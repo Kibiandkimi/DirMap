@@ -7,6 +7,7 @@ import { OffRouteMonitor, remainingPath } from './navigation';
 import { installOffline, saveOfflineCourse } from './offline';
 import { parseCustomRoutes, routeToken } from './course-routes';
 import { teamComparisonHtml } from './team-comparison';
+import { canRefine, refinementHtml } from './plan-refinement';
 import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type AutoTeamRequest, type Catalog, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Route, type TerrainEdit } from './types';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -131,8 +132,9 @@ $('course-mode').insertAdjacentHTML('afterend', '<div id="mixed-rules" class="qu
 $<HTMLInputElement>('mandatory-order').onchange = () => { resetPlan(); persistRules(); renderState(); };
 $('sensor-status').insertAdjacentHTML('afterend', '<button id="calibrate-compass" class="text-button compass-calibration">校准罗盘</button>');
 $('check-in').insertAdjacentHTML('afterend', '<button id="meeting-departure" class="primary-button wide hidden">全班已到齐，统一出发</button>');
-$('objective').insertAdjacentHTML('afterend', '<label class="field-label" for="solver-budget">规划计算预算</label><select id="solver-budget"><option value="5">快速规划 · 5 秒</option><option value="30">继续优化 · 30 秒</option></select>');
-$<HTMLSelectElement>('solver-budget').onchange = resetPlan;
+$('objective').insertAdjacentHTML('afterend', '<label class="field-label" for="solver-budget">新方案计算预算</label><select id="solver-budget"><option value="5">快速规划 · 5 秒</option><option value="30">较长计算 · 30 秒</option></select>');
+// A different time budget does not invalidate the current route. Continuing
+// that route uses its own button and saved inputs below the result heading.
 if (import.meta.env.PROD) {
   void installOffline();
   $('course-title').insertAdjacentHTML('afterend', '<p id="offline-status" class="muted" role="status"></p><button id="save-offline" class="text-button">保存本课供离线查看</button>');
@@ -191,7 +193,7 @@ async function watchJob<T>(initial: Job<T>): Promise<T> {
 async function renderJobs() {
   if (courseId) return;
   const jobs = await api<Job[]>('/api/jobs');
-  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案' };
+  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线' };
   const states: Record<string, string> = { queued: '排队中', running: '处理中', succeeded: '已完成', failed: '未完成' };
   $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(states[job.state])} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
 }
@@ -225,7 +227,7 @@ async function resumeJob(pending: PendingJob) {
   const result = await watchJob(job);
   catalog = await api('/api/catalog');
   await loadState(job.assetId);
-  if (job.kind === 'plan' || job.kind === 'auto_teams' || job.kind === 'choose_teams') {
+  if (['plan', 'auto_teams', 'choose_teams', 'refine_plan', 'confirm_plan'].includes(job.kind)) {
     const restored = result as Plan;
     if (restored.version !== state?.version || restored.routingSchema !== __DIRMAP_ROUTING_SCHEMA__ || state.registrationStale) throw new Error('这份路线所用地图或算法已更新，请重新生成路线');
     if (restored.request?.teams?.length) restorePlanFields(restored.request);
@@ -242,6 +244,12 @@ function syncTaskButtons() {
   $<HTMLButtonElement>('recommend-teams').disabled = busy || needsRecognitionUpdate() || value('course-mode') === 'custom';
   $('auto-team-hint').textContent = value('course-mode') === 'custom' ? '自定义点序已确定队数；切换其他访问方式后可自动比较。' : '';
   document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => { button.disabled = busy; });
+  const refine = document.querySelector<HTMLButtonElement>('#refine-plan');
+  if (refine) refine.disabled = busy || !canRefine(plan);
+  for (const id of ['review-button', 'customize-plan']) {
+    const button = document.getElementById(id) as HTMLButtonElement | null;
+    if (button) button.disabled = busy;
+  }
   document.querySelectorAll<HTMLButtonElement>('[data-choose-count]').forEach(button => {
     const rec = plan?.teamRecommendation;
     button.disabled = busy || !rec?.comparisonId || !rec.comparisonToken || Number(button.dataset.chooseCount) === (rec.selectedCount ?? rec.recommendedCount);
@@ -423,6 +431,7 @@ function showPlan(result: Plan) {
   campusMap.setRoutes(result.routes);
   $('route-results').innerHTML = `<div class="result-heading"><h2>队伍路线</h2><span class="status-tag ${result.status === 'OPTIMAL' ? 'success' : ''}">${result.status === 'FIXED' ? '按自定义点序' : result.status === 'OPTIMAL' ? '模型内已证明最优' : '当前最佳可行'}</span></div><p class="muted compact">基于当前通行图；${result.draft ? '核验后可发布给学生。' : '可以发布给学生。'}</p>${result.routes.map((r, i) => `<button class="route-card" data-team="${e(r.teamId)}" style="--team-color:${teamColors[i % teamColors.length]}"><span class="route-name"><i></i>${e(r.teamId)}<small>${r.people} 人</small></span><span class="route-metrics"><strong>${distance(r.distanceM)}</strong><span>${minutes(r.durationSec)}</span></span><span class="route-stops">${r.controlIds.map(id => e(state?.controls.find(c => c.id === id)?.label ?? id)).join(' → ')}</span><span class="route-detail">${r.departureSec ? `${Math.round(r.departureSec)} 秒后出发 · ` : ''}打点 ${Math.round(r.serviceSec)} 秒 · 集合等待 ${minutes(r.waitSec ?? 0)} · 开课后 ${minutes(r.finishSec)} 完成</span></button>`).join('')}<button id="export-route" class="text-button wide">下载路线 GeoJSON</button>`;
   $('publish-section').classList.remove('hidden');
+  $('route-results').querySelector('.result-heading')?.insertAdjacentHTML('afterend', refinementHtml(result));
   if (result.coverage?.mode === 'mixed_coverage') {
     const ids = result.coverage.mandatoryControlIds;
     $('route-results').insertAdjacentHTML('afterbegin', `<div id="mixed-coverage-result" class="notice-card"><strong>已验证混合覆盖</strong><p>每队均到访 ${ids.map(id => e(state?.controls.find(c => c.id === id)?.label ?? id)).join('、')}；其余 ${result.coverage.sharedControlIds.length} 个点均已分配。${result.coverage.mandatoryOrder ? '必到点按指定顺序访问。' : '集合顺序由规划统一安排。'}</p></div>`);
@@ -485,6 +494,20 @@ campusMap.onDrag = () => { follow = false; if (sensors.active) $('follow-label')
 document.body.addEventListener('click', event => {
   const job = (event.target as HTMLElement).closest<HTMLElement>('[data-resume-job]');
   if (job) { void task(() => resumeJob({ id: job.dataset.resumeJob })); return; }
+  const refine = (event.target as HTMLElement).closest<HTMLElement>('[data-refine-plan]');
+  if (refine) {
+    void task(async () => {
+      if (!state || !plan || !canRefine(plan)) throw new Error('这份路线不能继续优化，请先重新生成可行方案');
+      const source = plan, revision = planRevision;
+      const result = await runJob<Plan>('/api/plans/refine', { assetId: activeId, version: state.version,
+        planId: source.id, timeLimitSec: 30 });
+      if (revision !== planRevision) throw new Error('计算期间课程设置已改变，继续优化的结果已保留在处理记录中');
+      if (!result.request?.teams.length) throw new Error('无法恢复继续优化的方案');
+      resetPlan(); restorePlanFields(result.request); showPlan(result);
+      notify(result.refinement?.improved ? '本轮已找到更好的路线，队数保持不变' : '本轮未找到更好的路线，已保留原方案');
+    });
+    return;
+  }
   const choice = (event.target as HTMLElement).closest<HTMLElement>('[data-choose-count]');
   if (choice) {
     void task(async () => {
@@ -641,8 +664,8 @@ $('review-button').onclick = () => {
     try {
       if (!['registration', 'controls', 'passages'].every(name => $<HTMLInputElement>(`review-${name}`).checked)) throw new Error('请完成三项核验后发布');
       if (suggested.length && !$<HTMLInputElement>('review-approaches').checked) throw new Error('请先在原图核对并确认建议的到访位置');
-      // Explicit teacher action confirms the selected targets, preserving
-      // unselected candidate states. Save creates a new version; replan it.
+      // Explicit teacher action confirms the selected targets and creates a
+      // new version. Saved calculations can revalidate the exact route.
       const previousPlan = plan!;
       const controls = state!.controls.map(c => {
         if (!c.required) return c;
@@ -656,12 +679,14 @@ $('review-button').onclick = () => {
       const automatic = previousPlan.teamRecommendation?.sourceRequest;
       const choice = previousPlan.teamRecommendation;
       const preserveChoice = choice?.selectionMode === 'teacher' && choice.comparisonId && choice.comparisonToken;
-      const result = preserveChoice
+      const result = previousPlan.continuation
+        ? await runJob<Plan>('/api/plans/confirm', { assetId: activeId, version: state!.version, planId: previousPlan.id })
+        : preserveChoice
         ? await runJob<Plan>('/api/plans/choose-team-count', { assetId: activeId, version: state!.version,
             comparisonId: choice.comparisonId, comparisonToken: choice.comparisonToken,
             teamCount: choice.selectedCount, confirmPlanId: previousPlan.id })
         : await runJob<Plan>(automatic ? '/api/plans/auto-teams' : '/api/plans', { ...(automatic ?? previousPlan.request!), version: state!.version });
-      if (automatic && result.request?.teams?.length) restorePlanFields(result.request);
+      if (result.request?.teams?.length) restorePlanFields(result.request);
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
       const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title: '深大定向越野课' }) });
       const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a>`;

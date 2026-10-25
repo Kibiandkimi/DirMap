@@ -1,4 +1,4 @@
-"""Compact, content-checked snapshots of compared team-count solutions."""
+"""Content-checked planning inputs and compact saved solution snapshots."""
 import copy
 import hashlib
 import json
@@ -61,16 +61,58 @@ def freeze_bundle(bundle):
             'pixels': [e.get('approachPixel') or e['pixel'] for e in bundle['endpoints']]}
 
 
+def route_metrics(result):
+    routes = result['routes']
+    return {'latestFinishSec': max(r['finishSec'] for r in routes),
+            'totalFinishSec': sum(r['finishSec'] for r in routes),
+            'totalDistanceM': sum(r['distanceM'] for r in routes),
+            'totalWaitSec': sum(r['waitSec'] for r in routes)}
+
+
+def objective_value(metrics, objective):
+    if objective == 'min_distance':
+        return (metrics['totalDistanceM'],)
+    if objective == 'min_total_time':
+        return (metrics['totalFinishSec'],)
+    return (metrics['latestFinishSec'], metrics['totalFinishSec'])
+
+
+def candidate(result, teams):
+    value = {'teams': copy.deepcopy(teams), 'orders': [r['order'].copy() for r in result['routes']],
+             'status': result['status'], 'proof': copy.deepcopy(result['proof']), 'metrics': route_metrics(result)}
+    if result.get('refinement'):
+        value['refinement'] = copy.deepcopy(result['refinement'])
+    return value
+
+
+def used_paths(graph, bundle, orders):
+    pairs = {(a, b) for order in orders for a, b in zip(order, order[1:])}
+    return {f'{a}:{b}': path_fingerprint(graph.expand(bundle['parents'][a], bundle['nodes'][a], bundle['nodes'][b]))
+            for a, b in pairs}
+
+
 def create(state, request, result, bundle, metrics, identifier, graph_hash, implementation):
-    candidates = result.pop('_teamCandidates')
+    candidates = result.pop('_teamCandidates', None)
+    if candidates is None:
+        candidates = {str(len(request['teams'])): candidate(result, request['teams'])}
     content = {'schema': 1, 'id': identifier, 'assetId': state['assetId'], 'version': state['version'],
                'routingSchema': ROUTING_SCHEMA, 'graphHash': graph_hash,
                'implementation': implementation, 'requirementsHash': store.file_hash(store.ROOT/'requirements.lock'),
                'modelInputHash': fingerprint(model_inputs(state, request['controlIds'])),
                'bundle': freeze_bundle(bundle), 'candidates': candidates,
                'pathHashes': {f'{a}:{b}': value['pathHash'] for (a, b), value in metrics.items()},
-               'recommendation': copy.deepcopy(result['teamRecommendation']), 'createdAt': time.time()}
+               'request': copy.deepcopy(request), 'recommendation': copy.deepcopy(result.get('teamRecommendation')),
+               'createdAt': time.time()}
     return {'content': content, 'token': fingerprint(content)}
+
+
+def reference(saved):
+    return {'id': saved['content']['id'], 'token': saved['token'], 'version': saved['content']['version']}
+
+
+def source_request(saved):
+    content = saved['content']
+    return content.get('request') or content['recommendation']['sourceRequest']
 
 
 def public(saved, count, selection_mode):
@@ -82,7 +124,7 @@ def public(saved, count, selection_mode):
 
 def verify_and_restore(saved, state, graph, bundle, implementation):
     content = saved['content']
-    request = content['recommendation']['sourceRequest']
+    request = source_request(saved)
     if content['routingSchema'] != ROUTING_SCHEMA or content['implementation'] != implementation \
             or content['requirementsHash'] != store.file_hash(store.ROOT/'requirements.lock'):
         raise ValueError('规划程序已更新，请重新比较后选择')
@@ -111,5 +153,29 @@ def revalidated_copy(saved, state, identifier):
     content = copy.deepcopy(saved['content'])
     content.setdefault('originComparisonId', content['id'])
     content.update(id=identifier, version=state['version'], revalidatedAt=time.time())
-    content['recommendation']['sourceRequest']['version'] = state['version']
+    if content.get('request'):
+        content['request']['version'] = state['version']
+    if content.get('recommendation'):
+        content['recommendation']['sourceRequest']['version'] = state['version']
     return {'content': content, 'token': fingerprint(content)}
+
+
+def refined_copy(saved, state, identifier, result, request, graph, bundle):
+    from .team_planning import choose_count
+    copied = revalidated_copy(saved, state, identifier)
+    content, count = copied['content'], len(request['teams'])
+    item = candidate(result, request['teams'])
+    content['candidates'][str(count)] = item
+    content['pathHashes'].update(used_paths(graph, bundle, item['orders']))
+    rec = content.get('recommendation')
+    if rec:
+        row = next(row for row in rec['candidates'] if row['teamCount'] == count)
+        row.update(item['metrics'], status=result['status'], optimalityProven=result['proof']['globalOptimalityProven'])
+        rec.update(choose_count(rec['candidates'], request['objective'], rec['targetGainFraction']))
+        rec['allCountsOptimalityProven'] = all(row['optimalityProven'] for row in rec['candidates'])
+        if result['refinement']['attempted']:
+            rec['refinedCounts'] = sorted(set(rec.get('refinedCounts', [])) | {count})
+    else:
+        content['request'] = copy.deepcopy(request)
+    copied['token'] = fingerprint(content)
+    return copied

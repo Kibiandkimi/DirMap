@@ -127,6 +127,16 @@ class TeamCountChoiceRequest(Model):
     confirmPlanId: str | None = Field(default=None, pattern=r'^(?:[0-9a-f]{16}|[0-9a-f]{32})$')
 
 
+class SavedPlanRequest(Model):
+    assetId: str
+    version: int = Field(ge=1)
+    planId: str = Field(pattern=r'^(?:[0-9a-f]{16}|[0-9a-f]{32})$')
+
+
+class RefinePlanRequest(SavedPlanRequest):
+    timeLimitSec: FiniteFloat = Field(default=30, ge=.1, le=30)
+
+
 class Control(Model):
     id: str = Field(min_length=1, max_length=50)
     label: str = Field(min_length=1, max_length=40)
@@ -473,6 +483,16 @@ def auto_teams(request: AutoTeamRequest, http_request: Request):
 @app.post('/api/plans/choose-team-count')
 def choose_team_count(request: TeamCountChoiceRequest, http_request: Request):
     return submit_job(http_request, 'choose_teams', request.assetId, request.model_dump(exclude_none=True), request.version)
+
+
+@app.post('/api/plans/refine')
+def refine_plan(request: RefinePlanRequest, http_request: Request):
+    return submit_job(http_request, 'refine_plan', request.assetId, request.model_dump(), request.version)
+
+
+@app.post('/api/plans/confirm')
+def confirm_plan(request: SavedPlanRequest, http_request: Request):
+    return submit_job(http_request, 'confirm_plan', request.assetId, request.model_dump(), request.version)
 
 
 @app.post('/api/releases')

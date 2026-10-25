@@ -36,7 +36,11 @@ export interface Plan {
   rendezvous?: { controlId: string; allArrivedSec: number; departureSec: number }[];
   proof?: { algorithm: string; globalOptimalityProven: boolean; scope: string; elapsedSec: number; objectiveValue: number[] };
   teamRecommendation?: TeamRecommendation;
+  continuation?: { id: string; token: string; version: number };
+  refinement?: { sourcePlanId: string; budgetSec: number; before: PlanMetrics; after: PlanMetrics;
+    improved: boolean; attempted: boolean; round: number };
 }
+export interface PlanMetrics { latestFinishSec: number; totalFinishSec: number; totalDistanceM: number; totalWaitSec: number }
 export interface PlanRequest {
   assetId: string; version: number; controlIds: string[]; startPixel: Pixel; finishPixel: Pixel;
   mode: string; objective: string; mandatoryControlIds?: string[]; mandatoryOrder?: boolean;
@@ -51,6 +55,7 @@ export interface AutoTeamRequest extends Omit<PlanRequest, 'teams' | 'customRout
 export interface TeamRecommendation {
   comparisonId?: string; comparisonToken?: string; comparisonVersion?: number;
   selectedCount?: number; selectionMode?: 'automatic' | 'teacher';
+  refinedCounts?: number[];
   recommendedCount: number; bestMetricCount: number; metric: 'latestFinishSec' | 'totalFinishSec' | 'totalDistanceM';
   baselineValue: number; bestValue: number; recommendedValue: number; targetGainFraction: number;
   retainedGainFraction: number; gainPercent: number; noMeaningfulGain: boolean;

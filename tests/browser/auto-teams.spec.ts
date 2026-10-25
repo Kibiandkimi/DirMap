@@ -116,8 +116,8 @@ test('teacher can adopt another compared count and publish its exact reviewed ro
   await page.locator('#review-button').click();
   for (const name of ['registration', 'controls', 'passages']) await page.locator('#review-'+name).check();
   await page.locator('#review-approaches').check();
-  const confirmed = page.waitForResponse(r => r.url().endsWith('/api/plans/choose-team-count')
-    && r.request().method() === 'POST' && r.request().postDataJSON().confirmPlanId === selected.id);
+  const confirmed = page.waitForResponse(r => r.url().endsWith('/api/plans/confirm')
+    && r.request().method() === 'POST' && r.request().postDataJSON().planId === selected.id);
   await page.locator('#publish-confirm').click();
   expect((await confirmed).ok()).toBe(true);
   const link = page.getByLabel('学生课程链接');
