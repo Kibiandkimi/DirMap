@@ -1,7 +1,11 @@
 """Release integrity and atomic recovery without touching a live server."""
 import io
 import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import tarfile
 
 import pytest
@@ -158,3 +162,32 @@ def test_complete_deployment_links_data_and_runtime_and_updates_receiver(tmp_pat
     assert json.loads((active/'deployment.json').read_text())['revision'] == REVISION
     assert (root/'bin/github-receiver.py').read_bytes() == (source/'deploy/receiver.py').read_bytes()
     assert not list((root/'releases').glob('.staging-*'))
+
+
+def test_packaged_runtime_decodes_images_without_development_tools(tmp_path):
+    import cv2
+    import numpy as np
+    workspace = Path(__file__).resolve().parents[1]
+    root = fixture(tmp_path/'source')
+    shutil.copytree(workspace/'dirmap', root/'dirmap', dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__'))
+    cv2.imwrite(str(root/'map.png'), np.full((7, 11, 3), 255, np.uint8))
+    archive = tmp_path/'release.tar.gz'
+    build_package(root, archive, REVISION)
+    target = tmp_path/'runtime'
+    target.mkdir()
+    receiver.extract_release(archive, target, REVISION)
+    script = '''
+import importlib.abc, pathlib, sys
+class NoDevelopmentTools(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'tools' or fullname.startswith('tools.'):
+            raise ModuleNotFoundError('Development tools are absent from the production artifact')
+sys.meta_path.insert(0, NoDevelopmentTools())
+from dirmap import images
+assert pathlib.Path(images.__file__).resolve().is_relative_to(pathlib.Path.cwd())
+image, info = images.read_map_image('map.png')
+assert image.shape == (7, 11, 3) and info['encodedSize'] == [11, 7]
+'''
+    result = subprocess.run([sys.executable, '-B', '-c', script], cwd=target,
+                            env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

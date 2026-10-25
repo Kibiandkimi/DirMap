@@ -10,7 +10,7 @@ MAX_WORKING_SIDE = 4096
 
 
 def read_map_image(path, target_size=None):
-    from tools.inspect_inputs import image_header
+    from .image_metadata import image_header
     try:
         header = image_header(Path(path))
         width, height = header['width_px'], header['height_px']
