@@ -6,7 +6,8 @@ import { PixelEditor } from './editor';
 import { OffRouteMonitor, remainingPath } from './navigation';
 import { installOffline, saveOfflineCourse } from './offline';
 import { parseCustomRoutes, routeToken } from './course-routes';
-import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type Catalog, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Route, type TerrainEdit } from './types';
+import { teamComparisonHtml } from './team-comparison';
+import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type AutoTeamRequest, type Catalog, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Route, type TerrainEdit } from './types';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const number = (id: string) => Number($<HTMLInputElement>(id).value);
@@ -87,6 +88,8 @@ phoneLayout.addEventListener('change', () => setMobilePanel(false));
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && phoneLayout.matches) setMobilePanel(false); });
 setMobilePanel(false);
 $('objective').insertAdjacentHTML('beforeend', '<option value="min_distance">全班总距离最短</option>');
+$('group-preview').insertAdjacentHTML('afterend', '<details class="auto-team-settings"><summary>按分队收益自动选择队数</summary><div class="form-grid"><label>每队至少几人<input id="auto-min-people" type="number" min="1" max="500" value="2"></label><label>最多比较几队<input id="auto-max-teams" type="number" min="1" max="30" value="30"></label><label>保留最佳改善收益 <span>%</span><input id="auto-gain" type="number" min="50" max="100" step="5" value="90"></label></div><p class="muted compact">比较允许的全部队数，选择达到收益目标的最少队数。沿用总人数、速度、出发间隔与当前优化目标。</p><button id="recommend-teams" class="soft-button wide">比较收益并自动分队</button><p id="auto-team-hint" class="muted compact"></p></details>');
+for (const id of ['auto-min-people', 'auto-max-teams', 'auto-gain']) $(id).oninput = () => { resetPlan(); persistRules(); };
 $('map-summary').insertAdjacentHTML('afterend', '<details class="job-history"><summary>处理记录与恢复</summary><p class="muted compact">刷新页面或服务重启后，可在这里接续原任务。</p><button id="refresh-jobs" class="text-button">刷新记录</button><div id="job-history-list"></div></details>');
 $('refresh-jobs').onclick = () => task(renderJobs);
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="mixed_coverage">全员必到 + 其余点全班分担</option>');
@@ -188,7 +191,7 @@ async function watchJob<T>(initial: Job<T>): Promise<T> {
 async function renderJobs() {
   if (courseId) return;
   const jobs = await api<Job[]>('/api/jobs');
-  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划' };
+  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较' };
   const states: Record<string, string> = { queued: '排队中', running: '处理中', succeeded: '已完成', failed: '未完成' };
   $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(states[job.state])} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
 }
@@ -222,10 +225,10 @@ async function resumeJob(pending: PendingJob) {
   const result = await watchJob(job);
   catalog = await api('/api/catalog');
   await loadState(job.assetId);
-  if (job.kind === 'plan') {
+  if (job.kind === 'plan' || job.kind === 'auto_teams') {
     const restored = result as Plan;
     if (restored.version !== state?.version || restored.routingSchema !== __DIRMAP_ROUTING_SCHEMA__ || state.registrationStale) throw new Error('这份路线所用地图或算法已更新，请重新生成路线');
-    if (restored.request) restorePlanFields(restored.request);
+    if (restored.request?.teams?.length) restorePlanFields(restored.request);
     showPlan(restored);
   }
   notify(job.recovered ? '已恢复中断任务的结果' : '已载入原任务结果');
@@ -236,6 +239,8 @@ function needsRecognitionUpdate() {
 function syncTaskButtons() {
   for (const id of ['process-current', 'process-all', 'upload-button', 'refresh-terrain', 'refresh-recognition']) $<HTMLButtonElement>(id).disabled = busy;
   $<HTMLButtonElement>('plan-button').disabled = busy || needsRecognitionUpdate();
+  $<HTMLButtonElement>('recommend-teams').disabled = busy || needsRecognitionUpdate() || value('course-mode') === 'custom';
+  $('auto-team-hint').textContent = value('course-mode') === 'custom' ? '自定义点序已确定队数；切换其他访问方式后可自动比较。' : '';
   document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => { button.disabled = busy; });
 }
 async function task(action: () => Promise<void>) {
@@ -246,24 +251,32 @@ async function task(action: () => Promise<void>) {
 }
 function resetPlan() { planRevision++; plan = null; selectedTeam = null; campusMap.setRoutes([]); campusMap.setApproaches([]); $('route-results').innerHTML = ''; $('plan-errors').innerHTML = ''; $('publish-section').classList.add('hidden'); }
 function rulesKey() { return 'dirmap-course-rules-v1:' + (catalog.maps.find(m => m.id === activeId)?.sha256 ?? activeId); }
+function restoreAutoTeamFields(settings: Pick<AutoTeamRequest, 'minPeoplePerTeam' | 'maxTeams' | 'targetGainFraction'>) {
+  if (Number.isInteger(settings.minPeoplePerTeam) && settings.minPeoplePerTeam >= 1 && settings.minPeoplePerTeam <= 500) $<HTMLInputElement>('auto-min-people').value = String(settings.minPeoplePerTeam);
+  if (Number.isInteger(settings.maxTeams) && settings.maxTeams >= 1 && settings.maxTeams <= 30) $<HTMLInputElement>('auto-max-teams').value = String(settings.maxTeams);
+  if (Number.isFinite(settings.targetGainFraction) && settings.targetGainFraction >= .5 && settings.targetGainFraction <= 1) $<HTMLInputElement>('auto-gain').value = String(settings.targetGainFraction * 100);
+}
 function persistRules() {
-  try { localStorage.setItem(rulesKey(), JSON.stringify({ mode: value('course-mode'), mandatory: [...mandatory], order: $<HTMLInputElement>('mandatory-order').checked, selected: state?.controls.filter(c => c.required).map(c => c.id), customDrafts, teamInputs: courseTeams() })); }
+  try { localStorage.setItem(rulesKey(), JSON.stringify({ mode: value('course-mode'), objective: value('objective'), mandatory: [...mandatory], order: $<HTMLInputElement>('mandatory-order').checked, selected: state?.controls.filter(c => c.required).map(c => c.id), customDrafts, teamInputs: courseTeams(), autoTeams: { minPeoplePerTeam: number('auto-min-people'), maxTeams: number('auto-max-teams'), targetGainFraction: number('auto-gain') / 100 } })); }
   catch { /* Planning still works if private mode prevents local preferences. */ }
 }
 function initializeRules() {
   mandatory = new Set(); missingPresetLabels = [];
   customDrafts = {}; restoredTeams = null; customMapTeam = null;
   $<HTMLInputElement>('mandatory-order').checked = false;
+  restoreAutoTeamFields({ minPeoplePerTeam: 2, maxTeams: 30, targetGainFraction: .9 });
   const allowed = ['all_visit', 'split_coverage', 'fixed_order', 'mixed_coverage', 'custom'];
   try {
     const saved = JSON.parse(localStorage.getItem(rulesKey()) ?? 'null');
     if (saved && allowed.includes(saved.mode) && Array.isArray(saved.mandatory) && saved.mandatory.every((id: unknown) => typeof id === 'string')) {
+      if (saved.autoTeams) restoreAutoTeamFields(saved.autoTeams);
+      if (['min_max_finish_then_sum', 'min_total_time', 'min_distance'].includes(saved.objective)) $<HTMLSelectElement>('objective').value = saved.objective;
       $<HTMLSelectElement>('course-mode').value = saved.mode;
       mandatory = new Set(saved.mandatory.filter((id: string) => state?.controls.some(c => c.id === id && (c.role ?? 'control') === 'control')));
       $<HTMLInputElement>('mandatory-order').checked = saved.order === true;
       if (Array.isArray(saved.selected) && state) for (const c of state.controls) c.required = (c.role ?? 'control') === 'control' && (saved.selected.includes(c.id) || mandatory.has(c.id));
       if (saved.customDrafts && typeof saved.customDrafts === 'object') customDrafts = Object.fromEntries(Object.entries(saved.customDrafts).filter(([, draft]) => typeof draft === 'string')) as Record<string, string>;
-      if (saved.mode === 'custom' && Array.isArray(saved.teamInputs) && saved.teamInputs.length && saved.teamInputs.every((t: PlanRequest['teams'][number]) => typeof t.id === 'string' && Number.isInteger(t.people) && t.people > 0 && Number.isFinite(t.speedMps))) {
+      if (Array.isArray(saved.teamInputs) && saved.teamInputs.length && saved.teamInputs.every((t: PlanRequest['teams'][number]) => typeof t.id === 'string' && Number.isInteger(t.people) && t.people > 0 && Number.isFinite(t.speedMps))) {
         restoredTeams = saved.teamInputs;
         $<HTMLInputElement>('teams').value = String(restoredTeams!.length);
         $<HTMLInputElement>('people').value = String(restoredTeams!.reduce((sum, t) => sum+t.people, 0));
@@ -411,6 +424,11 @@ function showPlan(result: Plan) {
     $('route-results').insertAdjacentHTML('afterbegin', `<div id="mixed-coverage-result" class="notice-card"><strong>已验证混合覆盖</strong><p>每队均到访 ${ids.map(id => e(state?.controls.find(c => c.id === id)?.label ?? id)).join('、')}；其余 ${result.coverage.sharedControlIds.length} 个点均已分配。${result.coverage.mandatoryOrder ? '必到点按指定顺序访问。' : '集合顺序由规划统一安排。'}</p></div>`);
   }
   if (result.proof?.scope) $('route-results').insertAdjacentHTML('afterbegin', `<p class="muted compact">${e(result.proof.scope)}</p>`);
+  if (result.teamRecommendation) {
+    restoreAutoTeamFields(result.teamRecommendation.sourceRequest);
+    persistRules();
+    $('route-results').insertAdjacentHTML('afterbegin', teamComparisonHtml(result.teamRecommendation));
+  }
   const suggestions = result.approaches?.filter(a => a.automatic) ?? [];
   if (suggestions.length) {
     $('route-results').insertAdjacentHTML('afterbegin', `<div class="notice-card"><strong>${suggestions.length} 处到访位置建议</strong><p>路线停在可通行的地物外沿；紫色圈心保持原位。请核对橙色到访标记。</p>${suggestions.map(a => `<p>${e(state?.controls.find(c => c.id === a.controlId)?.label)}：距圈心 ${a.offsetM.toFixed(1)} m <button class="text-button" data-approach-review="${e(a.controlId)}">在原图核对 ↗</button></p>`).join('')}</div>`);
@@ -438,7 +456,7 @@ $('upload-button').onclick = () => $<HTMLInputElement>('upload-input').click();
 $<HTMLInputElement>('upload-input').onchange = event => task(async () => { const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return; const form = new FormData(); form.append('file', file); const asset = await api<{ id: string }>('/api/maps/upload', { method: 'POST', body: form }); catalog = await api('/api/catalog'); await loadState(asset.id); });
 document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b === button)); document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('hidden', tab.id !== `tab-${button.dataset.tab}`)); });
 for (const id of ['people', 'teams', 'stagger', 'speed']) $<HTMLInputElement>(id).oninput = () => { restoredTeams = null; groupPreview(); renderCustomRoutes(); resetPlan(); persistRules(); };
-$<HTMLSelectElement>('objective').onchange = resetPlan;
+$<HTMLSelectElement>('objective').onchange = () => { resetPlan(); persistRules(); };
 $<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = []; customMapTeam = null; $('map-action-hint').classList.add('hidden'); resetPlan(); persistRules(); renderState(); };
 for (const id of ['pick-start', 'pick-finish']) $(id).onclick = () => { if (!state?.registration) { notify('请先完成配准'); return; } mapAction = id === 'pick-start' ? 'start' : 'finish'; $('map-action-hint').textContent = `点击地图中可通行的位置，设置${mapAction === 'start' ? '起点' : '终点'}`; $('map-action-hint').classList.remove('hidden'); setMobilePanel(false); };
 $<HTMLInputElement>('return-start').onchange = () => { if ($<HTMLInputElement>('return-start').checked) { finishPixel = startPixel; if (startPixel && state) campusMap.setEndpoint('finish', pixelToLngLat(startPixel, state)); } resetPlan(); };
@@ -489,25 +507,45 @@ $<HTMLInputElement>('standard-map').onchange = event => campusMap.setStandardMap
 $<HTMLInputElement>('overlay-opacity').oninput = () => campusMap.setOpacity(number('overlay-opacity') / 100);
 $<HTMLInputElement>('stitch-maps').onchange = () => task(updateOverlays);
 $<HTMLInputElement>('show-terrain').onchange = () => campusMap.setTerrain(state, $<HTMLInputElement>('show-terrain').checked);
-$('plan-button').onclick = () => task(async () => {
+function planInputs(): Omit<PlanRequest, 'teams' | 'customRoutes'> {
   if (!state?.registration) throw new Error('请先识别并校准地图'); if (!startPixel) throw new Error('请在地图上选择起点');
   const finish = $<HTMLInputElement>('return-start').checked ? startPixel : finishPixel; if (!finish) throw new Error('请在地图上选择终点');
-  const people = number('people'), teams = number('teams'), speed = number('speed'), stagger = number('stagger');
-  if (![people, teams].every(Number.isInteger) || people < 1 || teams < 1 || teams > people || teams > 30) throw new Error('请填写有效人数与队数，队数不能超过人数');
+  const speed = number('speed'), stagger = number('stagger');
   if (!Number.isFinite(speed) || speed < .2 || speed > 10 || !Number.isFinite(stagger) || stagger < 0) throw new Error('请填写有效速度和出发间隔');
   const controlIds = state.controls.filter(c => c.required && c.state !== 'rejected').map(c => c.id); if (!controlIds.length) throw new Error('请至少选择一个目标点');
   const rules = rulePayload();
   if (value('course-mode') === 'mixed_coverage' && (missingPresetLabels.length || !rules.mandatoryControlIds.length)) throw new Error('请明确选择所有每队必到点后再规划');
+  return { assetId: activeId, version: state.version, controlIds, startPixel, finishPixel: finish, mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget') };
+}
+$('plan-button').onclick = () => task(async () => {
+  const input = planInputs();
+  const people = number('people'), teams = number('teams');
+  if (![people, teams].every(Number.isInteger) || people < 1 || teams < 1 || teams > people || teams > 30) throw new Error('请填写有效人数与队数，队数不能超过人数');
+  const rules = rulePayload();
   let customRoutes: PlanRequest['customRoutes'] = [];
   if (value('course-mode') === 'custom') {
-    try { customRoutes = parseCustomRoutes(customDrafts, courseTeams(), state.controls, rules.mandatoryControlIds, rules.mandatoryOrder); }
+    try { customRoutes = parseCustomRoutes(customDrafts, courseTeams(), state!.controls, rules.mandatoryControlIds, rules.mandatoryOrder); }
     catch (error) { $('custom-route-error').textContent = error instanceof Error ? error.message : String(error); throw error; }
   }
   resetPlan();
   const revision = planRevision;
-  const result = await runJob<Plan>('/api/plans', { assetId: activeId, version: state.version, controlIds, startPixel, finishPixel: finish, mode: value('course-mode'), objective: value('objective'),
-    ...rules, customRoutes, teams: courseTeams(), timeLimitSec: number('solver-budget') });
+  const result = await runJob<Plan>('/api/plans', { ...input, customRoutes, teams: courseTeams() });
   if (revision !== planRevision) throw new Error('计算期间规则已改变，请按新规则重新生成路线');
+  showPlan(result);
+});
+$('recommend-teams').onclick = () => task(async () => {
+  const input = planInputs();
+  if (input.mode === 'custom') throw new Error('自定义点序已确定队数，请切换其他访问方式');
+  const totalPeople = number('people'), minPeoplePerTeam = number('auto-min-people'), maxTeams = number('auto-max-teams');
+  const targetGainFraction = number('auto-gain') / 100;
+  if (![totalPeople, minPeoplePerTeam, maxTeams].every(Number.isInteger) || totalPeople < 1 || totalPeople > 500 || minPeoplePerTeam < 1 || minPeoplePerTeam > totalPeople || maxTeams < 1 || maxTeams > 30) throw new Error('请检查总人数、每队最少人数和最多队数');
+  if (!Number.isFinite(targetGainFraction) || targetGainFraction < .5 || targetGainFraction > 1) throw new Error('收益保留比例应为 50%–100%');
+  const request: AutoTeamRequest = { ...input, totalPeople, minPeoplePerTeam, maxTeams, targetGainFraction, speedMps: number('speed'), staggerSec: number('stagger') };
+  resetPlan(); persistRules();
+  const revision = planRevision;
+  const result = await runJob<Plan>('/api/plans/auto-teams', request);
+  if (revision !== planRevision) throw new Error('比较期间规则已改变，请按新规则重新计算');
+  if (result.request?.teams?.length) restorePlanFields(result.request);
   showPlan(result);
 });
 
@@ -594,7 +632,9 @@ $('review-button').onclick = () => {
       state = await api(`/api/maps/${activeId}/review`, { method: 'POST', body: JSON.stringify({ version: state!.version, registrationChecked: true, controlsChecked: true, passagesChecked: true, notes: value('review-notes') }) });
       // Use the exact existing team inputs and selected controls, not stale
       // geometry from the previous version after confirmation.
-      const result = await runJob<Plan>('/api/plans', { ...previousPlan.request!, version: state!.version });
+      const automatic = previousPlan.teamRecommendation?.sourceRequest;
+      const result = await runJob<Plan>(automatic ? '/api/plans/auto-teams' : '/api/plans', { ...(automatic ?? previousPlan.request!), version: state!.version });
+      if (automatic && result.request?.teams?.length) restorePlanFields(result.request);
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
       const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title: '深大定向越野课' }) });
       const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a>`;

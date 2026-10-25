@@ -22,6 +22,7 @@ from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
 from .reference import geojson
 from .schedule import custom_sequences
+from .team_planning import team_counts
 from .vision import read_image
 
 @asynccontextmanager
@@ -86,6 +87,34 @@ class PlanRequest(Model):
                              [r.model_dump() for r in self.customRoutes], self.mandatoryControlIds, self.mandatoryOrder)
         elif self.customRoutes:
             raise ValueError('自定义路线仅用于自定义模式')
+        return self
+
+
+class AutoTeamRequest(Model):
+    assetId: str
+    version: int = Field(ge=1)
+    controlIds: list[str] = Field(min_length=1, max_length=60)
+    startPixel: Point
+    finishPixel: Point
+    mode: Literal['all_visit', 'split_coverage', 'fixed_order', 'mixed_coverage'] = 'all_visit'
+    mandatoryControlIds: list[str] = Field(default_factory=list, max_length=60)
+    mandatoryOrder: bool = False
+    objective: Literal['min_max_finish_then_sum', 'min_total_time', 'min_distance'] = 'min_max_finish_then_sum'
+    totalPeople: int = Field(ge=1, le=500, strict=True)
+    minPeoplePerTeam: int = Field(default=2, ge=1, le=500, strict=True)
+    maxTeams: int = Field(default=30, ge=1, le=30, strict=True)
+    speedMps: FiniteFloat = Field(ge=.2, le=10)
+    staggerSec: FiniteFloat = Field(default=0, ge=0, le=86400)
+    targetGainFraction: FiniteFloat = Field(default=.9, ge=.5, le=1)
+    timeLimitSec: FiniteFloat = Field(default=5, ge=.1, le=30)
+
+    @model_validator(mode='after')
+    def valid_course(self):
+        data = self.model_dump()
+        fields = {key: data[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel',
+                  'mode', 'mandatoryControlIds', 'mandatoryOrder', 'objective', 'timeLimitSec')}
+        PlanRequest(**fields, teams=[{'id': 'comparison', 'people': self.totalPeople, 'speedMps': self.speedMps}])
+        team_counts(self.totalPeople, self.minPeoplePerTeam, self.maxTeams, len(self.controlIds), self.mode, self.staggerSec)
         return self
 
 
@@ -425,6 +454,11 @@ def plan(request: PlanRequest, http_request: Request):
     # Requests with different constraints are different jobs. Do not dedupe
     # solely by map ID and accidentally return somebody else's route.
     return submit_job(http_request, 'plan', request.assetId, request.model_dump())
+
+
+@app.post('/api/plans/auto-teams')
+def auto_teams(request: AutoTeamRequest, http_request: Request):
+    return submit_job(http_request, 'auto_teams', request.assetId, request.model_dump())
 
 
 @app.post('/api/releases')

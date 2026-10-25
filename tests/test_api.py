@@ -304,6 +304,66 @@ def test_uploaded_source_manifest_is_portable_and_original_download_is_exact(cli
     assert client.get(f'/assets/maps/{asset_id}/working.jpg').content == payload
 
 
+def automatic_request(**overrides):
+    payload = {key: value for key, value in request().items() if key != 'teams'}
+    payload.update(totalPeople=12, minPeoplePerTeam=2, maxTeams=6, speedMps=1.4,
+                   staggerSec=0, targetGainFraction=.9, timeLimitSec=2)
+    return {**payload, **overrides}
+
+
+def test_automatic_team_job_reuses_one_graph_matrix_and_preserves_recommendation_on_release(client, monkeypatch):
+    original = service.plan_matrix
+    calls = []
+    def counted(*args, **kwargs):
+        calls.append(1)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(service, 'plan_matrix', counted)
+    headers = {'X-DirMap-Request-Id': 'automatic-team-comparison'}
+    job = client.post('/api/plans/auto-teams', json=automatic_request(), headers=headers).json()
+    duplicate = client.post('/api/plans/auto-teams', json=automatic_request(), headers=headers).json()
+    assert job['id'] == duplicate['id'] and job['kind'] == 'auto_teams'
+    done = wait_job(client, job['id'])
+    assert done['state'] == 'succeeded', done
+    plan = done['result']
+    assert calls == [1]
+    assert plan['teamRecommendation']['recommendedCount'] == len(plan['routes']) == 4
+    assert len(plan['request']['teams']) == 4
+    assert sum(team['people'] for team in plan['request']['teams']) == 12
+    assert plan['teamRecommendation']['evaluatedCounts'] == [1, 2, 3, 4, 5, 6]
+    selected = next(c for c in plan['teamRecommendation']['candidates'] if c['recommended'])
+    assert selected['latestFinishSec'] == pytest.approx(max(r['finishSec'] for r in plan['routes']))
+    assert selected['totalDistanceM'] == pytest.approx(sum(r['distanceM'] for r in plan['routes']))
+    state = store.get_state('szu-1')
+    state['controls'][0]['state'] = 'accepted'
+    store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200
+    released = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']})
+    assert released.status_code == 200, released.text
+    snapshot = client.get('/api/releases/'+released.json()['id']).json()
+    assert snapshot['plan']['teamRecommendation'] == plan['teamRecommendation']
+
+
+def test_automatic_distance_comparison_reports_true_walked_metres_and_weighted_times(client):
+    np.savez_compressed(store.asset_dir('szu-1')/'terrain.npz', costs=np.full((41, 41), 2, np.float32))
+    job = client.post('/api/plans/auto-teams', json=automatic_request(objective='min_distance')).json()
+    done = wait_job(client, job['id'])
+    assert done['state'] == 'succeeded', done
+    plan = done['result']
+    assert plan['teamRecommendation']['recommendedCount'] == 1
+    route = plan['routes'][0]
+    assert route['travelSec'] == pytest.approx(route['distanceM']*2/1.4)
+    row = plan['teamRecommendation']['candidates'][0]
+    assert row['totalDistanceM'] == pytest.approx(route['distanceM'])
+    assert row['latestFinishSec'] == pytest.approx(route['finishSec'])
+
+
+@pytest.mark.parametrize('changes', [{'totalPeople': True}, {'minPeoplePerTeam': 13}, {'maxTeams': 31},
+                                   {'targetGainFraction': .2}, {'mode': 'custom'}, {'controlIds': ['c1', 'c1']}])
+def test_automatic_team_request_rejects_inconsistent_rules(client, changes):
+    assert client.post('/api/plans/auto-teams', json=automatic_request(**changes)).status_code == 422
+
+
 def navigation_release(client):
     state = store.get_state('szu-1')
     first = state['controls'][0]

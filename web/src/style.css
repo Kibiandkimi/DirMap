@@ -95,3 +95,14 @@ dialog { border: 1px solid #dde6d4; border-radius: 16px; box-shadow: 0 30px 100p
   .ol-zoom { bottom: 28px; }
   .sensor-status { margin: 1px 4px; }
 }
+.auto-team-settings, .team-comparison { margin: 12px 0; padding: 12px; border: 1px solid #dbe3d8; border-radius: 10px; }
+.auto-team-settings summary, .team-comparison summary { cursor: pointer; font-size: 13px; font-weight: 600; color: #315b43; }
+.auto-team-settings .form-grid { margin-top: 12px; }
+.team-comparison { padding: 10px; }
+.team-comparison svg { display: block; width: 100%; margin: 6px 0; }
+.team-comparison svg text { fill: #5f7062; font: 10px sans-serif; }
+.comparison-scroll { max-width: 100%; overflow-x: auto; }
+.comparison-scroll table { border-collapse: collapse; width: 100%; font-size: 11px; }
+.comparison-scroll th, .comparison-scroll td { padding: 8px 6px; text-align: right; white-space: nowrap; border-bottom: 1px solid #e2e8df; }
+.comparison-scroll th { color: #63735f; font-weight: 500; }
+.comparison-scroll .recommended { background: #e7f1e4; font-weight: 600; color: #29583f; }

@@ -35,6 +35,7 @@ export interface Plan {
   coverage?: { mode: string; mandatoryControlIds: string[]; mandatoryOrder: boolean; sharedControlIds: string[]; synchronization?: string; rendezvousControlIds?: string[] };
   rendezvous?: { controlId: string; allArrivedSec: number; departureSec: number }[];
   proof?: { algorithm: string; globalOptimalityProven: boolean; scope: string; elapsedSec: number; objectiveValue: number[] };
+  teamRecommendation?: TeamRecommendation;
 }
 export interface PlanRequest {
   assetId: string; version: number; controlIds: string[]; startPixel: Pixel; finishPixel: Pixel;
@@ -42,6 +43,20 @@ export interface PlanRequest {
   customRoutes?: { teamId: string; controlIds: string[] }[];
   teams: { id: string; people: number; speedMps: number; departureSec?: number }[];
   timeLimitSec: number;
+}
+export interface AutoTeamRequest extends Omit<PlanRequest, 'teams' | 'customRoutes'> {
+  totalPeople: number; minPeoplePerTeam: number; maxTeams: number; speedMps: number;
+  staggerSec: number; targetGainFraction: number;
+}
+export interface TeamRecommendation {
+  recommendedCount: number; bestMetricCount: number; metric: 'latestFinishSec' | 'totalFinishSec' | 'totalDistanceM';
+  baselineValue: number; bestValue: number; recommendedValue: number; targetGainFraction: number;
+  retainedGainFraction: number; gainPercent: number; noMeaningfulGain: boolean;
+  allCountsCompared: boolean; allCountsOptimalityProven: boolean; evaluatedCounts: number[];
+  sourceRequest: AutoTeamRequest; method: string; elapsedSec: number; scope: string;
+  candidates: { teamCount: number; teamSizes: number[]; latestFinishSec: number; totalFinishSec: number;
+    totalDistanceM: number; totalWaitSec: number; gainPercent: number; marginalGain: number;
+    retainedGainFraction: number; recommended: boolean; status: string; optimalityProven: boolean }[];
 }
 export interface Job<T = unknown> {
   id: string; kind: string; assetId: string; state: 'queued' | 'running' | 'succeeded' | 'failed';

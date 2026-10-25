@@ -18,6 +18,7 @@ from .access import AccessResolver
 from .graph import build_graph, expand_route, plan_matrix
 from .optimizer import solve
 from .schedule import apply_schedule
+from .team_planning import recommend_teams
 from .ocr import label_controls
 from .reference import load_reference
 from .registration import auto_register, extend_transfer_boundary, manual_register, recover_boundary_buildings, register_to_map, warp_overlay
@@ -105,6 +106,8 @@ def _execute_operation(job, progress):
         result = apply_anchors(asset_id, payload['anchors'], payload['version'], operation_id=operation_id)
     elif job['kind'] == 'plan':
         result = plan_course(payload, progress, operation_id=operation_id)
+    elif job['kind'] == 'auto_teams':
+        result = plan_course(payload, progress, operation_id=operation_id, auto_teams=True)
     else:
         raise ValueError('不支持的任务类型')
     return result
@@ -419,7 +422,7 @@ def navigate_course(release, request):
                 'scope': '从当前位置到本队剩余点及终点的合法最短路；保持发布时的点位分配和访问顺序。'}
 
 
-def plan_course(request, progress=lambda p, m: None, operation_id=None):
+def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_teams=False):
     started = time.perf_counter()
     state = store.get_state(request['assetId'])
     if not state:
@@ -452,11 +455,43 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None):
     # Graphs are prepared with the map. Include reloading and the point matrix
     # in the class's calculation budget; keep room to expand and save paths.
     solver_budget = max(.01, request.get('timeLimitSec', 5)-preparation_elapsed-.65)
-    result = solve(bundle['matrix'], controls, request['teams'], request['mode'], request['objective'], solver_budget,
-                   mandatory_ids=request.get('mandatoryControlIds'), mandatory_order=request.get('mandatoryOrder', False),
-                   custom_routes=request.get('customRoutes'))
+    if auto_teams:
+        metrics = {}
+        def measure(candidate, teams):
+            for route, team in zip(candidate['routes'], teams):
+                legs = []
+                for a, b in zip(route['order'], route['order'][1:]):
+                    if (a, b) not in metrics:
+                        path = graph.expand(bundle['parents'][a], bundle['nodes'][a], bundle['nodes'][b])
+                        lengths = weights = 0.
+                        if len(path) > 1:
+                            lengths = float(graph.lengths[path[:-1], path[1:]].sum())
+                            weights = float(graph.weights[path[:-1], path[1:]].sum())
+                        metrics[a, b] = {'distanceM': lengths+float(bundle['connectors'][a]+bundle['connectors'][b]),
+                                         'travelWeightM': weights+float(bundle['connectorWeights'][a]+bundle['connectorWeights'][b])}
+                    legs.append(metrics[a, b])
+                route['legs'] = legs
+                route['distanceM'] = sum(leg['distanceM'] for leg in legs)
+                route['travelSec'] = sum(leg['travelWeightM'] for leg in legs)/team['speedMps']
+            candidate['rendezvous'] = apply_schedule(candidate['routes'], controls, teams, request.get('mandatoryControlIds', []))
+            return {'latestFinishSec': max(r['finishSec'] for r in candidate['routes']),
+                    'totalFinishSec': sum(r['finishSec'] for r in candidate['routes']),
+                    'totalDistanceM': sum(r['distanceM'] for r in candidate['routes']),
+                    'totalWaitSec': sum(r['waitSec'] for r in candidate['routes'])}
+        result, chosen_teams = recommend_teams(bundle['matrix'], controls, request, solver_budget, measure, progress)
+        request = {key: request[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel',
+                   'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder') if key in request}
+        request['teams'] = chosen_teams
+    else:
+        result = solve(bundle['matrix'], controls, request['teams'], request['mode'], request['objective'], solver_budget,
+                       mandatory_ids=request.get('mandatoryControlIds'), mandatory_order=request.get('mandatoryOrder', False),
+                       custom_routes=request.get('customRoutes'))
+    geometries = {}
     for route, team in zip(result['routes'], request['teams']):
-        route.update(expand_route(graph, bundle, route['order']))
+        order = tuple(route['order'])
+        if order not in geometries:
+            geometries[order] = expand_route(graph, bundle, route['order'])
+        route.update(geometries[order])
         route['travelSec'] = route['travelWeightM']/team['speedMps']
     result['rendezvous'] = apply_schedule(result['routes'], controls, request['teams'], request.get('mandatoryControlIds', []))
     result.update(id=plan_id, assetId=state['assetId'], version=state['version'], graphHash=graph.content_hash,
