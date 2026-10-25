@@ -49,6 +49,8 @@ export interface AutoTeamRequest extends Omit<PlanRequest, 'teams' | 'customRout
   staggerSec: number; targetGainFraction: number;
 }
 export interface TeamRecommendation {
+  comparisonId?: string; comparisonToken?: string; comparisonVersion?: number;
+  selectedCount?: number; selectionMode?: 'automatic' | 'teacher';
   recommendedCount: number; bestMetricCount: number; metric: 'latestFinishSec' | 'totalFinishSec' | 'totalDistanceM';
   baselineValue: number; bestValue: number; recommendedValue: number; targetGainFraction: number;
   retainedGainFraction: number; gainPercent: number; noMeaningfulGain: boolean;

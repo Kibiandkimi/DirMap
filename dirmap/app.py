@@ -118,6 +118,15 @@ class AutoTeamRequest(Model):
         return self
 
 
+class TeamCountChoiceRequest(Model):
+    assetId: str
+    version: int = Field(ge=1)
+    comparisonId: str = Field(pattern=r'^(?:[0-9a-f]{16}|[0-9a-f]{32})$')
+    comparisonToken: str = Field(pattern=r'^[0-9a-f]{64}$')
+    teamCount: int = Field(ge=1, le=30, strict=True)
+    confirmPlanId: str | None = Field(default=None, pattern=r'^(?:[0-9a-f]{16}|[0-9a-f]{32})$')
+
+
 class Control(Model):
     id: str = Field(min_length=1, max_length=50)
     label: str = Field(min_length=1, max_length=40)
@@ -324,7 +333,7 @@ def submit_job(request: Request, kind, asset_id, payload, expected_version=None)
             state = store.get_state(asset_id)
             if not state or state['version'] != expected_version:
                 raise HTTPException(409, '地图已更新，请刷新后重试')
-        inputs = service.job_inputs(kind, asset_id)
+        inputs = service.job_inputs(kind, asset_id, payload)
         return queue.submit(kind, asset_id, payload, inputs, request_id)
 
 
@@ -461,6 +470,11 @@ def auto_teams(request: AutoTeamRequest, http_request: Request):
     return submit_job(http_request, 'auto_teams', request.assetId, request.model_dump())
 
 
+@app.post('/api/plans/choose-team-count')
+def choose_team_count(request: TeamCountChoiceRequest, http_request: Request):
+    return submit_job(http_request, 'choose_teams', request.assetId, request.model_dump(exclude_none=True), request.version)
+
+
 @app.post('/api/releases')
 def release(request: ReleaseRequest):
     if any(c not in '0123456789abcdef' for c in request.planId):
@@ -470,6 +484,11 @@ def release(request: ReleaseRequest):
         plan = store.read_json(store.asset_dir(request.assetId)/f'plan-{request.planId}.json')
         if not state or not plan or not state['reviewed']:
             raise ValueError('请先核验地图并生成路线')
+        selected = set((plan.get('request') or {}).get('controlIds', []))
+        controls = {c['id']: c for c in state['controls']}
+        if not plan.get('routes') or not selected or any(identifier not in controls or
+                controls[identifier]['state'] != 'accepted' or not controls[identifier].get('calibrated') for identifier in selected):
+            raise ValueError('所选路线仍有目标未核验，不能发布')
         if any(a.get('automatic') for a in plan.get('approaches', [])):
             raise ValueError('请先核对并保存建议的到访位置，再生成发布路线')
         if state['version'] != plan['version'] or state['graphHash'] != plan['graphHash']:

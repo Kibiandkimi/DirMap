@@ -16,13 +16,14 @@ import numpy as np
 from .geometry import Frame, Registration
 from .access import AccessResolver
 from .graph import build_graph, expand_route, plan_matrix
-from .optimizer import solve
+from .optimizer import solve, evaluate_routes
+from .route_search import validate_sequences
 from .schedule import apply_schedule
 from .team_planning import recommend_teams
 from .ocr import label_controls
 from .reference import load_reference
 from .registration import auto_register, extend_transfer_boundary, manual_register, recover_boundary_buildings, register_to_map, warp_overlay
-from . import store, graph_cache
+from . import store, graph_cache, comparisons
 from .protocol import ROUTING_SCHEMA
 from .images import read_map_image
 from .recognition import reconcile_controls
@@ -40,7 +41,7 @@ def implementation_signature():
     return hashlib.sha256(b''.join(path.read_bytes() for path in paths)).hexdigest()
 
 
-def job_inputs(kind, asset_id):
+def job_inputs(kind, asset_id, payload=None):
     """Freeze the inputs which must not change while a job waits/restarts."""
     with store.LOCK:
         asset = store.get_asset(asset_id)
@@ -65,6 +66,16 @@ def job_inputs(kind, asset_id):
         elif state and (state.get('quality') or {}).get('baseAssetId'):
             base = store.get_state(state['quality']['baseAssetId'])
             snapshot['baseRegistration'] = registration_stamp(base) if base else None
+        if kind == 'choose_teams':
+            if not payload:
+                raise ValueError('缺少分队比较记录')
+            comparison = comparisons.load(asset_id, payload['comparisonId'], payload['comparisonToken'])
+            snapshot['comparisonToken'] = comparison['token']
+            if payload.get('confirmPlanId'):
+                path = comparisons.plan_path(asset_id, payload['confirmPlanId'])
+                if not path.exists():
+                    raise ValueError('待核验的路线不存在，请重新选择方案')
+                snapshot['selectedPlanHash'] = store.file_hash(path)
         return snapshot
 
 
@@ -74,7 +85,7 @@ def execute_job(job, progress):
     if committed is not None:
         progress(100, '已恢复原任务提交的结果')
         return committed
-    if job['inputs'] != job_inputs(job['kind'], asset_id):
+    if job['inputs'] != job_inputs(job['kind'], asset_id, job['payload']):
         raise ValueError('等待或恢复期间地图、参照或程序已更新；已保留最新修改，请重新提交任务')
     if job['attempts'] > 3:
         raise ValueError('任务已多次随服务中断，已保留已有结果；请检查服务后重新提交')
@@ -108,6 +119,8 @@ def _execute_operation(job, progress):
         result = plan_course(payload, progress, operation_id=operation_id)
     elif job['kind'] == 'auto_teams':
         result = plan_course(payload, progress, operation_id=operation_id, auto_teams=True)
+    elif job['kind'] == 'choose_teams':
+        result = choose_team_count(payload, progress, operation_id=operation_id)
     else:
         raise ValueError('不支持的任务类型')
     return result
@@ -422,7 +435,22 @@ def navigate_course(release, request):
                 'scope': '从当前位置到本队剩余点及终点的合法最短路；保持发布时的点位分配和访问顺序。'}
 
 
-def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_teams=False):
+def choose_team_count(payload, progress=lambda p, m: None, operation_id=None):
+    saved = comparisons.load(payload['assetId'], payload['comparisonId'], payload['comparisonToken'])
+    content = saved['content']
+    candidate = content['candidates'].get(str(payload['teamCount']))
+    if not candidate or len(candidate['teams']) != payload['teamCount']:
+        raise ValueError('该队数不在原比较范围内，请重新比较')
+    if not payload.get('confirmPlanId') and payload['version'] != content['version']:
+        raise ValueError('这次比较所用地图已更新，请重新比较')
+    original = content['recommendation']['sourceRequest']
+    request = {key: original[key] for key in ('assetId', 'controlIds', 'startPixel', 'finishPixel',
+               'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder') if key in original}
+    request.update(version=payload['version'], teams=copy.deepcopy(candidate['teams']))
+    return plan_course(request, progress, operation_id, selection={'saved': saved, 'payload': payload, 'candidate': candidate})
+
+
+def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_teams=False, selection=None):
     started = time.perf_counter()
     state = store.get_state(request['assetId'])
     if not state:
@@ -438,6 +466,17 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         raise ValueError('请至少选择一个目标')
     if any(c.get('role', 'control') != 'control' or c['state'] == 'rejected' for c in controls):
         raise ValueError('路线目标不能包含起终点符号或已排除的候选')
+    confirm_choice = bool(selection and selection['payload'].get('confirmPlanId'))
+    if confirm_choice:
+        previous = store.read_json(comparisons.plan_path(state['assetId'], selection['payload']['confirmPlanId']))
+        chosen = (previous or {}).get('teamRecommendation') or {}
+        if (chosen.get('selectionMode') != 'teacher' or chosen.get('comparisonId') != selection['payload']['comparisonId']
+                or chosen.get('comparisonToken') != selection['payload']['comparisonToken']
+                or chosen.get('selectedCount') != selection['payload']['teamCount']):
+            raise ValueError('待发布路线与所选比较方案不一致')
+        required = {c['id'] for c in state['controls'] if c.get('required') and c.get('role', 'control') == 'control'}
+        if not state['reviewed'] or required != set(ids) or any(c['state'] != 'accepted' or not c.get('calibrated') for c in controls):
+            raise ValueError('请先核验所选课程目标，再恢复要发布的方案')
     progress(10, '建立保留细墙的通行图')
     graph = get_graph(state)
     reg = Registration.from_dict(state['registration'])
@@ -446,15 +485,18 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
                          metric='distance' if request['objective'] == 'min_distance' else 'time')
     plan_id = operation_id or uuid.uuid4().hex[:16]
     if bundle['unresolved']:
+        if selection:
+            raise ValueError('原方案的点位已不可达，请重新核对并比较')
         return {'id': plan_id, 'assetId': state['assetId'], 'request': request,
                 'routingSchema': ROUTING_SCHEMA, 'status': 'NEEDS_REVIEW', 'unresolved': bundle['unresolved'],
                 'routes': [], 'graphHash': graph.content_hash, 'version': state['version'],
                 'approaches': bundle.get('approaches', [])}
-    progress(65, '优化队伍分配与访问顺序')
+    progress(65, '复核已比较的点序与路线' if selection else '优化队伍分配与访问顺序')
     preparation_elapsed = time.perf_counter()-started
     # Graphs are prepared with the map. Include reloading and the point matrix
     # in the class's calculation budget; keep room to expand and save paths.
     solver_budget = max(.01, request.get('timeLimitSec', 5)-preparation_elapsed-.65)
+    comparison_to_save = None
     if auto_teams:
         metrics = {}
         def measure(candidate, teams):
@@ -468,7 +510,8 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
                             lengths = float(graph.lengths[path[:-1], path[1:]].sum())
                             weights = float(graph.weights[path[:-1], path[1:]].sum())
                         metrics[a, b] = {'distanceM': lengths+float(bundle['connectors'][a]+bundle['connectors'][b]),
-                                         'travelWeightM': weights+float(bundle['connectorWeights'][a]+bundle['connectorWeights'][b])}
+                                         'travelWeightM': weights+float(bundle['connectorWeights'][a]+bundle['connectorWeights'][b]),
+                                         'pathHash': comparisons.path_fingerprint(path)}
                     legs.append(metrics[a, b])
                 route['legs'] = legs
                 route['distanceM'] = sum(leg['distanceM'] for leg in legs)
@@ -479,9 +522,30 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
                     'totalDistanceM': sum(r['distanceM'] for r in candidate['routes']),
                     'totalWaitSec': sum(r['waitSec'] for r in candidate['routes'])}
         result, chosen_teams = recommend_teams(bundle['matrix'], controls, request, solver_budget, measure, progress)
+        comparison_to_save = comparisons.create(state, request, result, bundle, metrics, plan_id,
+                                                 graph.content_hash, implementation_signature())
+        result['teamRecommendation'] = comparisons.public(comparison_to_save, len(chosen_teams), 'automatic')
         request = {key: request[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel',
                    'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder') if key in request}
         request['teams'] = chosen_teams
+    elif selection:
+        saved, candidate = selection['saved'], selection['candidate']
+        comparisons.verify_and_restore(saved, state, graph, bundle, implementation_signature())
+        mandatory_ids = request.get('mandatoryControlIds', [])
+        node_ids = {c['id']: i+1 for i, c in enumerate(controls)}
+        mandatory = tuple(node_ids[c] for c in mandatory_ids)
+        validate_sequences(candidate['orders'], len(controls), len(request['teams']), request['mode'], mandatory,
+                           mandatory if request.get('mandatoryOrder') else ())
+        proof = copy.deepcopy(candidate['proof'])
+        proof['scope'] += ' 沿用同次比较的分队、点序与证明；本次只复核并恢复路线，未重新优化。'
+        proof['reusedComparisonId'] = saved['content']['id']
+        result = evaluate_routes(bundle['matrix'], controls, request['teams'], candidate['orders'],
+            request['mode'], request['objective'], mandatory_ids, request.get('mandatoryOrder', False),
+            proven=proof['globalOptimalityProven'], algorithm=proof['algorithm'], proof_details=proof)
+        if confirm_choice:
+            comparison_to_save = comparisons.revalidated_copy(saved, state, plan_id)
+            saved = comparison_to_save
+        result['teamRecommendation'] = comparisons.public(saved, len(request['teams']), 'teacher')
     else:
         result = solve(bundle['matrix'], controls, request['teams'], request['mode'], request['objective'], solver_budget,
                        mandatory_ids=request.get('mandatoryControlIds'), mandatory_order=request.get('mandatoryOrder', False),
@@ -494,16 +558,24 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         route.update(geometries[order])
         route['travelSec'] = route['travelWeightM']/team['speedMps']
     result['rendezvous'] = apply_schedule(result['routes'], controls, request['teams'], request.get('mandatoryControlIds', []))
+    if selection:
+        row = next(r for r in selection['saved']['content']['recommendation']['candidates'] if r['teamCount'] == len(request['teams']))
+        observed = {'latestFinishSec': max(r['finishSec'] for r in result['routes']),
+                    'totalFinishSec': sum(r['finishSec'] for r in result['routes']),
+                    'totalDistanceM': sum(r['distanceM'] for r in result['routes']),
+                    'totalWaitSec': sum(r['waitSec'] for r in result['routes'])}
+        if any(abs(value-row[key]) > max(1e-5, abs(value)*1e-10) for key, value in observed.items()):
+            raise ValueError('复核后的路线指标与原比较不一致，请重新比较')
     result.update(id=plan_id, assetId=state['assetId'], version=state['version'], graphHash=graph.content_hash,
                   routingSchema=ROUTING_SCHEMA,
-                  request=request, draft=not state['reviewed'], createdAt=time.time(),
+                  request=request, draft=not state['reviewed'] or any(c['state'] != 'accepted' or not c.get('calibrated') for c in controls), createdAt=time.time(),
                   approaches=bundle.get('approaches', []),
                   graphStatistics={'nodes': len(graph.pixels), 'edges': graph.weights.nnz,
                                    'components': int(graph.component_count), 'gridStepPx': graph.step,
                                    'fineGridStepPx': 1 if graph.adaptive else graph.step})
     result['proof']['graphHash'] = graph.content_hash
     result['preparationSec'] = round(preparation_elapsed, 3)
-    result['proof']['solverBudgetSec'] = round(solver_budget, 3)
+    result['proof']['solverBudgetSec'] = 0 if selection else round(solver_budget, 3)
     result['planningElapsedSec'] = round(time.perf_counter()-started, 3)
     if any(a['automatic'] for a in result['approaches']):
         result['draft'] = True
@@ -512,7 +584,13 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         current = store.get_state(state['assetId'])
         if current['version'] != state['version']:
             raise ValueError('计算期间地图已更新，请重新规划')
+        if selection:
+            comparisons.load(state['assetId'], selection['payload']['comparisonId'], selection['payload']['comparisonToken'])
+        if confirm_choice and not current['reviewed']:
+            raise ValueError('课程核验状态已改变，请重新核验')
         current['graphHash'] = graph.content_hash
+        if comparison_to_save:
+            store.atomic_json(comparisons.path(state['assetId'], comparison_to_save['content']['id']), comparison_to_save)
         store.atomic_json(store.asset_dir(state['assetId'])/f'plan-{plan_id}.json', result)
         store.save_state(state['assetId'], current, operation_id, result)
     return result

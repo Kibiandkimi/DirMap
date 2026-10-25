@@ -358,6 +358,130 @@ def test_automatic_distance_comparison_reports_true_walked_metres_and_weighted_t
     assert row['latestFinishSec'] == pytest.approx(route['finishSec'])
 
 
+def compared_plan(client):
+    job = client.post('/api/plans/auto-teams', json=automatic_request()).json()
+    result = wait_job(client, job['id'])
+    assert result['state'] == 'succeeded', result
+    return result['result']
+
+
+def choice_request(plan, count=2, **overrides):
+    comparison = plan['teamRecommendation']
+    return {'assetId': plan['assetId'], 'version': plan['version'], 'comparisonId': comparison['comparisonId'],
+            'comparisonToken': comparison['comparisonToken'], 'teamCount': count, **overrides}
+
+
+def choose_plan(client, payload, key='choose-comparison-count'):
+    response = client.post('/api/plans/choose-team-count', json=payload, headers={'X-DirMap-Request-Id': key})
+    assert response.status_code == 200, response.text
+    result = wait_job(client, response.json()['id'])
+    assert result['state'] == 'succeeded', result
+    return result['result']
+
+
+def test_choosing_compared_count_restores_exact_solution_without_optimization(client, monkeypatch):
+    from dirmap import comparisons
+    original = compared_plan(client)
+    snapshot = comparisons.load('szu-1', original['teamRecommendation']['comparisonId'])
+    orders = snapshot['content']['candidates']['2']['orders']
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Adopting a compared solution must not run optimization again')
+    monkeypatch.setattr(service, 'solve', forbidden)
+    monkeypatch.setattr(service, 'recommend_teams', forbidden)
+    payload = choice_request(original)
+    selected = choose_plan(client, payload)
+    replay = choose_plan(client, payload)
+    assert replay == selected
+    assert selected['id'] != original['id']
+    assert [r['order'] for r in selected['routes']] == orders
+    assert len(selected['routes']) == 2
+    assert selected['teamRecommendation']['recommendedCount'] == 4
+    assert selected['teamRecommendation']['selectedCount'] == 2
+    assert selected['teamRecommendation']['selectionMode'] == 'teacher'
+    row = next(r for r in original['teamRecommendation']['candidates'] if r['teamCount'] == 2)
+    assert sum(r['distanceM'] for r in selected['routes']) == pytest.approx(row['totalDistanceM'])
+    assert max(r['finishSec'] for r in selected['routes']) == pytest.approx(row['latestFinishSec'])
+    assert store.read_json(store.asset_dir('szu-1')/f'plan-{original["id"]}.json') == original
+    assert len(list(store.asset_dir('szu-1').glob('comparison-*.json'))) == 1
+
+
+def reviewed_choice(client, change_service=False):
+    original = compared_plan(client)
+    selected = choose_plan(client, choice_request(original))
+    state = store.get_state('szu-1')
+    controls = [{k: v for k, v in c.items() if k not in ('calibrated', 'lnglat')} for c in state['controls']]
+    controls[0].update(state='accepted', approachPixel=controls[0]['pixel'])
+    if change_service:
+        controls[0]['serviceBaseSec'] += 100
+    updated = client.patch('/api/maps/szu-1', json={'version': 1, 'controls': controls}).json()
+    assert updated['version'] == 2
+    assert client.post('/api/maps/szu-1/review', json={'version': 2, 'registrationChecked': True,
+        'controlsChecked': True, 'passagesChecked': True}).status_code == 200
+    return selected
+
+
+def test_review_and_publication_keep_the_teacher_choice_and_all_original_orders(client, monkeypatch):
+    selected = reviewed_choice(client)
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Confirmation must preserve the reviewed choice')
+    monkeypatch.setattr(service, 'solve', forbidden)
+    monkeypatch.setattr(service, 'recommend_teams', forbidden)
+    confirmed = choose_plan(client, choice_request(selected, version=2, confirmPlanId=selected['id']), 'confirm-chosen-plan')
+    assert confirmed['draft'] is False and confirmed['version'] == 2
+    assert len(confirmed['routes']) == 2
+    assert confirmed['teamRecommendation']['recommendedCount'] == 4
+    assert confirmed['teamRecommendation']['selectedCount'] == 2
+    assert confirmed['teamRecommendation']['comparisonId'] != selected['teamRecommendation']['comparisonId']
+    for before, after in zip(selected['routes'], confirmed['routes']):
+        assert before['order'] == after['order']
+        assert before['geometry'] == after['geometry']
+        assert before['finishSec'] == after['finishSec']
+    response = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': confirmed['id']})
+    assert response.status_code == 200, response.text
+    release = client.get('/api/releases/'+response.json()['id']).json()
+    assert len(release['plan']['routes']) == 2 and release['plan']['teamRecommendation']['selectedCount'] == 2
+    # The comparison fork revalidated for the new map version remains usable.
+    another = choose_plan(client, choice_request(confirmed, 3), 'choose-after-confirmation')
+    assert len(another['routes']) == 3
+
+
+def test_changed_map_and_changed_service_cannot_reuse_old_comparison_proof(client):
+    selected = reviewed_choice(client, change_service=True)
+    response = client.post('/api/plans/choose-team-count', json=choice_request(selected, version=2))
+    assert response.status_code == 200
+    failure = wait_job(client, response.json()['id'])
+    assert failure['state'] == 'failed' and '地图已更新' in failure['message']
+    response = client.post('/api/plans/choose-team-count', json=choice_request(selected, version=2, confirmPlanId=selected['id']))
+    failure = wait_job(client, response.json()['id'])
+    assert failure['state'] == 'failed' and '耗时设置' in failure['message']
+
+
+def test_corrupt_comparison_and_unavailable_count_are_refused(client):
+    from dirmap import comparisons
+    plan = compared_plan(client)
+    response = client.post('/api/plans/choose-team-count', json=choice_request(plan, 30))
+    failure = wait_job(client, response.json()['id'])
+    assert failure['state'] == 'failed' and '不在原比较范围' in failure['message']
+    path = comparisons.path('szu-1', plan['teamRecommendation']['comparisonId'])
+    content = store.read_json(path)
+    content['content']['candidates']['2']['orders'][0] = [0, 999, 2]
+    store.atomic_json(path, content)
+    response = client.post('/api/plans/choose-team-count', json=choice_request(plan))
+    assert response.status_code == 422 and '记录已改变' in response.text
+
+
+def test_review_of_other_targets_does_not_authorize_an_unconfirmed_plan_target(client):
+    state = store.get_state('szu-1')
+    state['controls'][0]['required'] = False
+    store.save_state('szu-1', state)
+    assert client.post('/api/maps/szu-1/review', json={'version': 1, 'registrationChecked': True,
+        'controlsChecked': True, 'passagesChecked': True}).status_code == 200
+    plan = compared_plan(client)
+    assert plan['draft'] is True
+    response = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']})
+    assert response.status_code == 422 and '目标未核验' in response.text
+
+
 @pytest.mark.parametrize('changes', [{'totalPeople': True}, {'minPeoplePerTeam': 13}, {'maxTeams': 31},
                                    {'targetGainFraction': .2}, {'mode': 'custom'}, {'controlIds': ['c1', 'c1']}])
 def test_automatic_team_request_rejects_inconsistent_rules(client, changes):

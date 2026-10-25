@@ -158,4 +158,9 @@ def recommend_teams(matrix, controls, request, time_limit, measure, progress=lam
         'allCountsOptimalityProven': all(row['optimalityProven'] for row in rows),
         'method': method, 'elapsedSec': time.perf_counter()-started,
         'scope': '按当前优化目标比较允许的全部队数；推荐达到指定比例的已计算最佳收益的最少队数。限时可行解之间的比较不代表全局最优队数。'}
+    # Service code stores these compact snapshots privately. Keeping orders
+    # and proofs avoids duplicating route geometry for every possible count.
+    result['_teamCandidates'] = {str(k): {'teams': copy.deepcopy(teams_by_count[k]),
+        'orders': [r['order'].copy() for r in results[k]['routes']],
+        'status': results[k]['status'], 'proof': copy.deepcopy(results[k]['proof'])} for k in counts}
     return result, teams_by_count[count]

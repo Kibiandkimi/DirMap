@@ -68,3 +68,72 @@ test('automatic team benefits choose a count, survive reload and publish the cho
   await expect(page.locator('#student-progress')).toHaveText('1 / 3');
   await context.setOffline(false);
 });
+
+test('teacher can adopt another compared count and publish its exact reviewed routes', async ({ page, context }) => {
+  test.setTimeout(120000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const initial = await (await page.request.get('/api/maps/szu-1')).json();
+  // The browser server is a disposable copy. Restore automatic approaches
+  // here so confirmation exercises inferred-to-manual position promotion.
+  const editable = initial.controls.map((c: any) => ({ id: c.id, label: c.label, pixel: c.pixel,
+    radiusPx: c.radiusPx, required: c.required, role: c.role ?? 'control', state: 'candidate',
+    approachPixel: null, serviceBaseSec: c.serviceBaseSec, servicePerPersonSec: c.servicePerPersonSec }));
+  expect((await page.request.patch('/api/maps/szu-1', { data: { version: initial.version, controls: editable } })).ok()).toBe(true);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.locator('#mobile-panel').click();
+  await expect(page.locator('.control-row').first()).toBeVisible();
+  const state = await (await page.request.get('/api/maps/szu-1')).json();
+  const ids = state.controls.filter((c: any) => c.role === 'control').slice(0, 3).map((c: any) => c.id);
+  const boxes = page.locator('[data-required]');
+  for (let i = 0; i < await boxes.count(); i++) {
+    const box = boxes.nth(i);
+    if (!await box.isDisabled()) await box.setChecked(ids.includes(await box.getAttribute('data-required')));
+  }
+  await page.locator('#people').fill('12'); await page.locator('#stagger').fill('0');
+  await page.locator('.auto-team-settings summary').click();
+  await page.locator('#auto-max-teams').fill('6');
+  await page.locator('#recommend-teams').click();
+  await expect(page.locator('.team-recommendation')).toContainText('自动建议 4 队', { timeout: 30000 });
+  await page.locator('.team-comparison summary').click();
+  const adopted = page.waitForResponse(r => r.url().endsWith('/api/plans/choose-team-count') && r.request().method() === 'POST');
+  await page.getByRole('button', { name: '采用 6 队', exact: true }).click();
+  const job = await (await adopted).json();
+  await expect(page.locator('.team-recommendation')).toContainText('当前采用 6 队', { timeout: 30000 });
+  await expect(page.locator('.route-card')).toHaveCount(6);
+  await expect(page.locator('#teams')).toHaveValue('6');
+  await expect(page.locator('[data-comparison-count="6"]')).toHaveClass(/selected/);
+  await expect(page.locator('[data-comparison-count="4"]')).toHaveClass(/recommended/);
+  await expect(page.locator('.team-recommendation')).toContainText('自动建议为 4 队');
+  const selected = (await (await page.request.get('/api/jobs/'+job.id)).json()).result;
+  expect(selected.teamRecommendation.selectedCount).toBe(6);
+  expect(selected.approaches.some((a: any) => a.automatic)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/dirmap-chosen-count-phone.png' });
+  await page.reload(); await page.locator('#mobile-panel').click();
+  await page.locator('.job-history summary').click();
+  await page.locator(`[data-resume-job="${job.id}"]`).click();
+  await expect(page.locator('.team-recommendation')).toContainText('当前采用 6 队', { timeout: 30000 });
+  await page.locator('#review-button').click();
+  for (const name of ['registration', 'controls', 'passages']) await page.locator('#review-'+name).check();
+  await page.locator('#review-approaches').check();
+  const confirmed = page.waitForResponse(r => r.url().endsWith('/api/plans/choose-team-count')
+    && r.request().method() === 'POST' && r.request().postDataJSON().confirmPlanId === selected.id);
+  await page.locator('#publish-confirm').click();
+  expect((await confirmed).ok()).toBe(true);
+  const link = page.getByLabel('学生课程链接');
+  await expect(link).toBeVisible({ timeout: 30000 });
+  const courseId = new URL(await link.inputValue()).searchParams.get('course');
+  const course = await (await page.request.get('/api/releases/'+courseId)).json();
+  expect(course.plan.teamRecommendation.selectedCount).toBe(6);
+  expect(course.plan.teamRecommendation.recommendedCount).toBe(4);
+  expect(course.plan.routes.map((r: any) => r.controlIds)).toEqual(selected.routes.map((r: any) => r.controlIds));
+  expect(course.plan.routes.map((r: any) => r.geometry)).toEqual(selected.routes.map((r: any) => r.geometry));
+  await page.goto(`http://127.0.0.1:8768/?course=${courseId}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#offline-status')).toContainText('本课已保存', { timeout: 20000 });
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+  await context.setOffline(true); await page.reload();
+  await page.locator('#mobile-panel').click();
+  await expect(page.locator('#student-team option')).toHaveCount(6);
+  await expect(page.locator('#student-overview')).toContainText('2 人同行');
+  await context.setOffline(false);
+});

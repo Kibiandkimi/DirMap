@@ -191,7 +191,7 @@ async function watchJob<T>(initial: Job<T>): Promise<T> {
 async function renderJobs() {
   if (courseId) return;
   const jobs = await api<Job[]>('/api/jobs');
-  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较' };
+  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案' };
   const states: Record<string, string> = { queued: '排队中', running: '处理中', succeeded: '已完成', failed: '未完成' };
   $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(states[job.state])} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
 }
@@ -225,7 +225,7 @@ async function resumeJob(pending: PendingJob) {
   const result = await watchJob(job);
   catalog = await api('/api/catalog');
   await loadState(job.assetId);
-  if (job.kind === 'plan' || job.kind === 'auto_teams') {
+  if (job.kind === 'plan' || job.kind === 'auto_teams' || job.kind === 'choose_teams') {
     const restored = result as Plan;
     if (restored.version !== state?.version || restored.routingSchema !== __DIRMAP_ROUTING_SCHEMA__ || state.registrationStale) throw new Error('这份路线所用地图或算法已更新，请重新生成路线');
     if (restored.request?.teams?.length) restorePlanFields(restored.request);
@@ -242,6 +242,10 @@ function syncTaskButtons() {
   $<HTMLButtonElement>('recommend-teams').disabled = busy || needsRecognitionUpdate() || value('course-mode') === 'custom';
   $('auto-team-hint').textContent = value('course-mode') === 'custom' ? '自定义点序已确定队数；切换其他访问方式后可自动比较。' : '';
   document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => { button.disabled = busy; });
+  document.querySelectorAll<HTMLButtonElement>('[data-choose-count]').forEach(button => {
+    const rec = plan?.teamRecommendation;
+    button.disabled = busy || !rec?.comparisonId || !rec.comparisonToken || Number(button.dataset.chooseCount) === (rec.selectedCount ?? rec.recommendedCount);
+  });
 }
 async function task(action: () => Promise<void>) {
   if (busy) return; busy = true;
@@ -481,6 +485,23 @@ campusMap.onDrag = () => { follow = false; if (sensors.active) $('follow-label')
 document.body.addEventListener('click', event => {
   const job = (event.target as HTMLElement).closest<HTMLElement>('[data-resume-job]');
   if (job) { void task(() => resumeJob({ id: job.dataset.resumeJob })); return; }
+  const choice = (event.target as HTMLElement).closest<HTMLElement>('[data-choose-count]');
+  if (choice) {
+    void task(async () => {
+      const rec = plan?.teamRecommendation;
+      if (!state || !rec?.comparisonId || !rec.comparisonToken) throw new Error('请先重新比较队数');
+      const count = Number(choice.dataset.chooseCount), revision = planRevision;
+      const result = await runJob<Plan>('/api/plans/choose-team-count', { assetId: activeId, version: state.version,
+        comparisonId: rec.comparisonId, comparisonToken: rec.comparisonToken, teamCount: count });
+      if (revision !== planRevision) throw new Error('选择期间课程设置已改变，请重新选择方案');
+      if (!result.request?.teams?.length) throw new Error('无法恢复该方案，请重新比较');
+      resetPlan(); restorePlanFields(result.request); showPlan(result);
+      const details = document.querySelector<HTMLDetailsElement>('.team-comparison');
+      if (details) details.open = true;
+      notify(`已采用 ${count} 队方案，保留原比较中的点序`);
+    });
+    return;
+  }
   const reorder = (event.target as HTMLElement).closest<HTMLElement>('[data-mandatory-up],[data-mandatory-down]');
   if (reorder) {
     const ids = [...mandatory], id = reorder.dataset.mandatoryUp ?? reorder.dataset.mandatoryDown!;
@@ -633,7 +654,13 @@ $('review-button').onclick = () => {
       // Use the exact existing team inputs and selected controls, not stale
       // geometry from the previous version after confirmation.
       const automatic = previousPlan.teamRecommendation?.sourceRequest;
-      const result = await runJob<Plan>(automatic ? '/api/plans/auto-teams' : '/api/plans', { ...(automatic ?? previousPlan.request!), version: state!.version });
+      const choice = previousPlan.teamRecommendation;
+      const preserveChoice = choice?.selectionMode === 'teacher' && choice.comparisonId && choice.comparisonToken;
+      const result = preserveChoice
+        ? await runJob<Plan>('/api/plans/choose-team-count', { assetId: activeId, version: state!.version,
+            comparisonId: choice.comparisonId, comparisonToken: choice.comparisonToken,
+            teamCount: choice.selectedCount, confirmPlanId: previousPlan.id })
+        : await runJob<Plan>(automatic ? '/api/plans/auto-teams' : '/api/plans', { ...(automatic ?? previousPlan.request!), version: state!.version });
       if (automatic && result.request?.teams?.length) restorePlanFields(result.request);
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
       const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title: '深大定向越野课' }) });

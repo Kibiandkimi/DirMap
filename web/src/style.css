@@ -106,3 +106,8 @@ dialog { border: 1px solid #dde6d4; border-radius: 16px; box-shadow: 0 30px 100p
 .comparison-scroll th, .comparison-scroll td { padding: 8px 6px; text-align: right; white-space: nowrap; border-bottom: 1px solid #e2e8df; }
 .comparison-scroll th { color: #63735f; font-weight: 500; }
 .comparison-scroll .recommended { background: #e7f1e4; font-weight: 600; color: #29583f; }
+.comparison-scroll .selected { background: #e7f1e4; color: #29583f; }
+.comparison-scroll .recommended:not(.selected) { background: #fffbf3; font-weight: 400; }
+.choose-count { min-height: 40px; border: 1px solid #bdd0bb; border-radius: 7px; padding: 6px 9px; background: #fff; color: #29583f; cursor: pointer; white-space: nowrap; }
+.choose-count:disabled { opacity: 1; background: #e1ecdF; cursor: default; }
+.count-recommendation { display: block; color: #966226; margin-top: 3px; font-size: 10px; }
