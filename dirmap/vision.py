@@ -80,7 +80,12 @@ def north_guides(mask, native):
         a, b, c = candidates[i:i+3]
         first, second = b[0]-a[0], c[0]-b[0]
         overlap = min(v[3] for v in (a, b, c))-max(v[2] for v in (a, b, c))
-        if (first >= max(native*8, width*.02) and .88 <= second/first <= 1.12
+        ratio = second/first if first else 0
+        # One guide can disappear inside buildings, a lake or overprint.
+        # A tightly matched double spacing still gives three observations;
+        # do not accept arbitrary pairs of parallel streams as a family.
+        regular = .88 <= ratio <= 1.12 or abs(ratio-2) <= .06 or abs(ratio-.5) <= .015
+        if (min(first, second) >= max(native*8, width*.02) and regular
                 and max(v[1] for v in (a, b, c))-min(v[1] for v in (a, b, c)) < .01
                 and overlap > height*.12):
             accepted.update((i, i+1, i+2))

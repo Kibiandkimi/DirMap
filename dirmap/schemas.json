@@ -1,4 +1,4 @@
 {
   "routing": "native-quadtree-v6-rendezvous",
-  "terrain": "print-scale-boundaries-v4"
+  "terrain": "print-scale-boundaries-v5-guide-gaps"
 }

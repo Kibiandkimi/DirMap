@@ -22,6 +22,36 @@ def test_photo_montage_guides_do_not_cut_the_map_into_disconnected_strips():
     assert np.all(result[250:701, 75] > 0)
 
 
+def test_missing_guide_still_identifies_regular_family_but_not_unrelated_waterways():
+    water = np.zeros((1000, 900), np.uint8)
+    for x in (150, 450, 600):  # the stroke at 300 is obscured
+        cv2.line(water, (x, 150), (x, 750), 255, 2)
+    cv2.rectangle(water, (410, 330), (490, 410), 255, -1)
+    cv2.line(water, (75, 250), (75, 700), 255, 2)
+    result = water_obstacles(water)
+    assert not result[480:520, 140:610].any()
+    assert np.all(result[345:395, 425:475] > 0)
+    assert np.all(result[250:701, 75] > 0)
+    unequal = np.zeros_like(water)
+    for x in (75, 180, 410):
+        cv2.line(unequal, (x, 150), (x, 750), 255, 2)
+    assert np.array_equal(water_obstacles(unequal), unequal)
+
+
+def test_real_sheet_36_is_not_blocked_by_a_blue_north_guide():
+    from dirmap import store
+    from dirmap.vision import read_image
+    image = read_image(store.get_asset('szu-2')['path'])
+    result = analyze(image)
+    assert result['costs'][495, 436] > 0
+    assert not result['semantics']['water'][495, 436]
+    # Existing lake interiors, a roof crossed by the guide, and forbidden
+    # point 35 remain obstacles. Removing annotations must not open them.
+    assert np.all(result['costs'][515:530, 210:230] == 0)
+    assert result['costs'][210, 436] == 0
+    assert result['costs'][629, 293] == 0
+
+
 def frame(width, height):
     source = [[0, 0], [width-1, 0], [width-1, height-1], [0, height-1]]
     matrix = [[1, 0, 0], [0, -1, height-1]]
