@@ -11,6 +11,7 @@ import numpy as np
 from ortools.sat.python import cp_model
 
 from .schedule import timeline
+from .route_scores import RouteScores, improves
 
 
 def _circuit(model, count, optional=False):
@@ -71,6 +72,12 @@ def optimize(matrix, controls, teams, mode, objective, seed, deadline, mandatory
     stages = []
     services = [[c.get('serviceBaseSec', 5)+t['people']*c.get('servicePerPersonSec', 1)
                  for c in controls] for t in teams]
+    seed = [list(route) for route in seed]
+    candidates = [('incumbent', seed)]
+
+    def remember(source, routes):
+        if not any(routes == previous for _, previous in candidates):
+            candidates.append((source, [route.copy() for route in routes]))
 
     def stage(solver, status, name):
         record = {'objective': name, 'status': solver.status_name(status) if solver else 'UNKNOWN'}
@@ -94,7 +101,7 @@ def optimize(matrix, controls, teams, mode, objective, seed, deadline, mandatory
         stage(solver, status, 'tour_metres')
         sequence = _sequence(solver, arcs, count) if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else seed[0]
         chosen = [sequence.copy() for _ in teams]
-        metres = sum(int(distance[a, b]) for a, b in zip(sequence, sequence[1:]))/quantum
+        remember('tour_search', chosen)
 
         def score(value):
             times = [value/t['speedMps']+sum(s)+t.get('departureSec', 0) for t, s in zip(teams, services)]
@@ -102,7 +109,14 @@ def optimize(matrix, controls, teams, mode, objective, seed, deadline, mandatory
                 return [len(teams)*value]
             return [max(times), sum(times)] if objective == 'min_max_finish_then_sum' else [sum(times)]
 
-        model_value = score(metres)
+        def model_score(routes):
+            metres = [sum(int(distance[a, b]) for a, b in zip(route, route[1:]))/quantum for route in routes]
+            times = [value/t['speedMps']+sum(s)+t.get('departureSec', 0) for value, t, s in zip(metres, teams, services)]
+            if objective == 'min_distance':
+                return [sum(metres)]
+            return [max(times), sum(times)] if objective == 'min_max_finish_then_sum' else [sum(times)]
+
+        model_value = model_score(chosen)
         bound = score(solver.best_objective_bound/quantum) if solver and status != cp_model.UNKNOWN else None
         proven = status == cp_model.OPTIMAL
         quantization = {'distanceM': .001, 'rounding': 'nearest', 'maxTourRoundingErrorM': (count-1)*.0005}
@@ -189,6 +203,7 @@ def optimize(matrix, controls, teams, mode, objective, seed, deadline, mandatory
         solver, status = _run(model, deadline)
         stage(solver, status, 'makespan_seconds' if secondary is not None else 'total_metres' if objective == 'min_distance' else 'total_seconds')
         chosen = [_sequence(solver, arcs, count) for arcs, _ in circuits] if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else seed
+        remember('primary_search', chosen)
         primary_optimal = status == cp_model.OPTIMAL
         bound = [solver.best_objective_bound/quantum] if solver and status != cp_model.UNKNOWN else [None]
         if secondary is not None:
@@ -204,11 +219,14 @@ def optimize(matrix, controls, teams, mode, objective, seed, deadline, mandatory
                 stage(solver, status, 'total_seconds_with_optimal_makespan')
                 if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
                     chosen = [_sequence(solver, arcs, count) for arcs, _ in circuits]
+                    remember('secondary_search', chosen)
                     bound[1] = solver.best_objective_bound/quantum
             else:
                 status = cp_model.FEASIBLE
         proven = primary_optimal and status == cp_model.OPTIMAL
-        model_value = [v/quantum for v in score(chosen)]
+        def model_score(routes):
+            return [v/quantum for v in score(routes)]
+        model_value = model_score(chosen)
         quantization = {'timeSec': .001, 'timeRounding': 'ceiling', 'distanceM': .001, 'distanceRounding': 'nearest'}
 
     if any(s['status'] == 'MODEL_INVALID' for s in stages):
@@ -217,6 +235,23 @@ def optimize(matrix, controls, teams, mode, objective, seed, deadline, mandatory
     # evidence that the teacher's selected controls are unreachable.
     if any(s['status'] == 'INFEASIBLE' for s in stages):
         raise RuntimeError('精确模型与已有可行路线冲突')
+    search_proven, search_value = proven, model_value
+    if search_proven:
+        bound = search_value.copy()
+    # Integer rounding can reverse close decisions. Keep the best measured
+    # objective among the input and every completed search stage, then attach
+    # a proof only if that returned route also attains the proved model value.
+    # Keep this guard outside CP-SAT: additional millisecond-sum constraints
+    # can cause OR-Tools 9.15 propagation to overrun its wall-clock budget.
+    source, chosen = candidates[0]
+    value = RouteScores(matrix, chosen, teams, services, objective, mandatory_nodes).score()
+    model_value = model_score(chosen)
+    for candidate_source, candidate in candidates[1:]:
+        candidate_value = RouteScores(matrix, candidate, teams, services, objective, mandatory_nodes).score()
+        candidate_model = model_score(candidate)
+        if improves(candidate_value, value) or (not improves(value, candidate_value) and improves(candidate_model, model_value)):
+            source, chosen, value, model_value = candidate_source, candidate, candidate_value, candidate_model
+    proven = search_proven and model_value == search_value
     gap = None
     if bound and all(v is None for v in bound):
         bound = None
@@ -224,9 +259,14 @@ def optimize(matrix, controls, teams, mode, objective, seed, deadline, mandatory
         bound, gap = model_value, 0.
     elif bound and bound[0] is not None and len(model_value) == 1:
         gap = max(0., (model_value[0]-bound[0])/max(1e-9, abs(model_value[0])))
+    scope = '当前通行图上的路线、打点、指定出发时间及集合等待；所有队伍在每个集合点完成打点后统一出发。精确证明限于列出的毫米/毫秒量化模型，不含通道拥堵。'
+    if search_proven and not proven:
+        scope += ' 已保留实际指标更好的已知路线；量化模型的最优证明属于另一方案，不能用于当前返回路线。'
     return {'sequences': chosen, 'proven': proven,
             'proof': {'algorithm': 'cp_sat_circuit_two_stage' if mode in ('split_coverage', 'mixed_coverage') else 'cp_sat_circuit',
                       'bestBound': bound, 'relativeGap': gap, 'modelObjectiveValue': model_value,
+                      'searchModelObjectiveValue': search_value, 'searchProvenOptimal': search_proven,
+                      'solutionSource': source,
                       'quantization': quantization, 'stages': stages,
-                      'termination': 'PROVEN_OPTIMAL' if proven else 'TIME_LIMIT',
-                      'scope': '当前通行图上的路线、打点、指定出发时间及集合等待；所有队伍在每个集合点完成打点后统一出发。精确证明限于列出的毫米/毫秒量化模型，不含通道拥堵。'}}
+                      'termination': 'PROVEN_OPTIMAL' if proven else 'BETTER_ACTUAL_SOLUTION_RETAINED' if search_proven else 'TIME_LIMIT',
+                      'scope': scope}}

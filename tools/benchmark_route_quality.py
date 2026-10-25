@@ -19,11 +19,12 @@ import statistics
 import sys
 import tempfile
 import time
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import numpy as np
-from dirmap import service, store, optimizer, team_planning
+from dirmap import exact, service, store, optimizer, team_planning
 from dirmap.geometry import Registration
 from dirmap.graph import expand_route, plan_matrix
 from dirmap.route_scores import RouteScores
@@ -80,9 +81,11 @@ def scoring_comparison(old_scores):
                                (b, scores.stages[b][j-1], insert/teams[b]['speedMps']+service[b, node-1])]
                     candidates.append((remove+insert, updates, {a: source, b: target}))
         elapsed = {'before': [], 'after': []}
+        baseline_incremental = hasattr(previous, 'changes')
         for _ in range(3):
             started = time.perf_counter()
-            before = np.array([previous.replacements(replacements) for _, _, replacements in candidates])
+            before = np.array([previous.changes(delta, updates) if baseline_incremental else previous.replacements(replacements)
+                               for delta, updates, replacements in candidates])
             elapsed['before'].append(time.perf_counter()-started)
             started = time.perf_counter()
             after = np.array([scores.changes(delta, updates) for delta, updates, _ in candidates])
@@ -91,9 +94,50 @@ def scoring_comparison(old_scores):
         old_time, new_time = map(statistics.median, (elapsed['before'], elapsed['after']))
         results.append({'mandatoryCount': len(common), 'candidateMoves': len(candidates), 'beforeMedianSec': old_time,
                         'afterMedianSec': new_time, 'speedup': old_time/new_time,
+                        'baselineScoring': 'incremental' if baseline_incremental else 'full_profiles',
                         'maxAbsoluteScoreDifference': float(np.max(np.abs(before-after))),
                         'scope': 'Identical candidate scoring only; excludes preparing moves, route search and map loading.'})
     return results
+
+
+def incumbent_comparison(old_exact):
+    """Reproduce rounding and interrupted lexicographic-stage regressions."""
+    result = []
+    matrix = np.full((4, 4), 10., float)
+    np.fill_diagonal(matrix, 0)
+    for a, b in ((0, 1), (1, 2), (2, 3)):
+        matrix[a, b] = 1.00049
+    matrix[0, 2], matrix[2, 1], matrix[1, 3] = 1.00051, 1., 1.
+    cases = [('rounding_reversal', matrix, 1, [[0, 2, 1, 3]], 'all_visit', 'min_distance')]
+    matrix = np.random.default_rng(1).integers(1, 80, (7, 7)).astype(float)
+    np.fill_diagonal(matrix, 0)
+    cases.append(('first_stage_only', matrix, 2, [[0, 5, 3, 6], [0, 1, 2, 4, 6]],
+                  'split_coverage', 'min_max_finish_then_sum'))
+    for name, matrix, count, seed, mode, objective in cases:
+        controls = [{'id': str(i), 'serviceBaseSec': 0, 'servicePerPersonSec': 0} for i in range(len(matrix)-2)]
+        teams = [{'id': str(i), 'people': 2, 'speedMps': 1} for i in range(count)]
+        def actual(routes):
+            # Independent complete walks; these fixtures have no meetings or
+            # service time, so no incremental score cache is involved.
+            costs = [float(sum(matrix[a, b] for a, b in zip(route, route[1:]))) for route in routes]
+            return [sum(costs)] if objective == 'min_distance' else [max(costs), sum(costs)]
+        row = {'case': name, 'incumbent': actual(seed)}
+        for label, module in (('before', old_exact), ('after', exact)):
+            run = module._run
+            def controlled_run(model, deadline):
+                solver, status = run(model, deadline)
+                if name == 'first_stage_only' and status == module.cp_model.OPTIMAL:
+                    status = module.cp_model.FEASIBLE
+                return solver, status
+            with patch.object(module, '_run', controlled_run):
+                solved = module.optimize(matrix, controls, teams, mode, objective, seed, time.perf_counter()+2)
+            row[label] = {'actualObjectiveValue': actual(solved['sequences']), 'returnedRouteProven': solved['proven'],
+                          'modelObjectiveValue': solved['proof']['modelObjectiveValue'],
+                          'bestBound': solved['proof']['bestBound'], 'stages': solved['proof']['stages']}
+        assert row['after']['actualObjectiveValue'] <= row['incumbent']
+        row['scope'] = 'First-stage case uses a real CP-SAT result but reports FEASIBLE to skip the second stage, simulating interruption; rounding case runs to completion.'
+        result.append(row)
+    return result
 
 
 def main():
@@ -123,6 +167,9 @@ def main():
         report['candidateScoring'] = scoring_comparison(importlib.import_module(old.__package__+'.route_scores').RouteScores)
         for row in report['candidateScoring']:
             print({'candidateScoring': row}, flush=True)
+        report['incumbentRetention'] = incumbent_comparison(importlib.import_module(old.__package__+'.exact'))
+        for row in report['incumbentRetention']:
+            print({'incumbentRetention': row}, flush=True)
         cases = []
         for count, groups in ((20, 20), (30, 10)):
             points = np.random.default_rng(530).random((count+2, 2))*200

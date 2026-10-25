@@ -84,6 +84,8 @@
 
 移点和交换的候选评分只重算变化的路段与集合阶段。同一批候选的评分约快 4.9 倍（分担）/6.5 倍（集合），不代表整个规划 API 的加速。图 3 通行图上采样 30 点、10 队，在相同 5 秒求解预算下，最晚完成估计进一步缩短约 16 秒；原有 16 点课程的推荐保持 4 队。范围与重复结果见 [邻域搜索对照](evidence/runtime/route-neighborhoods.json)，可用 `python3 -B tools/benchmark_route_quality.py --baseline 94d104b --output evidence/runtime/route-neighborhoods.json` 复现。
 
+精确细化会保留初始方案和各完成阶段中未取整指标最好的路线，避免第一目标相同却增加总耗时，也避免取整后选中的路线反而更长。最优证明必须对应最终返回路线；保留的路线未达到该量化模型最优值时显示“当前最佳可行”。用例与实图复测见 [已有方案保留检查](evidence/runtime/route-incumbents.json)，可用 `python3 -B tools/benchmark_route_quality.py --baseline 29ecfb2 --output evidence/runtime/route-incumbents.json` 复现。
+
 按用户要求，不考虑检查点接待人数或对应的排队限制。人数继续用于均衡分队、速度设置及已有的打点耗时估计。
 
 备选方案只保存点序、证明及复核所需的模型数据，不重复保存地图或整张通行图。图 3 的 16 点实图检查中，保存 1–10 队比较约占 29 KB；采用另一档约 2.1 秒，核验后点序、路线坐标和时间保持一致。检查在临时副本完成，见 [方案采用记录](evidence/runtime/team-choice.json)，可用 `python3 -B tools/verify_team_choice.py` 复现。
