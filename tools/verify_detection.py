@@ -7,6 +7,7 @@ or proof of generalization to arbitrary orienteering maps.
 """
 from collections import Counter
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 import sys
 import time
@@ -51,7 +52,8 @@ def check(image, name, labels, expected_positions=None, start_position=None, tol
 
 def main():
     fixture = store.read_json(store.ROOT/'evidence/new-map-fixture.json')
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(fixture['sourceFile'])
+    override = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('DIRMAP_RECOGNITION_SOURCE')
+    path = Path(override) if override else store.ROOT/fixture['sourceFile']
     assert store.file_hash(path) == fixture['sourceHash'], 'Fixture describes a different input image'
     inventory = store.read_json(store.ROOT/'evidence/course-inventory.json')['maps']
     report = {'auditedAt': datetime.now(timezone.utc).isoformat(), 'scope': __doc__, 'cases': [],

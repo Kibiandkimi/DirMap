@@ -5,3 +5,4 @@
 *.png binary
 *.img binary
 *.npz binary
+*.sh text eol=lf

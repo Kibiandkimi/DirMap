@@ -1,5 +1,15 @@
 # 实施状态与继续工作的依据
 
+## 2026-10-25 Git、跨目录迁移与自动部署
+
+- 已初始化 `main` 并建立 [Kibiandkimi/DirMap](https://github.com/Kibiandkimi/DirMap)，按用户要求公开。Git 包含源码、测试、原三图、两份图例与校园参照；忽略依赖、构建产物、上传地图、教师校核、课堂包、任务数据库和本地备份。
+- 修复上传清单保存绝对路径导致迁移后误读旧工作台的问题：按当前 `DIRMAP_DATA_DIR/projects/<id>/source.img` 解析，兼容已有绝对路径记录，新上传保存相对路径。4 个新增用例在旧实现下均失败，修复后连同 API、跨进程任务恢复共 28 项通过。
+- 初始全量后端 127 项、前端 19 项及构建通过。浏览器 29 项通过；新增图测试改用项目内 `source.img` 时触发扩展名校验，已用真实 JPEG 文件名提交相同字节，单独重跑完整上传、识别、配准与原图编辑通过。七个原图/变体识别场景均通过。原图数据没有修改。
+- 参考 `~/Work/temp/DirMapDeploy` 的实际 Azure Ubuntu 24.04 / Python 3.12 / systemd 部署，加入 `.github/workflows/deploy.yml`、校验发布包、受限 SSH 接收器、独立依赖环境、原子切换和失败回滚。部署相关 12 项本地测试及 actionlint 检查通过。`production` 环境仅允许 `main`；专用 SSH 密钥和主机公钥通过 Secrets 配置，个人登录密钥不上传。
+- GitHub Actions 是后续自动验证和发版记录；用 `/api/health` 的 `revision` 核对实际运行提交。教学数据、教师口令、HTTPS 和 nginx 配置保留在服务器。细节见 [自动部署说明](deploy/README.md)。
+- 本地运行环境已恢复至 `/tmp`，HTTP 入口 `http://localhost:8765`；五张地图的原文件下载哈希均与目录记录一致。工作盘仍有空间，未使用 Codespace。
+- 原地图软件目标仍 active。独立配准/语义真值、多层通道、资源容量模型及完整校园试走的缺口保持下文所述，Git 和部署完成不代表这些门槛已通过。
+
 ## 2026-10-25 鸿蒙微信持续定位修复
 
 - 续接 `01a16b6c-f177-7a11-98e1-d1a6a1baf58e`。用户报告 OpenHarmony 6.1、ArkWeb 6.0.0.46SP3、微信 8.0.19.47 首次定位成功，随后一直显示位置过期；同机的 `DirMapStatic` 定位正常，仅作参考。

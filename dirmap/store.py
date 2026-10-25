@@ -100,7 +100,12 @@ def catalog():
     for index, path in enumerate(sorted(ROOT.glob('*.jpg'))):
         originals.append({'id': f'szu-{index+1}', 'path': str(path), 'name': f'深大定向图 {index+1}',
                           'filename': path.name, 'role': 'map', 'sha256': file_hash(path)})
-    originals.extend(read_json(DATA/'uploads.json', []))
+    # Uploaded originals always live inside the selected workbench. Older
+    # manifests stored absolute paths: after a backup/clone is relocated,
+    # those may still exist but belong to a different (possibly live) copy.
+    # Resolve by asset ID instead of following the old machine's path.
+    originals.extend({**asset, 'path': str(asset_dir(asset['id'])/'source.img')}
+                     for asset in read_json(DATA/'uploads.json', []))
     return originals
 
 

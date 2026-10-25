@@ -293,6 +293,17 @@ def test_unknown_image_and_unreviewed_release_rejected(client):
     assert client.get('/api/jobs/unknown').status_code == 404
 
 
+def test_uploaded_source_manifest_is_portable_and_original_download_is_exact(client):
+    payload = cv2.imencode('.png', np.full((40, 60, 3), 255, np.uint8))[1].tobytes()
+    response = client.post('/api/maps/upload', files={'file': ('course.png', payload, 'image/png')})
+    assert response.status_code == 200
+    asset_id = response.json()['id']
+    manifest = store.read_json(store.DATA/'uploads.json')
+    assert manifest[0]['path'] == f'projects/{asset_id}/source.img'
+    assert client.get(f'/assets/maps/{asset_id}/original').content == payload
+    assert client.get(f'/assets/maps/{asset_id}/working.jpg').content == payload
+
+
 def navigation_release(client):
     state = store.get_state('szu-1')
     first = state['controls'][0]

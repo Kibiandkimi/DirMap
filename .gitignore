@@ -19,3 +19,4 @@ playwright-report/
 .env.*
 !.env.example
 *.log
+/deployment.json

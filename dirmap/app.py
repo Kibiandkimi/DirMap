@@ -197,7 +197,9 @@ def health():
     declination = None
     if 2025 <= decimal_year <= 2030:
         declination = GeoMag().calculate(glat=Frame().lat, glon=Frame().lng, alt=0, time=decimal_year).d
+    deployment = store.read_json(store.ROOT/'deployment.json', {})
     return {'status': 'ok', 'version': '0.1.0', 'frame': Frame().as_dict(),
+            'revision': deployment.get('revision'),
             'adminTokenRequired': bool(os.environ.get('DIRMAP_ADMIN_TOKEN')),
             'magneticDeclinationDeg': declination, 'magneticModel': 'WMM-2025', 'modelDate': today.isoformat()}
 
@@ -344,7 +346,7 @@ async def upload(file: UploadFile = File(...)):
     except Exception:
         path.unlink(missing_ok=True)
         raise
-    asset = {'id': asset_id, 'path': str(path), 'name': Path(file.filename).stem[:80],
+    asset = {'id': asset_id, 'path': path.relative_to(store.DATA).as_posix(), 'name': Path(file.filename).stem[:80],
              'filename': Path(file.filename).name, 'role': 'map', 'sha256': hashlib.sha256(payload).hexdigest()}
     with store.LOCK:
         uploads = store.read_json(store.DATA/'uploads.json', [])

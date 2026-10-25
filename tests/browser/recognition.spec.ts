@@ -10,7 +10,10 @@ test('original photo collage imports, finds every control and opens in its worki
   await expect(page.locator('.control-row').first()).toBeVisible();
   const imported = page.waitForResponse(response => response.url().endsWith('/api/maps/upload')
     && response.request().method() === 'POST');
-  await page.locator('#upload-input').setInputFiles(fixture.sourceFile);
+  const source = process.env.DIRMAP_RECOGNITION_SOURCE || fixture.sourceFile;
+  // Workbench originals use source.img internally; upload them under their
+  // actual image format so the browser exercises the JPEG import contract.
+  await page.locator('#upload-input').setInputFiles({ name: 'photo-collage.jpg', mimeType: 'image/jpeg', buffer: fs.readFileSync(source) });
   const asset = await (await imported).json();
   expect(asset.sha256).toBe(fixture.sourceHash);
   await expect(page.locator('#process-current')).toBeEnabled();

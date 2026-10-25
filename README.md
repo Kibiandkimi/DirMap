@@ -102,6 +102,12 @@ DIRMAP_BROWSER_PATH=/usr/bin/google-chrome npm run test:browser
 
 Git 仓库包含源码、测试、原三张地图、两份图例及校园参照。教师导入的地图、校核状态、派生图、任务队列、已发布课堂和本地备份不进入 Git，仍保存在本机 `data` 目录。新克隆可运行 `./tools/setup.sh` 重建原三图；复现新增上传图的检查或迁移现有课堂时，还需单独复制相应的 `data` 数据和原文件。推送源码不能代替教学数据备份。
 
+上传地图按当前数据目录下的 `projects/<地图 ID>/source.img` 读取；新记录使用相对路径，旧记录里的绝对路径无需手工修改。把整个 `data` 目录复制到另一台电脑后，可设置 `DIRMAP_DATA_DIR` 指向它；即使旧位置还存在，也只读取选定工作台中的原文件。
+
+新增照片拼版图的识别脚本和浏览器回归默认读取 `evidence/new-map-fixture.json` 指定的项目内路径，不依赖原电脑的图片文件夹。原文件另存时，可用 `DIRMAP_RECOGNITION_SOURCE=/路径/原图.jpg` 指定测试输入；脚本会核对文件哈希。
+
+仓库公开托管在 [Kibiandkimi/DirMap](https://github.com/Kibiandkimi/DirMap)。推送 `main` 后，GitHub Actions 自动测试、构建并部署到现有服务器，保留服务器教学数据；内部健康检查失败会回滚。配置、依赖更新和恢复方式见 [自动部署说明](deploy/README.md)。
+
 当前检查汇总见 [verification-summary.json](evidence/runtime/verification-summary.json)，可用 `tools/summarize_verification.py` 汇总已保存的验证记录。独立配准基准、完整通行语义（尤其可翻越墙、多层通道）及真机/校园验收仍未完成。下一步工作见 [实施状态](IMPLEMENTATION_STATUS.md)。
 
 应用采用 OpenLayers、OpenStreetMap、WGS84、Python/FastAPI。校园参照 © OpenStreetMap contributors，遵循 [ODbL](https://www.openstreetmap.org/copyright)。三张原图及两张图例保持原文件不变。
