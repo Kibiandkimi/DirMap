@@ -24,6 +24,7 @@ class RouteScores:
         self.max_except = np.where(self.work == self.maxima, second, self.maxima)
         last_second = np.sort(self.finishes)[-2] if self.count > 1 else -np.inf
         self.finish_except = np.where(self.finishes == self.max_finish, last_second, self.max_finish)
+        self.leaders = None
 
     def profile(self, team, sequence):
         work = np.zeros(self.last+1)
@@ -68,6 +69,39 @@ class RouteScores:
             return (float(cost),)
         finish = work[:, :-1].max(axis=0).sum()+work[:, -1]
         return (float(finish.max()), float(finish.sum())) if self.objective == 'min_max_finish_then_sum' else (float(finish.sum()),)
+
+    def changes(self, distance_delta, updates):
+        """Score changed stages without rebuilding unchanged route profiles.
+
+        Each update is (team, stage, seconds_delta). A move may remove and
+        insert work in the same stage; combine those before taking maxima.
+        """
+        if self.objective == 'min_distance':
+            return (float(self.total_cost+distance_delta),)
+        changed = {}
+        for team, stage, delta in updates:
+            row = changed.setdefault(stage, {})
+            row[team] = row.get(team, 0.)+delta
+        release_delta, final_delta, final_max = 0., 0., self.maxima[-1]
+        for stage, deltas in changed.items():
+            if len(deltas) == 1:
+                team, delta = next(iter(deltas.items()))
+                maximum = max(self.max_except[team, stage], self.work[team, stage]+delta)
+            else:
+                # At most two teams change in a relocation or swap. Three
+                # leaders suffice even when the changed teams tied for first.
+                if self.leaders is None:
+                    self.leaders = np.argsort(self.work, axis=0)[-3:][::-1].T
+                candidates = self.leaders[stage] if len(deltas) <= 2 else range(self.count)
+                outside = max((self.work[t, stage] for t in candidates if t not in deltas), default=-np.inf)
+                maximum = max(outside, max(self.work[t, stage]+delta for t, delta in deltas.items()))
+            if stage < self.last:
+                release_delta += maximum-self.maxima[stage]
+            else:
+                final_max, final_delta = maximum, sum(deltas.values())
+        total = self.total_finish+self.count*release_delta+final_delta
+        maximum = self.release+release_delta+final_max
+        return (float(maximum), float(total)) if self.objective == 'min_max_finish_then_sum' else (float(total),)
 
 
 def improves(candidate, current, tolerance=1e-8):

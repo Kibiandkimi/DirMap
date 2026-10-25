@@ -122,20 +122,30 @@ def improve_routes(matrix, routes, teams, service, objective, mandatory, deadlin
     routes = [list(r) for r in routes]
     while time.perf_counter() < deadline:
         scores = RouteScores(matrix, routes, teams, service, objective, mandatory)
-        old, common = scores.score(), scores.order
+        old = scores.score()
         order = sorted(range(len(teams)), key=lambda k: (-scores.finishes[k], k))
         changed = False
         for team in order:
             route = routes[team]
+            reverse = [0.]
+            for a, b in zip(route, route[1:]):
+                reverse.append(reverse[-1]+matrix[b, a]-matrix[a, b])
             for i in range(1, len(route)-2):
                 for j in range(i+1, len(route)-1):
                     if time.perf_counter() >= deadline:
                         return routes
-                    candidate = route[:i]+list(reversed(route[i:j+1]))+route[j+1:]
-                    if tuple(n for n in candidate if n in mandatory) != common:
+                    crossed = scores.stages[team][j]-scores.stages[team][i-1]
+                    if crossed > 1:
                         continue
-                    if improves(scores.replacements({team: candidate}), old):
-                        routes[team], changed = candidate, True
+                    if crossed:
+                        candidate = route[:i]+list(reversed(route[i:j+1]))+route[j+1:]
+                        value = scores.replacements({team: candidate})
+                    else:
+                        a, first, last, b = route[i-1], route[i], route[j], route[j+1]
+                        delta = matrix[a, last]+matrix[first, b]-matrix[a, first]-matrix[last, b]+reverse[j]-reverse[i]
+                        value = scores.changes(delta, [(team, scores.stages[team][i-1], delta/teams[team]['speedMps'])])
+                    if improves(value, old):
+                        routes[team], changed = route[:i]+list(reversed(route[i:j+1]))+route[j+1:], True
                         break
                 if changed:
                     break
@@ -143,19 +153,32 @@ def improve_routes(matrix, routes, teams, service, objective, mandatory, deadlin
                 break
         if changed:
             continue
-        for a, b in itertools.permutations(order, 2):
-            if len(routes[a]) <= 3:
+        # A node can move within its own route, including across a meeting.
+        # Reversals alone cannot reach every improving insertion order.
+        for a, b in itertools.product(order, repeat=2):
+            if a != b and len(routes[a]) <= 3:
                 continue
             for i in range(1, len(routes[a])-1):
-                if routes[a][i] in mandatory:
+                node = routes[a][i]
+                if node in mandatory:
                     continue
+                previous, following = routes[a][i-1], routes[a][i+1]
+                remove = matrix[previous, following]-matrix[previous, node]-matrix[node, following]
+                source_stage = scores.stages[a][i-1]
+                remove_time = remove/teams[a]['speedMps']-service[a][node-1]
                 for j in range(1, len(routes[b])):
                     if time.perf_counter() >= deadline:
                         return routes
-                    source, target = routes[a].copy(), routes[b].copy()
-                    target.insert(j, source.pop(i))
-                    if improves(scores.replacements({a: source, b: target}), old):
-                        routes[a], routes[b], changed = source, target, True
+                    if a == b and j in (i, i+1):
+                        continue
+                    previous, following = routes[b][j-1], routes[b][j]
+                    insert = matrix[previous, node]+matrix[node, following]-matrix[previous, following]
+                    updates = [(a, source_stage, remove_time),
+                               (b, scores.stages[b][j-1], insert/teams[b]['speedMps']+service[b][node-1])]
+                    if improves(scores.changes(remove+insert, updates), old):
+                        node = routes[a].pop(i)
+                        routes[b].insert(j-(a == b and j > i), node)
+                        changed = True
                         break
                 if changed:
                     break
@@ -172,10 +195,15 @@ def improve_routes(matrix, routes, teams, service, objective, mandatory, deadlin
                         return routes
                     if routes[b][j] in mandatory:
                         continue
-                    first, second = routes[a].copy(), routes[b].copy()
-                    first[i], second[j] = second[j], first[i]
-                    if improves(scores.replacements({a: first, b: second}), old):
-                        routes[a], routes[b], changed = first, second, True
+                    first, second = routes[a][i], routes[b][j]
+                    left, right = routes[a][i-1], routes[a][i+1]
+                    first_delta = matrix[left, second]+matrix[second, right]-matrix[left, first]-matrix[first, right]
+                    left, right = routes[b][j-1], routes[b][j+1]
+                    second_delta = matrix[left, first]+matrix[first, right]-matrix[left, second]-matrix[second, right]
+                    updates = [(a, scores.stages[a][i-1], first_delta/teams[a]['speedMps']+service[a][second-1]-service[a][first-1]),
+                               (b, scores.stages[b][j-1], second_delta/teams[b]['speedMps']+service[b][first-1]-service[b][second-1])]
+                    if improves(scores.changes(first_delta+second_delta, updates), old):
+                        routes[a][i], routes[b][j], changed = second, first, True
                         break
                 if changed:
                     break

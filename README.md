@@ -80,7 +80,9 @@
 
 自动分队复用一次点间路程计算；全点及固定顺序复用同一条路线，小型分担问题复用子集最短路表。混合模式的路线改进按全班完成时间判断，计入集合等待。图 3 的全部 16 点、20 人、1–10 队比较，在一次本机检查中分别用时约 3.51 秒（全点）和 4.97 秒（混合）；混合模式当前建议 4 队，比本次 1 队方案的最晚完成时间少约 32%。限时方案的比较不代表全局最优队数。详见 [分队收益与算法性能记录](evidence/runtime/team-planning-performance.json)，可用 `python3 -B tools/benchmark_team_planning.py` 复现；教学数据在临时副本中检查。
 
-限时求解还会尝试跨队交换和不同集合顺序，并保留已有更优结果；自动比较后会集中一部分预算细化最终推荐路线。每队恰好一个点采用快速精确匹配，单队和固定集合顺序也有直接求解分支。同一图 3 输入、同样 5 秒求解预算的配对检查中，最晚完成估计比旧算法减少约 71 秒；详细范围及重复结果见 [路线质量记录](evidence/runtime/route-quality.json)，可用 `python3 -B tools/benchmark_route_quality.py` 复现。
+限时求解还会尝试同队移点、跨队交换和不同集合顺序，并保留已有更优结果；自动比较后会集中一部分预算细化最终推荐路线。每队恰好一个点采用快速精确匹配，单队和固定集合顺序也有直接求解分支。同一图 3 输入、同样 5 秒求解预算的配对检查中，最晚完成估计比旧算法减少约 71 秒；详细范围及重复结果见 [路线质量记录](evidence/runtime/route-quality.json)，可用 `python3 -B tools/benchmark_route_quality.py` 复现。
+
+移点和交换的候选评分只重算变化的路段与集合阶段。同一批候选的评分约快 4.9 倍（分担）/6.5 倍（集合），不代表整个规划 API 的加速。图 3 通行图上采样 30 点、10 队，在相同 5 秒求解预算下，最晚完成估计进一步缩短约 16 秒；原有 16 点课程的推荐保持 4 队。范围与重复结果见 [邻域搜索对照](evidence/runtime/route-neighborhoods.json)，可用 `python3 -B tools/benchmark_route_quality.py --baseline 94d104b --output evidence/runtime/route-neighborhoods.json` 复现。
 
 按用户要求，不考虑检查点接待人数或对应的排队限制。人数继续用于均衡分队、速度设置及已有的打点耗时估计。
 
@@ -120,7 +122,7 @@ Git 仓库包含源码、测试、原三张地图、两份图例及校园参照�
 
 仓库公开托管在 [Kibiandkimi/DirMap](https://github.com/Kibiandkimi/DirMap)。推送 `main` 后，GitHub Actions 自动测试、构建并部署到现有服务器，保留服务器教学数据；内部健康检查失败会回滚。配置、依赖更新和恢复方式见 [自动部署说明](deploy/README.md)。
 
-当前检查汇总见 [verification-summary.json](evidence/runtime/verification-summary.json)，可用 `tools/summarize_verification.py` 汇总已保存的验证记录。独立配准基准、完整通行语义（尤其可翻越墙、多层通道）及真机/校园验收仍未完成。下一步工作见 [实施状态](IMPLEMENTATION_STATUS.md)。
+各次最新修改的验证见 [实施状态](IMPLEMENTATION_STATUS.md) 顶部记录；[verification-summary.json](evidence/runtime/verification-summary.json) 保留较早阶段的汇总，可用 `tools/summarize_verification.py` 汇总已保存的验证记录，但不会自动重跑检查。独立配准基准、完整通行语义（尤其可翻越墙、多层通道）及真机/校园验收仍未完成。
 
 应用采用 OpenLayers、OpenStreetMap、WGS84、Python/FastAPI。校园参照 © OpenStreetMap contributors，遵循 [ODbL](https://www.openstreetmap.org/copyright)。三张原图及两张图例保持原文件不变。
 

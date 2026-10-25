@@ -10,10 +10,12 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import importlib.util
+import itertools
 import json
 from pathlib import Path
 import platform
 import subprocess
+import statistics
 import sys
 import tempfile
 import time
@@ -24,15 +26,74 @@ import numpy as np
 from dirmap import service, store, optimizer, team_planning
 from dirmap.geometry import Registration
 from dirmap.graph import expand_route, plan_matrix
+from dirmap.route_scores import RouteScores
+from dirmap.route_search import initial_routes
 
 
-def old_module(reference, name, directory):
-    path = directory/(name+'.py')
-    path.write_bytes(subprocess.check_output(['git', 'show', f'{reference}:dirmap/{name}.py'], cwd=ROOT))
-    spec = importlib.util.spec_from_file_location('dirmap.baseline_'+name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def baseline_modules(reference, directory):
+    # Freeze the complete relative-import chain. Loading only an old
+    # optimizer as dirmap.baseline_optimizer would silently use today's
+    # route_search/route_scores and invalidate a before/after comparison.
+    paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', reference, 'dirmap'], cwd=ROOT, text=True).splitlines()
+    for filename in paths:
+        relative = Path(filename).relative_to('dirmap')
+        if relative.suffix not in ('.py', '.cpp', '.json'):
+            continue
+        path = directory/relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(subprocess.check_output(['git', 'show', f'{reference}:{filename}'], cwd=ROOT))
+    name = 'dirmap_quality_baseline'
+    spec = importlib.util.spec_from_file_location(name, directory/'__init__.py', submodule_search_locations=[str(directory)])
+    package = importlib.util.module_from_spec(spec)
+    sys.modules[name] = package
+    spec.loader.exec_module(package)
+    return importlib.import_module(name+'.optimizer'), importlib.import_module(name+'.team_planning')
+
+
+def scoring_comparison(old_scores):
+    """Time the same physical relocations, with all candidate copies prepared."""
+    points = np.random.default_rng(530).random((32, 2))*200
+    matrix = np.linalg.norm(points[:, None]-points[None, :], axis=2)
+    teams = [{'speedMps': .7+i*.05, 'departureSec': i*3} for i in range(10)]
+    service = np.array([[7+i % 3]*30 for i in range(10)], float)
+    results = []
+    for common in ((), (1, 2, 3)):
+        routes = initial_routes(matrix, teams, service, 'min_max_finish_then_sum', common)
+        scores = RouteScores(matrix, routes, teams, service, 'min_max_finish_then_sum', common)
+        previous = old_scores(matrix, routes, teams, service, 'min_max_finish_then_sum', common)
+        candidates = []
+        for a, b in itertools.permutations(range(len(teams)), 2):
+            if len(routes[a]) <= 3:
+                continue
+            for i in range(1, len(routes[a])-1):
+                node = routes[a][i]
+                if node in common:
+                    continue
+                left, right = routes[a][i-1], routes[a][i+1]
+                remove = matrix[left, right]-matrix[left, node]-matrix[node, right]
+                for j in range(1, len(routes[b])):
+                    left, right = routes[b][j-1], routes[b][j]
+                    insert = matrix[left, node]+matrix[node, right]-matrix[left, right]
+                    source, target = routes[a].copy(), routes[b].copy()
+                    target.insert(j, source.pop(i))
+                    updates = [(a, scores.stages[a][i-1], remove/teams[a]['speedMps']-service[a, node-1]),
+                               (b, scores.stages[b][j-1], insert/teams[b]['speedMps']+service[b, node-1])]
+                    candidates.append((remove+insert, updates, {a: source, b: target}))
+        elapsed = {'before': [], 'after': []}
+        for _ in range(3):
+            started = time.perf_counter()
+            before = np.array([previous.replacements(replacements) for _, _, replacements in candidates])
+            elapsed['before'].append(time.perf_counter()-started)
+            started = time.perf_counter()
+            after = np.array([scores.changes(delta, updates) for delta, updates, _ in candidates])
+            elapsed['after'].append(time.perf_counter()-started)
+            assert np.allclose(before, after, rtol=0, atol=1e-8)
+        old_time, new_time = map(statistics.median, (elapsed['before'], elapsed['after']))
+        results.append({'mandatoryCount': len(common), 'candidateMoves': len(candidates), 'beforeMedianSec': old_time,
+                        'afterMedianSec': new_time, 'speedup': old_time/new_time,
+                        'maxAbsoluteScoreDifference': float(np.max(np.abs(before-after))),
+                        'scope': 'Identical candidate scoring only; excludes preparing moves, route search and map loading.'})
+    return results
 
 
 def main():
@@ -56,19 +117,32 @@ def main():
               'matrixHash': hashlib.sha256(bundle['matrix'].tobytes()).hexdigest(), 'quality': [], 'recommendations': []}
     edges = set()
     with tempfile.TemporaryDirectory(prefix='dirmap-quality-baseline-') as temporary:
-        old = old_module(args.baseline, 'optimizer', Path(temporary))
-        old_teams = old_module(args.baseline, 'team_planning', Path(temporary))
-        for name in ('solve', 'subset_tours', 'evaluate_routes', 'route_cost', 'balanced_people'):
-            setattr(old_teams, name, getattr(old, name))
+        old, old_teams = baseline_modules(args.baseline, Path(temporary))
+        report['baselinePlanningHashes'] = {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in Path(temporary).glob('*.py') if path.stem in ('optimizer', 'exact', 'route_search', 'route_scores', 'schedule', 'team_planning')}
+        report['candidateScoring'] = scoring_comparison(importlib.import_module(old.__package__+'.route_scores').RouteScores)
+        for row in report['candidateScoring']:
+            print({'candidateScoring': row}, flush=True)
         cases = []
         for count, groups in ((20, 20), (30, 10)):
             points = np.random.default_rng(530).random((count+2, 2))*200
             matrix = np.linalg.norm(points[:, None]-points[None, :], axis=2)
             targets = [{'id': str(i)} for i in range(count)]
             participants = [{'id': str(i), 'people': 2+i % 3, 'speedMps': .7+i*.05, 'departureSec': i*3} for i in range(groups)]
-            cases.append((f'synthetic-{count}-points-{groups}-teams', matrix, targets, participants, 'split_coverage', {}))
-        cases.append(('szu-3-16-points-free-meetings', bundle['matrix'], controls, teams, 'mixed_coverage', {'mandatory_ids': mandatory}))
-        for name, matrix, targets, participants, mode, options in cases:
+            cases.append((f'synthetic-{count}-points-{groups}-teams', matrix, targets, participants, 'split_coverage', {}, None))
+        cases.append(('szu-3-16-points-free-meetings', bundle['matrix'], controls, teams, 'mixed_coverage', {'mandatory_ids': mandatory}, bundle))
+        component = graph.components[graph.snap(start)]
+        nodes = np.flatnonzero(graph.components == component)
+        sampled = np.random.default_rng(1047).choice(nodes, size=30, replace=False)
+        targets = [{'id': f'performance-{i}', 'pixel': graph.pixels[node].tolist(), 'state': 'candidate'}
+                   for i, node in enumerate(sampled)]
+        participants = [{'id': f'group-{i}', 'people': 4+i % 3, 'speedMps': 1.2+(i % 2)*.2, 'departureSec': i*5}
+                        for i in range(10)]
+        large_bundle = plan_matrix(graph, targets, start, start, Registration.from_dict(state['registration']))
+        assert not large_bundle['unresolved']
+        cases.append(('szu-3-graph-30-sampled-points-10-teams', large_bundle['matrix'], targets, participants, 'split_coverage', {}, large_bundle))
+        report['sampledCourseScope'] = 'The 30 graph nodes are a synthetic performance course on real terrain, not teacher controls or recognition evidence.'
+        for name, matrix, targets, participants, mode, options, path_bundle in cases:
             for repetition in range(2):
                 row = {'case': name, 'repetition': repetition, 'solverBudgetSec': 5}
                 for label, function in (('before', old.solve), ('after', optimizer.solve)):
@@ -76,9 +150,9 @@ def main():
                     result = function(matrix, targets, participants, mode, time_limit=5, **options)
                     row[label] = {'seconds': time.perf_counter()-started, 'status': result['status'],
                                   'objective': list(map(float, result['proof']['objectiveValue']))}
-                    if name.startswith('szu-3'):
+                    if path_bundle is not None:
                         for route in result['routes']:
-                            edges.update(tuple(e) for e in expand_route(graph, bundle, route['order'])['edgeIds'])
+                            edges.update(tuple(e) for e in expand_route(graph, path_bundle, route['order'])['edgeIds'])
                 row['primaryImprovementPercent'] = 100*(row['before']['objective'][0]-row['after']['objective'][0])/row['before']['objective'][0]
                 report['quality'].append(row)
                 print(row, flush=True)

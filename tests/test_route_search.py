@@ -6,8 +6,29 @@ import numpy as np
 import pytest
 
 from dirmap.optimizer import evaluate_routes, solve
-from dirmap.route_scores import RouteScores
-from dirmap.route_search import class_search, improve_routes, singleton_assignment
+from dirmap.route_scores import RouteScores, improves
+from dirmap.route_search import class_search, improve_routes, singleton_assignment, validate_sequences
+
+
+def simulated_score(matrix, routes, teams, service, objective, common=()):
+    """Walk each route to each meeting, then release the whole class."""
+    clocks = [team.get('departureSec', 0.) for team in teams]
+    positions = [0]*len(teams)
+    finish = len(matrix)-1
+    for barrier in (*common, finish):
+        for team, route in enumerate(routes):
+            end = route.index(barrier)
+            for position in range(positions[team]+1, end+1):
+                a, b = route[position-1:position+1]
+                clocks[team] += matrix[a, b]/teams[team]['speedMps']
+                if b != finish:
+                    clocks[team] += service[team][b-1]
+            positions[team] = end
+        if barrier != finish:
+            clocks = [max(clocks)]*len(teams)
+    if objective == 'min_distance':
+        return (sum(matrix[a, b] for route in routes for a, b in zip(route, route[1:])),)
+    return (max(clocks), sum(clocks)) if objective == 'min_max_finish_then_sum' else (sum(clocks),)
 
 
 @pytest.mark.parametrize('objective', ['min_max_finish_then_sum', 'min_total_time', 'min_distance'])
@@ -74,6 +95,65 @@ def test_warm_start_survives_expired_budget_and_is_not_mutated():
     result = class_search(matrix, teams, service, 'min_max_finish_then_sum', (), (), time.perf_counter()-1, incumbent)
     assert RouteScores(matrix, result, teams, service, 'min_max_finish_then_sum').score() <= old
     assert incumbent == saved
+
+
+def test_moving_a_visit_within_one_team_escapes_a_reversal_local_minimum():
+    points = np.random.default_rng(18).random((10, 2))*50
+    matrix = np.linalg.norm(points[:, None]-points[None, :], axis=2)
+    teams = [{'speedMps': 1., 'departureSec': 0}, {'speedMps': 1.3, 'departureSec': 9}]
+    service = np.array([[3]*8, [5]*8], float)
+    routes = [[0, 5, 1, 4, 2, 6, 9], [0, 8, 7, 2, 6, 3, 9]]
+    objective, common = 'min_max_finish_then_sum', (2, 6)
+    original = simulated_score(matrix, routes, teams, service, objective, common)
+    # Check the stated trap using complete walks, without incremental scores.
+    for team, route in enumerate(routes):
+        for i in range(1, len(route)-2):
+            for j in range(i+1, len(route)-1):
+                candidate = route[:i]+route[i:j+1][::-1]+route[j+1:]
+                if tuple(node for node in candidate if node in common) != common:
+                    continue
+                changed = [r.copy() for r in routes]
+                changed[team] = candidate
+                assert not improves(simulated_score(matrix, changed, teams, service, objective, common), original)
+    expected = [routes[0], [0, 3, 8, 7, 2, 6, 9]]
+    target = simulated_score(matrix, expected, teams, service, objective, common)
+    assert target[0] < original[0]-4
+    result = improve_routes(matrix, routes, teams, service, objective, common, time.perf_counter()+1)
+    assert not improves(target, simulated_score(matrix, result, teams, service, objective, common))
+    validate_sequences(result, 8, 2, 'mixed_coverage', common, common)
+    assert routes[1] == [0, 8, 7, 2, 6, 3, 9]
+
+
+@pytest.mark.parametrize('objective', ['min_max_finish_then_sum', 'min_total_time', 'min_distance'])
+@pytest.mark.parametrize('common', [(), (2, 7)])
+@pytest.mark.parametrize('directed', [False, True])
+def test_incremental_search_never_worsens_independent_complete_walks(objective, common, directed):
+    for seed in range(6):
+        rng = np.random.default_rng(903+seed)
+        if directed:
+            # Directed shortest-path costs exercise reverse-arc deltas. They
+            # need not equal the forward distance, even on a legal graph.
+            matrix = rng.uniform(1, 100, (11, 11))
+            np.fill_diagonal(matrix, 0)
+            for node in range(11):
+                matrix = np.minimum(matrix, matrix[:, node, None]+matrix[None, node, :])
+        else:
+            points = rng.random((11, 2))*100
+            matrix = np.linalg.norm(points[:, None]-points[None, :], axis=2)
+        teams = [{'speedMps': .7, 'departureSec': 8}, {'speedMps': 1.3, 'departureSec': 0},
+                 {'speedMps': 2.4, 'departureSec': 23}]
+        service = rng.uniform(0, 20, (3, 9))
+        routes = [[0, *common, 10] for _ in teams]
+        for index, node in enumerate(rng.permutation([n for n in range(1, 10) if n not in common])):
+            route = routes[index % 3]
+            route.insert(int(rng.integers(1, len(route))), int(node))
+        saved = [r.copy() for r in routes]
+        before = simulated_score(matrix, routes, teams, service, objective, common)
+        result = improve_routes(matrix, routes, teams, service, objective, common, time.perf_counter()+.08)
+        validate_sequences(result, 9, 3, 'mixed_coverage' if common else 'split_coverage', common, common)
+        after = simulated_score(matrix, result, teams, service, objective, common)
+        assert not improves(before, after, tolerance=1e-6), (seed, before, after, routes, result)
+        assert routes == saved
 
 
 def test_free_gathering_order_can_escape_the_nearest_first_order():
