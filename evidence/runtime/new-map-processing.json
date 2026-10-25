@@ -1,5 +1,5 @@
 {
-  "auditedAt": "2026-10-25T15:01:08.815Z",
+  "auditedAt": "2026-10-25T22:45:49.104Z",
   "sourceHash": "67db55e8b7249ae947a8e253aded172e343207b931432f622d407ceb74402bd8",
   "freshUpload": true,
   "reusedTeacherControls": false,
@@ -65,7 +65,7 @@
     "629940895",
     "629940896"
   ],
-  "processingElapsedSec": 55.43,
+  "processingElapsedSec": 55.938,
   "allChecksPassed": true,
   "independentFieldValidation": false,
   "scope": "Fresh original-file upload through the browser, processing job, geographic projection and pixel editor; development regression only."

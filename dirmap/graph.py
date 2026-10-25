@@ -10,7 +10,7 @@ from scipy.sparse import coo_matrix, csr_matrix
 from scipy.sparse.csgraph import connected_components, dijkstra
 from scipy.spatial import cKDTree
 
-from .geometry import Frame
+from .geometry import Frame, affine_points
 from .native import shortest_paths as native_shortest_paths
 from .protocol import ROUTING_SCHEMA
 
@@ -235,6 +235,51 @@ def build_graph(costs, registration, source_hash, edits=None, step=4, adaptive=T
     return graph
 
 
+def _uniform_shortcuts(costs, owners, pixels, positions, cell_sizes, terrain, registration):
+    """Add 2:1 directions inside uniform ground without skipping pixel walls.
+
+    Restrict each new segment to one affine registration piece, unless the
+    entire registration is affine. Its displayed world segment then follows
+    the same native-pixel line that was checked for obstacles and terrain.
+    """
+    height, width = costs.shape
+    globally_affine = np.allclose(registration.target, affine_points(registration.affine, registration.source),
+                                  rtol=0, atol=1e-9)
+    pieces = None if globally_affine else registration.tri.find_simplex(pixels)
+    sources, targets, distances, weights = [], [], [], []
+    for size in np.unique(cell_sizes).astype(int):
+        ids = np.flatnonzero(cell_sizes == size)
+        origin = np.full(2, (size-1)/2)
+        for dx, dy in ((2, 1), (-2, 1), (1, 2), (-1, 2)):
+            end = pixels[ids]+[dx*size, dy*size]
+            at = np.floor(end+.5).astype(int)
+            inside = (at[:, 0] >= 0) & (at[:, 0] < width) & (at[:, 1] >= 0) & (at[:, 1] < height)
+            a, at, end = ids[inside], at[inside], end[inside]
+            b = owners[at[:, 1], at[:, 0]]
+            present = b >= 0
+            a, b, end = a[present], b[present], end[present]
+            same = (cell_sizes[b] == size) & np.all(pixels[b] == end, axis=1)
+            if pieces is not None:
+                same &= pieces[a] == pieces[b]
+            a, b = a[same], b[same]
+            if not len(a):
+                continue
+            # Check every pixel square touched by the segment, including
+            # both sides of grid boundaries and diagonal corner contacts.
+            base = np.rint(pixels[a]-origin).astype(int)
+            offsets = segment_pixels(origin, origin+[dx*size, dy*size])
+            clear = np.ones(len(a), dtype=bool)
+            for ox, oy in offsets:
+                x, y = base[:, 0]+ox, base[:, 1]+oy
+                clear &= (owners[y, x] >= 0) & (costs[y, x] == terrain[a])
+            a, b = a[clear], b[clear]
+            length = np.linalg.norm(positions[a]-positions[b], axis=1)
+            sources.append(a); targets.append(b); distances.append(length); weights.append(length*terrain[a])
+    if not sources:
+        return np.empty(0, np.int32), np.empty(0, np.int32), np.empty(0), np.empty(0)
+    return np.concatenate(sources), np.concatenate(targets), np.concatenate(distances), np.concatenate(weights)
+
+
 def _quadtree_graph(costs, registration, source_hash, edits, step):
     """Merge fully free homogeneous squares; split mixed cells to one pixel.
 
@@ -309,6 +354,9 @@ def _quadtree_graph(costs, registration, source_hash, edits, step):
     # The line between centres of adjacent square cells crosses their shared
     # face at this size ratio. Each leaf has a uniform terrain cost.
     weights = lengths*(terrain[a]*cell_sizes[a]+terrain[b]*cell_sizes[b])/(cell_sizes[a]+cell_sizes[b])
+    sa, sb, slengths, sweights = _uniform_shortcuts(costs, owners, pixels, positions, cell_sizes, terrain, registration)
+    a, b = np.concatenate((a, sa)), np.concatenate((b, sb))
+    lengths, weights = np.concatenate((lengths, slengths)), np.concatenate((weights, sweights))
     row, col = np.concatenate((a, b)), np.concatenate((b, a))
     shape = (count, count)
     weighted = coo_matrix((np.concatenate((weights, weights)), (row, col)), shape=shape).tocsr()
