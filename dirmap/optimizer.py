@@ -1,6 +1,5 @@
 """Exact small-course solvers and honestly labelled bounded heuristics."""
 
-import itertools
 import math
 import time
 
@@ -8,7 +7,7 @@ import numpy as np
 
 from .exact import optimize as optimize_exact
 from .schedule import custom_sequences, timeline
-from .route_scores import RouteScores, improves
+from .route_search import class_search, singleton_assignment, validate_sequences
 
 
 def balanced_people(total, count):
@@ -191,6 +190,10 @@ def solve(matrix, controls, teams, mode='all_visit', objective='min_max_finish_t
         raise ValueError('自定义路线仅用于自定义模式')
     mandatory_nodes = tuple(indexes[c] for c in mandatory_ids)
     ordered_nodes = mandatory_nodes if mandatory_order else ()
+    if initial_sequences is not None:
+        validate_sequences(initial_sequences, n, k, mode, mandatory_nodes, ordered_nodes)
+        initial_sequences = [list(route) for route in initial_sequences]
+    simple_tour = mode == 'all_visit' or (k == 1 and not ordered_nodes)
     for team in teams:
         if not isinstance(team['people'], int) or team['people'] < 1 or not math.isfinite(team['speedMps']) or not .2 <= team['speedMps'] <= 10:
             raise ValueError("队伍人数或速度无效")
@@ -218,11 +221,17 @@ def solve(matrix, controls, teams, mode='all_visit', objective='min_max_finish_t
     elif mode == 'fixed_order':
         sequences = [list(range(n+2)) for _ in teams]
         algorithm = 'dijkstra_fixed_order'
-    elif use_exact and mode == 'all_visit' and n <= 13:
+    elif mode == 'split_coverage' and k == n:
+        sequences = singleton_assignment(matrix, teams, service, list(range(1, n+1)), objective)
+        algorithm = 'bottleneck_assignment_two_stage' if objective == 'min_max_finish_then_sum' else 'singleton_assignment'
+    elif mode == 'mixed_coverage' and len(mandatory_nodes) == n and (mandatory_order or n == 1):
+        sequences = [[0, *mandatory_nodes, n+1] for _ in teams]
+        algorithm = 'fixed_rendezvous_order'
+    elif use_exact and n <= 13 and (mode == 'all_visit' or k == 1):
         try:
-            costs, reconstruct = prepared_tours if prepared_tours is not None else subset_tours(matrix, deadline)
+            costs, reconstruct = prepared_tours if prepared_tours is not None and not ordered_nodes else subset_tours(matrix, deadline, ordered_nodes)
             sequences = [reconstruct((1 << n)-1) for _ in teams]
-            algorithm = 'held_karp'
+            algorithm = 'held_karp_ordered' if ordered_nodes else 'held_karp'
         except TimeoutError:
             pass
     elif use_exact and mode == 'split_coverage' and n <= 10:
@@ -233,104 +242,28 @@ def solve(matrix, controls, teams, mode='all_visit', objective='min_max_finish_t
             pass
     if sequences is None:
         proven = False
-        algorithm = 'insertion_2opt_relocation'
+        algorithm = 'nearest_neighbor_2opt' if mode == 'all_visit' else 'multistart_2opt_relocation_swap'
         # Reserve most of the requested budget for the bounded exact model.
         heuristic_deadline = min(deadline, started+max(.01, time_limit*(.2 if use_exact else 1)))
         if mode == 'all_visit':
-            sequence = greedy_route(matrix, range(1, n+1), heuristic_deadline)
+            sequence = greedy_route(matrix, range(1, n+1), started)
+            if initial_sequences is not None:
+                sequence = min([sequence, *initial_sequences], key=lambda route: route_cost(matrix, route))
+            sequence = improve_order(matrix, sequence, heuristic_deadline)
             sequences = [sequence.copy() for _ in teams]
         else:
-            # Seed one task per team, then globally compare insertion costs
-            # on the obstacle-aware matrix instead of Euclidean clustering.
-            targets = sorted((i for i in range(1, n+1) if i not in mandatory_nodes), key=lambda i: -matrix[0, i])
-            if mandatory_nodes:
-                base = [0, *ordered_nodes, n+1] if ordered_nodes else greedy_route(matrix, mandatory_nodes, heuristic_deadline)
-                sequences = [base.copy() for _ in teams]
-                # A shared order prevents deadlock; the exact model can still
-                # optimize this order jointly when the teacher leaves it free.
-                heuristic_order = tuple(node for node in base if node in mandatory_nodes)
-                pending = targets
-            else:
-                sequences = [[0, targets[i], n+1] for i in range(k)]
-                heuristic_order = ()
-                pending = targets[k:]
-            for node in pending:
-                best = None
-                scores = RouteScores(matrix, sequences, teams, service, objective, heuristic_order)
-                for team in range(k):
-                    for position in range(1, len(sequences[team])):
-                        a, b = sequences[team][position-1:position+1]
-                        delta = matrix[a, node]+matrix[node, b]-matrix[a, b]
-                        value = scores.insertion(team, scores.stages[team][position-1], delta, service[team][node-1])
-                        if best is None or value < best[0]:
-                            best = (value, team, position)
-                sequences[best[1]].insert(best[2], node)
-            if not mandatory_nodes:
-                sequences = [improve_order(matrix, sequence, heuristic_deadline) for sequence in sequences]
-            else:
-                # A shorter individual tour can make another meeting stage
-                # slower. Only accept moves that improve the whole class.
-                changed = True
-                while changed and time.perf_counter() < heuristic_deadline:
-                    changed = False
-                    scores = RouteScores(matrix, sequences, teams, service, objective, heuristic_order)
-                    for team, sequence in enumerate(sequences):
-                        for i in range(1, len(sequence)-2):
-                            for j in range(i+1, len(sequence)-1):
-                                if time.perf_counter() >= heuristic_deadline:
-                                    break
-                                candidate = sequence[:i]+list(reversed(sequence[i:j+1]))+sequence[j+1:]
-                                if tuple(v for v in candidate if v in mandatory_nodes) != heuristic_order:
-                                    continue
-                                if improves(scores.replacements({team: candidate}), scores.score()):
-                                    sequences[team] = candidate
-                                    changed = True
-                                    break
-                            if changed or time.perf_counter() >= heuristic_deadline:
-                                break
-                        if changed or time.perf_counter() >= heuristic_deadline:
-                            break
-            improved = True
-            while improved and time.perf_counter() < heuristic_deadline:
-                improved = False
-                scores = RouteScores(matrix, sequences, teams, service, objective, heuristic_order)
-                old = scores.score()
-                for a, b in itertools.permutations(range(k), 2):
-                    if len(sequences[a]) <= 3:
-                        continue
-                    for i in range(1, len(sequences[a])-1):
-                        if sequences[a][i] in mandatory_nodes:
-                            continue
-                        for j in range(1, len(sequences[b])):
-                            if time.perf_counter() >= heuristic_deadline:
-                                break
-                            source, target = sequences[a].copy(), sequences[b].copy()
-                            target.insert(j, source.pop(i))
-                            value = scores.replacements({a: source, b: target})
-                            if improves(value, old):
-                                sequences[a], sequences[b], improved = source, target, True
-                                break
-                        if improved or time.perf_counter() >= heuristic_deadline:
-                            break
-                    if improved or time.perf_counter() >= heuristic_deadline:
-                        break
-        if initial_sequences is not None and totals(initial_sequences) < totals(sequences):
-            sequences = [seq.copy() for seq in initial_sequences]
-        exact = optimize_exact(matrix, controls, teams, mode, objective, sequences, deadline,
+            sequences = class_search(matrix, teams, service, objective, mandatory_nodes, ordered_nodes,
+                                     heuristic_deadline, initial_sequences)
+        exact = optimize_exact(matrix, controls, teams, 'all_visit' if simple_tour else mode, objective, sequences, deadline,
                                mandatory_nodes=mandatory_nodes, ordered_nodes=ordered_nodes) if use_exact else None
         if exact is not None:
             sequences, proven, proof_details = exact['sequences'], exact['proven'], exact['proof']
             algorithm = proof_details['algorithm']
     # Validate the final result after every exact/heuristic/timeout path.
-    if mode in ('split_coverage', 'mixed_coverage'):
-        from collections import Counter
-        actual = Counter(v for route in sequences for v in route[1:-1])
-        expected = Counter({v: k if v in mandatory_nodes else 1 for v in range(1, n+1)})
-        if actual != expected or any(len(route[1:-1]) != len(set(route[1:-1])) or
-                                    not set(mandatory_nodes).issubset(route) for route in sequences):
-            raise RuntimeError('路线未满足每队必到与全班分担规则')
-        if ordered_nodes and any([v for v in route if v in ordered_nodes] != list(ordered_nodes) for route in sequences):
-            raise RuntimeError('路线未满足必到点顺序')
+    try:
+        validate_sequences(sequences, n, k, mode, mandatory_nodes, ordered_nodes)
+    except ValueError as error:
+        raise RuntimeError('路线求解结果违反课程规则：'+str(error)) from error
     return evaluate_routes(matrix, controls, teams, sequences, mode, objective, mandatory_ids, mandatory_order,
                            proven=proven, algorithm=algorithm, proof_details=proof_details,
                            elapsed=time.perf_counter()-started)

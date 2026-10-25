@@ -6,6 +6,7 @@ import time
 import numpy as np
 
 from .optimizer import balanced_people, evaluate_routes, route_cost, solve, subset_tours
+from .route_scores import improves
 
 
 def team_counts(total, min_people, max_teams, controls, mode, stagger=0):
@@ -97,7 +98,7 @@ def recommend_teams(matrix, controls, request, time_limit, measure, progress=lam
         key = (metrics['latestFinishSec'], metrics['totalFinishSec']) if objective == 'min_max_finish_then_sum' else \
               (metrics['totalDistanceM'],) if objective == 'min_distance' else (metrics['totalFinishSec'],)
         old = summaries.get(count)
-        if old and tuple(old['_score']) < key and not candidate['proof']['globalOptimalityProven']:
+        if old and improves(old['_score'], key):
             return
         results[count] = candidate
         summaries[count] = {'teamCount': count, 'teamSizes': [t['people'] for t in teams_by_count[count]],
@@ -118,7 +119,8 @@ def recommend_teams(matrix, controls, request, time_limit, measure, progress=lam
             retain(count, solve(matrix, controls, teams_by_count[count], mode, objective, .005,
                                 use_exact=False, **settings))
         prepared = None
-        if mode == 'split_coverage' and len(controls) <= 10 and deadline-time.perf_counter() > .05:
+        if (mode == 'split_coverage' and len(controls) <= 10 and deadline-time.perf_counter() > .05
+                and any(not row['optimalityProven'] for row in summaries.values())):
             try:
                 prepared = subset_tours(matrix, min(deadline, time.perf_counter()+max(.03, (deadline-time.perf_counter())*.25)))
             except TimeoutError:
@@ -127,15 +129,25 @@ def recommend_teams(matrix, controls, request, time_limit, measure, progress=lam
         # best and threshold neighbours first. Existing incumbents survive.
         provisional = choose_count([dict(summaries[c]) for c in counts], objective, target)
         leading = [provisional['bestMetricCount'], provisional['recommendedCount'], 1]
-        order = list(dict.fromkeys(leading+counts))
+        order = [count for count in dict.fromkeys(leading+counts) if not summaries[count]['optimalityProven']]
+        # Keep room to improve the route we actually return, rather than
+        # spending the entire budget equally on counts the teacher won't use.
+        reserve = min(5., max(0., deadline-time.perf_counter())*.25)
+        comparison_deadline = deadline-reserve
         for index, count in enumerate(order):
-            remaining = deadline-time.perf_counter()
+            remaining = comparison_deadline-time.perf_counter()
             if remaining <= .015:
                 break
             budget = min(30., remaining/(len(order)-index))
             progress(76+16*index/max(1, len(order)), f'细化 {count} 队的路线')
             retain(count, solve(matrix, controls, teams_by_count[count], mode, objective, budget,
                 prepared_tours=prepared, initial_sequences=[r['order'] for r in results[count]['routes']], **settings))
+        selected = choose_count([dict(summaries[c]) for c in counts], objective, target)['recommendedCount']
+        remaining = deadline-time.perf_counter()
+        if not summaries[selected]['optimalityProven'] and remaining > .02:
+            progress(94, f'完善建议的 {selected} 队路线')
+            retain(selected, solve(matrix, controls, teams_by_count[selected], mode, objective, min(30., remaining),
+                prepared_tours=prepared, initial_sequences=[r['order'] for r in results[selected]['routes']], **settings))
         method = 'shared_matrix_and_subset_tours' if prepared else 'shared_matrix_and_incumbents'
     rows = [{k: v for k, v in summaries[count].items() if k != '_score'} for count in counts]
     decision = choose_count(rows, objective, target)

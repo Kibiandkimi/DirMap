@@ -125,3 +125,43 @@ def test_feasible_count_range_respects_people_coverage_and_departure_limits():
     for values in ((2, 3, 5, 2, 'all_visit'), (True, 1, 5, 2, 'all_visit'), (20, 2, 10, 5, 'custom')):
         with pytest.raises(ValueError):
             team_counts(*values)
+
+
+def test_proven_fixed_gathering_counts_are_not_solved_again(monkeypatch):
+    matrix = np.ones((5, 5)); np.fill_diagonal(matrix, 0)
+    controls = [{'id': str(i)} for i in range(3)]
+    request = settings(mode='mixed_coverage', mandatoryControlIds=['2', '0', '1'], mandatoryOrder=True)
+    original, calls = team_planning.solve, []
+    def counted(*args, **kwargs):
+        calls.append(kwargs.get('use_exact'))
+        return original(*args, **kwargs)
+    monkeypatch.setattr(team_planning, 'solve', counted)
+    result, _ = recommend_teams(matrix, controls, request, 2, measure(matrix))
+    assert result['teamRecommendation']['allCountsOptimalityProven']
+    assert calls == [False]*10
+    assert all(route['controlIds'] == ['2', '0', '1'] for route in result['routes'])
+
+
+@pytest.mark.parametrize('worse_proven_result', [False, True])
+def test_final_refinement_keeps_the_best_actual_route(monkeypatch, worse_proven_result):
+    points = np.array([[0, 0], [10, 0], [12, 0], [-10, 0], [-12, 0], [0, 0]], float)
+    matrix = np.linalg.norm(points[:, None]-points[None, :], axis=2)
+    if worse_proven_result:
+        matrix *= .000001  # meaningful differences inside a coarse rounding bucket
+    controls = [{'id': str(i), 'serviceBaseSec': 0, 'servicePerPersonSec': 0} for i in range(4)]
+    calls = {1: 0, 2: 0}
+    from dirmap.optimizer import evaluate_routes
+    def candidate(matrix, controls, teams, mode, objective, *args, **kwargs):
+        count = len(teams); calls[count] += 1
+        good = (calls[count] == 1) if worse_proven_result else (calls[count] >= 3)
+        routes = [[0, 1, 3, 2, 4, 5]] if count == 1 else \
+                 [[0, 1, 2, 5], [0, 3, 4, 5]] if good else [[0, 1, 3, 5], [0, 2, 4, 5]]
+        return evaluate_routes(matrix, controls, teams, routes, mode, objective,
+                               proven=worse_proven_result and count == 2 and not good)
+    monkeypatch.setattr(team_planning, 'solve', candidate)
+    result, _ = recommend_teams(matrix, controls, settings(mode='split_coverage', totalPeople=4, maxTeams=2), .2, measure(matrix))
+    rec = result['teamRecommendation']
+    assert calls == {1: 2, 2: 3}  # initial, comparison, then recommended-route refinement
+    assert rec['recommendedCount'] == 2
+    assert rec['recommendedValue'] == pytest.approx(24 * (.000001 if worse_proven_result else 1))
+    assert not result['proof']['globalOptimalityProven']
