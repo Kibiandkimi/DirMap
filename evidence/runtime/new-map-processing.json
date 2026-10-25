@@ -1,0 +1,73 @@
+{
+  "auditedAt": "2026-10-20T11:12:58.142Z",
+  "sourceHash": "67db55e8b7249ae947a8e253aded172e343207b931432f622d407ceb74402bd8",
+  "freshUpload": true,
+  "reusedTeacherControls": false,
+  "sourceImage": {
+    "encodedSize": [
+      7594,
+      8608
+    ],
+    "orientedSourceSize": [
+      7594,
+      8608
+    ],
+    "workingSize": [
+      3614,
+      4096
+    ],
+    "exifOrientation": 1,
+    "decoderReduction": 2,
+    "resized": true,
+    "pixelFrame": "working_image_after_exif_orientation",
+    "workingToSource": [
+      [
+        2.101272827891533,
+        0,
+        0.5506364139457665
+      ],
+      [
+        0,
+        2.1015625,
+        0.55078125
+      ]
+    ]
+  },
+  "labels": [
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47"
+  ],
+  "calibratedControls": 17,
+  "startFinishCount": 1,
+  "falsePhotoStarts": 0,
+  "workingPreviewSize": [
+    3614,
+    4096
+  ],
+  "registrationMethod": "water_seed_observed_outline_ransac_mesh",
+  "baseAssetId": null,
+  "recoveredBoundaryObjects": [
+    "231406260",
+    "629940895",
+    "629940896"
+  ],
+  "processingElapsedSec": 72.269,
+  "allChecksPassed": true,
+  "independentFieldValidation": false,
+  "scope": "Fresh original-file upload through the browser, processing job, geographic projection and pixel editor; development regression only."
+}

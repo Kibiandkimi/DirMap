@@ -1,0 +1,28 @@
+{
+  "auditedAt": "2026-10-20T11:07:32.585286+00:00",
+  "command": "npm run build",
+  "passed": true,
+  "exitCode": 0,
+  "elapsedSec": 5.565,
+  "sourceFiles": [
+    "web/src/editor.ts",
+    "web/src/heading.ts",
+    "web/src/main.ts",
+    "web/src/map.ts",
+    "web/src/navigation.ts",
+    "web/src/offline.ts",
+    "web/src/style.css",
+    "web/src/types.ts",
+    "web/src/vite-env.d.ts",
+    "web/index.html",
+    "web/sw.js",
+    "web/vite.config.ts",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "dirmap/schemas.json"
+  ],
+  "sourceHash": "ff3ea54c89ea4aab0939cac6cc5734e4b90e543c168107d33a244e1ed3576916",
+  "stdout": "vite v7.3.7 building client environment for production...\ntransforming...\n✓ 220 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                   0.57 kB │ gzip:   0.43 kB\ndist/sw.js                        5.45 kB\ndist/assets/index-Cna85sIQ.css   24.57 kB │ gzip:   6.34 kB\ndist/assets/index-CY0pzhtO.js   428.09 kB │ gzip: 127.64 kB\n✓ built in 2.83s\n",
+  "stderr": "npm notice run dirmap@0.1.0 build\nnpm notice run tsc --noEmit && vite build --config web/vite.config.ts\n"
+}

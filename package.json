@@ -1,0 +1,14 @@
+{
+  "name": "dirmap",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config web/vite.config.ts",
+    "build": "tsc --noEmit && vite build --config web/vite.config.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:browser": "playwright test"
+  },
+  "dependencies": { "ol": "^10.7.0" },
+  "devDependencies": { "vite": "^7.1.0", "typescript": "^5.9.0", "@playwright/test": "^1.58.0" }
+}

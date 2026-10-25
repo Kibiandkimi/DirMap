@@ -1,0 +1,9 @@
+numpy==2.5.4
+scipy==1.18.1
+opencv-python-headless==4.14.0.94
+fastapi==0.143.1
+uvicorn==0.54.0
+python-multipart==0.0.32
+httpx==0.28.1
+pygeomag==1.1.0
+ortools==9.15.6755

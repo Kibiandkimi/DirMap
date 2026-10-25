@@ -1,0 +1,243 @@
+{
+  "verifiedAt": "2026-10-25T00:57:27.629715+00:00",
+  "scope": "Continuous phone geolocation repair; not acceptance of the full original map-software plan.",
+  "locationVersion": "2026-10-25.1",
+  "reportedClient": "OpenHarmony 6.1 / ArkWeb 6.0.0.46SP3 / WeChat 8.0.19.47",
+  "codeFindings": [
+    "A provider counter was incorrectly assigned performance.timeOrigin and could be rejected after page uptime increased.",
+    "The original recovery timer was cleared by the first accepted fix and never rearmed for a subsequent stalled watch."
+  ],
+  "clockCompatibility": {
+    "policy": "OpenHarmony/ArkWeb callbacks use receipt time; other browsers retain Unix timestamp validation.",
+    "maximumAge": 0,
+    "rawDeviceTimestampCaptured": false,
+    "notes": "The actual provider timestamp format was not measured. Clock regression inputs were synthetic, based on the reported failure and working reference implementation."
+  },
+  "recovery": {
+    "probeAfterMs": 5000,
+    "staleAfterMs": 10000,
+    "nativeTimeoutMs": 15000,
+    "watchRestartAfterMs": 30000,
+    "errors": "Alternate accuracy modes; back off persistent errors up to 30 s; stop automatic retries on permission denial.",
+    "lifecycle": "Retire old watch/request callbacks on retry, permission denial, backgrounding and page-cache restoration."
+  },
+  "sourceSha256": {
+    "web/src/geolocation.ts": "df253498ff2d57a8ee964ce4d485b15393bf7dd33a8bf9124114c09751d025b2",
+    "web/src/location-tracker.ts": "bb026356b67eb8786af24f1ebe1e88852a957674091a5e6b1773fa867932f84c",
+    "web/src/heading.ts": "722e32f895b805c600b87faadd8486d5120fb7fad28d119dfac294111e3f58a4",
+    "web/src/main.ts": "80cc149383d615d11cf950418a3bfe3a2852b8c01f3df4342fe0f58968b43d82",
+    "web/src/map.ts": "1d9145a700761d387f3d526a63118aea6b10331ecef733973629834f7e106030"
+  },
+  "validation": {
+    "typescript": {
+      "command": "npm test",
+      "passed": 19,
+      "failed": 0
+    },
+    "build": {
+      "command": "npm run build",
+      "passed": true
+    },
+    "recoveryBrowser": {
+      "stats": {
+        "startTime": "2026-10-25T00:39:01.835Z",
+        "duration": 65517.443,
+        "expected": 11,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "name": "OpenHarmony WeChat keeps moving for a minute with non-Unix and stuck provider timestamps",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "watch stalls after its first fix; repeated one-shot requests continue to move the map",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "a stationary zero-clock stream stays live, while an exact positive-clock replay needs a new request",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "standard clocks reject stale, future and malformed fixes without erasing a recent good position",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "a pending request neither multiplies nor overrides a watch that has recovered",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "a missing native timeout is recovered and retired request callbacks cannot overwrite new fixes",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "high-accuracy failure switches provider and can later regain an accurate position",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "permission denial stops automatic requests, preserves compass and allows explicit retry",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "repeated provider errors back off, and a good watch fix resets the recovery delay",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "background and page-cache restoration retire watch and request callbacks without stopping later recovery",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "the phone diagnostic view identifies this fix and contains no coordinates",
+          "file": "geolocation.spec.ts",
+          "passed": true
+        }
+      ]
+    },
+    "integrationBrowser": {
+      "stats": {
+        "startTime": "2026-10-25T00:34:42.812Z",
+        "duration": 67937.148,
+        "expected": 12,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "name": "three real maps, source editor, local overlays and independent review state",
+          "file": "app.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "rendered compass cardinal directions put the heading at the top",
+          "file": "app.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "absolute orientation, relative rejection, user drag and north-up reset",
+          "file": "app.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "phone layout has no horizontal overflow and source editing is reachable",
+          "file": "app.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "actual image graph to course form to rendered multi-team paths",
+          "file": "app.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "built application serves working same-origin planning requests",
+          "file": "app.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "publish, phone offline reload, check-ins, rejoin remaining targets and invalidate stale releases",
+          "file": "app.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "map stays primary and editing is reachable at 390 x 844",
+          "file": "mobile.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "map stays primary and editing is reachable at 360 x 640",
+          "file": "mobile.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "map stays primary and editing is reachable at 844 x 390",
+          "file": "mobile.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "map stays primary and editing is reachable at 915 x 412",
+          "file": "mobile.spec.ts",
+          "passed": true
+        },
+        {
+          "name": "phone location normalizes WebView clocks, keeps compass working and ignores retired callbacks",
+          "file": "mobile.spec.ts",
+          "passed": true
+        }
+      ]
+    },
+    "browserScope": "Chrome with injected geolocation and orientation; recovery cases use a virtual clock installed before navigation. Integration covers real map routes, publishing, offline reload and an actual navigate API request with an ArkWeb-like counter.",
+    "integrationReleaseNote": "The 12 integration tests used the existing online routing/terrain schema (v5/v3) plus the new frontend, before the final error-backoff-only adjustment. The final 11 recovery tests include that adjustment. The user then deployed the whole current workspace (v6/v4); the staged v5/v3 package was not deployed."
+  },
+  "deployment": {
+    "actor": "user",
+    "release": "20261025T004016Z",
+    "routingSchema": "native-quadtree-v6-rendezvous",
+    "terrainSchema": "print-scale-boundaries-v4",
+    "sourceMatchesWorkspace": true,
+    "systemd": "active",
+    "url": "https://85.211.195.104",
+    "assets": [
+      {
+        "path": "/",
+        "status": 200,
+        "sha256": "40cd2133087f167efe493b2ae68dc83a49190ec0b379970587bf8f064f9d0b0e",
+        "matchesLocalBuild": true
+      },
+      {
+        "path": "/assets/index-49PBB7YR.js",
+        "status": 200,
+        "sha256": "6628fa716a19af23e7336ef676e48d689a19fd543bc09ab3ff712079536ee9c3",
+        "matchesLocalBuild": true
+      },
+      {
+        "path": "/assets/index-CL6R0ZgA.css",
+        "status": 200,
+        "sha256": "66eb8f0773b05d8fdfbfe507dd46861214619239e0f43cde5e9198c81c718382",
+        "matchesLocalBuild": true
+      },
+      {
+        "path": "/sw.js",
+        "status": 200,
+        "sha256": "5da1e59a068cd66b429602ab03f8dfe51bd14e898b800a514a091dd0185b4e56",
+        "matchesLocalBuild": true
+      }
+    ],
+    "offlineShellCache": "dirmap-shell-e0db6db1f333c3e4",
+    "health": {
+      "status": "ok",
+      "version": "0.1.0",
+      "frame": {
+        "crs": "WGS84",
+        "origin": [
+          113.9304,
+          22.535
+        ],
+        "unit": "metre",
+        "axes": "east_north"
+      },
+      "adminTokenRequired": true,
+      "magneticDeclinationDeg": -3.301572744034695,
+      "magneticModel": "WMM-2025",
+      "modelDate": "2026-10-25"
+    }
+  },
+  "deviceValidation": {
+    "source": "user report",
+    "result": "持续更新正常",
+    "requestedScenario": "Reopen in OpenHarmony WeChat, observe about one minute while moving, then background and return.",
+    "individualTimingOrAccuracyMetricsMeasured": false
+  },
+  "remainingScope": "Independent registration/passability benchmarks and broader original-plan acceptance remain tracked in IMPLEMENTATION_STATUS.md. The reported continuous-location incident is confirmed resolved by the user."
+}

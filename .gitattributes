@@ -1,0 +1,7 @@
+# Keep the supplied map and legend files byte-for-byte intact.
+*.pdf binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.img binary
+*.npz binary

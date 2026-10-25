@@ -1,0 +1,12 @@
+{
+  "auditedAt": "2026-10-20T11:30:12.846Z",
+  "url": "http://127.0.0.1:8765",
+  "assetId": "upload-f4fd82f6605e",
+  "version": 6,
+  "controls": 17,
+  "teacher43Preserved": true,
+  "falsePhotoStarts": 0,
+  "editorSourceLoaded": true,
+  "errors": [],
+  "passed": true
+}
