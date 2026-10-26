@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('phone custom routes retain each team order, report gathering waits and survive reload/publication', async ({ page, context }) => {
   test.setTimeout(90000);

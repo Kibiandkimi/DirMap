@@ -1,0 +1,16 @@
+{
+  "recordedAt": "2026-10-26",
+  "source": "User clarification in this project",
+  "confirmed": {
+    "assetId": "szu-3",
+    "regionDescription": "40号与41号之间、灰色建筑周围的大块灰白斜纹区域",
+    "meaning": "架空或下层可通行区域"
+  },
+  "implementationPolicy": {
+    "pattern": "repeated narrow neutral-grey diagonal stripes separated by light ground",
+    "solidBuildingsAndBlackBoundaries": "remain obstacles",
+    "purpleAndOliveRestrictions": "remain forbidden",
+    "overlappingSurfaces": "connect only through explicit confirmed portals"
+  },
+  "fieldSurveyCompleted": false
+}

@@ -24,7 +24,7 @@ from .team_planning import recommend_teams
 from .ocr import label_controls
 from .reference import load_reference
 from .registration import auto_register, extend_transfer_boundary, manual_register, recover_boundary_buildings, register_to_map, warp_overlay
-from . import store, graph_cache, comparisons
+from . import store, graph_cache, comparisons, layers
 from .protocol import ROUTING_SCHEMA
 from .images import read_map_image
 from .recognition import reconcile_controls
@@ -51,7 +51,7 @@ def job_inputs(kind, asset_id, payload=None):
                     'implementation': implementation_signature()}
         if state:
             snapshot['stateHash'] = hashlib.sha256(json.dumps({key: state.get(key) for key in
-                ('registration', 'frame', 'controls', 'edits', 'terrainSchema', 'reviewed')}, sort_keys=True).encode()).hexdigest()
+                ('registration', 'frame', 'controls', 'edits', 'surfaces', 'portals', 'terrainSchema', 'reviewed')}, sort_keys=True).encode()).hexdigest()
             terrain = store.artifact_path(state, 'terrain.npz')
             if terrain.exists():
                 snapshot['terrainHash'] = store.file_hash(terrain)
@@ -214,7 +214,7 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
         terrain = cv2.imread(str(directory/'terrain.png'), cv2.IMREAD_UNCHANGED)
         warp_overlay(terrain, Registration.from_dict(state['registration']), directory/'terrain-warp.png', max_side=1200, nearest=True)
         for key in ('forbiddenPixelFraction', 'restoredCourseInkPixels', 'continuedBarrierPixels',
-                    'continuedRoofPixels', 'staircaseCandidates', 'stairTreadPixels'):
+                    'continuedRoofPixels', 'staircaseCandidates', 'stairTreadPixels', 'pavedBoundaryPixels', 'lowerLevelHatchingPixels'):
             state['statistics'][key] = result['statistics'][key]
         state['terrainFeatures'] = result['terrainFeatures']
         state.update(terrainSchema=TERRAIN_SCHEMA, version=before+1, reviewed=False, graphHash=None,
@@ -295,6 +295,8 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
     if keep:
         state['controls'], state['recognitionReview'] = reconcile_controls(result['controls'], previous)
         state['edits'] = copy.deepcopy(previous.get('edits', []))
+        state['surfaces'] = copy.deepcopy(previous.get('surfaces', []))
+        state['portals'] = copy.deepcopy(previous.get('portals', []))
         state['recognitionExclusions'] = copy.deepcopy(previous.get('recognitionExclusions', []))
     if keep_registration:
         # Keep the serialized registration stamp too, so unchanged transforms
@@ -370,11 +372,12 @@ def _get_graph(state):
     cache_key = graph_cache.key(state, terrain_path)
     with np.load(terrain_path) as artifact:
         costs = artifact['costs']
-        semantics = {kind: artifact[kind] for kind in ('building', 'water', 'point_ink', 'vegetation', 'restricted') if kind in artifact}
+        semantics = {kind: artifact[kind] for kind in ('building', 'water', 'point_ink', 'vegetation', 'restricted', 'lower_level') if kind in artifact}
     reg = Registration.from_dict(state['registration'])
     graph = graph_cache.read(cache_key)
     if graph is None:
-        graph = build_graph(costs, reg, state['sourceHash'], state['edits'], step=4)
+        graph = layers.build(costs, reg, state['sourceHash'], state['edits'], state.get('surfaces', []),
+                             state.get('portals', []), semantics.get('restricted'), step=4, lower_level=semantics.get('lower_level'))
         try:
             graph_cache.write(cache_key, graph)
         except OSError:
@@ -423,7 +426,8 @@ def navigate_course(release, request):
         lookup = {c['id']: c for c in release['controls']}
         controls = [lookup[c] for c in remaining]
         team = next(t for t in published['request']['teams'] if t['id'] == route['teamId'])
-        bundle = plan_matrix(graph, controls, pixel.tolist(), published['request']['finishPixel'], reg)
+        bundle = plan_matrix(graph, controls, pixel.tolist(), published['request']['finishPixel'], reg,
+                             start_surface=request.get('surfaceId'), finish_surface=published['request'].get('finishSurfaceId'))
         if bundle['unresolved']:
             return {'status': 'NEEDS_REVIEW', 'unresolved': bundle['unresolved'],
                     'version': state['version'], 'graphHash': graph.content_hash, 'route': None}
@@ -460,7 +464,8 @@ def saved_plan(asset_id, identifier):
                 or plan['version'] != saved['content']['version'] or plan['graphHash'] != saved['content']['graphHash']
                 or plan.get('routingSchema') != saved['content']['routingSchema']):
             raise ValueError('原路线与保存的计算记录不一致，请重新生成')
-        defaults = {'mandatoryControlIds': [], 'mandatoryOrder': False, 'customRoutes': []}
+        defaults = {'mandatoryControlIds': [], 'mandatoryOrder': False, 'customRoutes': [],
+                    'startSurfaceId': None, 'finishSurfaceId': None}
         for key in ('assetId', 'controlIds', 'startPixel', 'finishPixel', 'mode', 'objective', *defaults):
             if request.get(key, defaults.get(key)) != original.get(key, defaults.get(key)):
                 raise ValueError('原路线的课程规则已变化，请重新生成')
@@ -492,7 +497,7 @@ def choose_team_count(payload, progress=lambda p, m: None, operation_id=None):
     if not payload.get('confirmPlanId') and payload['version'] != content['version']:
         raise ValueError('这次比较所用地图已更新，请重新比较')
     original = content['recommendation']['sourceRequest']
-    request = {key: original[key] for key in ('assetId', 'controlIds', 'startPixel', 'finishPixel',
+    request = {key: original[key] for key in ('assetId', 'controlIds', 'startPixel', 'finishPixel', 'startSurfaceId', 'finishSurfaceId',
                'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder') if key in original}
     request.update(version=payload['version'], teams=copy.deepcopy(candidate['teams']))
     return plan_course(request, progress, operation_id, selection={'saved': saved, 'payload': payload, 'candidate': candidate})
@@ -532,7 +537,8 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
     reg = Registration.from_dict(state['registration'])
     progress(40, '计算必到点之间的合法最短路')
     bundle = plan_matrix(graph, controls, request['startPixel'], request['finishPixel'], reg,
-                         metric='distance' if request['objective'] == 'min_distance' else 'time')
+                         metric='distance' if request['objective'] == 'min_distance' else 'time',
+                         start_surface=request.get('startSurfaceId'), finish_surface=request.get('finishSurfaceId'))
     plan_id = operation_id or uuid.uuid4().hex[:16]
     if bundle['unresolved']:
         if selection or continuing:
@@ -596,7 +602,7 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         comparison_to_save = comparisons.create(state, request, result, bundle, metrics, plan_id,
                                                  graph.content_hash, implementation_signature())
         result['teamRecommendation'] = comparisons.public(comparison_to_save, len(chosen_teams), 'automatic')
-        request = {key: request[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel',
+        request = {key: request[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel', 'startSurfaceId', 'finishSurfaceId',
                    'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder') if key in request}
         request['teams'] = chosen_teams
     elif selection:
@@ -687,6 +693,13 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
                                    'components': int(graph.component_count), 'gridStepPx': graph.step,
                                    'fineGridStepPx': 1 if graph.adaptive else graph.step})
     result['proof']['graphHash'] = graph.content_hash
+    result['targetSurfaces'] = {endpoint['id']: endpoint.get('surfaceId', 'ground') for endpoint in bundle['endpoints']}
+    result['surfaces'] = [{key: graph.surface_info(identifier)[key] for key in ('id', 'label', 'level', 'accepted')}
+                          for identifier in getattr(graph, 'surface_order', ['ground'])
+                          if graph.surface_info(identifier).get('accepted', True)]
+    for route in result['routes']:
+        for stop in route.get('stops', []):
+            stop['surfaceId'] = result['targetSurfaces'][stop['controlId']]
     result['preparationSec'] = round(preparation_elapsed, 3)
     result['proof']['solverBudgetSec'] = 0 if selection or confirm_saved else round(solver_budget, 3)
     result['planningElapsedSec'] = round(time.perf_counter()-started, 3)

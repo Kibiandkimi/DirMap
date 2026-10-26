@@ -14,7 +14,7 @@ import GeoJSON from 'ol/format/GeoJSON.js';
 import { Circle, Fill, Stroke, Style, Text } from 'ol/style.js';
 import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { ScaleLine, defaults } from 'ol/control.js';
-import type { Approach, Control, MapState, Pixel, Route } from './types';
+import type { Approach, Control, MapState, Pixel, Route, Surface } from './types';
 
 export const teamColors = ['#ec693f', '#416edb', '#9370ca', '#159386', '#bb8426', '#d95492', '#56974e', '#a5513f', '#54869f', '#887760'];
 export class CampusMap {
@@ -54,14 +54,15 @@ export class CampusMap {
 
   setReference(data: object) { this.referenceSource.clear(); this.referenceSource.addFeatures(new GeoJSON().readFeatures(data, { featureProjection: 'EPSG:3857' })); }
   setStandardMap(visible: boolean) { this.base.setVisible(visible); }
-  setControls(controls: Control[]) {
+  setControls(controls: Control[], surfaces: Surface[] = []) {
     this.controls.clear();
+    const labels = Object.fromEntries(surfaces.map(s => [s.id, s.label]));
     for (const c of controls) {
       if (!c.lnglat || c.state === 'rejected') continue;
       const feature = new Feature({ geometry: new Point(fromLonLat(c.lnglat)), controlId: c.id });
       const color = c.required ? '#9c3fa6' : '#798773';
       feature.setStyle(new Style({ image: new Circle({ radius: 12, fill: new Fill({ color: '#fffffff2' }), stroke: new Stroke({ color, width: 2.5, lineDash: c.state === 'candidate' ? [5, 2] : undefined }) }),
-        text: new Text({ text: c.label.replace('待核', '?'), font: '600 12px sans-serif', fill: new Fill({ color }), offsetY: -23, stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
+        text: new Text({ text: c.label.replace('待核', '?')+(c.surfaceId && c.surfaceId !== 'ground' ? ' · '+(labels[c.surfaceId] ?? '另层') : ''), font: '600 12px sans-serif', fill: new Fill({ color }), offsetY: -23, stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
       this.controls.addFeature(feature);
     }
   }
@@ -91,9 +92,19 @@ export class CampusMap {
     this.routes.clear();
     routes.forEach((route, i) => {
       if (selected && route.teamId !== selected) return;
-      const feature = new Feature(new LineString(route.geometry.map(p => fromLonLat(p))));
-      feature.setStyle([new Style({ stroke: new Stroke({ color: '#ffffffe6', width: 7 }) }), new Style({ stroke: new Stroke({ color: teamColors[i % teamColors.length], width: 4 }) })]);
-      this.routes.addFeature(feature);
+      const sections = route.surfaceSections ?? [{ surfaceId: 'ground', level: 0, startIndex: 0, endIndex: route.geometry.length-1 }];
+      for (const section of sections) {
+        const points = route.geometry.slice(section.startIndex, section.endIndex+1);
+        if (points.length < 2) continue;
+        const feature = new Feature(new LineString(points.map(p => fromLonLat(p))));
+        feature.setStyle([new Style({ stroke: new Stroke({ color: '#ffffffe6', width: 7 }) }), new Style({ stroke: new Stroke({ color: teamColors[i % teamColors.length], width: 4, lineDash: section.surfaceId === 'ground' ? undefined : section.level < 0 ? [3, 6] : [12, 5] }) })]);
+        this.routes.addFeature(feature);
+      }
+      for (const transition of route.transitions ?? []) {
+        const marker = new Feature(new Point(fromLonLat(transition.lnglat)));
+        marker.setStyle(new Style({ image: new Circle({ radius: 7, fill: new Fill({ color: '#fff' }), stroke: new Stroke({ color: teamColors[i % teamColors.length], width: 2 }) }), text: new Text({ text: transition.label, offsetY: 16, font: '11px sans-serif', fill: new Fill({ color: '#244d3b' }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
+        this.routes.addFeature(marker);
+      }
     });
   }
   setApproaches(approaches: Approach[]) {

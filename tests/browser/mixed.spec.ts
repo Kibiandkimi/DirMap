@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import fs from 'node:fs';
 
 async function openMixed(page: Page) {

@@ -1,4 +1,4 @@
 {
-  "routing": "native-quadtree-v7-uniform-shortcuts",
-  "terrain": "print-scale-boundaries-v5-guide-gaps"
+  "routing": "native-quadtree-v8-explicit-surfaces",
+  "terrain": "print-scale-boundaries-v6-lower-level-hatching"
 }

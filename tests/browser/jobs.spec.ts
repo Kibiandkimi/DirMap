@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 for (const dropResponse of [false, true]) {
   test(`reload recovers the original real-map plan after losing ${dropResponse ? 'submission response' : 'progress connection'}`, async ({ page }) => {

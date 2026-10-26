@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import service, store
+from . import service, store, layers
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -62,6 +62,8 @@ class PlanRequest(Model):
     controlIds: list[str] = Field(min_length=1, max_length=60)
     startPixel: Point
     finishPixel: Point
+    startSurfaceId: str | None = Field(default=None, min_length=1, max_length=50)
+    finishSurfaceId: str | None = Field(default=None, min_length=1, max_length=50)
     mode: Literal['all_visit', 'split_coverage', 'fixed_order', 'mixed_coverage', 'custom'] = 'all_visit'
     mandatoryControlIds: list[str] = Field(default_factory=list, max_length=60)
     mandatoryOrder: bool = False
@@ -96,6 +98,8 @@ class AutoTeamRequest(Model):
     controlIds: list[str] = Field(min_length=1, max_length=60)
     startPixel: Point
     finishPixel: Point
+    startSurfaceId: str | None = Field(default=None, min_length=1, max_length=50)
+    finishSurfaceId: str | None = Field(default=None, min_length=1, max_length=50)
     mode: Literal['all_visit', 'split_coverage', 'fixed_order', 'mixed_coverage'] = 'all_visit'
     mandatoryControlIds: list[str] = Field(default_factory=list, max_length=60)
     mandatoryOrder: bool = False
@@ -111,7 +115,7 @@ class AutoTeamRequest(Model):
     @model_validator(mode='after')
     def valid_course(self):
         data = self.model_dump()
-        fields = {key: data[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel',
+        fields = {key: data[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel', 'startSurfaceId', 'finishSurfaceId',
                   'mode', 'mandatoryControlIds', 'mandatoryOrder', 'objective', 'timeLimitSec')}
         PlanRequest(**fields, teams=[{'id': 'comparison', 'people': self.totalPeople, 'speedMps': self.speedMps}])
         team_counts(self.totalPeople, self.minPeoplePerTeam, self.maxTeams, len(self.controlIds), self.mode, self.staggerSec)
@@ -142,6 +146,7 @@ class Control(Model):
     label: str = Field(min_length=1, max_length=40)
     pixel: Point
     approachPixel: Point | None = None
+    surfaceId: str | None = Field(default=None, min_length=1, max_length=50)
     radiusPx: FiniteFloat = Field(default=15, gt=0, le=200)
     required: bool = True
     role: Literal['control', 'start', 'finish', 'start_finish'] = 'control'
@@ -161,12 +166,35 @@ class Edit(Model):
     pixels: list[Point] = Field(min_length=1, max_length=2000)
     radiusPx: int = Field(default=6, ge=1, le=100)
     cost: FiniteFloat = Field(default=1, ge=1, le=10)
+    surfaceId: str = Field(default='ground', min_length=1, max_length=50)
+    separateGround: bool = False
+
+
+class Surface(Model):
+    id: str = Field(min_length=1, max_length=50, pattern=r'^[A-Za-z0-9_-]+$')
+    label: str = Field(min_length=1, max_length=50)
+    level: int = Field(ge=-20, le=20, strict=True)
+    accepted: bool = False
+
+
+class Portal(Model):
+    id: str = Field(min_length=1, max_length=50, pattern=r'^[A-Za-z0-9_-]+$')
+    label: str = Field(default='换层入口', min_length=1, max_length=50)
+    fromSurface: str = Field(min_length=1, max_length=50)
+    toSurface: str = Field(min_length=1, max_length=50)
+    pixel: Point
+    radiusPx: int = Field(default=8, ge=1, le=100)
+    lengthM: FiniteFloat = Field(default=0, ge=0, le=1000)
+    costFactor: FiniteFloat = Field(default=1, ge=1, le=10)
+    accepted: bool = False
 
 
 class StatePatch(Model):
     version: int
     controls: list[Control] | None = Field(default=None, max_length=120)
     edits: list[Edit] | None = Field(default=None, max_length=500)
+    surfaces: list[Surface] | None = Field(default=None, max_length=16)
+    portals: list[Portal] | None = Field(default=None, max_length=64)
 
 
 class Anchor(Model):
@@ -204,6 +232,7 @@ class NavigationRequest(Model):
     accuracyM: FiniteFloat = Field(ge=0, le=10000)
     timestampMs: FiniteFloat
     completedControlIds: list[str] = Field(default_factory=list, max_length=60)
+    surfaceId: str | None = Field(default=None, min_length=1, max_length=50)
 
 
 @app.exception_handler(ValueError)
@@ -358,6 +387,14 @@ def refresh_terrain(asset_id: str, request: TerrainRequest, http_request: Reques
     return submit_job(http_request, 'terrain', asset_id, request.model_dump(), request.version)
 
 
+@app.get('/api/maps/{asset_id}/layer-candidates')
+def layer_candidates(asset_id: str):
+    state = store.get_state(asset_id)
+    if not state or not state.get('registration'):
+        raise ValueError('请先完成地图配准，再核对参照中的桥隧位置')
+    return layers.reference_candidates(state, service.reference())
+
+
 @app.get('/api/jobs')
 def recent_jobs(request: Request, assetId: str | None = None):
     return request.app.state.jobs.recent(assetId)
@@ -421,8 +458,8 @@ def patch_map(asset_id: str, patch: StatePatch):
             for control in data['controls']:
                 old = previous.get(control['id'], {})
                 fields = set(old.get('manualFields', []))
-                fields.update(key for key in ('label', 'pixel', 'approachPixel', 'radiusPx', 'role', 'serviceBaseSec', 'servicePerPersonSec')
-                              if key in old and control.get(key) != old.get(key))
+                fields.update(key for key in ('label', 'pixel', 'approachPixel', 'surfaceId', 'radiusPx', 'role', 'serviceBaseSec', 'servicePerPersonSec')
+                              if (key in old or key == 'surfaceId') and control.get(key) != old.get(key))
                 if fields:
                     control['manualFields'] = sorted(fields)
                 if control['label'] != old.get('label'):
@@ -440,7 +477,19 @@ def patch_map(asset_id: str, patch: StatePatch):
             for edit in data['edits']:
                 if any(not (0 <= x < state['width'] and 0 <= y < state['height']) for x, y in edit['pixels']):
                     raise ValueError('通行修正超出地图')
+                if edit.get('surfaceId') == 'ground':
+                    edit.pop('surfaceId')
+                if not edit.get('separateGround'):
+                    edit.pop('separateGround', None)
             state['edits'] = data['edits']
+        for key in ('surfaces', 'portals'):
+            if key in data:
+                state[key] = data[key]
+        for portal in state.get('portals', []):
+            x, y = portal['pixel']
+            if not (0 <= x < state['width'] and 0 <= y < state['height']):
+                raise ValueError('换层入口超出地图')
+        layers.validate(state.get('surfaces', []), state.get('portals', []), state['edits'], state['controls'])
         state.update(version=state['version']+1, reviewed=False, graphHash=None, updatedAt=time.time())
         service.project_controls(state)
         store.save_state(asset_id, state)

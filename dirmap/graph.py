@@ -60,13 +60,69 @@ class RasterGraph:
         self.tree = cKDTree(self.pixels)
         self.component_count, self.components = connected_components(self.weights, directed=False)
 
-    def clear_segment(self, a, b):
-        px = segment_pixels(a, b)
-        if (px < 0).any() or (px[:, 0] >= self.costs.shape[1]).any() or (px[:, 1] >= self.costs.shape[0]).any():
-            return False
-        return bool(np.all(self.costs[px[:, 1], px[:, 0]] > 0))
+    def surface_info(self, surface_id='ground'):
+        surface_id = surface_id or 'ground'
+        data = getattr(self, 'surface_data', None)
+        if data is not None:
+            if surface_id not in data:
+                raise ValueError('该层级不存在，请重新选择到访层级')
+            return data[surface_id]
+        if surface_id != 'ground':
+            raise ValueError('该地图没有这个层级')
+        return {'id': 'ground', 'label': '地面', 'level': 0, 'accepted': True, 'origin': [0, 0], 'costs': self.costs,
+                'owner': getattr(self, 'owner', None), 'tree': self.tree, 'nodes': None}
 
-    def node_at(self, pixel, max_distance_px=3, near=False):
+    def resolve_surface(self, pixel, requested=None):
+        if requested is not None:
+            data = self.surface_info(requested)
+            if not data.get('accepted', True):
+                raise ValueError('该层级的通行范围尚未核验')
+            return requested
+        point = np.rint(pixel).astype(int)
+        overlaps = []
+        for identifier, data in getattr(self, 'surface_data', {}).items():
+            if identifier == 'ground':
+                continue
+            x, y = point-np.asarray(data['origin'])
+            extent = data.get('extent')
+            if extent is not None and 0 <= y < extent.shape[0] and 0 <= x < extent.shape[1] and extent[y, x]:
+                overlaps.append(data['label'])
+        if overlaps:
+            raise ValueError('此处有叠合层级，请明确选择地面或'+ '、'.join(overlaps))
+        return 'ground'
+
+    def surface_for_node(self, node):
+        indexes = getattr(self, 'node_surfaces', None)
+        return self.surface_order[int(indexes[node])] if indexes is not None else 'ground'
+
+    def cost_at(self, pixel, surface_id='ground'):
+        data = self.surface_info(surface_id)
+        x, y = np.rint(pixel).astype(int)-np.asarray(data['origin'])
+        costs = data['costs']
+        if not (0 <= y < costs.shape[0] and 0 <= x < costs.shape[1]):
+            return 0.
+        return float(costs[y, x])
+
+    def clear_segment(self, a, b, surface_id='ground'):
+        data = self.surface_info(surface_id)
+        origin, costs = np.asarray(data['origin']), data['costs']
+        px = segment_pixels(np.asarray(a)-origin, np.asarray(b)-origin)
+        if (px < 0).any() or (px[:, 0] >= costs.shape[1]).any() or (px[:, 1] >= costs.shape[0]).any():
+            return False
+        return bool(np.all(costs[px[:, 1], px[:, 0]] > 0))
+
+    def edge_valid(self, a, b):
+        begin, end = self.weights.indptr[a:a+2]
+        indexes = self.weights.indices[begin:end]
+        at = np.searchsorted(indexes, b)
+        if at >= len(indexes) or indexes[at] != b:
+            return False
+        first, second = self.surface_for_node(a), self.surface_for_node(b)
+        if first != second:
+            return (int(a), int(b)) in getattr(self, 'portal_edges', {})
+        return self.clear_segment(self.pixels[a], self.pixels[b], first)
+
+    def node_at(self, pixel, max_distance_px=3, near=False, surface_id='ground'):
         """Nearest node owning a free native pixel, keeping the exact position.
 
         A quadtree leaf centre can sit several metres from a point that hugs a
@@ -80,11 +136,16 @@ class RasterGraph:
         point = np.asarray(pixel, dtype=float)
         if point.shape != (2,) or not np.isfinite(point).all():
             raise ValueError("到访坐标无效")
-        owner = getattr(self, 'owner', None)
+        data = self.surface_info(surface_id)
+        virtual = getattr(self, 'virtual_points', {}).get(surface_id or 'ground', {}).get(tuple(np.round(point, 8)))
+        if virtual is not None and self.cost_at(point, surface_id) > 0:
+            return virtual
+        owner = data['owner']
         if owner is None:
             return None
         height, width = owner.shape
-        x, y = np.rint(point).astype(int)
+        origin = np.asarray(data['origin'])
+        x, y = np.rint(point).astype(int)-origin
         if not (0 <= x < width and 0 <= y < height):
             return None
         limit = int(max(1, max_distance_px))
@@ -96,7 +157,7 @@ class RasterGraph:
             hits = np.argwhere(window >= 0)
             if not len(hits):
                 continue
-            points = np.column_stack((hits[:, 1]+x0, hits[:, 0]+y0)).astype(float)
+            points = np.column_stack((hits[:, 1]+x0, hits[:, 0]+y0)).astype(float)+origin
             distance = np.linalg.norm(points-point, axis=1)
             for index in np.argsort(distance):
                 node = int(window[hits[index, 0], hits[index, 1]])
@@ -104,21 +165,25 @@ class RasterGraph:
                     continue
                 if closest is None or distance[index] < closest_distance:
                     closest, closest_distance = node, float(distance[index])
-                if self.clear_segment(point, points[index]) and self.clear_segment(point, self.pixels[node]):
+                if self.clear_segment(point, points[index], surface_id) and self.clear_segment(point, self.pixels[node], surface_id):
                     return node
         return closest if near else None
 
-    def snap(self, pixel, max_distance_px=24):
+    def snap(self, pixel, max_distance_px=24, surface_id='ground'):
         point = np.asarray(pixel, dtype=float)
         if point.shape != (2,) or not np.isfinite(point).all():
             raise ValueError("到访坐标无效")
-        exact = self.node_at(point, max_distance_px=1)
+        data = self.surface_info(surface_id)
+        exact = self.node_at(point, max_distance_px=1, surface_id=surface_id)
         if exact is not None:
             return exact
-        candidates = self.tree.query_ball_point(point, max_distance_px)
+        tree = data['tree']
+        candidates = tree.query_ball_point(point, max_distance_px) if tree is not None else []
+        if data['nodes'] is not None:
+            candidates = [int(data['nodes'][i]) for i in candidates]
         candidates.sort(key=lambda i: np.linalg.norm(self.pixels[i]-point))
         for node in candidates:
-            if self.clear_segment(point, self.pixels[node]):
+            if self.clear_segment(point, self.pixels[node], surface_id):
                 return node
         raise ValueError("点位没有无障碍连接，请在同一侧选择实际可到达的位置")
 
@@ -141,7 +206,7 @@ class RasterGraph:
         return path
 
 
-def build_graph(costs, registration, source_hash, edits=None, step=4, adaptive=True):
+def apply_edits(costs, edits=None):
     costs = costs.copy()
     closed_edits = np.zeros(costs.shape, np.uint8)
     height, width = costs.shape
@@ -163,6 +228,13 @@ def build_graph(costs, registration, source_hash, edits=None, step=4, adaptive=T
             for p in (points[0], points[-1]):
                 cv2.circle(costs, tuple(p), radius, value, cv2.FILLED)
                 cv2.circle(closed_edits, tuple(p), radius, int(edit['kind'] == 'close'), cv2.FILLED)
+    return costs, closed_edits
+
+
+def build_graph(costs, registration, source_hash, edits=None, step=4, adaptive=True):
+    costs, closed_edits = apply_edits(costs, edits)
+    height, width = costs.shape
+    edits = edits or []
     if not isinstance(step, int) or step < 1 or step > 16:
         raise ValueError('通行网格步长无效')
     if adaptive:
@@ -369,15 +441,18 @@ def _quadtree_graph(costs, registration, source_hash, edits, step):
     return result
 
 
-def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric='time'):
-    endpoints = [{'id': 'start', 'pixel': start_pixel}, *controls, {'id': 'finish', 'pixel': finish_pixel}]
+def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric='time', start_surface=None, finish_surface=None):
+    endpoints = [{'id': 'start', 'pixel': start_pixel, 'surfaceId': start_surface}, *controls,
+                 {'id': 'finish', 'pixel': finish_pixel, 'surfaceId': finish_surface}]
     nodes, points, unresolved, approaches = [], [], [], []
     start_component = None
     resolver = getattr(graph, 'access_resolver', None)
     for endpoint in endpoints:
         pixel = endpoint.get('approachPixel') or endpoint['pixel']
         try:
-            if resolver is not None and endpoint['id'] not in ('start', 'finish'):
+            surface = graph.resolve_surface(pixel, endpoint.get('surfaceId'))
+            endpoint = {**endpoint, 'surfaceId': surface}
+            if resolver is not None and surface == 'ground' and endpoint['id'] not in ('start', 'finish'):
                 resolved = resolver.resolve(endpoint, start_component)
                 node, pixel = resolved['node'], resolved['pixel']
                 world = np.array([resolved['local']])
@@ -385,6 +460,7 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
                 approaches.append({'controlId': endpoint['id'], 'targetPixel': list(endpoint['pixel']),
                                    'pixel': pixel, 'method': resolved['method'], 'automatic': resolved['automatic'],
                                    'offsetM': float(np.linalg.norm(world[0]-exact[0])) if valid[0] else None,
+                                   'surfaceId': surface,
                                    'lnglat': Frame().to_lnglat(world[0]).tolist(),
                                    'targetLnglat': Frame().to_lnglat(exact[0]).tolist() if valid[0] else None})
                 endpoint = {**endpoint, 'approachPixel': pixel}
@@ -392,7 +468,13 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
                 world, inside = registration.forward([pixel])
                 if not inside[0]:
                     raise ValueError("点位超出配准有效范围")
-                node = graph.snap(pixel)
+                node = graph.snap(pixel, surface_id=surface)
+                if endpoint['id'] not in ('start', 'finish'):
+                    exact, valid = registration.forward([endpoint['pixel']])
+                    approaches.append({'controlId': endpoint['id'], 'targetPixel': list(endpoint['pixel']),
+                        'pixel': list(pixel), 'method': 'layer_position' if surface != 'ground' else 'exact', 'automatic': False,
+                        'surfaceId': surface, 'offsetM': float(np.linalg.norm(world[0]-exact[0])) if valid[0] else None,
+                        'lnglat': Frame().to_lnglat(world[0]).tolist(), 'targetLnglat': Frame().to_lnglat(exact[0]).tolist() if valid[0] else None})
             if endpoint['id'] == 'start':
                 start_component = graph.components[node]
             endpoints[len(nodes)] = endpoint
@@ -411,8 +493,7 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
     connectors = np.linalg.norm(np.asarray(points)-graph.local[nodes], axis=1)
     factors = []
     for endpoint in endpoints:
-        x, y = np.rint(endpoint.get('approachPixel') or endpoint['pixel']).astype(int)
-        factors.append(float(graph.costs[y, x]))
+        factors.append(graph.cost_at(endpoint.get('approachPixel') or endpoint['pixel'], endpoint['surfaceId']))
     connector_costs = connectors if metric == 'distance' else connectors*np.array(factors)
     matrix = distances[:, nodes] + connector_costs[:, None] + connector_costs[None, :]
     np.fill_diagonal(matrix, 0.)
@@ -423,7 +504,7 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
 
 def expand_route(graph, bundle, order, frame=None):
     frame = frame or Frame()
-    positions, node_ids, edge_ids, legs = [], [], [], []
+    positions, node_ids, edge_ids, legs, position_surfaces, transitions = [], [], [], [], [], []
     distance = 0.
     travel_weight = 0.
     for a, b in zip(order, order[1:]):
@@ -433,16 +514,33 @@ def expand_route(graph, bundle, order, frame=None):
         positions.append(bundle['world'][a].tolist())
         positions.extend(graph.local[path].tolist())
         positions.append(bundle['world'][b].tolist())
+        position_surfaces.extend([bundle['endpoints'][a].get('surfaceId', 'ground'),
+                                  *[graph.surface_for_node(node) for node in path],
+                                  bundle['endpoints'][b].get('surfaceId', 'ground')])
         node_ids.extend(path)
-        for u, v in zip(path, path[1:]):
+        for index, (u, v) in enumerate(zip(path, path[1:])):
             edge_ids.append([u, v])
             distance += float(graph.lengths[u, v])
             travel_weight += float(graph.weights[u, v])
+            portal = getattr(graph, 'portal_edges', {}).get((u, v))
+            if portal:
+                transitions.append({'portalId': portal['id'], 'label': portal.get('label') or '换层入口',
+                    'fromSurface': portal['fromSurface'], 'toSurface': portal['toSurface'], 'index': start_index+index+2,
+                    'lnglat': frame.to_lnglat(portal['local']).tolist(), 'lengthM': portal['lengthM'],
+                    'travelWeightM': portal['travelWeightM']})
         distance += float(bundle['connectors'][a]+bundle['connectors'][b])
         travel_weight += float(bundle['connectorWeights'][a]+bundle['connectorWeights'][b])
         legs.append({'fromId': bundle['endpoints'][a]['id'], 'toId': bundle['endpoints'][b]['id'],
                      'startIndex': start_index, 'endIndex': len(positions)-1,
                      'distanceM': distance-before_distance, 'travelWeightM': travel_weight-before_weight})
+    sections = []
+    for index, surface in enumerate(position_surfaces):
+        if sections and sections[-1]['surfaceId'] == surface:
+            sections[-1]['endIndex'] = index
+        else:
+            data = graph.surface_info(surface)
+            sections.append({'surfaceId': surface, 'label': data['label'], 'level': data['level'],
+                             'startIndex': index, 'endIndex': index})
     return {'geometry': frame.to_lnglat(positions).tolist(), 'localGeometry': positions,
             'distanceM': distance, 'travelWeightM': travel_weight, 'nodeIds': node_ids, 'edgeIds': edge_ids,
-            'legs': legs}
+            'legs': legs, 'surfaceSections': sections, 'transitions': transitions}

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('automatic team benefits choose a count, survive reload and publish the chosen teams offline', async ({ page, context }) => {
   test.setTimeout(90000);

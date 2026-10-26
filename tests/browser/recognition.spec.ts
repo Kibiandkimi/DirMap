@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import fs from 'node:fs';
 
 test('original photo collage imports, finds every control and opens in its working pixel frame', async ({ page }) => {

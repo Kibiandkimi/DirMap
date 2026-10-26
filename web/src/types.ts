@@ -4,9 +4,13 @@ export interface Control {
   role?: 'control' | 'start' | 'finish' | 'start_finish';
   state: 'candidate' | 'accepted' | 'rejected'; calibrated?: boolean; lnglat?: Pixel | null;
   approachPixel?: Pixel | null; serviceBaseSec: number; servicePerPersonSec: number;
+  surfaceId?: string | null;
   confidence?: number;
 }
-export interface TerrainEdit { kind: 'open' | 'close'; pixels: Pixel[]; radiusPx: number; cost?: number }
+export interface TerrainEdit { kind: 'open' | 'close'; pixels: Pixel[]; radiusPx: number; cost?: number; surfaceId?: string; separateGround?: boolean }
+export interface Surface { id: string; label: string; level: number; accepted?: boolean }
+export interface Portal { id: string; label: string; fromSurface: string; toSurface: string; pixel: Pixel;
+  radiusPx: number; lengthM: number; costFactor: number; accepted: boolean }
 export interface Anchor { pixel: Pixel; lnglat: Pixel; purpose: 'fit' | 'validation' }
 export interface MapState {
   assetId: string; processed?: boolean; name: string; width: number; height: number; version: number;
@@ -15,10 +19,11 @@ export interface MapState {
   terrainStale?: boolean;
   sourceImage?: { encodedSize: Pixel; orientedSourceSize: Pixel; workingSize: Pixel; resized: boolean; exifOrientation: number; decoderReduction: number; pixelFrame: string; workingToSource: number[][] };
   controls: Control[]; edits: TerrainEdit[]; extent?: number[]; reviewed: boolean;
-  terrainFeatures?: { kind: 'stairs'; polygon: Pixel[]; visibleTreadCells: number; traversableTreadLines: number }[];
+  surfaces?: Surface[]; portals?: Portal[];
+  terrainFeatures?: { kind: 'stairs' | 'lower_level'; polygon: Pixel[]; visibleTreadCells?: number; traversableTreadLines?: number }[];
   registration: { affine: number[][]; source: Pixel[]; target: Pixel[]; triangles: number[][] } | null;
   quality: { state: string; method: string; fitCount: number; validationCount: number; medianErrorM: number | null; p95ErrorM: number | null; inheritedGeographicP95M?: number; validationScope: string; baseAssetId?: string } | null;
-  warnings: string[]; statistics: { buildingCandidates: number; waterCandidates: number; controlCandidates: number; forbiddenPixelFraction: number; staircaseCandidates?: number };
+  warnings: string[]; statistics: { buildingCandidates: number; waterCandidates: number; controlCandidates: number; forbiddenPixelFraction: number; staircaseCandidates?: number; lowerLevelHatchingPixels?: number };
   frame: { crs: string; origin: Pixel };
 }
 export interface Route {
@@ -26,6 +31,8 @@ export interface Route {
   distanceM: number; travelSec: number; serviceSec: number; waitSec?: number; durationSec: number; departureSec: number; finishSec: number;
   stops?: { controlId: string; arrivalSec: number; serviceSec: number; readySec: number; departureSec: number; waitSec: number; rendezvous: boolean }[];
   legs?: { fromId: string; toId: string; startIndex: number; endIndex: number; distanceM: number }[];
+  surfaceSections?: { surfaceId: string; label: string; level: number; startIndex: number; endIndex: number }[];
+  transitions?: { portalId: string; label: string; fromSurface: string; toSurface: string; index: number; lnglat: Pixel; lengthM: number; travelWeightM: number }[];
 }
 export interface Plan {
   id: string; status: string; routes: Route[]; version: number; graphHash: string; draft: boolean;
@@ -36,6 +43,7 @@ export interface Plan {
   rendezvous?: { controlId: string; allArrivedSec: number; departureSec: number }[];
   proof?: { algorithm: string; globalOptimalityProven: boolean; scope: string; elapsedSec: number; objectiveValue: number[] };
   teamRecommendation?: TeamRecommendation;
+  surfaces?: Surface[]; targetSurfaces?: Record<string, string>;
   continuation?: { id: string; token: string; version: number };
   refinement?: { sourcePlanId: string; budgetSec: number; before: PlanMetrics; after: PlanMetrics;
     improved: boolean; attempted: boolean; round: number };
@@ -43,6 +51,7 @@ export interface Plan {
 export interface PlanMetrics { latestFinishSec: number; totalFinishSec: number; totalDistanceM: number; totalWaitSec: number }
 export interface PlanRequest {
   assetId: string; version: number; controlIds: string[]; startPixel: Pixel; finishPixel: Pixel;
+  startSurfaceId?: string | null; finishSurfaceId?: string | null;
   mode: string; objective: string; mandatoryControlIds?: string[]; mandatoryOrder?: boolean;
   customRoutes?: { teamId: string; controlIds: string[] }[];
   teams: { id: string; people: number; speedMps: number; departureSec?: number }[];
@@ -72,6 +81,7 @@ export interface Job<T = unknown> {
 export interface Approach {
   controlId: string; targetPixel: Pixel; pixel: Pixel; method: string;
   automatic: boolean; offsetM: number; lnglat: Pixel; targetLnglat: Pixel;
+  surfaceId?: string;
 }
 export interface Catalog { maps: { id: string; name: string; filename: string; sha256?: string; processed: boolean; controls: number | null;
   courseDefaults?: { mode: string; mandatoryLabels: string[]; mandatoryOrder: boolean; description?: string } | null }[]; legends: { name: string; url: string }[] }

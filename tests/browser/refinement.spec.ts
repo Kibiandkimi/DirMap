@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('continue the chosen real-map team count, recover during computation, and publish exact refined routes offline', async ({ page, context }) => {
   test.setTimeout(180000);

@@ -8,7 +8,7 @@ import { installOffline, saveOfflineCourse } from './offline';
 import { parseCustomRoutes, routeToken } from './course-routes';
 import { teamComparisonHtml } from './team-comparison';
 import { canRefine, refinementHtml } from './plan-refinement';
-import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type AutoTeamRequest, type Catalog, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Route, type TerrainEdit } from './types';
+import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type AutoTeamRequest, type Catalog, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Portal, type Route, type Surface, type TerrainEdit } from './types';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const number = (id: string) => Number($<HTMLInputElement>(id).value);
@@ -26,6 +26,7 @@ let customDrafts: Record<string, string> = {};
 let restoredTeams: PlanRequest['teams'] | null = null;
 let customMapTeam: string | null = null;
 let startPixel: Pixel | null = null, finishPixel: Pixel | null = null;
+let startSurfaceId: string | null = null, finishSurfaceId: string | null = null;
 let mapAction: 'start' | 'finish' | 'anchor' | null = null;
 let pendingAnchor: Pixel | null = null;
 let anchors: Anchor[] = [];
@@ -43,6 +44,8 @@ let courseSuperseded = false;
 let navigationRoute: Route | null = null;
 let navigationRevision = 0;
 let navigating = false;
+let surfaceSelectionPending = false;
+let stateLoad = 0, overlayUpdate = 0;
 let resumeSensors = false;
 const offRoute = new OffRouteMonitor();
 
@@ -135,6 +138,22 @@ $('check-in').insertAdjacentHTML('afterend', '<button id="meeting-departure" cla
 $('objective').insertAdjacentHTML('afterend', '<label class="field-label" for="solver-budget">新方案计算预算</label><select id="solver-budget"><option value="5">快速规划 · 5 秒</option><option value="30">较长计算 · 30 秒</option></select>');
 // A different time budget does not invalidate the current route. Continuing
 // that route uses its own button and saved inputs below the result heading.
+$('pick-finish').insertAdjacentHTML('afterend', '<div id="endpoint-surfaces" class="hidden"><label class="field-label">起点层级<select id="start-surface"></select></label><label class="field-label">终点层级<select id="finish-surface"></select></label></div>');
+$('start-surface').onchange = () => { startSurfaceId = value('start-surface') || null; if ($<HTMLInputElement>('return-start').checked) finishSurfaceId = startSurfaceId; resetPlan(); renderEndpointSurfaces(); };
+$('finish-surface').onchange = () => { finishSurfaceId = value('finish-surface') || null; if (finishSurfaceId !== startSurfaceId) $<HTMLInputElement>('return-start').checked = false; resetPlan(); };
+$('student-team').insertAdjacentHTML('afterend', '<label id="student-surface-field" class="field-label hidden">当前位置层级<select id="student-surface"><option value="">重合位置需要确认</option></select></label>');
+$('student-surface').onchange = () => { surfaceSelectionPending = true; resetNavigation(); if (lastPosition && locationFresh) void updateNavigation(lastPosition, true); };
+
+function renderEndpointSurfaces() {
+  const surfaces = [{ id: 'ground', label: '地面', accepted: true }, ...(state?.surfaces ?? [])];
+  const html = '<option value="">未指定（重合位置须选择）</option>'+surfaces.map(s => `<option value="${e(s.id)}" ${s.accepted ? '' : 'disabled'}>${e(s.label)}${s.accepted ? '' : '（待核验）'}</option>`).join('');
+  if (!surfaces.some(s => s.id === startSurfaceId)) startSurfaceId = null;
+  if (!surfaces.some(s => s.id === finishSurfaceId)) finishSurfaceId = null;
+  $('endpoint-surfaces').classList.toggle('hidden', !(state?.surfaces?.length));
+  $('start-surface').innerHTML = html; $('finish-surface').innerHTML = html;
+  $<HTMLSelectElement>('start-surface').value = startSurfaceId ?? '';
+  $<HTMLSelectElement>('finish-surface').value = finishSurfaceId ?? '';
+}
 if (import.meta.env.PROD) {
   void installOffline();
   $('course-title').insertAdjacentHTML('afterend', '<p id="offline-status" class="muted" role="status"></p><button id="save-offline" class="text-button">保存本课供离线查看</button>');
@@ -214,7 +233,8 @@ function restorePlanFields(request: PlanRequest) {
   restoredTeams = request.teams;
   customDrafts = Object.fromEntries((request.customRoutes ?? []).map(r => [r.teamId, r.controlIds.map(id => routeToken(id, state!.controls)).join(' → ')]));
   startPixel = request.startPixel; finishPixel = request.finishPixel;
-  $<HTMLInputElement>('return-start').checked = JSON.stringify(startPixel) === JSON.stringify(finishPixel);
+  startSurfaceId = request.startSurfaceId ?? null; finishSurfaceId = request.finishSurfaceId ?? null;
+  $<HTMLInputElement>('return-start').checked = JSON.stringify(startPixel) === JSON.stringify(finishPixel) && startSurfaceId === finishSurfaceId;
   campusMap.setEndpoint('start', pixelToLngLat(startPixel, state)); campusMap.setEndpoint('finish', pixelToLngLat(finishPixel, state));
   $('pick-start').querySelector('span')!.textContent = '已恢复规划起点'; $('pick-finish').querySelector('span')!.textContent = '已恢复规划终点';
   groupPreview(); persistRules(); renderState();
@@ -226,7 +246,7 @@ async function resumeJob(pending: PendingJob) {
   rememberJob({ id: job.id });
   const result = await watchJob(job);
   catalog = await api('/api/catalog');
-  await loadState(job.assetId);
+  if (!await loadState(job.assetId)) return;
   if (['plan', 'auto_teams', 'choose_teams', 'refine_plan', 'confirm_plan'].includes(job.kind)) {
     const restored = result as Plan;
     if (restored.version !== state?.version || restored.routingSchema !== __DIRMAP_ROUTING_SCHEMA__ || state.registrationStale) throw new Error('这份路线所用地图或算法已更新，请重新生成路线');
@@ -342,8 +362,12 @@ function renderCatalog() {
   $('legend-links').innerHTML = catalog.legends.map(l => `<a href="${e(l.url)}" target="_blank" rel="noreferrer">${e(l.name.includes('aigc') ? '随图定向运动图例（含 AIGC 标记）' : l.name)} <span>↗</span></a>`).join('');
 }
 async function loadState(id: string, fit = true) {
-  activeId = id; const next = await api<MapState & { processed: boolean }>(`/api/maps/${id}`);
-  state = next.processed ? next : null; anchors = []; renderAnchors(); resetPlan(); startPixel = finishPixel = null;
+  // The latest map choice wins. A slower earlier response must not pair one
+  // map's controls with another map's ID, so both change together here.
+  const load = ++stateLoad;
+  const next = await api<MapState & { processed: boolean }>(`/api/maps/${id}`);
+  if (load !== stateLoad) return false;
+  activeId = id; state = next.processed ? next : null; anchors = []; renderAnchors(); resetPlan(); startPixel = finishPixel = null; startSurfaceId = finishSurfaceId = null;
   initializeRules();
   campusMap.setEndpoint('start', null); campusMap.setEndpoint('finish', null); mapAction = null; $('map-action-hint').classList.add('hidden');
   $('pick-start').querySelector('span')!.textContent = '在地图选起点'; $('pick-finish').querySelector('span')!.textContent = '在地图选终点';
@@ -351,21 +375,26 @@ async function loadState(id: string, fit = true) {
   const finishes = state?.controls.filter(c => ['finish', 'start_finish'].includes(c.role ?? '') && c.calibrated && c.state !== 'rejected') ?? [];
   if (state && starts.length === 1) {
     startPixel = starts[0].approachPixel ?? starts[0].pixel;
+    startSurfaceId = starts[0].surfaceId ?? null;
     campusMap.setEndpoint('start', pixelToLngLat(startPixel, state));
     $('pick-start').querySelector('span')!.textContent = '已识别原图起点';
   }
   if (state && finishes.length === 1) {
     finishPixel = finishes[0].approachPixel ?? finishes[0].pixel;
+    finishSurfaceId = finishes[0].surfaceId ?? null;
     campusMap.setEndpoint('finish', pixelToLngLat(finishPixel, state));
     $('pick-finish').querySelector('span')!.textContent = '已识别原图终点';
-    $<HTMLInputElement>('return-start').checked = JSON.stringify(startPixel) === JSON.stringify(finishPixel);
+    $<HTMLInputElement>('return-start').checked = JSON.stringify(startPixel) === JSON.stringify(finishPixel) && startSurfaceId === finishSurfaceId;
   }
-  renderCatalog(); renderState(); await updateOverlays(); if (fit && state?.extent) campusMap.fit(state.extent);
+  renderCatalog(); renderState(); await updateOverlays(); if (fit && state?.extent && load === stateLoad) campusMap.fit(state.extent);
+  return load === stateLoad;
 }
 async function updateOverlays() {
+  const update = ++overlayUpdate;
   let states = state ? [state] : [];
   if ($<HTMLInputElement>('stitch-maps').checked) {
     const all = await Promise.all(catalog.maps.filter(m => m.processed && m.id !== activeId).map(m => api<MapState>(`/api/maps/${m.id}`)));
+    if (update !== overlayUpdate) return;
     states = [...all, ...states];
   }
   campusMap.setOverlays(states, number('overlay-opacity') / 100, activeId);
@@ -373,11 +402,12 @@ async function updateOverlays() {
 }
 function renderState() {
   syncTaskButtons();
+  renderEndpointSurfaces();
   $('analysis-update').classList.toggle('hidden', !needsRecognitionUpdate() || !state?.registration || !!state?.registrationStale);
   renderMixedRules();
   renderCustomRoutes();
   groupPreview();
-  campusMap.setControls(state?.controls ?? []);
+  campusMap.setControls(state?.controls ?? [], state?.surfaces ?? []);
   $('export-map').setAttribute('href', `/api/maps/${activeId}/export`);
   $('release-badge').textContent = state?.reviewed ? '已核验' : '备课草稿';
   $('map-title').textContent = state?.name ?? catalog.maps.find(map => map.id === activeId)?.name ?? '深圳大学 · 粤海校区';
@@ -398,12 +428,12 @@ function renderState() {
   $('registration-quality').innerHTML = q ? `<span class="quality-label">${q.baseAssetId ? '共同地物对齐' : '标准地图地物匹配'}</span><div class="quality-values"><div><strong>${q.fitCount}</strong><span>拟合同名点</span></div><div><strong>${q.p95ErrorM?.toFixed(1) ?? '—'}<small> m</small></strong><span>留出误差 P95</span></div></div><p>${e(q.validationScope)}</p>${q.inheritedGeographicP95M ? `<p>基准图地理匹配 P95：${q.inheritedGeographicP95M.toFixed(1)} m</p>` : ''}` : '自动匹配证据不足，可添加同名点完成校准。';
   $('terrain-summary').innerHTML = `<strong>${Math.round(state.statistics.forbiddenPixelFraction * 100)}%</strong> 像素被识别为障碍候选<p>${state.edits.length} 处教师通行修正</p><p>${state.statistics.staircaseCandidates ?? 0} 处楼梯候选，可在原图中勾选查看；楼梯按较慢速度估计。</p><p>路线会检查每条边经过的工作图像素。未知层级及模糊的门洞仍需核验。</p>`;
 }
-async function saveEdits(controls: Control[], edits: TerrainEdit[]) {
+async function saveEdits(controls: Control[], edits: TerrainEdit[], surfaces?: Surface[], portals?: Portal[]) {
   if (!state) return;
   // Send mutable control fields only; server-derived positions are recomputed.
   const bodyControls = controls.map(c => ({ id: c.id, label: c.label, pixel: c.pixel, approachPixel: c.approachPixel ?? null,
-    role: c.role ?? 'control', radiusPx: c.radiusPx, required: c.required, state: c.state, serviceBaseSec: c.serviceBaseSec, servicePerPersonSec: c.servicePerPersonSec }));
-  state = await api<MapState>(`/api/maps/${activeId}`, { method: 'PATCH', body: JSON.stringify({ version: state.version, controls: bodyControls, edits }) });
+    surfaceId: c.surfaceId ?? null, role: c.role ?? 'control', radiusPx: c.radiusPx, required: c.required, state: c.state, serviceBaseSec: c.serviceBaseSec, servicePerPersonSec: c.servicePerPersonSec }));
+  state = await api<MapState>(`/api/maps/${activeId}`, { method: 'PATCH', body: JSON.stringify({ version: state.version, controls: bodyControls, edits, surfaces, portals }) });
   resetPlan(); renderState(); await updateOverlays(); notify('修改已保存，请重新生成路线');
 }
 function openEditor(mode: 'inspect' | 'close' | 'anchor' = 'inspect', id: string | null = null) {
@@ -437,6 +467,12 @@ function showPlan(result: Plan) {
     $('route-results').insertAdjacentHTML('afterbegin', `<div id="mixed-coverage-result" class="notice-card"><strong>已验证混合覆盖</strong><p>每队均到访 ${ids.map(id => e(state?.controls.find(c => c.id === id)?.label ?? id)).join('、')}；其余 ${result.coverage.sharedControlIds.length} 个点均已分配。${result.coverage.mandatoryOrder ? '必到点按指定顺序访问。' : '集合顺序由规划统一安排。'}</p></div>`);
   }
   if (result.proof?.scope) $('route-results').insertAdjacentHTML('afterbegin', `<p class="muted compact">${e(result.proof.scope)}</p>`);
+  const transitions = result.routes.flatMap(r => r.transitions ?? []);
+  if (transitions.length) {
+    const names = Object.fromEntries((result.surfaces ?? []).map(s => [s.id, s.label]));
+    const unique = [...new Map(transitions.map(t => [t.portalId+':'+t.fromSurface, t])).values()];
+    $('route-results').insertAdjacentHTML('afterbegin', `<div class="notice-card"><strong>路线含换层入口</strong>${unique.map(t => `<p>${e(t.label)}：${e(names[t.fromSurface])} → ${e(names[t.toSurface])}</p>`).join('')}<p class="muted compact">平面相交处不会直接换层。发布前请核对入口及各目标的到访层级。</p></div>`);
+  }
   if (result.teamRecommendation) {
     restoreAutoTeamFields(result.teamRecommendation.sourceRequest);
     persistRules();
@@ -462,7 +498,7 @@ function showPlan(result: Plan) {
 }
 function download(name: string, data: unknown) { const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
-$('map-cards').onclick = event => { const button = (event.target as HTMLElement).closest<HTMLElement>('[data-map]'); if (button && !busy) task(() => loadState(button.dataset.map!)); };
+$('map-cards').onclick = event => { const button = (event.target as HTMLElement).closest<HTMLElement>('[data-map]'); if (button && !busy) task(async () => { await loadState(button.dataset.map!); }); };
 $('process-current').onclick = () => task(async () => { await runJob(`/api/maps/${activeId}/process`); catalog = await api('/api/catalog'); await loadState(activeId); notify('识别与配准完成，请核对候选点和通行区域'); });
 $('process-all').onclick = () => task(async () => { for (const map of catalog.maps) { await runJob(`/api/maps/${map.id}/process`); } catalog = await api('/api/catalog'); $<HTMLInputElement>('stitch-maps').checked = true; await loadState(activeId); });
 $('upload-button').onclick = () => $<HTMLInputElement>('upload-input').click();
@@ -472,7 +508,7 @@ for (const id of ['people', 'teams', 'stagger', 'speed']) $<HTMLInputElement>(id
 $<HTMLSelectElement>('objective').onchange = () => { resetPlan(); persistRules(); };
 $<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = []; customMapTeam = null; $('map-action-hint').classList.add('hidden'); resetPlan(); persistRules(); renderState(); };
 for (const id of ['pick-start', 'pick-finish']) $(id).onclick = () => { if (!state?.registration) { notify('请先完成配准'); return; } mapAction = id === 'pick-start' ? 'start' : 'finish'; $('map-action-hint').textContent = `点击地图中可通行的位置，设置${mapAction === 'start' ? '起点' : '终点'}`; $('map-action-hint').classList.remove('hidden'); setMobilePanel(false); };
-$<HTMLInputElement>('return-start').onchange = () => { if ($<HTMLInputElement>('return-start').checked) { finishPixel = startPixel; if (startPixel && state) campusMap.setEndpoint('finish', pixelToLngLat(startPixel, state)); } resetPlan(); };
+$<HTMLInputElement>('return-start').onchange = () => { if ($<HTMLInputElement>('return-start').checked) { finishPixel = startPixel; finishSurfaceId = startSurfaceId; if (startPixel && state) campusMap.setEndpoint('finish', pixelToLngLat(startPixel, state)); } resetPlan(); renderEndpointSurfaces(); };
 campusMap.onClick = (lnglat, id) => {
   if (customMapTeam && state && !mapAction) {
     const control = state.controls.find(c => c.id === id && c.state !== 'rejected' && (c.role ?? 'control') === 'control');
@@ -559,7 +595,9 @@ function planInputs(): Omit<PlanRequest, 'teams' | 'customRoutes'> {
   const controlIds = state.controls.filter(c => c.required && c.state !== 'rejected').map(c => c.id); if (!controlIds.length) throw new Error('请至少选择一个目标点');
   const rules = rulePayload();
   if (value('course-mode') === 'mixed_coverage' && (missingPresetLabels.length || !rules.mandatoryControlIds.length)) throw new Error('请明确选择所有每队必到点后再规划');
-  return { assetId: activeId, version: state.version, controlIds, startPixel, finishPixel: finish, mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget') };
+  return { assetId: activeId, version: state.version, controlIds, startPixel, finishPixel: finish, startSurfaceId,
+    finishSurfaceId: $<HTMLInputElement>('return-start').checked ? startSurfaceId : finishSurfaceId,
+    mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget') };
 }
 $('plan-button').onclick = () => task(async () => {
   const input = planInputs();
@@ -705,6 +743,8 @@ function waitingMeeting(): Control | undefined {
 function renderStudent() {
   const route = studentRoute(); if (!route) return;
   $('student-overview').innerHTML = `<div class="quality-values"><div><strong>${distance(route.distanceM)}</strong><span>全程距离</span></div><div><strong>${Math.round(route.durationSec / 60)}<small> 分钟</small></strong><span>预计用时（含打点与等待）</span></div></div><p>${route.people} 人同行${route.departureSec ? ` · 开课后 ${route.departureSec} 秒出发` : ' · 统一出发'}</p>`;
+  const surfaceNames = Object.fromEntries((plan?.surfaces ?? []).map(s => [s.id, s.label]));
+  if (route.transitions?.length) $('student-overview').insertAdjacentHTML('beforeend', `<div id="student-transitions" class="notice-card"><strong>按标记换层</strong>${route.transitions.map(t => `<p>${e(t.label)}：${e(surfaceNames[t.fromSurface])} → ${e(surfaceNames[t.toSurface])}</p>`).join('')}<p class="muted compact">道路在屏幕上重合不代表互通。换层后请确认当前位置层级。</p></div>`);
   const requiredByAll = new Set(plan?.coverage?.mandatoryControlIds ?? []);
   if (plan?.coverage?.mandatoryControlIds.length) {
     const labels = [...requiredByAll].map(id => e(studentControls.find(c => c.id === id)?.label ?? id));
@@ -715,8 +755,10 @@ function renderStudent() {
   let metres: number | null = null;
   if (next?.lnglat && locationFresh && lastPosition && Date.now() - lastPosition.timestamp < 10000) { const lat = next.lnglat[1] * Math.PI / 180; metres = Math.hypot((next.lnglat[0] - lastPosition.coords.longitude) * 111320 * Math.cos(lat), (next.lnglat[1] - lastPosition.coords.latitude) * 110700); }
   const waiting = waitingMeeting();
+  const nextSurface = plan?.targetSurfaces?.[waiting?.id ?? next?.id ?? 'finish'];
   const plannedWait = waiting ? route.stops?.find(s => s.controlId === waiting.id)?.waitSec : null;
   $('next-control').innerHTML = waiting ? `<span class="next-label">集合点 ${e(waiting.label)}</span><strong>等待全班集合</strong><p>${plannedWait ? `计划等待 ${minutes(plannedWait)}。` : ''}请现场确认所有队伍到齐，再统一出发。</p>` : next ? `<span class="next-label">目标 ${e(next.label)}</span><strong>${metres === null ? '等待定位' : `直线 ${distance(metres)}`}</strong><p>${requiredByAll.has(next.id) ? '这是全班集合点，到达后须等待所有队伍。' : '沿地图中的队伍路线前往'}</p>` : '<span class="next-label">所有目标已完成</span><strong>前往课程终点</strong><p>仍需按路线返回终点。</p>';
+  if ((plan?.surfaces?.length ?? 0) > 1 && nextSurface) $('next-control').insertAdjacentHTML('beforeend', `<p class="target-surface">到访层级：${e(surfaceNames[nextSurface] ?? '请核对')}</p>`);
   $<HTMLButtonElement>('check-in').disabled = !next || !!waiting || courseSuperseded;
   $('check-in').classList.toggle('hidden', !!waiting);
   $('meeting-departure').classList.toggle('hidden', !waiting);
@@ -727,17 +769,19 @@ function resetNavigation() {
   navigationRevision++; navigationRoute = null; offRoute.reset();
   campusMap.setRoutes(plan?.routes ?? [], value('student-team'));
 }
-async function updateNavigation(position: GeolocationPosition) {
+async function updateNavigation(position: GeolocationPosition, force = false) {
   const route = studentRoute();
-  if (!route || !courseId || courseSuperseded || !follow || navigating || waitingMeeting()) return;
+  force ||= surfaceSelectionPending;
+  if (!route || !courseId || courseSuperseded || (!follow && !force) || navigating || waitingMeeting()) return;
   const lnglat: Pixel = [position.coords.longitude, position.coords.latitude];
-  if (!offRoute.update({ lnglat, accuracy: position.coords.accuracy, timestamp: position.timestamp }, remainingPath(navigationRoute ?? route, completed), Date.now())) return;
+  if (!force && !offRoute.update({ lnglat, accuracy: position.coords.accuracy, timestamp: position.timestamp }, remainingPath(navigationRoute ?? route, completed), Date.now())) return;
   const revision = navigationRevision, teamId = route.teamId;
   const completedControlIds = route.controlIds.filter(id => completed.has(id));
+  surfaceSelectionPending = false;
   navigating = true; $('location-status').textContent = '已偏离路线，正在计算返回路径…';
   try {
     const result = await api<{ status: string; route: Route | null; unresolved?: { message: string }[] }>(`/api/releases/${courseId}/navigate`, {
-      method: 'POST', signal: AbortSignal.timeout(30000), body: JSON.stringify({ teamId, lnglat, accuracyM: position.coords.accuracy, timestampMs: position.timestamp, completedControlIds }),
+      method: 'POST', signal: AbortSignal.timeout(30000), body: JSON.stringify({ teamId, lnglat, accuracyM: position.coords.accuracy, timestampMs: position.timestamp, completedControlIds, surfaceId: value('student-surface') || null }),
     });
     if (revision !== navigationRevision || courseSuperseded || teamId !== studentRoute()?.teamId) return;
     if (result.status !== 'READY' || !result.route) throw new Error(result.unresolved?.[0]?.message ?? '当前位置没有可确认的合法连接');
@@ -779,9 +823,12 @@ async function boot() {
       throw new Error('这份课程的地图或通行状态已更新，请向教师获取新链接');
     }
     plan = course.plan; studentControls = course.controls; $('course-title').textContent = course.title;
+    const surfaces = plan.surfaces ?? [{ id: 'ground', label: '地面', level: 0 }];
+    $('student-surface-field').classList.toggle('hidden', surfaces.length < 2);
+    $('student-surface').innerHTML = '<option value="">重合位置需要确认</option>'+surfaces.map(s => `<option value="${e(s.id)}">${e(s.label)}</option>`).join('');
     $('release-badge').textContent = course.offline ? '离线 · 状态未更新' : '课堂导航';
     $('student-team').innerHTML = plan.routes.map(r => `<option value="${e(r.teamId)}">${e(r.teamId)} · ${r.people} 人</option>`).join('');
-    campusMap.setReleaseOverlay(courseId, course.extent, .65); campusMap.setControls(course.controls); campusMap.setApproaches(plan.approaches ?? []); $<HTMLSelectElement>('student-team').dispatchEvent(new Event('change'));
+    campusMap.setReleaseOverlay(courseId, course.extent, .65); campusMap.setControls(course.controls, plan.surfaces); campusMap.setApproaches(plan.approaches ?? []); $<HTMLSelectElement>('student-team').dispatchEvent(new Event('change'));
     if (import.meta.env.PROD) {
       if (course.offline) $('offline-status').textContent = '正在使用已保存课程；联网后检查教师更新。';
       else void cacheStudentCourse();
@@ -798,10 +845,12 @@ async function boot() {
       } catch { $('release-badge').textContent = '离线 · 状态未更新'; }
     }, 15000);
   } else {
+    // Resume only what was pending when this page opened. A submission made
+    // here in the meantime reports its own unconfirmed state instead.
+    const pending = pendingJob();
     catalog = await api<Catalog>('/api/catalog'); if (catalog.maps.length) activeId = catalog.maps[0].id; renderCatalog(); await loadState(activeId);
     await renderJobs();
-    const pending = pendingJob();
-    if (pending) await task(() => resumeJob(pending));
+    if (pending && JSON.stringify(pendingJob()) === JSON.stringify(pending)) await task(() => resumeJob(pending));
   }
 }
 async function cacheStudentCourse() {

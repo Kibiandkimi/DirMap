@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('obsolete recognition can be refreshed without losing calibration or teacher edits, then planned', async ({ page }) => {
   test.setTimeout(180000);

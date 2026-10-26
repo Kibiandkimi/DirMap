@@ -111,3 +111,9 @@ dialog { border: 1px solid #dde6d4; border-radius: 16px; box-shadow: 0 30px 100p
 .choose-count { min-height: 40px; border: 1px solid #bdd0bb; border-radius: 7px; padding: 6px 9px; background: #fff; color: #29583f; cursor: pointer; white-space: nowrap; }
 .choose-count:disabled { opacity: 1; background: #e1ecdF; cursor: default; }
 .count-recommendation { display: block; color: #966226; margin-top: 3px; font-size: 10px; }
+.layer-settings { margin: 0 20px 12px; padding: 10px; border: 1px solid #dce4d6; border-radius: 8px; }
+.layer-settings summary { cursor: pointer; color: #31583f; }
+.layer-settings .editor-toolbar { padding: 8px 0; gap: 8px; }
+.layer-settings input[type="number"] { width: 80px; }
+.layer-settings input[type="text"], .layer-settings input:not([type]) { max-width: 200px; }
+.surface-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin: 7px 0; }

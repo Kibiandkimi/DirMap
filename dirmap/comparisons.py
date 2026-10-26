@@ -46,6 +46,7 @@ def model_inputs(state, control_ids):
     controls = {c['id']: c for c in state['controls']}
     return {'sourceHash': state['sourceHash'], 'size': [state['width'], state['height']],
             'registration': state['registration'], 'frame': state['frame'], 'edits': state['edits'],
+            'surfaces': state.get('surfaces', []), 'portals': state.get('portals', []),
             'controls': [{'id': identifier, 'pixel': [float(v)+0. for v in controls[identifier]['pixel']],
                           'radiusPx': float(controls[identifier].get('radiusPx', 15))+0.,
                           'role': controls[identifier].get('role') or 'control',
@@ -58,7 +59,8 @@ def freeze_bundle(bundle):
     return {'matrix': bundle['matrix'].tolist(), 'nodes': list(map(int, bundle['nodes'])),
             'world': bundle['world'].tolist(), 'connectors': bundle['connectors'].tolist(),
             'connectorWeights': bundle['connectorWeights'].tolist(),
-            'pixels': [e.get('approachPixel') or e['pixel'] for e in bundle['endpoints']]}
+            'pixels': [e.get('approachPixel') or e['pixel'] for e in bundle['endpoints']],
+            'surfaces': [e.get('surfaceId', 'ground') for e in bundle['endpoints']]}
 
 
 def route_metrics(result):
@@ -132,7 +134,8 @@ def verify_and_restore(saved, state, graph, bundle, implementation):
         raise ValueError('地图、点位或耗时设置已变化，请重新比较')
     frozen = content['bundle']
     pixels = [e.get('approachPixel') or e['pixel'] for e in bundle['endpoints']]
-    if list(map(int, bundle['nodes'])) != frozen['nodes'] or pixels != frozen['pixels']:
+    if (list(map(int, bundle['nodes'])) != frozen['nodes'] or pixels != frozen['pixels']
+            or [e.get('surfaceId', 'ground') for e in bundle['endpoints']] != frozen.get('surfaces', ['ground']*len(pixels))):
         raise ValueError('到访位置已变化，请重新比较')
     matrix = np.asarray(frozen['matrix'], dtype=float)
     if bundle['matrix'].shape != matrix.shape or not np.allclose(bundle['matrix'], matrix, rtol=0, atol=1e-7):

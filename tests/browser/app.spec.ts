@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import fs from 'node:fs';
 
 test('three real maps, source editor, local overlays and independent review state', async ({ page }) => {

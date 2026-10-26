@@ -14,6 +14,7 @@ from .reference import polygon_properties
 from .symbols import classify_course_symbols, course_ink_mask
 from .overprint import annotation_mask, restore, continue_roof_boundaries
 from .stairs import detect_stairs
+from .hatching import lower_level_hatching
 from .protocol import TERRAIN_SCHEMA
 from .images import read_map_image
 
@@ -351,6 +352,12 @@ def analyze(image, labeler=None):
     restrictions = purple_restrictions(masks['purple'], controls, annotations)
     recovered, hidden, continued_barriers = restore(image, masks['purple'], annotations, restrictions, masks['black'], controls)
     terrain_masks = colour_masks(recovered)
+    lower_stripes, lower_area, lower_features = lower_level_hatching(recovered, controls)
+    # Only traversal changes. Registration keeps the full building outline,
+    # which is what a reference footprint over a passable lower level shows.
+    if lower_stripes.any():
+        masks['building'][lower_stripes > 0] = 0
+        terrain_masks['building'][lower_stripes > 0] = 0
     # Preserve observed obstacle pixels, while restoring the hidden portions
     # of water/roofs/walls rather than turning purple ink into free ground.
     for kind in ('water', 'building', 'dark_green', 'olive', 'black'):
@@ -372,12 +379,13 @@ def analyze(image, labeler=None):
     buildings = cv2.dilate(support, np.ones((3, 3), np.uint8))
     continued_roofs = continue_roof_boundaries(image, hidden, masks['building'], controls)
     buildings |= continued_roofs
+    buildings[lower_stripes > 0] = 0
     # A black roof outline blended with yellow paving is dark brown in the
     # scan, not neutral black. Retain that one-pixel boundary where a solid
     # roof supports it, without filling bright gates or light-grey porticos.
     _, terrain_s, terrain_v = cv2.split(cv2.cvtColor(recovered, cv2.COLOR_BGR2HSV))
     roof_edge = ((terrain_v < 165) & (terrain_s < 150)
-                 & (cv2.dilate(buildings, np.ones((3, 3), np.uint8)) > 0))
+                 & (cv2.dilate(buildings, np.ones((3, 3), np.uint8)) > 0) & (lower_stripes == 0))
     buildings[roof_edge] = 255
     water_regions = water_obstacles(terrain_masks['water'])
     hard = cv2.bitwise_or(buildings, water_regions)
@@ -399,12 +407,13 @@ def analyze(image, labeler=None):
     costs[stairs > 0] = 1.7
     costs[hard > 0] = 0
     return {'width': width, 'height': height, 'controls': controls, 'features': features,
-            'terrainFeatures': [{'kind': 'stairs', **feature} for feature in stair_features],
+            'terrainFeatures': [{'kind': 'stairs', **feature} for feature in stair_features]+lower_features,
             'masks': masks, 'blocked': hard, 'costs': costs,
             'semantics': {'building': buildings > 0, 'water': water_regions > 0,
                           'point_ink': terrain_masks['black'] > 0, 'vegetation': terrain_masks['dark_green'] > 0,
                           'restricted': (restrictions > 0) | (terrain_masks['olive'] > 0),
                           'stairs': stairs > 0,
+                          'lower_level': lower_area > 0,
                           'course_ink': hidden > 0, 'uncertain_ink': unknown_ink > 0},
             'statistics': {'buildingCandidates': sum(f['kind']=='building' for f in features),
                            'waterCandidates': sum(f['kind']=='water' for f in features),
@@ -417,6 +426,7 @@ def analyze(image, labeler=None):
                            'staircaseCandidates': len(stair_features),
                            'stairTreadPixels': int(np.count_nonzero(treads)),
                            'pavedBoundaryPixels': int(np.count_nonzero(boundaries)),
+                           'lowerLevelHatchingPixels': int(np.count_nonzero(lower_stripes)),
                            **({'ocr': ocr} if ocr else {})}, 'terrainSchema': TERRAIN_SCHEMA,
             'warnings': ['自动提取结果待核验：细墙、门洞、桥隧层级及紫色禁区可能存在歧义。',
                          '控制点编号需核对；圈心和到访位置分别保存。']}

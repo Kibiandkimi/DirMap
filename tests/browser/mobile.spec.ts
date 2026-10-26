@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 640 }, { width: 844, height: 390 }, { width: 915, height: 412 }]) {
   test(`map stays primary and editing is reachable at ${viewport.width} x ${viewport.height}`, async ({ page }) => {
