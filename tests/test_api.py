@@ -548,3 +548,14 @@ def test_student_rejoin_rejects_skipped_controls_stale_fixes_and_wall_snapping(c
     assert finished['route']['serviceSec'] == 0
     client.patch('/api/maps/szu-1', json={'version': 1, 'edits': []})
     assert client.post(url, json=navigation_request(reg, [28, 15])).status_code == 409
+
+
+def test_job_cancellation_is_a_protected_teacher_action(client, monkeypatch):
+    assert client.post('/api/jobs/0123456789abcdef/cancel').status_code == 404
+    job = client.post('/api/plans', json=request()).json()
+    monkeypatch.setenv('DIRMAP_ADMIN_TOKEN', 'test-only-token')
+    assert client.post(f"/api/jobs/{job['id']}/cancel").status_code == 401
+    cancelled = client.post(f"/api/jobs/{job['id']}/cancel", headers={'X-DirMap-Token': 'test-only-token'}).json()
+    assert cancelled['id'] == job['id'] and 'result' not in cancelled
+    # A tiny plan may already have finished; otherwise it stops or is marked.
+    assert cancelled['state'] == 'succeeded' or cancelled.get('cancelled') or cancelled.get('cancelRequested')

@@ -52,7 +52,7 @@ const offRoute = new OffRouteMonitor();
 document.querySelector('#app')!.innerHTML = `
 <header class="app-header"><a href="/" class="brand" aria-label="DirMap 首页"><span class="brand-mark"><svg viewBox="0 0 30 32" aria-hidden="true"><path d="M15 2 28 26 15 20 2 26Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M15 9v11" stroke="currentColor" stroke-width="2"/></svg></span><span>DirMap<small>深大定向</small></span></a><div class="header-context"><span class="context-dot"></span>深圳大学 · 粤海校区<span class="header-divider"></span><span id="header-mode">课程工作台</span></div><div class="header-actions"><span id="release-badge" class="status-tag">备课草稿</span><button id="open-help" class="text-button">使用说明</button></div></header>
 <div class="workspace"><aside class="sidebar" id="teacher-panel"><div class="sidebar-intro"><p class="eyebrow">ORIENTEERING CLASSROOM</p><h1>让每一次出发<br>都有方向<span>。</span></h1><p>校准地图，安排路线，一起探索校园。</p></div>
-<section class="source-section"><div class="section-title"><h2>课程地图</h2><button id="upload-button" class="text-button">＋ 导入</button><input id="upload-input" type="file" accept="image/jpeg,image/png" hidden></div><div id="map-cards" class="map-cards"></div><div class="source-actions"><button id="process-current" class="primary-button">自动识别与配准</button><button id="process-all" class="soft-button">处理全部</button></div><div id="job-status" class="job-status hidden" role="status"><div><span id="job-message">准备中</span><span id="job-percent">0%</span></div><progress id="job-progress" max="100" value="0"></progress></div><div id="map-summary" class="summary-strip">选择地图开始准备课程</div></section>
+<section class="source-section"><div class="section-title"><h2>课程地图</h2><button id="upload-button" class="text-button">＋ 导入</button><input id="upload-input" type="file" accept="image/jpeg,image/png" hidden></div><div id="map-cards" class="map-cards"></div><div class="source-actions"><button id="process-current" class="primary-button">自动识别与配准</button><button id="process-all" class="soft-button">处理全部</button></div><div id="job-status" class="job-status hidden" role="status"><div><span id="job-message">准备中</span><span id="job-percent">0%</span></div><progress id="job-progress" max="100" value="0"></progress><button id="cancel-job" class="text-button hidden">取消任务</button></div><div id="map-summary" class="summary-strip">选择地图开始准备课程</div></section>
 <nav class="tabs" aria-label="工作区域"><button data-tab="course" class="active">课程设置</button><button data-tab="registration">地图配准</button><button data-tab="terrain">通行核验</button></nav>
 <section id="tab-course" class="tab-content"><div class="section-title"><h2>路线规则</h2><span class="step-number">01</span></div><label class="field-label" for="course-mode">访问方式</label><select id="course-mode"><option value="all_visit">每队访问全部目标</option><option value="split_coverage">全班分担全部目标</option><option value="fixed_order">按列表顺序访问</option></select><div class="form-grid"><label>总人数<input id="people" type="number" value="20" min="1" max="500"></label><label>队伍数<input id="teams" type="number" value="4" min="1" max="30"></label><label>步行 / 跑速 <span>m/s</span><input id="speed" type="number" value="1.4" step="0.1" min="0.2" max="10"></label><label>错峰间隔 <span>秒</span><input id="stagger" type="number" value="0" min="0" max="3600"></label></div><p id="group-preview" class="muted compact">每队 5 人 · 同时出发</p><label class="field-label" for="objective">优化目标</label><select id="objective"><option value="min_max_finish_then_sum">优先让最后一队更早完成</option><option value="min_total_time">全班总耗时最短</option></select>
 <div class="section-title section-gap"><h2>起终点与目标</h2><span class="step-number">02</span></div><div class="endpoint-row"><button id="pick-start" class="endpoint-button"><i class="endpoint-dot start"></i><span>在地图选起点</span></button><button id="pick-finish" class="endpoint-button"><i class="endpoint-dot finish"></i><span>在地图选终点</span></button></div><label class="check-label"><input id="return-start" type="checkbox" checked>回到起点结束</label><div class="control-heading"><span id="control-count">尚未识别目标</span><button id="edit-controls" class="text-button">原图校核 ↗</button></div><p class="muted compact">勾选本次课程目标；固定顺序模式可上下调整。</p><div id="control-list" class="control-list"><div class="empty-small">识别后，控制圈会显示在这里。</div></div><button id="plan-button" class="primary-button wide plan-button">生成队伍路线 <span>→</span></button><div id="plan-errors" role="status"></div><div id="route-results"></div>
@@ -196,25 +196,41 @@ async function runJob<T>(url: string, body?: object): Promise<T> {
   rememberJob({ id: job.id, requestId });
   return watchJob(job);
 }
+let watchedJob: string | null = null;
 async function watchJob<T>(initial: Job<T>): Promise<T> {
   let job = initial;
   $('job-status').classList.remove('hidden');
-  for (;;) {
-    $('job-message').textContent = job.message ?? '排队处理中'; $('job-percent').textContent = `${job.progress}%`; $<HTMLProgressElement>('job-progress').value = job.progress;
-    if (job.state === 'succeeded') { rememberJob(null); $('job-status').classList.add('hidden'); return job.result as T; }
-    if (job.state === 'failed') { rememberJob(null); throw new Error(job.message ?? '处理失败'); }
-    await new Promise(resolve => setTimeout(resolve, 700));
-    // A connection loss doesn't mean the server job failed or should restart.
-    try { job = await api(`/api/jobs/${job.id}`); }
-    catch (error) { if (error instanceof ApiError && error.status === 404) { rememberJob(null); throw error; } $('job-message').textContent = '连接中断，正在重连原任务…'; await new Promise(resolve => setTimeout(resolve, 2500)); }
+  watchedJob = job.id;
+  try {
+    for (;;) {
+      $('job-message').textContent = job.message ?? '排队处理中'; $('job-percent').textContent = `${job.progress}%`; $<HTMLProgressElement>('job-progress').value = job.progress;
+      $('cancel-job').classList.toggle('hidden', !['queued', 'running'].includes(job.state) || !!job.cancelRequested);
+      if (job.state === 'succeeded' && job.resultPruned) { rememberJob(null); throw new Error('这条记录的计算结果已按保留期限清理，请重新生成'); }
+      if (job.state === 'succeeded') { rememberJob(null); $('job-status').classList.add('hidden'); return job.result as T; }
+      if (job.state === 'failed') { rememberJob(null); throw new Error(job.cancelled ? '任务已取消，原有数据保持不变' : job.message ?? '处理失败'); }
+      await new Promise(resolve => setTimeout(resolve, 700));
+      // A connection loss doesn't mean the server job failed or should restart.
+      try { job = await api(`/api/jobs/${job.id}`); }
+      catch (error) { if (error instanceof ApiError && error.status === 404) { rememberJob(null); throw error; } $('job-message').textContent = '连接中断，正在重连原任务…'; await new Promise(resolve => setTimeout(resolve, 2500)); }
+    }
+  } finally {
+    if (watchedJob === job.id) { watchedJob = null; $('cancel-job').classList.add('hidden'); }
   }
 }
+$('cancel-job').onclick = async () => {
+  if (!watchedJob) return;
+  const button = $<HTMLButtonElement>('cancel-job'); button.disabled = true;
+  try { const job = await api<Job>(`/api/jobs/${encodeURIComponent(watchedJob)}/cancel`, { method: 'POST' }); $('job-message').textContent = job.message ?? '正在取消'; button.classList.toggle('hidden', !!job.cancelRequested || !['queued', 'running'].includes(job.state)); }
+  catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
+  finally { button.disabled = false; }
+};
 async function renderJobs() {
   if (courseId) return;
   const jobs = await api<Job[]>('/api/jobs');
   const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线' };
   const states: Record<string, string> = { queued: '排队中', running: '处理中', succeeded: '已完成', failed: '未完成' };
-  $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(states[job.state])} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
+  const status = (job: Job) => job.cancelled ? '已取消' : job.cancelRequested ? '正在取消' : job.resultPruned ? '结果已清理' : states[job.state];
+  $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(status(job))} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
 }
 function restorePlanFields(request: PlanRequest) {
   if (!state) return;

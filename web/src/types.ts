@@ -77,6 +77,7 @@ export interface TeamRecommendation {
 export interface Job<T = unknown> {
   id: string; kind: string; assetId: string; state: 'queued' | 'running' | 'succeeded' | 'failed';
   progress: number; message?: string; createdAt: number; recovered?: boolean; attempts: number; result?: T;
+  error?: string; cancelled?: boolean; cancelRequested?: boolean; resultPruned?: boolean;
 }
 export interface Approach {
   controlId: string; targetPixel: Pixel; pixel: Pixel; method: string;

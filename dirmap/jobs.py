@@ -17,6 +17,11 @@ import uuid
 
 
 log = logging.getLogger(__name__)
+CANCELLED = 'JobCancelled'
+
+
+class JobCancelled(Exception):
+    """Raised at the next stage boundary after a teacher cancels a job."""
 
 
 def encode(value):
@@ -24,12 +29,15 @@ def encode(value):
 
 
 class JobQueue:
-    def __init__(self, data, handler, poll_sec=.25):
+    def __init__(self, data, handler, poll_sec=.25, maintenance=None, maintenance_interval_sec=6*3600):
         self.root = Path(data)/'jobs'
         self.root.mkdir(parents=True, exist_ok=True)
         self.path = self.root/'queue.sqlite3'
         self.handler = handler
         self.poll_sec = poll_sec
+        self.maintenance = maintenance
+        self.maintenance_interval_sec = maintenance_interval_sec
+        self.last_maintenance = None
         self.stop = threading.Event()
         self.wake = threading.Event()
         self.thread = None
@@ -53,6 +61,14 @@ class JobQueue:
                     kind TEXT NOT NULL, asset_id TEXT NOT NULL, payload TEXT NOT NULL
                 );
             ''')
+            # Older databases gain the cancellation and retention markers.
+            # Another server process may be upgrading the same file.
+            db.execute('BEGIN IMMEDIATE')
+            columns = {row['name'] for row in db.execute('PRAGMA table_info(jobs)')}
+            for column in ('cancel_requested', 'result_pruned'):
+                if column not in columns:
+                    db.execute(f'ALTER TABLE jobs ADD COLUMN {column} INTEGER NOT NULL DEFAULT 0')
+            db.execute('COMMIT')
 
     @contextmanager
     def database(self):
@@ -77,6 +93,12 @@ class JobQueue:
                   'recovered': bool(row['recovered'])}
         if row['error']:
             result['error'] = row['error']
+        if row['error'] == CANCELLED:
+            result['cancelled'] = True
+        elif row['cancel_requested'] and row['state'] in ('queued', 'running'):
+            result['cancelRequested'] = True
+        if row['result_pruned']:
+            result['resultPruned'] = True
         if with_result and row['result'] is not None:
             result['result'] = json.loads(row['result'])
         return result
@@ -120,6 +142,11 @@ class JobQueue:
                 row = db.execute('SELECT * FROM jobs WHERE id=?', (submission['job_id'],)).fetchone()
             else:
                 row = db.execute("SELECT * FROM jobs WHERE input_hash=? AND state IN ('queued','running')", (fingerprint,)).fetchone()
+                if row is not None and row['cancel_requested']:
+                    # Submitting identical work again means its result is
+                    # still wanted; joining it must not inherit the cancel.
+                    db.execute("UPDATE jobs SET cancel_requested=0,message='继续处理中' WHERE id=?", (row['id'],))
+                    row = db.execute('SELECT * FROM jobs WHERE id=?', (row['id'],)).fetchone()
                 if row is None:
                     job_id = uuid.uuid4().hex[:16]
                     db.execute('''INSERT INTO jobs(id,kind,asset_id,input_hash,payload,inputs,state,created_at)
@@ -132,6 +159,60 @@ class JobQueue:
             db.execute('COMMIT')
         self.wake.set()
         return self.public(row)
+
+    def cancel(self, job_id):
+        """Stop queued work now and running work at its next stage boundary.
+
+        A result committed before that boundary still succeeds: the map has
+        already changed, so reporting the job as cancelled would be false.
+        A recovered job may have committed before the restart; its handler
+        reconciles the receipt first, then observes the request.
+        """
+        with self.database() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone()
+            if row is not None and row['state'] == 'queued' and not row['recovered']:
+                db.execute("""UPDATE jobs SET state='failed',message='已取消',error=?,finished_at=? WHERE id=?""",
+                           (CANCELLED, time.time(), job_id))
+            elif row is not None and row['state'] in ('queued', 'running'):
+                db.execute("""UPDATE jobs SET cancel_requested=1,message='正在取消，当前步骤结束后停止'
+                              WHERE id=?""", (job_id,))
+            row = db.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone()
+            db.execute('COMMIT')
+        return self.public(row, with_result=False)
+
+    def compact(self, keep_per_asset=20, keep_sec=30*86400, now=None):
+        """Drop old result bodies; metadata stays visible in the history.
+
+        The newest finished results of each map are kept regardless of age.
+        Published courses copy their plan, so they never depend on these.
+        """
+        now = time.time() if now is None else now
+        with self.database() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rows = db.execute("""SELECT id FROM (SELECT id, finished_at, ROW_NUMBER() OVER (
+                                     PARTITION BY asset_id ORDER BY finished_at DESC, id) AS position
+                                 FROM jobs WHERE state IN ('succeeded','failed') AND result IS NOT NULL)
+                                 WHERE position > ? AND finished_at < ?""", (keep_per_asset, now-keep_sec)).fetchall()
+            db.executemany('UPDATE jobs SET result=NULL, result_pruned=1 WHERE id=?', [(row['id'],) for row in rows])
+            db.execute('COMMIT')
+            free = db.execute('PRAGMA freelist_count').fetchone()[0]*db.execute('PRAGMA page_size').fetchone()[0]
+            if free > 8*1024*1024:
+                try:
+                    db.execute('VACUUM')
+                except sqlite3.OperationalError:
+                    pass  # a reader holds the file; the space is reused or freed next time
+        return len(rows)
+
+    def maintain(self):
+        # Called only by the live worker between jobs.
+        self.last_maintenance = time.monotonic()
+        try:
+            self.compact()
+            if self.maintenance is not None:
+                self.maintenance()
+        except Exception:
+            log.exception('Data retention pass failed; retrying at the next interval')
 
     def start(self):
         if self.thread is not None:
@@ -166,13 +247,22 @@ class JobQueue:
     def execute(self, row):
         def progress(percent, message):
             with self.database() as db:
-                db.execute("UPDATE jobs SET progress=?,message=? WHERE id=? AND state='running'",
+                db.execute("UPDATE jobs SET progress=?,message=? WHERE id=? AND state='running' AND cancel_requested=0",
                            (max(0, min(100, float(percent))), str(message), row['id']))
+                cancelled = db.execute('SELECT cancel_requested FROM jobs WHERE id=?', (row['id'],)).fetchone()[0]
+            # A completion report is never interrupted; cancelling applies to
+            # the work that remains.
+            if cancelled and percent < 100:
+                raise JobCancelled('任务已取消')
         envelope = {'id': row['id'], 'kind': row['kind'], 'assetId': row['asset_id'],
                     'payload': json.loads(row['payload']), 'inputs': json.loads(row['inputs']),
                     'attempts': row['attempts'], 'recovered': bool(row['recovered'])}
         try:
             result = encode(self.handler(envelope, progress))
+        except JobCancelled:
+            with self.database() as db:
+                db.execute("""UPDATE jobs SET state='failed',message='已取消',error=?,finished_at=? WHERE id=?""",
+                           (CANCELLED, time.time(), row['id']))
         except Exception as exc:
             with self.database() as db:
                 db.execute("""UPDATE jobs SET state='failed',message=?,error=?,finished_at=? WHERE id=?""",
@@ -196,6 +286,9 @@ class JobQueue:
                         row = self.claim()
                         if row:
                             self.execute(row)
+                        elif (self.last_maintenance is None
+                              or time.monotonic()-self.last_maintenance >= self.maintenance_interval_sec):
+                            self.maintain()
                         else:
                             self.wake.wait(self.poll_sec)
                             self.wake.clear()

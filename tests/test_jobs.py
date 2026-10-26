@@ -240,3 +240,139 @@ def test_independent_api_processes_do_not_overwrite_each_others_edits(tmp_path, 
         for process in workers:
             if process.poll() is None:
                 process.kill(); process.communicate(timeout=10)
+
+
+def test_cancel_stops_queued_work_and_identical_work_can_be_submitted_again(tmp_path):
+    started, release = threading.Event(), threading.Event()
+    calls = []
+    def action(job, progress):
+        calls.append(job['payload']); started.set()
+        assert release.wait(10)
+        progress(50, 'halfway')
+        return {'done': job['payload']}
+    queue = JobQueue(tmp_path, action, .01)
+    first = queue.submit('plan', 'map', {'n': 1}, {'version': 1}, 'request-first')
+    second = queue.submit('plan', 'map', {'n': 2}, {'version': 1}, 'request-second')
+    queue.start()
+    try:
+        assert started.wait(5)
+        cancelled = queue.cancel(second['id'])
+        assert cancelled['state'] == 'failed' and cancelled['cancelled'] and cancelled['message'] == '已取消'
+        again = queue.submit('plan', 'map', {'n': 2}, {'version': 1}, 'request-again')
+        assert again['id'] != second['id'] and again['state'] == 'queued'
+        release.set()
+        assert wait_job(queue, first['id'])['state'] == 'succeeded'
+        assert wait_job(queue, again['id'])['result'] == {'done': {'n': 2}}
+        assert calls == [{'n': 1}, {'n': 2}]
+        assert queue.by_request('request-second')['cancelled'] and queue.cancel('missing') is None
+    finally:
+        release.set(); queue.close()
+
+
+def test_running_cancel_stops_at_the_next_stage_but_not_completion_or_wanted_work(tmp_path):
+    reached, release = threading.Event(), threading.Event()
+    def action(job, progress):
+        reached.set()
+        assert release.wait(10)
+        progress(100 if job['payload'].get('finishing') else 40, 'next stage')
+        return {'payload': job['payload']}
+    queue = JobQueue(tmp_path, action, .01)
+    queue.start()
+    def running(payload, request_id=None):
+        reached.clear(); release.clear()
+        job = queue.submit('plan', 'map', payload, {'version': 1}, request_id)
+        assert reached.wait(5)
+        return job
+    try:
+        job = running({})
+        pending = queue.cancel(job['id'])
+        assert pending['state'] == 'running' and pending['cancelRequested']
+        release.set()
+        done = wait_job(queue, job['id'])
+        assert done['state'] == 'failed' and done['cancelled'] and 'result' not in done
+        finishing = running({'finishing': True})
+        queue.cancel(finishing['id']); release.set()
+        assert wait_job(queue, finishing['id'])['result'] == {'payload': {'finishing': True}}
+        wanted = running({'wanted': True}, 'first-tab')
+        queue.cancel(wanted['id'])
+        joined = queue.submit('plan', 'map', {'wanted': True}, {'version': 1}, 'second-tab')
+        assert joined['id'] == wanted['id'] and 'cancelRequested' not in joined
+        release.set()
+        assert wait_job(queue, wanted['id'])['state'] == 'succeeded'
+    finally:
+        release.set(); queue.close()
+
+
+@pytest.mark.parametrize('moment', ['before_commit', 'after_commit'])
+def test_cancelled_terrain_update_publishes_nothing_unless_it_already_committed(tmp_path, monkeypatch, moment):
+    asset, _ = terrain_fixture(tmp_path, monkeypatch)
+    queue = JobQueue(store.DATA, service.execute_job, .01)
+    analyzing, release = threading.Event(), threading.Event()
+    analyze, save = service.analyze, store.save_state
+    def slow_analyze(*args, **kwargs):
+        analyzing.set()
+        assert release.wait(10)
+        return analyze(*args, **kwargs)
+    def cancel_after_commit(asset_id, value, operation_id=None, result=None):
+        save(asset_id, value, operation_id, result)
+        if operation_id:
+            queue.cancel(operation_id)
+    monkeypatch.setattr(service, 'analyze', slow_analyze)
+    if moment == 'after_commit':
+        monkeypatch.setattr(store, 'save_state', cancel_after_commit)
+    job = queue.submit('terrain', asset['id'], {'version': 1}, service.job_inputs('terrain', asset['id']))
+    queue.start()
+    try:
+        assert analyzing.wait(10)
+        if moment == 'before_commit':
+            assert queue.cancel(job['id'])['cancelRequested']
+        release.set()
+        done = wait_job(queue, job['id'], 60)
+    finally:
+        release.set(); queue.close()
+    after = store.get_state(asset['id'])
+    if moment == 'before_commit':
+        assert done['cancelled'] and after['version'] == 1 and 'lastOperationId' not in after
+    else:
+        # The map changed before the request arrived; reporting a
+        # cancellation would hide a committed update.
+        assert done['state'] == 'succeeded' and 'cancelled' not in done
+        assert after['version'] == 2 and after['lastOperationId'] == job['id'] and done['result']['version'] == 2
+
+
+def test_compaction_drops_only_old_results_beyond_each_maps_newest(tmp_path):
+    queue = JobQueue(tmp_path, lambda job, progress: {'blob': 'x'*2000, 'payload': job['payload']})
+    ages = {('map-a', 0): 40, ('map-a', 1): 35, ('map-a', 2): 25, ('map-a', 3): 20, ('map-a', 4): 1, ('map-b', 0): 50}
+    ids = {key: queue.submit('plan', key[0], {'index': key[1]}, {})['id'] for key in ages}
+    while (row := queue.claim()) is not None:
+        queue.execute(row)
+    now = time.time()
+    with queue.database() as db:
+        for key, age in ages.items():
+            db.execute('UPDATE jobs SET finished_at=? WHERE id=?', (now-age*86400, ids[key]))
+    assert queue.compact(keep_per_asset=2, keep_sec=30*86400, now=now) == 2
+    pruned = {key for key in ages if queue.get(ids[key]).get('resultPruned')}
+    assert pruned == {('map-a', 0), ('map-a', 1)}
+    for key in ages:
+        job = queue.get(ids[key])
+        assert job['state'] == 'succeeded' and ('result' in job) == (key not in pruned)
+    assert len(queue.recent('map-a')) == 5
+    assert queue.compact(keep_per_asset=2, keep_sec=30*86400, now=now) == 0
+
+
+def test_existing_queue_database_is_upgraded_in_place(tmp_path):
+    (tmp_path/'jobs').mkdir()
+    import sqlite3
+    with sqlite3.connect(tmp_path/'jobs'/'queue.sqlite3') as db:
+        db.execute('''CREATE TABLE jobs (id TEXT PRIMARY KEY, kind TEXT NOT NULL, asset_id TEXT NOT NULL,
+                      input_hash TEXT NOT NULL, payload TEXT NOT NULL, inputs TEXT NOT NULL,
+                      state TEXT NOT NULL CHECK(state IN ('queued','running','succeeded','failed')),
+                      progress REAL NOT NULL DEFAULT 0, message TEXT, error TEXT,
+                      attempts INTEGER NOT NULL DEFAULT 0, recovered INTEGER NOT NULL DEFAULT 0,
+                      created_at REAL NOT NULL, started_at REAL, finished_at REAL, result TEXT)''')
+        db.execute("""INSERT INTO jobs(id,kind,asset_id,input_hash,payload,inputs,state,created_at,finished_at,result)
+                      VALUES('old','plan','map','hash','{}','{}','succeeded',1,2,'{"kept":true}')""")
+    queue = JobQueue(tmp_path, lambda job, progress: None)
+    old = queue.get('old')
+    assert old['result'] == {'kept': True} and not ({'cancelled', 'cancelRequested', 'resultPruned'} & set(old))
+    assert JobQueue(tmp_path, lambda job, progress: None).get('old') == old

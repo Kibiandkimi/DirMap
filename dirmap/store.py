@@ -191,6 +191,40 @@ def stage_artifacts(state, directory, replace_all=False):
     return state
 
 
+def _newest(directory, pattern):
+    return sorted(directory.glob(pattern), key=lambda path: path.stat().st_mtime, reverse=True)
+
+
+def prune_history(keep_per_asset=20, keep_sec=30*86400, receipt_age_sec=86400, now=None):
+    """Bound saved plans, comparisons and replay receipts.
+
+    Published courses embed their plan and overlay, so they never read these
+    files. Each map keeps its newest plans and comparisons regardless of age,
+    plus every comparison that a kept plan refers to. A replay receipt
+    matters only while it is some map's lastOperationId.
+    """
+    now = time.time() if now is None else now
+    removed = []
+    with LOCK:
+        receipts = set()
+        for directory in sorted(path for path in (DATA/'projects').glob('*') if path.is_dir()):
+            receipts.add((read_json(directory/'state.json') or {}).get('lastOperationId'))
+            plans = _newest(directory, 'plan-*.json')
+            stale = {path for path in plans[keep_per_asset:] if now-path.stat().st_mtime > keep_sec}
+            used = {((read_json(path) or {}).get('teamRecommendation') or {}).get('comparisonId')
+                    for path in plans if path not in stale}
+            stale.update(path for path in _newest(directory, 'comparison-*.json')[keep_per_asset:]
+                         if path.stem.removeprefix('comparison-') not in used and now-path.stat().st_mtime > keep_sec)
+            for path in sorted(stale):
+                path.unlink()
+                removed.append(path)
+        for path in (DATA/'jobs'/'results').glob('*.json'):
+            if path.stem not in receipts and now-path.stat().st_mtime > receipt_age_sec:
+                path.unlink()
+                removed.append(path)
+    return removed
+
+
 def prune_artifacts(asset_id, minimum_age_sec=86400):
     """Bound old derived generations without touching sources or releases.
 

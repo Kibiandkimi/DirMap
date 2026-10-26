@@ -27,7 +27,7 @@ from .vision import read_image
 
 @asynccontextmanager
 async def lifespan(app):
-    queue = JobQueue(store.DATA, service.execute_job)
+    queue = JobQueue(store.DATA, service.execute_job, maintenance=store.prune_history)
     app.state.jobs = queue
     queue.start()
     try:
@@ -411,6 +411,14 @@ def job_by_request(request_id: str, request: Request):
 @app.get('/api/jobs/{job_id}')
 def job(job_id: str, request: Request):
     result = request.app.state.jobs.get(job_id)
+    if result is None:
+        raise HTTPException(404, '任务不存在，请检查任务记录和当前地图')
+    return result
+
+
+@app.post('/api/jobs/{job_id}/cancel')
+def cancel_job(job_id: str, request: Request):
+    result = request.app.state.jobs.cancel(job_id)
     if result is None:
         raise HTTPException(404, '任务不存在，请检查任务记录和当前地图')
     return result
