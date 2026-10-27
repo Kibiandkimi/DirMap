@@ -27,7 +27,7 @@ def test_team_progress_is_its_furthest_phone_with_earliest_times(course):
     summary = progress.record(course, report(team='B', device='phone-three', completed=['m'], departed=['m'], times={'m': now*1000}), now+2)
     a, b = summary['teams']
     assert a == {'teamId': 'A', 'completed': ['c1', 'm'], 'checkIns': {'c1': now*1000-60_000, 'm': now*1000},
-                 'departed': [], 'finished': False, 'reportedAt': now+1}
+                 'departed': [], 'finished': False, 'arrived': False, 'arrivedAt': None, 'reportedAt': now+1}
     assert b['completed'] == ['m'] and b['departed'] == ['m'] and not b['finished']
     # Persisted for every reader, including a later server process.
     assert progress.summary(course, now=now+3)['teams'] == summary['teams']
@@ -64,3 +64,20 @@ def test_number_of_reporting_phones_is_bounded(course, monkeypatch):
     with pytest.raises(ValueError, match='设备过多'):
         progress.record(course, report(device='phone-three'))
     assert progress.record(course, report(device='phone-one', revision=2, completed=['c1']))['teams'][0]['completed'] == ['c1']
+
+
+def test_reaching_the_finish_needs_every_target_and_keeps_the_earliest_time(course):
+    now = 1_800_000_000.
+    done = ['c1', 'm', 'c2']
+    with pytest.raises(ValueError, match='所有目标'):
+        progress.record(course, {**report(completed=['c1']), 'arrived': True, 'arrivedAt': now*1000}, now)
+    progress.record(course, {**report(completed=done), 'arrived': True, 'arrivedAt': now*1000}, now)
+    later = {**report(device='phone-two', completed=done), 'arrived': True, 'arrivedAt': now*1000+90_000}
+    team = progress.record(course, later, now+90)['teams'][0]
+    assert team['arrived'] and team['arrivedAt'] == now*1000
+    # Undoing the arrival on the first phone leaves the second phone's.
+    team = progress.record(course, {**report(revision=2, completed=done), 'arrived': False}, now+100)['teams'][0]
+    assert team['arrived'] and team['arrivedAt'] == now*1000+90_000
+    skewed = {**report(team='B', device='phone-three', completed=['m', 'c3']), 'arrived': True, 'arrivedAt': 1.}
+    team = progress.record(course, skewed, now+101)['teams'][1]
+    assert team['arrived'] and team['arrivedAt'] is None

@@ -28,6 +28,9 @@ export function resultsCsv(routes: Route[], progress: ClassProgress, controls: C
         meetings.includes(id) ? '全班必到' : '本队分担', done ? '已完成' : '未完成', done && at !== undefined ? clock(at) : '',
         ...(startedAtMs === null ? [] : [done && at !== undefined && at >= startedAtMs ? since(at - startedAtMs) : ''])]);
     });
+    const end = team?.arrivedAt ?? null;
+    rows.push([route.teamId, String(route.people), '', '终点', '终点', team?.arrived ? '已到达' : '未到达', end !== null ? clock(end) : '',
+      ...(startedAtMs === null ? [] : [end !== null && end >= startedAtMs ? since(end - startedAtMs) : ''])]);
   }
   return '\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';
 }

@@ -36,6 +36,7 @@ export interface Route {
 }
 export interface TeamProgress {
   teamId: string; completed: string[]; checkIns: Record<string, number>; departed: string[]; finished: boolean; reportedAt: number | null;
+  arrived?: boolean; arrivedAt?: number | null;
 }
 export interface ClassProgress { teams: TeamProgress[]; serverTime: number }
 export interface Plan {

@@ -16,8 +16,10 @@ test('class results list every planned target with phone check-in times and safe
   assert.deepEqual(csv.slice(1).trim().split('\r\n').slice(1), [
     '第 1 队,3,1,31,全班必到,已完成,2026-10-27 09:05:07',
     "第 1 队,3,2,'=1+1,本队分担,未完成,",
+    '第 1 队,3,,终点,终点,未到达,',
     '"B,""二""",2,1,33,本队分担,已完成,2026-10-27 09:05:07',
     '"B,""二""",2,2,31,全班必到,已完成,',
+    '"B,""二""",2,,终点,终点,未到达,',
   ]);
 });
 test('with a class start the results add the time since the start', () => {
@@ -28,4 +30,7 @@ test('with a class start the results add the time since the start', () => {
   assert.equal(rows[0], '队伍,人数,顺序,目标,类型,状态,打点时间（手机记录）,距开课（分:秒）');
   assert.ok(rows[1].endsWith(',2026-10-27 09:02:05,2:05'));
   assert.ok(rows[2].endsWith(',2026-10-27 08:59:59,'));
+  assert.equal(rows[3], '第 1 队,3,,终点,终点,未到达,,');
+  progress.teams[0].arrived = true; progress.teams[0].arrivedAt = start + 3_600_000;
+  assert.equal(resultsCsv(routes.slice(0, 1), progress, controls, [], start).trim().split('\r\n').at(-1), '第 1 队,3,,终点,终点,已到达,2026-10-27 10:00:00,60:00');
 });

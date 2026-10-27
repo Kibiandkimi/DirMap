@@ -41,6 +41,7 @@ let courseId = new URLSearchParams(location.search).get('course');
 let completed = new Set<string>();
 let departedMeetings = new Set<string>();
 let checkInTimes: Record<string, number> = {};
+let arrivedAt: number | null = null;
 let classProgress: ClassProgress | null = null;
 let syncingProgress = false;
 let studentControls: Control[] = [];
@@ -64,7 +65,7 @@ document.querySelector('#app')!.innerHTML = `
 <div id="publish-section" class="publish-section hidden"><button id="review-button" class="soft-button wide">核验课程并发布</button><div id="share-result"></div></div></section>
 <section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>地物匹配与局部校准</h2><span class="step-number">01</span></div><p class="muted">先通过水体和建筑匹配到标准地图；同一校园的图幅也会匹配共同地物。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><div id="field-check-card" class="quality-card"><strong>现场 GPS 核查</strong><p class="muted compact">站在原图上能认出的位置（路口、建筑角或目标圈心），用手机当前定位记录核查点，再在原图上点出所站位置。核查点不参与拟合，也不会让路线或已发布课程失效。</p><div id="field-check-summary"></div><button id="add-field-check" class="soft-button wide">＋ 用当前位置添加核查点</button><div id="field-check-list" class="anchor-list"></div></div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
 <section id="tab-terrain" class="tab-content hidden"><div class="section-title"><h2>核对可通行区域</h2><span class="step-number">01</span></div><p class="muted">红色区域为识别出的障碍。重点核对围墙、门洞、水体、禁区和上下层通道。</p><label class="check-label"><input id="show-terrain" type="checkbox">在地图上显示障碍候选</label><button id="edit-terrain" class="primary-button wide section-gap">打开原图修正通行区域</button><div id="terrain-summary" class="quality-card"></div><p class="muted">原图修正保存后需重新生成路线。二维相交不能证明桥上、桥下可以互通。</p><div class="section-title section-gap"><h2>随图图例</h2></div><div id="legend-links" class="legend-links"></div></section></aside>
-<aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><p id="class-clock" class="class-clock" role="timer"></p><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
+<aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><p id="class-clock" class="class-clock" role="timer"></p><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="arrive-finish" class="primary-button wide hidden">已到达终点</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
 <main class="map-panel"><div id="map" role="application" aria-label="校园标准地图与定向路线"></div><div class="map-topbar"><div class="map-title"><span class="map-kicker">CAMPUS EXPLORER</span><strong id="map-title">深圳大学 · 粤海校区</strong><span id="map-subtitle">标准地图 / WGS84</span></div><div class="layer-tools"><label class="check-label"><input id="standard-map" type="checkbox" checked>标准底图</label><label class="check-label teacher-only"><input id="stitch-maps" type="checkbox">叠合图幅</label><label class="opacity-control">原图 <input id="overlay-opacity" type="range" min="0" max="100" value="70" aria-label="原图透明度"></label></div></div><div id="map-action-hint" class="map-action-hint hidden" role="status"></div><button id="north-button" class="compass-button" title="北向上" aria-label="切换北向上"><span>N</span><svg id="compass-arrow" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 21 25 12 20 3 25Z" fill="#295c46"/><path d="M12 1v19l9 5Z" fill="#abbdb1"/></svg></button><div class="map-bottom"><div class="navigation-card"><button id="follow-button" class="follow-button"><span class="locate-icon">◎</span><span id="follow-label">开始定位与朝向跟随</span></button><div id="sensor-status" class="sensor-status" role="status">手机打开 HTTPS 链接即可启用</div></div><div class="map-key"><span><i class="key-control"></i>目标点</span><span><i class="key-route"></i>队伍路线</span><span id="location-status">位置尚未开启</span></div></div></main></div><div id="toast" class="toast hidden" role="status"></div>`;
 
 const campusMap = new CampusMap($('map'));
@@ -862,6 +863,7 @@ function saveProgress() {
     localStorage.setItem(key, JSON.stringify([...completed]));
     localStorage.setItem(key + ':departed-meetings', JSON.stringify([...departedMeetings]));
     localStorage.setItem(key + ':times', JSON.stringify(checkInTimes));
+    localStorage.setItem(key + ':arrived', JSON.stringify(arrivedAt));
     localStorage.setItem(key + ':revision', String(Number(localStorage.getItem(key + ':revision') ?? '0') + 1));
     localStorage.setItem(key + ':unsent', '1');
   } catch { /* progress still works on this page; sharing waits for storage */ }
@@ -877,6 +879,7 @@ async function syncProgress() {
   try {
     classProgress = await api<ClassProgress>(`/api/releases/${courseId}/progress`, { method: 'POST', signal: AbortSignal.timeout(15000), body: JSON.stringify({
       teamId: route.teamId, deviceId: deviceId(), revision, completed: done, departed: [...departedMeetings].filter(id => done.includes(id)),
+      arrived: arrivedAt !== null && done.length === route.controlIds.length, arrivedAt,
       checkIns: Object.fromEntries(done.filter(id => Number.isFinite(checkInTimes[id])).map(id => [id, checkInTimes[id]])) }) });
     if (stored(key + ':revision') === String(revision)) localStorage.removeItem(key + ':unsent');
     renderStudent();
@@ -903,7 +906,8 @@ function renderClassBoard() {
   $('class-board-list').innerHTML = classProgress.teams.map(team => {
     const route = plan!.routes.find(r => r.teamId === team.teamId), last = team.completed.at(-1);
     const time = last && team.checkIns[last] ? `（${clock(team.checkIns[last])}）` : '';
-    return `<div class="class-board-row ${team.finished ? 'done' : ''}" data-team-progress="${e(team.teamId)}"><strong>${e(team.teamId)}</strong><span>${team.completed.length} / ${route?.controlIds.length ?? 0}</span><small>${team.finished ? `全部目标完成${time}` : last ? `最近 ${label(last)}${time}` : '尚未打点'}</small></div>`;
+    const state = team.arrived ? `已到终点${team.arrivedAt ? `（${clock(team.arrivedAt)}）` : ''}` : team.finished ? `全部目标完成${time}` : last ? `最近 ${label(last)}${time}` : '尚未打点';
+    return `<div class="class-board-row ${team.finished ? 'done' : ''}" data-team-progress="${e(team.teamId)}"><strong>${e(team.teamId)}</strong><span>${team.completed.length} / ${route?.controlIds.length ?? 0}</span><small>${state}</small></div>`;
   }).join('') + `<p class="muted compact">按各队手机上报的打点汇总，断网的队伍联网后补传。</p><button id="export-results" class="text-button">导出成绩表（CSV）</button>`;
 }
 $('class-board-list').addEventListener('click', event => {
@@ -940,11 +944,15 @@ function renderStudent() {
   const missing = arrived ? (plan?.routes ?? []).filter(r => !arrived.some(t => t.teamId === r.teamId)).map(r => e(r.teamId)) : [];
   const arrivals = !arrived ? '<p id="meeting-arrivals" class="muted compact">联网后显示各队到达情况。</p>'
     : `<p id="meeting-arrivals">${missing.length ? `已到 ${arrived.length} / ${plan!.routes.length} 队 · 未到：${missing.join('、')}` : '各队均已上报到达，可以统一出发。'}</p>`;
-  $('next-control').innerHTML = waiting ? `<span class="next-label">集合点 ${e(waiting.label)}</span><strong>等待全班集合</strong><p>${plannedWait ? `计划等待 ${minutes(plannedWait)}。` : ''}请现场确认所有队伍到齐，再统一出发。</p>${arrivals}` : next ? `<span class="next-label">目标 ${e(next.label)}</span><strong>${metres === null ? '等待定位' : `直线 ${distance(metres)}`}</strong><p>${requiredByAll.has(next.id) ? '这是全班集合点，到达后须等待所有队伍。' : '沿地图中的队伍路线前往'}</p>` : '<span class="next-label">所有目标已完成</span><strong>前往课程终点</strong><p>仍需按路线返回终点。</p>';
+  $('next-control').innerHTML = waiting ? `<span class="next-label">集合点 ${e(waiting.label)}</span><strong>等待全班集合</strong><p>${plannedWait ? `计划等待 ${minutes(plannedWait)}。` : ''}请现场确认所有队伍到齐，再统一出发。</p>${arrivals}` : next ? `<span class="next-label">目标 ${e(next.label)}</span><strong>${metres === null ? '等待定位' : `直线 ${distance(metres)}`}</strong><p>${requiredByAll.has(next.id) ? '这是全班集合点，到达后须等待所有队伍。' : '沿地图中的队伍路线前往'}</p>`
+    : arrivedAt !== null ? `<span class="next-label">课程终点</span><strong>已到达终点</strong><p>${new Date(arrivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 到达${classStart?.startedAt ? `，开课后 ${clockText(Math.max(0, arrivedAt / 1000 + classStart.offset - classStart.startedAt))}` : ''}。</p>`
+    : '<span class="next-label">所有目标已完成</span><strong>前往课程终点</strong><p>仍需按路线返回终点，到达后点“已到达终点”。</p>';
   if ((plan?.surfaces?.length ?? 0) > 1 && nextSurface) $('next-control').insertAdjacentHTML('beforeend', `<p class="target-surface">到访层级：${e(surfaceNames[nextSurface] ?? '请核对')}</p>`);
   $<HTMLButtonElement>('check-in').disabled = !next || !!waiting || courseSuperseded;
   $('check-in').classList.toggle('hidden', !!waiting);
   $('meeting-departure').classList.toggle('hidden', !waiting);
+  $('arrive-finish').classList.toggle('hidden', !!next || !!waiting || arrivedAt !== null);
+  $<HTMLButtonElement>('arrive-finish').disabled = courseSuperseded;
   $<HTMLButtonElement>('meeting-departure').disabled = courseSuperseded;
   renderClassBoard();
   $('student-stops').innerHTML = route.controlIds.map((id, i) => `<div class="student-stop ${completed.has(id) ? 'done' : ''}"><i>${completed.has(id) ? '✓' : i + 1}</i><span>目标 ${e(studentControls.find(c => c.id === id)?.label ?? id)}${plan?.coverage?.mandatoryControlIds.length ? `<small> · ${requiredByAll.has(id) ? '全员必到' : '本队分担'}</small>` : ''}</span><small>${completed.has(id) ? `已完成${checkInTimes[id] ? ' ' + new Date(checkInTimes[id]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : '待到访'}</small></div>`).join('');
@@ -986,6 +994,8 @@ $<HTMLSelectElement>('student-team').onchange = () => {
   departedMeetings = new Set([...departedMeetings].filter(id => completed.has(id) && plan?.coverage?.mandatoryControlIds.includes(id)));
   try { checkInTimes = JSON.parse(localStorage.getItem(progressKey() + ':times') ?? '{}') ?? {}; } catch { checkInTimes = {}; }
   checkInTimes = Object.fromEntries(Object.entries(checkInTimes).filter(([id, at]) => completed.has(id) && Number.isFinite(at)));
+  try { arrivedAt = JSON.parse(localStorage.getItem(progressKey() + ':arrived') ?? 'null'); } catch { arrivedAt = null; }
+  if (!Number.isFinite(arrivedAt) || ids.some(id => !completed.has(id))) arrivedAt = null;
   $('print-team').setAttribute('href', `/?course=${courseId}&print=${encodeURIComponent(value('student-team'))}`);
   resetNavigation(); renderStudent(); renderClassClock(); void syncProgress();
 };
@@ -996,7 +1006,11 @@ $('meeting-departure').onclick = () => {
   departedMeetings.add(waiting.id); saveProgress();
   resetNavigation(); renderStudent();
 };
-$('undo-check-in').onclick = () => { if (courseSuperseded || viewing()) return; const last = [...completed].at(-1); if (last) { completed.delete(last); departedMeetings.delete(last); delete checkInTimes[last]; saveProgress(); resetNavigation(); renderStudent(); } };
+$('arrive-finish').onclick = () => {
+  const route = studentRoute(); if (!route || courseSuperseded || viewing() || route.controlIds.some(id => !completed.has(id))) return;
+  arrivedAt = Date.now(); saveProgress(); resetNavigation(); renderStudent();
+};
+$('undo-check-in').onclick = () => { if (courseSuperseded || viewing()) return; if (arrivedAt !== null) { arrivedAt = null; saveProgress(); renderStudent(); return; } const last = [...completed].at(-1); if (last) { completed.delete(last); departedMeetings.delete(last); delete checkInTimes[last]; saveProgress(); resetNavigation(); renderStudent(); } };
 addEventListener('online', () => { void syncProgress(); void refreshClassProgress(); });
 
 async function boot() {

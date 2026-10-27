@@ -252,6 +252,8 @@ class ProgressReport(Model):
     completed: list[str] = Field(default_factory=list, max_length=60)
     checkIns: dict[str, FiniteFloat] = Field(default_factory=dict, max_length=60)
     departed: list[str] = Field(default_factory=list, max_length=60)
+    arrived: bool = False
+    arrivedAt: FiniteFloat | None = None
 
 
 class SessionRequest(Model):

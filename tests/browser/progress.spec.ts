@@ -76,7 +76,7 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
   const csv = fs.readFileSync(await (await download).path(), 'utf8');
   const rows = csv.replace(/^\uFEFF/, '').trim().split('\r\n');
   expect(rows[0]).toBe('队伍,人数,顺序,目标,类型,状态,打点时间（手机记录）,距开课（分:秒）');
-  expect(rows).toHaveLength(1+first.controlIds.length+second.controlIds.length);
+  expect(rows).toHaveLength(3+first.controlIds.length+second.controlIds.length);
   expect(rows.filter(row => row.includes(',已完成,'))).toHaveLength(reached+second.controlIds.indexOf(meeting)+1);
   await expect(a.phone.locator('.student-stop.done > small').first()).toHaveText(/^已完成 \d{1,2}:\d{2}/);
   // A check-in made while the previous report is still in flight follows
@@ -112,13 +112,30 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
   await a.phone.reload({ waitUntil: 'domcontentloaded' });
   await a.phone.locator('#student-team').selectOption(first.teamId);
   await expect(a.phone.locator('#student-progress')).toHaveText(`${reached+1} / ${first.controlIds.length}`);
+  // Finish the remaining targets, then record reaching the finish.
+  while (!await a.phone.locator('#arrive-finish').isVisible()) {
+    await a.phone.locator(await a.phone.locator('#meeting-departure').isVisible() ? '#meeting-departure' : '#check-in').click();
+  }
+  await a.phone.locator('#arrive-finish').click();
+  await expect(a.phone.locator('#next-control')).toContainText('已到达终点');
+  await expect.poll(async () => (await server()).arrived, { timeout: 5000 }).toBe(true);
+  expect((await server()).finished).toBe(true);
+  await a.phone.evaluate(() => dispatchEvent(new Event('online')));
+  await expect(a.phone.locator(`[data-team-progress="${first.teamId}"]`)).toContainText('已到终点');
+  // Undo takes back the arrival before any check-in.
+  await a.phone.locator('#undo-check-in').click();
+  await expect(a.phone.locator('#arrive-finish')).toBeVisible();
+  await expect.poll(async () => (await server()).arrived, { timeout: 5000 }).toBe(false);
+  expect((await server()).completed).toHaveLength(first.controlIds.length);
+  await a.phone.locator('#arrive-finish').click();
+  await expect.poll(async () => (await server()).arrived, { timeout: 5000 }).toBe(true);
   // After a reload the teacher finds the course and its progress again.
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.locator('[data-map="szu-3"]').click();
   await page.locator('#release-history summary').click();
   const row = page.locator(`[data-release="${courseId}"]`);
   await expect(row).toContainText('当前有效');
-  await expect(row).toContainText('2/2 队已打点 · 0 队完成');
+  await expect(row).toContainText('2/2 队已打点 · 1 队完成');
   await expect(row.getByRole('link', { name: '全班进度 ↗' })).toHaveAttribute('href', new RegExp(`course=${courseId}#progress$`));
   page.once('dialog', dialog => dialog.accept());
   await row.locator('[data-session="reset"]').click();
