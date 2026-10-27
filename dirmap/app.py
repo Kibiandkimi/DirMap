@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import service, store, layers, memory
+from . import service, store, layers, memory, progress
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -227,6 +227,15 @@ class ReleaseRequest(Model):
     title: str = Field(default='深大定向越野课', min_length=1, max_length=100)
 
 
+class ProgressReport(Model):
+    teamId: str = Field(min_length=1, max_length=50)
+    deviceId: str = Field(pattern=r'^[A-Za-z0-9_-]{8,64}$')
+    revision: int = Field(ge=0, le=10**9, strict=True)
+    completed: list[str] = Field(default_factory=list, max_length=60)
+    checkIns: dict[str, FiniteFloat] = Field(default_factory=dict, max_length=60)
+    departed: list[str] = Field(default_factory=list, max_length=60)
+
+
 class NavigationRequest(Model):
     teamId: str = Field(min_length=1, max_length=50)
     lnglat: Point
@@ -252,7 +261,7 @@ async def origin_guard(request: Request, call_next):
             if urlparse(origin).netloc != request.headers.get('host'):
                 return JSONResponse(status_code=403, content={'detail': '不允许跨站修改课程'})
         token = os.environ.get('DIRMAP_ADMIN_TOKEN')
-        student_navigation = request.method == 'POST' and re.fullmatch(r'/api/releases/[0-9a-f]{32}/navigate', request.url.path)
+        student_navigation = request.method == 'POST' and re.fullmatch(r'/api/releases/[0-9a-f]{32}/(navigate|progress)', request.url.path)
         if token and not student_navigation:
             import secrets
             supplied = request.headers.get('x-dirmap-token', '')
@@ -261,7 +270,7 @@ async def origin_guard(request: Request, call_next):
     response = await call_next(request)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    if request.url.path.startswith('/api/jobs'):
+    if request.url.path.startswith('/api/jobs') or request.url.path.endswith('/progress'):
         response.headers['Cache-Control'] = 'no-store'
     return response
 
@@ -601,6 +610,19 @@ def get_release(release_id: str):
                            or value.get('routingSchema') != ROUTING_SCHEMA
                            or service.registration_stale(state))
     return value
+
+
+@app.get('/api/releases/{release_id}/progress')
+def class_progress(release_id: str):
+    return progress.summary(get_release(release_id))
+
+
+@app.post('/api/releases/{release_id}/progress')
+def report_progress(release_id: str, report: ProgressReport):
+    release = get_release(release_id)
+    if release['superseded']:
+        raise HTTPException(409, '课程已更新，请使用教师提供的新链接')
+    return progress.record(release, report.model_dump())
 
 
 @app.post('/api/releases/{release_id}/navigate')

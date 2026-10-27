@@ -559,3 +559,26 @@ def test_job_cancellation_is_a_protected_teacher_action(client, monkeypatch):
     assert cancelled['id'] == job['id'] and 'result' not in cancelled
     # A tiny plan may already have finished; otherwise it stops or is marked.
     assert cancelled['state'] == 'succeeded' or cancelled.get('cancelled') or cancelled.get('cancelRequested')
+
+
+def test_students_share_progress_without_the_teacher_token(client, monkeypatch):
+    state = store.get_state('szu-1'); state['controls'][0]['state'] = 'accepted'; store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200
+    plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
+    release_id = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']}).json()['id']
+    monkeypatch.setenv('DIRMAP_ADMIN_TOKEN', 'teacher-only')
+    url = f'/api/releases/{release_id}/progress'
+    body = {'teamId': 'team1', 'deviceId': 'student-phone', 'revision': 1, 'completed': ['c1'],
+            'checkIns': {'c1': time.time()*1000}, 'departed': []}
+    assert client.get(url).json()['teams'][0]['completed'] == []
+    shared = client.post(url, json=body)
+    assert shared.status_code == 200 and shared.json()['teams'][0]['finished']
+    assert shared.headers['cache-control'] == 'no-store'
+    assert client.get(url).json()['teams'][0]['completed'] == ['c1']
+    assert client.post(url, json={**body, 'revision': 1.5}).status_code == 422
+    assert client.post(url, json={**body, 'deviceId': 'x'}).status_code == 422
+    assert client.post(url, json=body, headers={'Origin': 'https://elsewhere.test'}).status_code == 403
+    assert client.post('/api/releases/'+'0'*32+'/progress', json=body).status_code == 404
+    client.patch('/api/maps/szu-1', json={'version': 1, 'edits': []}, headers={'X-DirMap-Token': 'teacher-only'})
+    assert client.post(url, json={**body, 'revision': 2}).status_code == 409

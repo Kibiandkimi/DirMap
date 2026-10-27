@@ -34,6 +34,10 @@ export interface Route {
   surfaceSections?: { surfaceId: string; label: string; level: number; startIndex: number; endIndex: number }[];
   transitions?: { portalId: string; label: string; fromSurface: string; toSurface: string; index: number; lnglat: Pixel; lengthM: number; travelWeightM: number }[];
 }
+export interface TeamProgress {
+  teamId: string; completed: string[]; checkIns: Record<string, number>; departed: string[]; finished: boolean; reportedAt: number | null;
+}
+export interface ClassProgress { teams: TeamProgress[]; serverTime: number }
 export interface Plan {
   id: string; status: string; routes: Route[]; version: number; graphHash: string; draft: boolean;
   assetId?: string; routingSchema?: string; request?: PlanRequest;
