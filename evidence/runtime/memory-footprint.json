@@ -1,0 +1,43 @@
+{
+ "generatedAt": "2026-10-27T00:13:35+00:00",
+ "asset": "upload-f4fd82f6605e",
+ "baseline": "01d80d257d49b0e119f8bbdfc675a2f0a83c988c",
+ "current": "eabbf3ffc9c601641cb4aa79f93dd339fa72fe26",
+ "currentWorkingTreeChanged": false,
+ "machine": {
+  "python": "3.14.4",
+  "cpu": "x86_64",
+  "cpus": 16
+ },
+ "scope": "Fresh process per task on a disposable copy of one prepared map. Refresh includes terrain analysis, publication and graph warming; planning loads the graph from the disk cache and plans all targets for 4 teams. Resident memory on this machine, sampled every 5 ms.",
+ "runs": {
+  "baseline": {
+   "refresh": {
+    "baselineMiB": 120,
+    "peakMiB": 1846,
+    "retainedMiB": 1531,
+    "elapsedSec": 53.8
+   },
+   "plan": {
+    "baselineMiB": 120,
+    "peakMiB": 1032,
+    "retainedMiB": 870,
+    "elapsedSec": 7.8
+   }
+  },
+  "current": {
+   "refresh": {
+    "baselineMiB": 120,
+    "peakMiB": 936,
+    "retainedMiB": 556,
+    "elapsedSec": 58.4
+   },
+   "plan": {
+    "baselineMiB": 120,
+    "peakMiB": 817,
+    "retainedMiB": 526,
+    "elapsedSec": 7.9
+   }
+  }
+ }
+}
