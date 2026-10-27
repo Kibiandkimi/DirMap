@@ -473,9 +473,9 @@ async function selectSite(id: string, mapId?: string) {
   void showSiteReference();
   const site = currentSite();
   const target = mapId ?? siteMaps()[0]?.id;
-  if (target) await loadState(target);
-  else { await loadState(''); if (site) campusMap.fitBounds(site.bbox); }
-  if (target && !state?.extent && site) campusMap.fitBounds(site.bbox);
+  // A place chosen while this one was loading keeps the view.
+  const current = await loadState(target ?? '');
+  if (current && site && activeSite === id && !state?.extent) campusMap.fitBounds(site.bbox);
 }
 $('site-select').onchange = () => task(() => selectSite(value('site-select')));
 $('add-site').onclick = () => {
