@@ -25,9 +25,9 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
   await self.clients.claim();
 })()));
 
-async function limitedFetch(request) {
+async function limitedFetch(request, limitMs = 4000) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), limitMs);
   try { return await fetch(request, { signal: controller.signal }); }
   finally { clearTimeout(timer); }
 }
@@ -59,14 +59,16 @@ async function trimCourses(cache) {
 }
 
 async function freshJSON(request) {
-  const cache = await caches.open(COURSES);
+  const cache = await caches.open(COURSES), saved = await cache.match(request);
   try {
-    const response = await limitedFetch(request);
+    // Fall back to a saved copy quickly; without one, a slow first download
+    // is better than no course at all.
+    const response = await limitedFetch(request, saved ? 4000 : 30000);
     // An explicit server 404/409 must not resurrect a deleted/stale course.
     if (response.ok) { await saveJSON(cache, request, response); await trimCourses(cache); }
     return response;
   } catch (error) {
-    const cached = await cache.match(request);
+    const cached = saved ?? await cache.match(request);
     if (!cached) throw error;
     return Response.json({ ...await cached.json(), offline: true, savedAt: cached.headers.get('X-DirMap-Saved-At') },
       { headers: { 'X-DirMap-Offline': '1' } });
@@ -101,9 +103,9 @@ self.addEventListener('message', event => {
   event.waitUntil((async () => {
     try {
       const id = event.data.id, cache = await caches.open(COURSES);
-      const url = `/api/releases/${id}`, course = await limitedFetch(url);
+      const url = `/api/releases/${id}`, course = await limitedFetch(url, 30000);
       if (!course.ok || (await course.clone().json()).superseded) throw new Error('课程已更新或不可用');
-      const overlay = await limitedFetch(url + '/overlay.png');
+      const overlay = await limitedFetch(url + '/overlay.png', 60000);
       if (!overlay.ok) throw new Error('原图尚未下载完整');
       await cache.put(url + '/overlay.png', overlay);
       await saveJSON(cache, url, course);
