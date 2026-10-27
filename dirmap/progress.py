@@ -19,6 +19,20 @@ def path(release_id):
     return store.DATA/'releases'/release_id/'progress.json'
 
 
+def started_at(release_id):
+    """When the teacher started the class clock, in server seconds."""
+    return (store.read_json(store.DATA/'releases'/release_id/'session.json') or {}).get('startedAt')
+
+
+def set_started(release_id, moment):
+    target = store.DATA/'releases'/release_id/'session.json'
+    with store.LOCK:
+        if moment is None:
+            target.unlink(missing_ok=True)
+        else:
+            store.atomic_json(target, {'startedAt': moment})
+
+
 def record(release, report, now=None):
     now = time.time() if now is None else now
     route = next((r for r in release['plan']['routes'] if r['teamId'] == report['teamId']), None)

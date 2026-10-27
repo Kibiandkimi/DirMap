@@ -643,7 +643,7 @@ def test_phones_poll_a_small_status_and_course_json_is_compressed(client):
     plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
     release_id = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']}).json()['id']
     status = client.get(f'/api/releases/{release_id}/status')
-    assert status.json() == {'id': release_id, 'superseded': False, 'routingSchema': ROUTING_SCHEMA}
+    assert {k: v for k, v in status.json().items() if k != 'serverTime'} == {'id': release_id, 'superseded': False, 'routingSchema': ROUTING_SCHEMA, 'startedAt': None}
     assert len(status.content) < 200
     full = client.get(f'/api/releases/{release_id}', headers={'Accept-Encoding': 'gzip'})
     assert full.headers['content-encoding'] == 'gzip' and full.json()['id'] == release_id
@@ -652,3 +652,39 @@ def test_phones_poll_a_small_status_and_course_json_is_compressed(client):
     client.patch('/api/maps/szu-1', json={'version': 1, 'edits': [{'kind': 'close', 'pixels': [[22, 22]], 'radiusPx': 5}]})
     assert client.get(f'/api/releases/{release_id}/status').json()['superseded'] is True
     assert client.get('/api/releases/'+'0'*32+'/status').status_code == 404
+
+
+def test_teacher_starts_the_class_clock_that_phones_read_with_the_status(client, monkeypatch):
+    state = store.get_state('szu-1'); state['controls'][0]['state'] = 'accepted'; store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200
+    plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
+    release_id = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']}).json()['id']
+    status = client.get(f'/api/releases/{release_id}/status').json()
+    assert status['startedAt'] is None and abs(status['serverTime']-time.time()) < 5
+    monkeypatch.setenv('DIRMAP_ADMIN_TOKEN', 'teacher-only')
+    url, teacher = f'/api/releases/{release_id}/session', {'X-DirMap-Token': 'teacher-only'}
+    assert client.post(url, json={'action': 'start'}).status_code == 401
+    started = client.post(url, json={'action': 'start'}, headers=teacher).json()
+    assert abs(started['startedAt']-time.time()) < 5
+    assert client.get(f'/api/releases/{release_id}/status').json()['startedAt'] == started['startedAt']
+    assert client.get('/api/releases', headers=teacher).json()[0]['startedAt'] == started['startedAt']
+    assert client.post(url, json={'action': 'later'}, headers=teacher).status_code == 422
+    assert client.post(url, json={'action': 'reset'}, headers=teacher).json()['startedAt'] is None
+    client.patch('/api/maps/szu-1', json={'version': 1, 'edits': []}, headers=teacher)
+    assert client.post(url, json={'action': 'start'}, headers=teacher).status_code == 409
+
+
+def test_course_qr_code_opens_the_student_link(client):
+    state = store.get_state('szu-1'); state['controls'][0]['state'] = 'accepted'; store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200
+    plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
+    release_id = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']}).json()['id']
+    response = client.get(f'/api/releases/{release_id}/qr.png', params={'origin': 'https://course.example:8443'})
+    assert response.status_code == 200 and response.headers['content-type'] == 'image/png'
+    image = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_GRAYSCALE)
+    assert cv2.QRCodeDetector().detectAndDecode(image)[0] == f'https://course.example:8443/?course={release_id}'
+    for origin in ('javascript:alert(1)', 'https://host/path', 'https://host?x=1'):
+        assert client.get(f'/api/releases/{release_id}/qr.png', params={'origin': origin}).status_code == 422
+    assert client.get('/api/releases/'+'0'*32+'/qr.png', params={'origin': 'https://host'}).status_code == 404

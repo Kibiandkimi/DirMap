@@ -78,3 +78,17 @@ def route_map(release, team_id, overlay_path):
     if not ok:
         raise ValueError('无法生成路线图')
     return encoded.tobytes()
+
+
+def course_qr(url, module_px=10, quiet_modules=4):
+    """PNG bytes of a QR code for a student course link."""
+    matrix = cv2.QRCodeEncoder.create().encode(url)
+    if matrix is None or not matrix.size:
+        raise ValueError('无法生成课程二维码')
+    image = cv2.resize(matrix, None, fx=module_px, fy=module_px, interpolation=cv2.INTER_NEAREST)
+    border = module_px*quiet_modules
+    image = cv2.copyMakeBorder(image, border, border, border, border, cv2.BORDER_CONSTANT, value=255)
+    ok, encoded = cv2.imencode('.png', image)
+    if not ok:
+        raise ValueError('无法生成课程二维码')
+    return encoded.tobytes()

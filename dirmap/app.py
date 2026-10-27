@@ -254,6 +254,10 @@ class ProgressReport(Model):
     departed: list[str] = Field(default_factory=list, max_length=60)
 
 
+class SessionRequest(Model):
+    action: Literal['start', 'reset']
+
+
 class NavigationRequest(Model):
     teamId: str = Field(min_length=1, max_length=50)
     lnglat: Point
@@ -647,6 +651,7 @@ def list_releases(request: Request, assetId: str | None = None, limit: int = 20)
         teams = progress.summary(release)['teams']
         result.append({'id': release['id'], 'title': release['title'], 'assetId': release['assetId'],
                        'createdAt': release['createdAt'], 'superseded': release['superseded'], 'url': '/?course='+release['id'],
+                       'startedAt': progress.started_at(release['id']),
                        'teams': len(teams), 'startedTeams': sum(bool(team['completed']) for team in teams),
                        'finishedTeams': sum(team['finished'] for team in teams),
                        'lastReportAt': max((team['reportedAt'] for team in teams if team['reportedAt']), default=None)})
@@ -672,7 +677,28 @@ def get_release(release_id: str):
 def release_status(release_id: str):
     # Phones poll this; the full course is downloaded once when opened.
     release = get_release(release_id)
-    return {'id': release['id'], 'superseded': release['superseded'], 'routingSchema': release.get('routingSchema')}
+    return {'id': release['id'], 'superseded': release['superseded'], 'routingSchema': release.get('routingSchema'),
+            'startedAt': progress.started_at(release_id), 'serverTime': time.time()}
+
+
+@app.post('/api/releases/{release_id}/session')
+def release_session(release_id: str, request: SessionRequest):
+    # Staggered departures count from this moment on every phone.
+    release = get_release(release_id)
+    if request.action == 'start' and release['superseded']:
+        raise HTTPException(409, '课程已更新，不能为旧课程开始计时')
+    progress.set_started(release_id, time.time() if request.action == 'start' else None)
+    return release_status(release_id)
+
+
+@app.get('/api/releases/{release_id}/qr.png')
+def course_qr(release_id: str, origin: str):
+    # Behind a proxy only the teacher's page knows the public address.
+    if not re.fullmatch(r'https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?', origin):
+        raise ValueError('课程地址无效')
+    get_release(release_id)
+    return Response(printing.course_qr(f'{origin}/?course={release_id}'), media_type='image/png',
+                    headers={'Cache-Control': 'public, max-age=86400'})
 
 
 @app.get('/api/releases/{release_id}/route-map')

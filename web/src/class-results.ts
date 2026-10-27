@@ -12,18 +12,21 @@ const clock = (ms: number) => {
   return `${t.getFullYear()}-${two(t.getMonth() + 1)}-${two(t.getDate())} ${two(t.getHours())}:${two(t.getMinutes())}:${two(t.getSeconds())}`;
 };
 
+const since = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
+
 /** One row per team and target in published order, for after-class records.
  * Times are what each phone recorded; a blank time with "已完成" means the
  * phone's clock was rejected or the check-in predates time sharing. */
-export function resultsCsv(routes: Route[], progress: ClassProgress, controls: Control[], meetings: string[] = []) {
+export function resultsCsv(routes: Route[], progress: ClassProgress, controls: Control[], meetings: string[] = [], startedAtMs: number | null = null) {
   const labels = new Map(controls.map(c => [c.id, c.label]));
-  const rows = [['队伍', '人数', '顺序', '目标', '类型', '状态', '打点时间（手机记录）']];
+  const rows = [['队伍', '人数', '顺序', '目标', '类型', '状态', '打点时间（手机记录）', ...(startedAtMs === null ? [] : ['距开课（分:秒）'])]];
   for (const route of routes) {
     const team = progress.teams.find(t => t.teamId === route.teamId);
     route.controlIds.forEach((id, index) => {
       const done = team?.completed.includes(id) ?? false, at = team?.checkIns[id];
       rows.push([route.teamId, String(route.people), String(index + 1), labels.get(id) ?? id,
-        meetings.includes(id) ? '全班必到' : '本队分担', done ? '已完成' : '未完成', done && at !== undefined ? clock(at) : '']);
+        meetings.includes(id) ? '全班必到' : '本队分担', done ? '已完成' : '未完成', done && at !== undefined ? clock(at) : '',
+        ...(startedAtMs === null ? [] : [done && at !== undefined && at >= startedAtMs ? since(at - startedAtMs) : ''])]);
     });
   }
   return '\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';

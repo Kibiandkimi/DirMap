@@ -64,7 +64,7 @@ document.querySelector('#app')!.innerHTML = `
 <div id="publish-section" class="publish-section hidden"><button id="review-button" class="soft-button wide">核验课程并发布</button><div id="share-result"></div></div></section>
 <section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>地物匹配与局部校准</h2><span class="step-number">01</span></div><p class="muted">先通过水体和建筑匹配到标准地图；同一校园的图幅也会匹配共同地物。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><div id="field-check-card" class="quality-card"><strong>现场 GPS 核查</strong><p class="muted compact">站在原图上能认出的位置（路口、建筑角或目标圈心），用手机当前定位记录核查点，再在原图上点出所站位置。核查点不参与拟合，也不会让路线或已发布课程失效。</p><div id="field-check-summary"></div><button id="add-field-check" class="soft-button wide">＋ 用当前位置添加核查点</button><div id="field-check-list" class="anchor-list"></div></div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
 <section id="tab-terrain" class="tab-content hidden"><div class="section-title"><h2>核对可通行区域</h2><span class="step-number">01</span></div><p class="muted">红色区域为识别出的障碍。重点核对围墙、门洞、水体、禁区和上下层通道。</p><label class="check-label"><input id="show-terrain" type="checkbox">在地图上显示障碍候选</label><button id="edit-terrain" class="primary-button wide section-gap">打开原图修正通行区域</button><div id="terrain-summary" class="quality-card"></div><p class="muted">原图修正保存后需重新生成路线。二维相交不能证明桥上、桥下可以互通。</p><div class="section-title section-gap"><h2>随图图例</h2></div><div id="legend-links" class="legend-links"></div></section></aside>
-<aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
+<aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><p id="class-clock" class="class-clock" role="timer"></p><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
 <main class="map-panel"><div id="map" role="application" aria-label="校园标准地图与定向路线"></div><div class="map-topbar"><div class="map-title"><span class="map-kicker">CAMPUS EXPLORER</span><strong id="map-title">深圳大学 · 粤海校区</strong><span id="map-subtitle">标准地图 / WGS84</span></div><div class="layer-tools"><label class="check-label"><input id="standard-map" type="checkbox" checked>标准底图</label><label class="check-label teacher-only"><input id="stitch-maps" type="checkbox">叠合图幅</label><label class="opacity-control">原图 <input id="overlay-opacity" type="range" min="0" max="100" value="70" aria-label="原图透明度"></label></div></div><div id="map-action-hint" class="map-action-hint hidden" role="status"></div><button id="north-button" class="compass-button" title="北向上" aria-label="切换北向上"><span>N</span><svg id="compass-arrow" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 21 25 12 20 3 25Z" fill="#295c46"/><path d="M12 1v19l9 5Z" fill="#abbdb1"/></svg></button><div class="map-bottom"><div class="navigation-card"><button id="follow-button" class="follow-button"><span class="locate-icon">◎</span><span id="follow-label">开始定位与朝向跟随</span></button><div id="sensor-status" class="sensor-status" role="status">手机打开 HTTPS 链接即可启用</div></div><div class="map-key"><span><i class="key-control"></i>目标点</span><span><i class="key-route"></i>队伍路线</span><span id="location-status">位置尚未开启</span></div></div></main></div><div id="toast" class="toast hidden" role="status"></div>`;
 
 const campusMap = new CampusMap($('map'));
@@ -103,7 +103,16 @@ $('map-summary').insertAdjacentHTML('afterend', '<details class="job-history"><s
 $('refresh-jobs').onclick = () => task(renderJobs);
 $('map-summary').insertAdjacentHTML('afterend', '<details id="release-history" class="release-history"><summary>已发布课程</summary><p class="muted compact">本图最近发布的学生链接与全班进度。地图或通行修改后旧课程会失效。</p><div id="release-list"></div></details>');
 $('release-history').addEventListener('toggle', () => { if ($<HTMLDetailsElement>('release-history').open) void renderReleases(); });
-type ReleaseSummary = { id: string; title: string; createdAt: number; superseded: boolean; url: string; teams: number; startedTeams: number; finishedTeams: number; lastReportAt: number | null };
+$('release-list').addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-session]');
+  if (!button) return;
+  if (button.dataset.session === 'reset' && !confirm('重置后各队手机的开课时间和出发倒计时将清除，确定吗？')) return;
+  void task(async () => {
+    await api(`/api/releases/${button.dataset.releaseId}/session`, { method: 'POST', body: JSON.stringify({ action: button.dataset.session }) });
+    await renderReleases(); notify(button.dataset.session === 'start' ? '已开始计时，各队手机将显示出发倒计时' : '已重置计时');
+  });
+});
+type ReleaseSummary = { id: string; title: string; createdAt: number; superseded: boolean; url: string; teams: number; startedTeams: number; finishedTeams: number; lastReportAt: number | null; startedAt: number | null };
 let releaseRender = 0;
 async function renderReleases() {
   if (courseId || !$<HTMLDetailsElement>('release-history').open) return;
@@ -116,7 +125,8 @@ async function renderReleases() {
   $('release-list').innerHTML = releases.length ? releases.map(r => {
     const link = new URL(r.url, location.href).href;
     const progress = r.startedTeams ? `${r.startedTeams}/${r.teams} 队已打点 · ${r.finishedTeams} 队完成${r.lastReportAt ? ` · 最近上报 ${clock(r.lastReportAt)}` : ''}` : `${r.teams} 队 · 尚无打点`;
-    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}</small><small>${progress}</small></span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印 ↗</a></div>`;
+    const session = r.startedAt ? `<button class="text-button" data-session="reset" data-release-id="${e(r.id)}">重置计时</button>` : r.superseded ? '' : `<button class="soft-button" data-session="start" data-release-id="${e(r.id)}">开始计时</button>`;
+    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}${r.startedAt ? ` · ${clock(r.startedAt)} 开课` : ''}</small><small>${progress}</small>${session}</span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印 ↗</a><button class="text-button" data-course-qr="${e(r.id)}" data-course-title="${e(r.title)}">二维码</button></div>`;
   }).join('') : '<p class="muted compact">本图尚未发布课程。</p>';
 }
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="mixed_coverage">全员必到 + 其余点全班分担</option>');
@@ -727,6 +737,14 @@ sensors.onLocationFreshness = fresh => {
 window.addEventListener('pagehide', () => { resumeSensors = sensors.active; sensors.stop(); });
 window.addEventListener('pageshow', event => { if (event.persisted && resumeSensors && !courseSuperseded) void sensors.start(); });
 
+function showCourseQr(id: string, title: string) {
+  const link = new URL(`/?course=${id}`, location.href).href;
+  simpleDialog('扫码进入课程', `<p class="course-qr-title">${e(title)}</p><img class="course-qr" src="/api/releases/${e(id)}/qr.png?origin=${encodeURIComponent(location.origin)}" alt="课程二维码"><p class="muted compact course-qr-link">${e(link)}</p><p class="muted compact">学生用微信或相机扫码打开，选择本队后开始。投屏时可放大浏览器窗口。</p>`);
+}
+document.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLElement>('[data-course-qr]');
+  if (button) showCourseQr(button.dataset.courseQr!, button.dataset.courseTitle ?? '定向越野课');
+});
 function simpleDialog(title: string, body: string): HTMLDialogElement {
   const dialog = document.createElement('dialog'); dialog.className = 'info-dialog'; dialog.innerHTML = `<div class="dialog-heading"><h2>${e(title)}</h2><button class="icon-button" data-close aria-label="关闭">×</button></div>${body}`;
   document.body.append(dialog); dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => dialog.close(); dialog.addEventListener('close', () => dialog.remove(), { once: true }); dialog.showModal(); return dialog;
@@ -801,13 +819,33 @@ $('review-button').onclick = () => {
       if (result.request?.teams?.length) restorePlanFields(result.request);
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
       const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title: '深大定向越野课' }) });
-      const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印各队路线 ↗</a>`;
+      const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印各队路线 ↗</a><button class="text-button" data-course-qr="${e(new URL(link).searchParams.get('course') ?? '')}" data-course-title="深大定向越野课">课程二维码</button>`;
       dialog.close(); dialog.remove(); renderState(); void renderReleases(); notify('已生成学生课程链接');
     } catch (error) { $('review-error').textContent = error instanceof Error ? error.message : String(error); button.disabled = false; }
   };
 };
 
 function studentRoute(): Route | undefined { return plan?.routes.find(r => r.teamId === value('student-team')); }
+let classStart: { startedAt: number | null; offset: number } | null = null;
+function rememberClassStart(startedAt: number | null, serverTime: number) {
+  // Phone clocks drift; count from the server's start using its own time.
+  classStart = { startedAt, offset: serverTime - Date.now() / 1000 };
+  try { localStorage.setItem(`dirmap-class-start:${courseId}`, JSON.stringify(classStart)); } catch { /* the clock still runs this session */ }
+  renderClassClock();
+}
+function loadClassStart() {
+  try { const saved = JSON.parse(stored(`dirmap-class-start:${courseId}`) ?? 'null'); if (saved && Number.isFinite(saved.offset)) classStart = saved; } catch { /* no saved start */ }
+  renderClassClock();
+}
+const clockText = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+function renderClassClock() {
+  const route = studentRoute(); if (!route || !courseId) return;
+  if (!classStart?.startedAt) { $('class-clock').textContent = '等待教师开始计时'; $('class-clock').classList.remove('due'); return; }
+  const elapsed = Math.max(0, Date.now() / 1000 + classStart.offset - classStart.startedAt), wait = route.departureSec - elapsed;
+  const together = !plan?.routes.some(r => r.departureSec > 0);
+  $('class-clock').textContent = `开课 ${clockText(elapsed)} · ${together ? '统一出发' : wait > 0 ? `本队还有 ${clockText(wait)} 出发` : '本队已可出发'}`;
+  $('class-clock').classList.toggle('due', route.departureSec > 0 && wait > 0 && wait <= 60);
+}
 let fallbackDevice: string | null = null;
 function deviceId() {
   // A random per-browser label lets the server order this phone's reports;
@@ -870,7 +908,8 @@ function renderClassBoard() {
 }
 $('class-board-list').addEventListener('click', event => {
   if (!(event.target as HTMLElement).closest('#export-results') || !plan || !classProgress) return;
-  const url = URL.createObjectURL(new Blob([resultsCsv(plan.routes, classProgress, studentControls, plan.coverage?.mandatoryControlIds ?? [])], { type: 'text/csv;charset=utf-8' }));
+  const start = classStart?.startedAt ? (classStart.startedAt - classStart.offset) * 1000 : null;
+  const url = URL.createObjectURL(new Blob([resultsCsv(plan.routes, classProgress, studentControls, plan.coverage?.mandatoryControlIds ?? [], start)], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a'); link.href = url; link.download = `dirmap-results-${courseId}.csv`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
@@ -882,7 +921,7 @@ function waitingMeeting(): Control | undefined {
 }
 function renderStudent() {
   const route = studentRoute(); if (!route) return;
-  $('student-overview').innerHTML = `<div class="quality-values"><div><strong>${distance(route.distanceM)}</strong><span>全程距离</span></div><div><strong>${Math.round(route.durationSec / 60)}<small> 分钟</small></strong><span>预计用时（含打点与等待）</span></div></div><p>${route.people} 人同行${route.departureSec ? ` · 开课后 ${route.departureSec} 秒出发` : ' · 统一出发'}</p>`;
+  $('student-overview').innerHTML = `<div class="quality-values"><div><strong>${distance(route.distanceM)}</strong><span>全程距离</span></div><div><strong>${Math.round(route.durationSec / 60)}<small> 分钟</small></strong><span>预计用时（含打点与等待）</span></div></div><p>${route.people} 人同行${route.departureSec ? ` · 开课后 ${minutes(route.departureSec)}出发` : plan?.routes.some(r => r.departureSec > 0) ? ' · 开课即出发，其他队错峰' : ' · 统一出发'}</p>`;
   const surfaceNames = Object.fromEntries((plan?.surfaces ?? []).map(s => [s.id, s.label]));
   if (route.transitions?.length) $('student-overview').insertAdjacentHTML('beforeend', `<div id="student-transitions" class="notice-card"><strong>按标记换层</strong>${route.transitions.map(t => `<p>${e(t.label)}：${e(surfaceNames[t.fromSurface])} → ${e(surfaceNames[t.toSurface])}</p>`).join('')}<p class="muted compact">道路在屏幕上重合不代表互通。换层后请确认当前位置层级。</p></div>`);
   const requiredByAll = new Set(plan?.coverage?.mandatoryControlIds ?? []);
@@ -948,7 +987,7 @@ $<HTMLSelectElement>('student-team').onchange = () => {
   try { checkInTimes = JSON.parse(localStorage.getItem(progressKey() + ':times') ?? '{}') ?? {}; } catch { checkInTimes = {}; }
   checkInTimes = Object.fromEntries(Object.entries(checkInTimes).filter(([id, at]) => completed.has(id) && Number.isFinite(at)));
   $('print-team').setAttribute('href', `/?course=${courseId}&print=${encodeURIComponent(value('student-team'))}`);
-  resetNavigation(); renderStudent(); void syncProgress();
+  resetNavigation(); renderStudent(); renderClassClock(); void syncProgress();
 };
 const viewing = () => $('student-panel').classList.contains('viewer');
 $('check-in').onclick = () => { if (courseSuperseded || waitingMeeting() || viewing()) return; const next = studentRoute()?.controlIds.find(id => !completed.has(id)); if (next) { completed.add(next); checkInTimes[next] = Date.now(); saveProgress(); resetNavigation(); renderStudent(); } };
@@ -991,11 +1030,12 @@ async function boot() {
       if (course.offline) $('offline-status').textContent = '正在使用已保存课程；联网后检查教师更新。';
       else void cacheStudentCourse();
     }
-    releasePoll = setInterval(async () => {
+    const checkStatus = async () => {
       if (document.hidden || courseSuperseded) return;
       try {
         // A few bytes per check instead of the whole course package.
-        const current = await api<{ superseded: boolean; routingSchema?: string; offline?: boolean }>(`/api/releases/${courseId}/status`);
+        const current = await api<{ superseded: boolean; routingSchema?: string; offline?: boolean; startedAt?: number | null; serverTime?: number }>(`/api/releases/${courseId}/status`);
+        if (typeof current.serverTime === 'number') rememberClassStart(current.startedAt ?? null, current.serverTime);
         if (current.superseded || current.routingSchema !== __DIRMAP_ROUTING_SCHEMA__) {
           courseSuperseded = true; navigationRevision++; follow = false; sensors.stop(); campusMap.setRoutes([]);
           $('release-badge').textContent = '课程已更新'; $('sensor-status').textContent = '旧路线已失效，请使用教师提供的新链接';
@@ -1005,7 +1045,10 @@ async function boot() {
           if (!current.offline) { await syncProgress(); await refreshClassProgress(); }
         }
       } catch { $('release-badge').textContent = '离线 · 状态未更新'; }
-    }, 15000);
+    };
+    releasePoll = setInterval(checkStatus, 15000);
+    loadClassStart(); setInterval(renderClassClock, 1000);
+    if (!course.offline) void checkStatus();
     if (location.hash === '#progress') {
       // The teacher's progress link only views the class; a stray tap must
       // not report a check-in for whichever team happens to be selected.

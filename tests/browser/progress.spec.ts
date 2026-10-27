@@ -10,7 +10,7 @@ async function publishMixedCourse(page: Page) {
   for (const control of state.controls.filter((c: any) => (c.role ?? 'control') === 'control')) {
     await page.locator(`[data-required="${control.id}"]`).setChecked(kept.has(control.label));
   }
-  await page.locator('#people').fill('4'); await page.locator('#teams').fill('2');
+  await page.locator('#people').fill('4'); await page.locator('#teams').fill('2'); await page.locator('#stagger').fill('600');
   await page.locator('#plan-button').click();
   await expect(page.locator('.route-card')).toHaveCount(2, { timeout: 30000 });
   await page.locator('#review-button').click();
@@ -20,6 +20,11 @@ async function publishMixedCourse(page: Page) {
   const link = page.getByLabel('学生课程链接');
   await expect(link).toBeVisible({ timeout: 30000 });
   await expect(page.getByRole('link', { name: '查看全班进度 ↗' })).toHaveAttribute('href', /#progress$/);
+  await page.getByRole('button', { name: '课程二维码' }).click();
+  const qr = page.locator('dialog img.course-qr');
+  await expect(qr).toHaveAttribute('src', /qr\.png\?origin=http%3A%2F%2F127\.0\.0\.1%3A5174$/);
+  await expect.poll(() => qr.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(200);
+  await page.locator('dialog [data-close]').click();
   return new URL(await link.inputValue()).searchParams.get('course')!;
 }
 
@@ -34,6 +39,10 @@ async function reachFirstMeeting(phone: Page, teamId: string, route: any, meetin
 test('phones share check-ins so a class meeting shows who has arrived, and offline check-ins catch up', async ({ page, browser }) => {
   test.setTimeout(150000);
   const courseId = await publishMixedCourse(page);
+  // Staggered teams count their departure from the teacher's start.
+  await page.locator('#release-history summary').click();
+  await page.locator(`[data-release="${courseId}"] [data-session="start"]`).click();
+  await expect(page.locator(`[data-release="${courseId}"]`)).toContainText('开课');
   const course = await (await page.request.get(`/api/releases/${courseId}`)).json();
   const [first, second] = course.plan.routes, meetings = course.plan.coverage.mandatoryControlIds;
   const phones = await Promise.all([0, 1].map(async () => {
@@ -44,6 +53,13 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
     return { context, phone };
   }));
   const [a, b] = phones;
+  await a.phone.locator('#student-team').selectOption(first.teamId);
+  await b.phone.locator('#student-team').selectOption(second.teamId);
+  await expect(a.phone.locator('#class-clock')).toContainText('本队已可出发');
+  await expect(b.phone.locator('#class-clock')).toHaveText(/^开课 0:\d\d · 本队还有 9:\d\d 出发$/);
+  await expect(a.phone.locator('#student-overview')).toContainText('开课即出发');
+  await expect(b.phone.locator('#student-overview')).toContainText('开课后 10 分 0 秒出发');
+  await b.phone.locator('#student-panel').screenshot({ path: '/tmp/dirmap-class-clock.png' });
   const meeting = await reachFirstMeeting(a.phone, first.teamId, first, meetings);
   await expect(a.phone.locator('#meeting-arrivals')).toContainText(`已到 1 / 2 队 · 未到：${second.teamId}`);
   expect(await reachFirstMeeting(b.phone, second.teamId, second, meetings)).toBe(meeting);
@@ -59,7 +75,7 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
   await a.phone.locator('#export-results').click();
   const csv = fs.readFileSync(await (await download).path(), 'utf8');
   const rows = csv.replace(/^\uFEFF/, '').trim().split('\r\n');
-  expect(rows[0]).toBe('队伍,人数,顺序,目标,类型,状态,打点时间（手机记录）');
+  expect(rows[0]).toBe('队伍,人数,顺序,目标,类型,状态,打点时间（手机记录）,距开课（分:秒）');
   expect(rows).toHaveLength(1+first.controlIds.length+second.controlIds.length);
   expect(rows.filter(row => row.includes(',已完成,'))).toHaveLength(reached+second.controlIds.indexOf(meeting)+1);
   await expect(a.phone.locator('.student-stop.done > small').first()).toHaveText(/^已完成 \d{1,2}:\d{2}/);
@@ -104,6 +120,9 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
   await expect(row).toContainText('当前有效');
   await expect(row).toContainText('2/2 队已打点 · 0 队完成');
   await expect(row.getByRole('link', { name: '全班进度 ↗' })).toHaveAttribute('href', new RegExp(`course=${courseId}#progress$`));
+  page.once('dialog', dialog => dialog.accept());
+  await row.locator('[data-session="reset"]').click();
+  await expect(row.locator('[data-session="start"]')).toBeVisible();
   // That link is a read-only view; a stray tap cannot report for a team.
   await page.goto(await row.getByRole('link', { name: '全班进度 ↗' }).getAttribute('href') as string, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#viewer-note')).toBeVisible();
