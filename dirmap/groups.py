@@ -41,8 +41,8 @@ class Gone(GroupError):
 
 @contextmanager
 def database():
-    path = store.DATA/'groups.sqlite3'
-    path.parent.mkdir(parents=True, exist_ok=True)
+    # Members' positions: readable by the server's user only.
+    path = store.private_database(store.DATA/'groups.sqlite3')
     db = sqlite3.connect(path, timeout=10, isolation_level=None)
     db.row_factory = sqlite3.Row
     db.execute('PRAGMA foreign_keys=ON')

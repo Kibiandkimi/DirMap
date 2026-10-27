@@ -25,6 +25,7 @@ def test_members_share_positions_messages_and_help_through_a_code(server, monkey
     assert created.status_code == 200 and created.headers['cache-control'] == 'no-store'
     host = created.json()
     assert len(host['group']['code']) == 6 and host['group']['title'] == '三队' and host['members'][0]['host']
+    assert (store.DATA/'groups.sqlite3').stat().st_mode & 0o777 == 0o600
     joined = server.post('/api/groups/join', json={'code': ' '+host['group']['code'][:3]+' '+host['group']['code'][3:], 'name': '小李'})
     member = joined.json()
     assert member['groupId'] == host['groupId'] and [m['name'] for m in member['members']] == ['小王', '小李']

@@ -214,7 +214,9 @@ def account_status(client):
 
 
 def test_session_cookie_is_http_only_and_cross_site_writes_are_refused(server):
+    import stat
     response = TestClient(app).post('/api/auth/register', json={'username': 'cookie-check', 'password': 'correct horse'})
+    assert stat.S_IMODE(os.stat(store.DATA/'accounts.sqlite3').st_mode) == 0o600
     cookie = response.headers['set-cookie'].lower()
     assert 'httponly' in cookie and 'samesite=lax' in cookie
     teacher = account('cross-site')

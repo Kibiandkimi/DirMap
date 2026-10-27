@@ -50,6 +50,16 @@ def using(workspace):
         CURRENT.reset(token)
 
 
+def private_database(path):
+    """An owner-only file for SQLite to open; its journals take the same mode."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        os.close(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600))
+    except FileExistsError:
+        pass
+    return path
+
+
 def workspaces():
     """Every workbench on this server, the original one first."""
     found = [LEGACY]
