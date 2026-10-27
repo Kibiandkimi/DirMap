@@ -1,0 +1,58 @@
+{
+  "checkedAt": "2026-10-27T21:55:11Z",
+  "site": "dashahe-park",
+  "scope": "由大沙河公园 OSM 参照按 ISSprOM 配色渲染的合成短距离图，已知旋转与比例；验证场地坐标系、参照与完整处理流程，不代表真实印刷公园地图的识别精度。",
+  "synthetic": {
+    "metresPerPixel": 0.5,
+    "rotationDeg": 2.5,
+    "size": [
+      1930,
+      2274
+    ],
+    "northGuideSpacingM": 150,
+    "controls": 8,
+    "jpegBytes": 439333
+  },
+  "processingSec": 51.2,
+  "registration": {
+    "method": "building_seed_observed_outline_ransac_mesh",
+    "fitCount": 195,
+    "p95ErrorM": 3.43,
+    "medianErrorM": 1.22,
+    "baseAssetId": null
+  },
+  "frameOrigin": [
+    113.9566,
+    22.5599
+  ],
+  "controls": {
+    "drawn": 8,
+    "detected": 8,
+    "matched": 8,
+    "calibrated": 8,
+    "positionErrorM": {
+      "median": 0.77,
+      "max": 1.45
+    },
+    "labels": [
+      "31",
+      "32",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "待核8"
+    ]
+  },
+  "startFinishRecognized": 1,
+  "plan": {
+    "status": "OPTIMAL",
+    "teams": 2,
+    "targets": 8,
+    "unresolved": [],
+    "totalDistanceM": 2566.3,
+    "latestFinishSec": 834.6,
+    "routeWithinMapExtent": true
+  }
+}

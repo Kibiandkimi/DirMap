@@ -8,17 +8,19 @@ import os
 from pathlib import Path
 import re
 import secrets
+import shutil
 import time
 from typing import Annotated, Literal
 import uuid
 
+import anyio
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import service, store, layers, memory, printing, progress, field_checks
+from . import accounts, groups, service, store, layers, memory, printing, progress, field_checks, sites
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -44,6 +46,9 @@ app = FastAPI(title='DirMap', version='0.1.0', lifespan=lifespan)
 # images are already compressed and stay as they are.
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 Point = tuple[FiniteFloat, FiniteFloat]
+MAX_UPLOADS = 30
+# Anyone may register, so uploads stop well before the data disk fills.
+MIN_FREE_BYTES = 2*1024**3
 
 
 class Model(BaseModel):
@@ -245,6 +250,69 @@ class ReleaseRequest(Model):
     title: str = Field(default='深大定向越野课', min_length=1, max_length=100)
 
 
+class Credentials(Model):
+    username: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class Registration(Credentials):
+    claimOriginal: bool = False
+    originalToken: str | None = Field(default=None, max_length=200)
+
+
+class PasswordChange(Model):
+    oldPassword: str = Field(min_length=1, max_length=200)
+    newPassword: str = Field(min_length=1, max_length=200)
+
+
+class ClaimRequest(Model):
+    originalToken: str | None = Field(default=None, max_length=200)
+
+
+class GroupCreate(Model):
+    name: str = Field(min_length=1, max_length=40)
+    title: str | None = Field(default=None, max_length=60)
+    releaseId: str | None = Field(default=None, pattern=r'^[0-9a-f]{32}$')
+    teamId: str | None = Field(default=None, min_length=1, max_length=50)
+    center: Point | None = None
+
+
+class GroupJoin(Model):
+    code: str = Field(min_length=1, max_length=20)
+    name: str = Field(min_length=1, max_length=40)
+    teamId: str | None = Field(default=None, min_length=1, max_length=50)
+
+
+class SharedPosition(Model):
+    lnglat: Point
+    accuracyM: FiniteFloat = Field(ge=0, le=10000)
+    headingDeg: FiniteFloat | None = Field(default=None, ge=0, le=360)
+    timestampMs: FiniteFloat
+
+
+class GroupSync(Model):
+    sharing: bool = False
+    position: SharedPosition | None = None
+    after: int = Field(default=0, ge=0, le=10**9, strict=True)
+
+
+class GroupMessage(Model):
+    kind: Literal['text', 'pin', 'help', 'resolved']
+    text: str | None = Field(default=None, max_length=200)
+    lnglat: Point | None = None
+    after: int = Field(default=0, ge=0, le=10**9, strict=True)
+
+
+class GroupManage(Model):
+    action: Literal['lock', 'unlock', 'remove', 'close']
+    memberId: str | None = Field(default=None, pattern=r'^[0-9a-f]{8}$')
+
+
+class SiteRequest(Model):
+    name: str = Field(min_length=1, max_length=40)
+    bbox: tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat]
+
+
 class ProgressReport(Model):
     teamId: str = Field(min_length=1, max_length=50)
     deviceId: str = Field(pattern=r'^[A-Za-z0-9_-]{8,64}$')
@@ -274,41 +342,164 @@ async def value_error(request, exc):
     return JSONResponse(status_code=422, content={'detail': str(exc)})
 
 
+@app.exception_handler(accounts.AuthError)
+async def auth_error(request, exc):
+    return JSONResponse(status_code=400, content={'detail': str(exc)})
+
+
+@app.exception_handler(groups.Gone)
+async def group_gone(request, exc):
+    # The phone forgets this membership instead of retrying it.
+    return JSONResponse(status_code=410, content={'detail': str(exc)})
+
+
+WRITES = ('POST', 'PUT', 'PATCH', 'DELETE')
+OPEN_PATHS = re.compile(r'/api/(?:health|auth/[a-z-]+|groups(?:/.*)?)')
+STUDENT_READS = re.compile(r'/api/releases/[0-9a-f]{32}(?:/(?:status|progress|overlay\.png|route-map|qr\.png|reference))?')
+STUDENT_WRITES = re.compile(r'/api/releases/[0-9a-f]{32}/(?:navigate|progress)')
+OWNER_PATHS = re.compile(r'/api/releases/[0-9a-f]{32}/(?:session|groups)')
+
+
+def access_scope(method, path):
+    """Who may call: anyone, the course's owner, or the workbench's owner."""
+    if not path.startswith(('/api/', '/assets/maps/')) or OPEN_PATHS.fullmatch(path):
+        return 'open'
+    if (method in ('GET', 'HEAD') and STUDENT_READS.fullmatch(path)) or (method == 'POST' and STUDENT_WRITES.fullmatch(path)):
+        return 'open'
+    return 'owner' if OWNER_PATHS.fullmatch(path) else 'workbench'
+
+
+def original_open():
+    # Visitors without a session keep using the original workbench, under
+    # its teacher token, until an account claims it.
+    return accounts.legacy_owner() is None
+
+
 @app.middleware('http')
 async def origin_guard(request: Request, call_next):
-    # Guard cross-origin writes to a local teaching server. A deployment can
-    # additionally require an operator token; release reads remain public.
-    if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
+    # Guard cross-origin writes. A signed-in account acts only on its own
+    # workbench and needs no teacher token there; course reads stay public.
+    if request.method in WRITES:
         origin = request.headers.get('origin')
         if origin and origin.rstrip('/') != str(request.base_url).rstrip('/'):
             from urllib.parse import urlparse
             if urlparse(origin).netloc != request.headers.get('host'):
                 return JSONResponse(status_code=403, content={'detail': '不允许跨站修改课程'})
+    scope = access_scope(request.method, request.url.path)
+    if scope != 'open' and current_user(request) is None:
+        if not await anyio.to_thread.run_sync(original_open):
+            return JSONResponse(status_code=401, content={'detail': '请先登录', 'login': True})
+        # Students hold the course link, so its groups' positions and the
+        # course list are the teacher's alone, as every change is.
         token = os.environ.get('DIRMAP_ADMIN_TOKEN')
-        student_navigation = request.method == 'POST' and re.fullmatch(r'/api/releases/[0-9a-f]{32}/(navigate|progress)', request.url.path)
-        if token and not student_navigation:
-            supplied = request.headers.get('x-dirmap-token', '')
-            if not secrets.compare_digest(supplied, token):
+        if token and (request.method in WRITES or request.url.path == '/api/releases' or scope == 'owner'):
+            if not secrets.compare_digest(request.headers.get('x-dirmap-token', ''), token):
                 return JSONResponse(status_code=401, content={'detail': '请输入教师管理口令'})
     response = await call_next(request)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    if request.url.path.startswith('/api/jobs') or request.url.path.endswith('/progress'):
+    if request.url.path.startswith(('/api/jobs', '/api/groups', '/api/auth')) or request.url.path.endswith(('/progress', '/groups')):
         response.headers['Cache-Control'] = 'no-store'
     return response
 
 
+class AccountMiddleware:
+    """Bind each API request to the signed-in account's workbench."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope['type'] != 'http' or not scope['path'].startswith(('/api/', '/assets/maps/')):
+            return await self.app(scope, receive, send)
+        token = Request(scope).cookies.get(accounts.COOKIE)
+        user = await anyio.to_thread.run_sync(accounts.session_user, token) if token else None
+        scope['dirmap.user'] = user
+        with store.using(user['workspace'] if user else store.LEGACY):
+            await self.app(scope, receive, send)
+
+
+app.add_middleware(AccountMiddleware)
+
+
+def current_user(request):
+    return request.scope.get('dirmap.user')
+
+
+def account_view(user):
+    owner = accounts.legacy_owner()
+    return {'user': {key: value for key, value in user.items() if key != 'workspace'} if user else None,
+            'original': {'claimed': owner is not None, 'tokenRequired': bool(os.environ.get('DIRMAP_ADMIN_TOKEN')),
+                         'hasData': None if owner else accounts.legacy_has_data()}}
+
+
+def signed_in(request, token, user):
+    response = JSONResponse(account_view(user))
+    response.set_cookie(accounts.COOKIE, token, max_age=accounts.SESSION_SEC, httponly=True, samesite='lax',
+                        secure=request.url.scheme == 'https', path='/')
+    return response
+
+
+def client_address(request):
+    return request.client.host if request.client else 'unknown'
+
+
+@app.get('/api/auth/me')
+def me(request: Request):
+    return account_view(current_user(request))
+
+
+@app.post('/api/auth/register')
+def register(body: Registration, request: Request):
+    token, user = accounts.register(body.username, body.password, client_address(request),
+                                    claim_legacy=body.claimOriginal, legacy_token=body.originalToken)
+    return signed_in(request, token, user)
+
+
+@app.post('/api/auth/login')
+def login(body: Credentials, request: Request):
+    token, user = accounts.login(body.username, body.password, client_address(request))
+    return signed_in(request, token, user)
+
+
+@app.post('/api/auth/logout')
+def logout(request: Request):
+    accounts.logout(request.cookies.get(accounts.COOKIE))
+    response = JSONResponse(account_view(None))
+    response.delete_cookie(accounts.COOKIE, path='/')
+    return response
+
+
+@app.post('/api/auth/password')
+def change_password(body: PasswordChange, request: Request):
+    user = current_user(request)
+    if user is None:
+        raise HTTPException(401, '请先登录')
+    accounts.change_password(user, body.oldPassword, body.newPassword, request.cookies.get(accounts.COOKIE, ''))
+    return account_view(user)
+
+
+@app.post('/api/auth/claim-original')
+def claim_original(body: ClaimRequest, request: Request):
+    user = current_user(request)
+    if user is None:
+        raise HTTPException(401, '请先登录')
+    return account_view(accounts.claim_legacy(user, body.originalToken))
+
+
 @app.get('/api/health')
-def health():
+def health(lng: FiniteFloat | None = None, lat: FiniteFloat | None = None):
     from datetime import date
     from pygeomag import GeoMag
     today = date.today()
     decimal_year = today.year + (today-date(today.year, 1, 1)).days / ((date(today.year+1, 1, 1)-date(today.year, 1, 1)).days)
+    # The compass corrects magnetic north at the course's own place.
+    frame = Frame(lng, lat) if lng is not None and lat is not None and abs(lng) <= 180 and abs(lat) <= 85 else Frame()
     declination = None
     if 2025 <= decimal_year <= 2030:
-        declination = GeoMag().calculate(glat=Frame().lat, glon=Frame().lng, alt=0, time=decimal_year).d
+        declination = GeoMag().calculate(glat=frame.lat, glon=frame.lng, alt=0, time=decimal_year).d
     deployment = store.read_json(store.ROOT/'deployment.json', {})
-    return {'status': 'ok', 'version': '0.1.0', 'frame': Frame().as_dict(),
+    return {'status': 'ok', 'version': '0.1.0', 'frame': frame.as_dict(),
             'revision': deployment.get('revision'),
             'adminTokenRequired': bool(os.environ.get('DIRMAP_ADMIN_TOKEN')),
             'magneticDeclinationDeg': declination, 'magneticModel': 'WMM-2025', 'modelDate': today.isoformat()}
@@ -324,7 +515,8 @@ def catalog():
                      'controls': len(state['controls']) if state else None,
                      'courseDefaults': store.course_defaults(asset['sha256'])})
     legends = [{'name': p.name, 'url': f'/assets/legend/{index}'} for index, p in enumerate(legend_paths())]
-    return {'maps': maps, 'legends': legends, 'reference': {'crs': 'WGS84', 'name': '深圳大学粤海校区',
+    return {'maps': maps, 'legends': legends, 'sites': [sites.public(site) for site in sites.available()],
+            'reference': {'crs': 'WGS84', 'name': '深圳大学粤海校区',
             'attribution': '© OpenStreetMap contributors', 'licenseUrl': 'https://www.openstreetmap.org/copyright'}}
 
 
@@ -366,8 +558,32 @@ def artifact(asset_id: str, artifact: str, v: int | None = None):
 
 
 @app.get('/api/reference')
-def reference():
-    return geojson(service.reference())
+def reference(site: str = store.DEFAULT_SITE):
+    return geojson(sites.reference(site))
+
+
+@app.get('/api/sites')
+def list_sites():
+    return [sites.public(site) for site in sites.available()]
+
+
+@app.post('/api/sites')
+def add_site(request: SiteRequest, http_request: Request):
+    site = sites.add(request.name, request.bbox)
+    return {'site': sites.public(site), 'job': submit_job(http_request, 'site_reference', site['id'], {})}
+
+
+@app.post('/api/sites/{site_id}/reference')
+def refresh_site(site_id: str, http_request: Request):
+    if sites.get(site_id).get('builtin'):
+        raise ValueError('内置场地的参照随程序发布，无需下载')
+    return submit_job(http_request, 'site_reference', site_id, {})
+
+
+@app.delete('/api/sites/{site_id}')
+def remove_site(site_id: str):
+    sites.remove(site_id)
+    return [sites.public(site) for site in sites.available()]
 
 
 @app.get('/api/maps/{asset_id}')
@@ -391,14 +607,14 @@ def submit_job(request: Request, kind, asset_id, payload, expected_version=None)
     request_id = request.headers.get('x-dirmap-request-id')
     if request_id and not re.fullmatch(r'[A-Za-z0-9_-]{8,128}', request_id):
         raise ValueError('提交标识格式不正确')
-    queue = request.app.state.jobs
-    prior = queue.by_request(request_id, kind, asset_id, payload)
+    queue, workspace = request.app.state.jobs, store.current_workspace()
+    prior = queue.by_request(request_id, kind, asset_id, payload, workspace)
     if prior:
         return prior
     with store.LOCK:
         # A matching request may have committed while this server process
         # waited for the map lock; replay it before checking its old version.
-        prior = queue.by_request(request_id, kind, asset_id, payload)
+        prior = queue.by_request(request_id, kind, asset_id, payload, workspace)
         if prior:
             return prior
         if expected_version is not None:
@@ -406,7 +622,7 @@ def submit_job(request: Request, kind, asset_id, payload, expected_version=None)
             if not state or state['version'] != expected_version:
                 raise HTTPException(409, '地图已更新，请刷新后重试')
         inputs = service.job_inputs(kind, asset_id, payload)
-        return queue.submit(kind, asset_id, payload, inputs, request_id)
+        return queue.submit(kind, asset_id, payload, inputs, request_id, workspace)
 
 
 @app.post('/api/maps/{asset_id}/process')
@@ -425,17 +641,17 @@ def layer_candidates(asset_id: str):
     state = store.get_state(asset_id)
     if not state or not state.get('registration'):
         raise ValueError('请先完成地图配准，再核对参照中的桥隧位置')
-    return layers.reference_candidates(state, service.reference())
+    return layers.reference_candidates(state, service.reference(asset_id, state))
 
 
 @app.get('/api/jobs')
 def recent_jobs(request: Request, assetId: str | None = None):
-    return request.app.state.jobs.recent(assetId)
+    return request.app.state.jobs.recent(assetId, workspace=store.current_workspace())
 
 
 @app.get('/api/jobs/request/{request_id}')
 def job_by_request(request_id: str, request: Request):
-    job = request.app.state.jobs.by_request(request_id)
+    job = request.app.state.jobs.by_request(request_id, workspace=store.current_workspace())
     if job is None:
         raise HTTPException(404, '未找到这次提交，请检查任务记录后重新操作')
     return job
@@ -443,7 +659,7 @@ def job_by_request(request_id: str, request: Request):
 
 @app.get('/api/jobs/{job_id}')
 def job(job_id: str, request: Request):
-    result = request.app.state.jobs.get(job_id)
+    result = request.app.state.jobs.get(job_id, store.current_workspace())
     if result is None:
         raise HTTPException(404, '任务不存在，请检查任务记录和当前地图')
     return result
@@ -451,16 +667,21 @@ def job(job_id: str, request: Request):
 
 @app.post('/api/jobs/{job_id}/cancel')
 def cancel_job(job_id: str, request: Request):
-    result = request.app.state.jobs.cancel(job_id)
+    result = request.app.state.jobs.cancel(job_id, store.current_workspace())
     if result is None:
         raise HTTPException(404, '任务不存在，请检查任务记录和当前地图')
     return result
 
 
 @app.post('/api/maps/upload')
-async def upload(file: UploadFile = File(...)):
+async def upload(file: UploadFile = File(...), siteId: str = store.DEFAULT_SITE):
     if Path(file.filename or '').suffix.lower() not in ('.jpg', '.jpeg', '.png'):
         raise ValueError('请上传 JPEG 或 PNG 地图')
+    sites.get(siteId)
+    if sum(not asset.get('builtin') for asset in store.catalog()) >= MAX_UPLOADS:
+        raise ValueError(f'每个工作台最多导入 {MAX_UPLOADS} 张地图，请先删除不用的地图')
+    if shutil.disk_usage(store.DATA).free < MIN_FREE_BYTES:
+        raise ValueError('服务器存储空间不足，暂时不能导入新地图，请联系管理员')
     payload = await file.read(20*1024*1024+1)
     if len(payload) > 20*1024*1024:
         raise ValueError('地图大小不能超过 20 MiB')
@@ -473,12 +694,27 @@ async def upload(file: UploadFile = File(...)):
         path.unlink(missing_ok=True)
         raise
     asset = {'id': asset_id, 'path': path.relative_to(store.DATA).as_posix(), 'name': Path(file.filename).stem[:80],
-             'filename': Path(file.filename).name, 'role': 'map', 'sha256': hashlib.sha256(payload).hexdigest()}
+             'filename': Path(file.filename).name, 'role': 'map', 'sha256': hashlib.sha256(payload).hexdigest(),
+             'siteId': siteId}
     with store.LOCK:
-        uploads = store.read_json(store.DATA/'uploads.json', [])
+        uploads = store.read_json(store.uploads_path(), [])
         uploads.append(asset)
-        store.atomic_json(store.DATA/'uploads.json', uploads)
+        store.atomic_json(store.uploads_path(), uploads)
     return {k: v for k, v in asset.items() if k != 'path'}
+
+
+@app.delete('/api/maps/{asset_id}')
+def delete_map(asset_id: str):
+    # Published courses keep their own copy of routes and the overlay; they
+    # report themselves as replaced once their map is gone.
+    with store.LOCK:
+        if store.get_asset(asset_id).get('builtin'):
+            raise ValueError('内置示例地图不能删除')
+        uploads = store.read_json(store.uploads_path(), [])
+        store.atomic_json(store.uploads_path(), [asset for asset in uploads if asset['id'] != asset_id])
+        shutil.rmtree(store.asset_dir(asset_id), ignore_errors=True)
+        service.forget_graph(asset_id)
+    return {'deleted': asset_id}
 
 
 @app.patch('/api/maps/{asset_id}')
@@ -534,7 +770,7 @@ def patch_map(asset_id: str, patch: StatePatch):
         state.update(version=state['version']+1, reviewed=False, graphHash=None, updatedAt=time.time())
         service.project_controls(state)
         store.save_state(asset_id, state)
-        service.GRAPH_CACHE.pop(asset_id, None)
+        service.forget_graph(asset_id)
         return state
 
 
@@ -621,35 +857,45 @@ def release(request: ReleaseRequest):
         if service.get_graph(state).content_hash != plan['graphHash']:
             raise ValueError('通行算法或数据已更新，请重新生成并核验路线')
         release_id = uuid.uuid4().hex
+        site = sites.get(store.site_of(store.get_asset(request.assetId)))
         result = {'id': release_id, 'title': request.title, 'assetId': request.assetId, 'createdAt': time.time(),
+                  'siteId': site['id'], 'siteName': site['name'], 'workspace': store.current_workspace(),
                   'plan': plan, 'controls': state['controls'], 'frame': state['frame'], 'extent': state['extent'],
                   'quality': state['quality'], 'review': state['review'], 'version': state['version'],
                   'routingSchema': ROUTING_SCHEMA}
         # Freeze derived raster together with the course. A later source edit
         # never mutates a previously issued student link.
-        import shutil
         path = store.DATA/'releases'/release_id
         path.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(store.artifact_path(state, 'overlay.png'), path/'overlay.png')
+        try:
+            store.atomic_json(path/'reference.json', geojson(sites.reference(site['id'])))
+        except ValueError:
+            pass  # a place drawn only by teacher anchors has no OSM reference
         store.atomic_json(path/'release.json', result)
+        # Listing a workbench's courses reads this instead of every package.
+        store.atomic_json(path/'meta.json', {key: result[key] for key in ('id', 'workspace', 'assetId', 'title', 'createdAt', 'siteId')})
         return {'id': release_id, 'url': '/?course='+release_id}
+
+
+def release_owner(path):
+    meta = store.read_json(path.parent/'meta.json') or store.read_json(path) or {}
+    return meta.get('workspace', store.LEGACY), meta.get('assetId')
 
 
 @app.get('/api/releases')
 def list_releases(request: Request, assetId: str | None = None, limit: int = 20):
-    # Course links are the students' access; only the teacher may list them.
-    token = os.environ.get('DIRMAP_ADMIN_TOKEN')
-    if token and not secrets.compare_digest(request.headers.get('x-dirmap-token', ''), token):
-        raise HTTPException(401, '请输入教师管理口令')
+    # Course links are the students' access; only their workbench lists them.
     paths = sorted((path for path in (store.DATA/'releases').glob('*/release.json') if re.fullmatch(r'[0-9a-f]{32}', path.parent.name)),
                    key=lambda path: path.stat().st_mtime, reverse=True)
     result = []
     for path in paths:
         if len(result) >= min(50, max(1, limit)):
             break
-        release = get_release(path.parent.name)
-        if assetId and release['assetId'] != assetId:
+        workspace, asset = release_owner(path)
+        if workspace != store.current_workspace() or (assetId and asset != assetId):
             continue
+        release = load_release(path.parent.name)
         teams = progress.summary(release)['teams']
         result.append({'id': release['id'], 'title': release['title'], 'assetId': release['assetId'],
                        'createdAt': release['createdAt'], 'superseded': release['superseded'], 'url': '/?course='+release['id'],
@@ -660,25 +906,39 @@ def list_releases(request: Request, assetId: str | None = None, limit: int = 20)
     return result
 
 
-@app.get('/api/releases/{release_id}')
-def get_release(release_id: str):
+def load_release(release_id):
+    """A published course, judged against its own workbench's current map."""
     if len(release_id) != 32 or any(c not in '0123456789abcdef' for c in release_id):
         raise HTTPException(404)
     value = store.read_json(store.DATA/'releases'/release_id/'release.json')
     if not value:
         raise HTTPException(404, '课程不存在')
-    state = store.get_state(value['assetId'])
-    value['superseded'] = (not state or state['version'] != value['version']
-                           or state['graphHash'] != value['plan']['graphHash']
-                           or value.get('routingSchema') != ROUTING_SCHEMA
-                           or service.registration_stale(state))
+    value.setdefault('workspace', store.LEGACY)
+    with store.using(value['workspace']):
+        state = store.get_state(value['assetId']) if store.valid_project(value['assetId']) else None
+        value['superseded'] = (not state or state['version'] != value['version']
+                               or state['graphHash'] != value['plan']['graphHash']
+                               or value.get('routingSchema') != ROUTING_SCHEMA
+                               or service.registration_stale(state))
     return value
+
+
+def owned_release(release_id):
+    release = load_release(release_id)
+    if release['workspace'] != store.current_workspace():
+        raise HTTPException(403, '只有发布这门课程的账户可以操作')
+    return release
+
+
+@app.get('/api/releases/{release_id}')
+def get_release(release_id: str):
+    return {key: value for key, value in load_release(release_id).items() if key != 'workspace'}
 
 
 @app.get('/api/releases/{release_id}/status')
 def release_status(release_id: str):
     # Phones poll this; the full course is downloaded once when opened.
-    release = get_release(release_id)
+    release = load_release(release_id)
     return {'id': release['id'], 'superseded': release['superseded'], 'routingSchema': release.get('routingSchema'),
             'startedAt': progress.started_at(release_id), 'serverTime': time.time()}
 
@@ -686,7 +946,7 @@ def release_status(release_id: str):
 @app.post('/api/releases/{release_id}/session')
 def release_session(release_id: str, request: SessionRequest):
     # Staggered departures count from this moment on every phone.
-    release = get_release(release_id)
+    release = owned_release(release_id)
     if request.action == 'start' and release['superseded']:
         raise HTTPException(409, '课程已更新，不能为旧课程开始计时')
     progress.set_started(release_id, time.time() if request.action == 'start' else None)
@@ -698,26 +958,26 @@ def course_qr(release_id: str, origin: str):
     # Behind a proxy only the teacher's page knows the public address.
     if not re.fullmatch(r'https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?', origin):
         raise ValueError('课程地址无效')
-    get_release(release_id)
+    load_release(release_id)
     return Response(printing.course_qr(f'{origin}/?course={release_id}'), media_type='image/png',
                     headers={'Cache-Control': 'public, max-age=86400'})
 
 
 @app.get('/api/releases/{release_id}/route-map')
 def route_map(release_id: str, team: str):
-    release = get_release(release_id)
+    release = load_release(release_id)
     image = printing.route_map(release, team, store.DATA/'releases'/release_id/'overlay.png')
     return Response(image, media_type='image/jpeg', headers={'Cache-Control': 'public, max-age=3600'})
 
 
 @app.get('/api/releases/{release_id}/progress')
 def class_progress(release_id: str):
-    return progress.summary(get_release(release_id))
+    return progress.summary(load_release(release_id))
 
 
 @app.post('/api/releases/{release_id}/progress')
 def report_progress(release_id: str, report: ProgressReport):
-    release = get_release(release_id)
+    release = load_release(release_id)
     if release['superseded']:
         raise HTTPException(409, '课程已更新，请使用教师提供的新链接')
     return progress.record(release, report.model_dump())
@@ -725,15 +985,76 @@ def report_progress(release_id: str, report: ProgressReport):
 
 @app.post('/api/releases/{release_id}/navigate')
 def navigate(release_id: str, request: NavigationRequest):
-    release = get_release(release_id)
+    release = load_release(release_id)
     if release['superseded']:
         raise HTTPException(409, '课程已更新，请使用教师提供的新课程链接')
-    return service.navigate_course(release, request.model_dump())
+    with store.using(release['workspace']):
+        return service.navigate_course(release, request.model_dump())
+
+
+@app.get('/api/releases/{release_id}/groups')
+def release_groups(release_id: str):
+    # Where the members of this course's groups are, for its own teacher.
+    owned_release(release_id)
+    return groups.for_release(release_id)
+
+
+def group_member(request, group_id):
+    if not re.fullmatch(r'[0-9a-f]{16}', group_id):
+        raise HTTPException(404)
+    return request.headers.get('x-dirmap-member', '')
+
+
+@app.post('/api/groups')
+def create_group(body: GroupCreate, request: Request):
+    release = load_release(body.releaseId) if body.releaseId else None
+    if release and release['superseded']:
+        raise HTTPException(409, '课程已更新，请使用教师提供的新链接')
+    return groups.create(body.name, client_address(request), body.title, release, body.teamId, body.center)
+
+
+@app.post('/api/groups/join')
+def join_group(body: GroupJoin, request: Request):
+    return groups.join(body.code, body.name, client_address(request), body.teamId)
+
+
+@app.post('/api/groups/{group_id}/sync')
+def sync_group(group_id: str, body: GroupSync, request: Request):
+    token = group_member(request, group_id)
+    return groups.sync(group_id, token, body.sharing, body.position.model_dump() if body.position else None, body.after)
+
+
+@app.post('/api/groups/{group_id}/messages')
+def group_message(group_id: str, body: GroupMessage, request: Request):
+    token = group_member(request, group_id)
+    return groups.post(group_id, token, body.kind, body.text, body.lnglat, body.after)
+
+
+@app.post('/api/groups/{group_id}/leave')
+def leave_group(group_id: str, request: Request):
+    groups.leave(group_id, group_member(request, group_id))
+    return {'left': True}
+
+
+@app.post('/api/groups/{group_id}/manage')
+def manage_group(group_id: str, body: GroupManage, request: Request):
+    return groups.manage(group_id, group_member(request, group_id), body.action, body.memberId)
+
+
+@app.get('/api/releases/{release_id}/reference')
+def release_reference(release_id: str):
+    # The place's reference as published, so a course works offline and
+    # without access to the teacher's workbench.
+    load_release(release_id)
+    path = store.DATA/'releases'/release_id/'reference.json'
+    if not path.exists():
+        return geojson(sites.reference(store.DEFAULT_SITE))
+    return JSONResponse(store.read_json(path), headers={'Cache-Control': 'public, max-age=86400'})
 
 
 @app.get('/api/releases/{release_id}/overlay.png')
 def release_overlay(release_id: str):
-    get_release(release_id)
+    load_release(release_id)
     return FileResponse(store.DATA/'releases'/release_id/'overlay.png', headers={'Cache-Control': 'public, max-age=31536000, immutable'})
 
 

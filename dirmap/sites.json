@@ -1,0 +1,21 @@
+{
+  "sites": [
+    {
+      "id": "szu-yuehai",
+      "name": "深圳大学粤海校区",
+      "shortName": "深大粤海",
+      "origin": [113.9304, 22.535],
+      "bbox": [113.92, 22.521, 113.946, 22.547],
+      "reference": ["data/reference/yuehai-osm.json", "data/reference/yuehai-osm-extra.json",
+                    "data/reference/yuehai-sports.json", "data/reference/yuehai-building-relations.json"]
+    },
+    {
+      "id": "dashahe-park",
+      "name": "大沙河公园",
+      "shortName": "大沙河公园",
+      "origin": [113.9566, 22.5599],
+      "bbox": [113.949, 22.552, 113.965, 22.567],
+      "reference": ["dirmap/reference-dashahe-park.json"]
+    }
+  ]
+}

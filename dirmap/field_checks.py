@@ -61,12 +61,13 @@ def report(asset_id):
         return {'checks': [{**c, 'errorM': None, 'insideRegistration': False, 'predictedLnglat': None, 'usable': False} for c in checks],
                 'summary': summarize([], len(checks))}
     predicted, inside = Registration.from_dict(state['registration']).forward([c['pixel'] for c in checks])
-    measured = Frame().to_local([c['lnglat'] for c in checks])
+    frame = Frame.of(state)
+    measured = frame.to_local([c['lnglat'] for c in checks])
     rows = []
     for check, guess, valid, truth in zip(checks, predicted, inside, measured):
         error = float(np.linalg.norm(guess-truth)) if valid else None
         rows.append({**check, 'errorM': error, 'insideRegistration': bool(valid),
-                     'predictedLnglat': Frame().to_lnglat(guess).tolist() if valid else None,
+                     'predictedLnglat': frame.to_lnglat(guess).tolist() if valid else None,
                      'usable': bool(valid and check['accuracyM'] <= MAX_ACCURACY_M)})
     usable = [row for row in rows if row['usable']]
     return {'checks': rows, 'summary': summarize(usable, len(rows))}

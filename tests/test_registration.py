@@ -113,3 +113,38 @@ def test_joined_boundary_roofs_can_recover_from_separate_observed_outlines_witho
     assert {p['referenceId'] for p in report['landmarks'] if p['purpose'] == 'validation'} == {'holdout'}
     np.testing.assert_array_equal(updated.target[:len(target)], reg.target)
     assert quality['landmarks'] == landmarks
+
+
+def test_a_sheet_without_matching_water_is_seeded_from_its_buildings():
+    # A park sheet whose river runs off the paper: only roofs to go by.
+    rng = np.random.default_rng(7)
+    angle, scale = np.radians(17), .6
+    rotate = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+    linear = scale*rotate @ np.diag([1., -1.])
+    shift = np.array([-180., 240.])
+    truth = np.column_stack((linear, shift))
+    reference, features = [], []
+    for index in range(14):
+        centre = rng.uniform(-260, 260, 2)
+        size = rng.uniform(14, 48, 2)
+        turn = rng.uniform(0, np.pi)
+        corners = np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]])*size/2 @ np.array(
+            [[np.cos(turn), np.sin(turn)], [-np.sin(turn), np.cos(turn)]])+centre
+        reference.append({'id': f'roof-{index}', 'kind': 'building', **polygon_properties(corners)})
+        pixels = np.linalg.solve(linear, (corners-shift).T).T
+        features.append({'kind': 'building', **polygon_properties(pixels)})
+    reference.append({'id': 'pond', 'kind': 'water', **polygon_properties([[300, 300], [340, 300], [340, 330], [300, 330]])})
+    width, height = 1000, 1000
+    matcher = Matcher(features, reference)
+    matrix, candidates = matcher.initial(width, height)
+    assert matcher.seed_kind == 'building' and candidates > 0
+    pixels = [f['center'] for f in features]
+    np.testing.assert_allclose(affine_points(matrix, pixels), affine_points(truth, pixels), atol=2.5)
+    # The water path is unchanged: with no source water it still reports
+    # why, and a sheet with too few roofs keeps that water failure.
+    try:
+        Matcher(features[:3], reference).initial(width, height)
+    except ValueError as error:
+        assert '水体' in str(error)
+    else:
+        raise AssertionError('three roofs must not seed a registration')

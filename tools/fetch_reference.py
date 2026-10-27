@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Fetch a bounded public OSM reference for SZU; no tile scraping or API key."""
+"""Fetch a bounded public OSM reference; no tile scraping or API key.
+
+Without options this refreshes the SZU campus files in the data directory.
+`--site <id>` regenerates the reference that ships with another built-in
+place (dirmap/sites.json), e.g. `--site dashahe-park`.
+"""
 
 import json
 import argparse
@@ -34,7 +39,18 @@ def fetch(query):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--building-relations-only', action='store_true', help='Refresh complete western campus building relations using the public OSM map API')
+    parser.add_argument('--site', help='Regenerate the shipped reference of this built-in place')
     args = parser.parse_args()
+    if args.site:
+        from dirmap import sites
+        site = next((s for s in sites.builtin() if s['id'] == args.site), None)
+        if site is None or len(site['reference']) != 1 or site['reference'][0].startswith('data/'):
+            raise SystemExit('Only a built-in place with one shipped reference file can be regenerated')
+        data, host = sites.download(sites.overpass_query(site['bbox']), lambda percent, message: print(message))
+        elements = sites.compact(data['elements'])
+        sites.save_reference(store.ROOT/site['reference'][0], site['bbox'], elements, host)
+        print(f'{site["reference"][0]}: {len(elements)} elements, {len(sites.reference(site["id"]))} usable features')
+        return
     if args.building_relations_only:
         url = 'https://api.openstreetmap.org/api/0.6/map?bbox=113.924,22.529,113.927,22.532'
         response = subprocess.run(['curl', '--fail', '--silent', '--show-error', '--max-time', '45', url],

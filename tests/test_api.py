@@ -684,7 +684,8 @@ def test_course_qr_code_opens_the_student_link(client):
     response = client.get(f'/api/releases/{release_id}/qr.png', params={'origin': 'https://course.example:8443'})
     assert response.status_code == 200 and response.headers['content-type'] == 'image/png'
     image = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_GRAYSCALE)
-    assert cv2.QRCodeDetector().detectAndDecode(image)[0] == f'https://course.example:8443/?course={release_id}'
+    # The classic detector misses about a fifth of valid codes; phones do not.
+    assert cv2.QRCodeDetectorAruco().detectAndDecode(image)[0] == f'https://course.example:8443/?course={release_id}'
     for origin in ('javascript:alert(1)', 'https://host/path', 'https://host?x=1'):
         assert client.get(f'/api/releases/{release_id}/qr.png', params={'origin': origin}).status_code == 422
     assert client.get('/api/releases/'+'0'*32+'/qr.png', params={'origin': 'https://host'}).status_code == 404

@@ -1,4 +1,4 @@
-"""Campus OSM reference. It is geodetic evidence, not a complete route graph."""
+"""A place's OSM reference. It is geodetic evidence, not a complete route graph."""
 
 import json
 from pathlib import Path
@@ -21,15 +21,38 @@ def polygon_properties(points):
     return {'center': center, 'area': area, 'aspect': ratio, 'points': np.asarray(points).tolist()}
 
 
-def load_reference(path, frame=None):
+# Parkland and stream centre lines only draw a park recognisable on screen.
+# Registration matches buildings, water and pitches; routing never uses any
+# reference polygon as a traversability mask.
+GREEN = {'leisure': ('park', 'garden'), 'landuse': ('grass', 'forest', 'meadow', 'recreation_ground', 'village_green'),
+         'natural': ('wood', 'scrub', 'grassland')}
+LINES = ('road', 'waterway')
+
+
+def classify(tags):
+    if tags.get('building'):
+        return 'building'
+    if tags.get('natural') == 'water' or tags.get('leisure') == 'swimming_pool':
+        return 'water'
+    if tags.get('leisure') == 'pitch':
+        return 'pitch'
+    if tags.get('highway'):
+        return 'road'
+    if tags.get('waterway') in ('river', 'stream', 'canal', 'drain', 'ditch'):
+        return 'waterway'
+    if any(tags.get(key) in values for key, values in GREEN.items()):
+        return 'green'
+    return None
+
+
+def load_reference(paths, frame=None):
+    """Features of one place, from one or more Overpass-format files."""
     frame = frame or Frame()
-    data = json.loads(Path(path).read_text())
-    for name in ('yuehai-osm-extra.json', 'yuehai-sports.json', 'yuehai-building-relations.json'):
-        extra = Path(path).with_name(name)
-        if extra.exists():
-            data['elements'] += json.loads(extra.read_text())['elements']
+    elements = []
+    for path in [paths] if isinstance(paths, (str, Path)) else paths:
+        elements += json.loads(Path(path).read_text(encoding='utf-8'))['elements']
     features = []
-    for element in data['elements']:
+    for element in elements:
         tags = element.get('tags', {})
         coordinates = [[p['lon'], p['lat']] for p in element.get('geometry', []) if p]
         if element.get('type') == 'relation':
@@ -59,15 +82,12 @@ def load_reference(path, frame=None):
                 continue
         if len(coordinates) < 2:
             continue
-        kind = ('building' if tags.get('building') else
-                'water' if tags.get('natural') == 'water' or tags.get('leisure') == 'swimming_pool' else
-                'pitch' if tags.get('leisure') == 'pitch' else
-                'road' if tags.get('highway') else None)
+        kind = classify(tags)
         if kind is None:
             continue
         local = frame.to_local(coordinates)
-        properties = polygon_properties(local) if kind != 'road' else None
-        if kind != 'road' and (not properties or properties['area'] < 40):
+        properties = polygon_properties(local) if kind not in LINES else None
+        if kind not in LINES and (not properties or properties['area'] < 40):
             continue
         features.append({'id': str(element['id']), 'kind': kind, 'tags': tags,
                          'lnglat': coordinates, 'points': local.tolist(), **(properties or {})})
@@ -78,6 +98,6 @@ def geojson(features):
     return {'type': 'FeatureCollection', 'features': [
         {'type': 'Feature', 'id': item['id'],
          'properties': {'kind': item['kind'], **item['tags']},
-         'geometry': {'type': 'LineString' if item['kind'] == 'road' else 'Polygon',
-                      'coordinates': item['lnglat'] if item['kind'] == 'road' else [item['lnglat']]}}
+         'geometry': {'type': 'LineString' if item['kind'] in LINES else 'Polygon',
+                      'coordinates': item['lnglat'] if item['kind'] in LINES else [item['lnglat']]}}
         for item in features]}

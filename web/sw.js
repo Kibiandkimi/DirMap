@@ -6,6 +6,7 @@ const SHELL = 'dirmap-shell-__DIRMAP_BUILD_ID__';
 const COURSES = 'dirmap-courses-v1';
 const RELEASE = /^\/api\/releases\/([0-9a-f]{32})$/;
 const OVERLAY = /^\/api\/releases\/[0-9a-f]{32}\/overlay\.png$/;
+const REFERENCE = /^\/api\/releases\/[0-9a-f]{32}\/reference$/;
 
 self.addEventListener('install', event => event.waitUntil((async () => {
   const response = await fetch('/', { cache: 'reload' });
@@ -50,11 +51,12 @@ async function trimCourses(cache) {
   for (const entry of entries.slice(3)) {
     await cache.delete(entry.request);
     await cache.delete(`/api/releases/${entry.id}/overlay.png`);
+    await cache.delete(`/api/releases/${entry.id}/reference`);
   }
   const kept = new Set(entries.slice(0, 3).map(entry => entry.id));
   for (const request of await cache.keys()) {
     const path = new URL(request.url).pathname;
-    if (OVERLAY.test(path) && !kept.has(path.split('/')[3])) await cache.delete(request);
+    if ((OVERLAY.test(path) || REFERENCE.test(path)) && !kept.has(path.split('/')[3])) await cache.delete(request);
   }
 }
 
@@ -80,7 +82,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (request.mode === 'navigate') {
     event.respondWith(limitedFetch(request).catch(async () => (await caches.open(SHELL)).match('/index.html')));
-  } else if (RELEASE.test(url.pathname) || ['/api/health', '/api/reference'].includes(url.pathname)) {
+  } else if (RELEASE.test(url.pathname) || REFERENCE.test(url.pathname) || ['/api/health', '/api/reference'].includes(url.pathname)) {
     event.respondWith(freshJSON(request));
   } else if (OVERLAY.test(url.pathname)) {
     event.respondWith((async () => {
@@ -108,8 +110,10 @@ self.addEventListener('message', event => {
       const overlay = await limitedFetch(url + '/overlay.png', 60000);
       if (!overlay.ok) throw new Error('原图尚未下载完整');
       await cache.put(url + '/overlay.png', overlay);
+      const origin = (await course.clone().json()).frame?.origin;
       await saveJSON(cache, url, course);
-      for (const path of ['/api/health', '/api/reference']) {
+      // The course's own place: its reference and magnetic declination.
+      for (const path of [url + '/reference', origin ? `/api/health?lng=${origin[0]}&lat=${origin[1]}` : '/api/health']) {
         try { const response = await limitedFetch(path); if (response.ok) await saveJSON(cache, path, response); } catch { /* course overlay and routes are already complete */ }
       }
       await trimCourses(cache);

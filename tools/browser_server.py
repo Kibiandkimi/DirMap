@@ -30,6 +30,18 @@ def remove_stale_copies(now=None):
         shutil.rmtree(directory, ignore_errors=True)
 
 
+def fixture_download(query, progress=lambda percent, message: None, rounds=2):
+    """Stands in for public Overpass: one building and a path at the range centre."""
+    import re
+    south, west, north, east = map(float, re.search(r'\(([-\d.]+),([-\d.]+),([-\d.]+),([-\d.]+)\)', query).groups())
+    lat, lng = (south+north)/2, (west+east)/2
+    square = [{'lat': lat+dy, 'lon': lng+dx} for dx, dy in ((0, 0), (.0004, 0), (.0004, .0003), (0, .0003), (0, 0))]
+    path = [{'lat': south+(north-south)*.2, 'lon': lng}, {'lat': north-(north-south)*.2, 'lon': lng}]
+    progress(20, '下载 OpenStreetMap 参照（测试数据）')
+    return {'elements': [{'type': 'way', 'id': 1, 'tags': {'building': 'yes', 'name': '测试楼'}, 'geometry': square},
+                         {'type': 'way', 'id': 2, 'tags': {'highway': 'footway'}, 'geometry': path}]}, 'fixture://overpass'
+
+
 if __name__ == '__main__':
     import uvicorn
     from dirmap import store
@@ -39,9 +51,11 @@ if __name__ == '__main__':
         data = Path(directory)/'data'
         source = store.DATA
         def ignore(path, names):
+            # Accounts, their workbenches and live groups stay on this machine;
+            # every browser run starts with the original workbench unclaimed.
             return [name for name in names if name == '.write.lock'
-                    or name.startswith(('.processing-', '.terrain-', '.anchors-'))
-                    or (Path(path) == source and name == 'jobs')]
+                    or name.startswith(('.processing-', '.terrain-', '.anchors-', 'accounts.sqlite3', 'groups.sqlite3'))
+                    or (Path(path) == source and name in ('jobs', 'workspaces'))]
         # Freeze the manifest and derived files together. A live teacher can
         # keep working; never replay their queued production jobs in tests.
         with store.LOCK:
@@ -50,4 +64,6 @@ if __name__ == '__main__':
         os.environ['DIRMAP_DATA_DIR'] = str(data)
         store.DATA = data
         os.environ.pop('DIRMAP_ADMIN_TOKEN', None)
+        from dirmap import sites
+        sites.download = fixture_download
         uvicorn.run('dirmap.app:app', host='127.0.0.1', port=8768)

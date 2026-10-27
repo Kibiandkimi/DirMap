@@ -1,10 +1,13 @@
 """Atomic manifests, immutable derived files, and cross-process edit locking."""
 
+from contextlib import contextmanager
+import contextvars
 import hashlib
 import fcntl
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import threading
 import time
@@ -12,6 +15,47 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = Path(os.environ.get('DIRMAP_DATA_DIR', str(ROOT/'data')))
+# '' is the original single-teacher workbench at the data root; each account
+# works in its own directory under workspaces/. Requests and queued jobs set
+# the workbench they act on, so map IDs such as szu-1 never cross accounts.
+LEGACY = ''
+CURRENT = contextvars.ContextVar('dirmap_workspace', default=LEGACY)
+
+
+def valid_workspace(workspace):
+    return workspace == LEGACY or bool(re.fullmatch(r'[0-9a-f]{16}', workspace or ''))
+
+
+def workspace_root(workspace=None):
+    workspace = CURRENT.get() if workspace is None else workspace
+    if workspace == LEGACY:
+        return DATA
+    if not valid_workspace(workspace):
+        raise ValueError('工作区标识无效')
+    return DATA/'workspaces'/workspace
+
+
+def current_workspace():
+    return CURRENT.get()
+
+
+@contextmanager
+def using(workspace):
+    if not valid_workspace(workspace):
+        raise ValueError('工作区标识无效')
+    token = CURRENT.set(workspace)
+    try:
+        yield
+    finally:
+        CURRENT.reset(token)
+
+
+def workspaces():
+    """Every workbench on this server, the original one first."""
+    found = [LEGACY]
+    if (DATA/'workspaces').is_dir():
+        found += sorted(path.name for path in (DATA/'workspaces').iterdir() if path.is_dir() and valid_workspace(path.name))
+    return found
 
 class DataLock:
     """Reentrant in a thread; serializes writers in other server processes.
@@ -88,24 +132,48 @@ def file_hash(path):
 
 
 def asset_dir(asset_id):
-    if not asset_id or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for c in asset_id):
+    if not valid_project(asset_id):
         raise ValueError('地图标识无效')
-    path = DATA/'projects'/asset_id
+    path = workspace_root()/'projects'/asset_id
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def catalog():
+# The three original sheets in the repository are of the Yuehai campus;
+# uploads made before places existed were all of that campus as well.
+DEFAULT_SITE = 'szu-yuehai'
+_HASHES = {}
+
+
+def builtin_maps():
     originals = []
     for index, path in enumerate(sorted(ROOT.glob('*.jpg'))):
+        stat = path.stat()
+        key = (str(path), stat.st_size, stat.st_mtime_ns)
+        if key not in _HASHES:
+            _HASHES[key] = file_hash(path)
         originals.append({'id': f'szu-{index+1}', 'path': str(path), 'name': f'深大定向图 {index+1}',
-                          'filename': path.name, 'role': 'map', 'sha256': file_hash(path)})
+                          'filename': path.name, 'role': 'map', 'sha256': _HASHES[key], 'siteId': DEFAULT_SITE,
+                          'builtin': True})
+    return originals
+
+
+def site_of(asset):
+    return asset.get('siteId') or DEFAULT_SITE
+
+
+def uploads_path():
+    return workspace_root()/'uploads.json'
+
+
+def catalog():
+    originals = builtin_maps()
     # Uploaded originals always live inside the selected workbench. Older
     # manifests stored absolute paths: after a backup/clone is relocated,
     # those may still exist but belong to a different (possibly live) copy.
     # Resolve by asset ID instead of following the old machine's path.
-    originals.extend({**asset, 'path': str(asset_dir(asset['id'])/'source.img')}
-                     for asset in read_json(DATA/'uploads.json', []))
+    originals.extend({**asset, 'siteId': asset.get('siteId') or DEFAULT_SITE, 'path': str(asset_dir(asset['id'])/'source.img')}
+                     for asset in read_json(uploads_path(), []))
     return originals
 
 
@@ -122,8 +190,15 @@ def course_defaults(source_hash):
     return read_json(ROOT/'data/course-presets.json', {}).get(source_hash)
 
 
+def valid_project(asset_id):
+    return bool(asset_id) and all(c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for c in asset_id)
+
+
 def get_state(asset_id):
-    return read_json(asset_dir(asset_id)/'state.json')
+    if not valid_project(asset_id):
+        raise ValueError('地图标识无效')
+    # Looking up a map must not create a project directory for it.
+    return read_json(workspace_root()/'projects'/asset_id/'state.json')
 
 
 def save_state(asset_id, value, operation_id=None, result=None):
@@ -207,7 +282,9 @@ def prune_history(keep_per_asset=20, keep_sec=30*86400, receipt_age_sec=86400, n
     removed = []
     with LOCK:
         receipts = set()
-        for directory in sorted(path for path in (DATA/'projects').glob('*') if path.is_dir()):
+        directories = sorted(path for workspace in workspaces()
+                             for path in (workspace_root(workspace)/'projects').glob('*') if path.is_dir())
+        for directory in directories:
             receipts.add((read_json(directory/'state.json') or {}).get('lastOperationId'))
             plans = _newest(directory, 'plan-*.json')
             stale = {path for path in plans[keep_per_asset:] if now-path.stat().st_mtime > keep_sec}

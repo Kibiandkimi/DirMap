@@ -20,6 +20,9 @@ from . import memory
 
 log = logging.getLogger(__name__)
 CANCELLED = 'JobCancelled'
+# One account cannot fill the single worker's queue for everybody else; the
+# original single-teacher workbench keeps its previous behaviour.
+MAX_ACTIVE_PER_WORKSPACE = 4
 
 
 class JobCancelled(Exception):
@@ -63,13 +66,17 @@ class JobQueue:
                     kind TEXT NOT NULL, asset_id TEXT NOT NULL, payload TEXT NOT NULL
                 );
             ''')
-            # Older databases gain the cancellation and retention markers.
-            # Another server process may be upgrading the same file.
+            # Older databases gain the cancellation and retention markers and
+            # the owning workbench ('' is the original one). Another server
+            # process may be upgrading the same file.
             db.execute('BEGIN IMMEDIATE')
             columns = {row['name'] for row in db.execute('PRAGMA table_info(jobs)')}
             for column in ('cancel_requested', 'result_pruned'):
                 if column not in columns:
                     db.execute(f'ALTER TABLE jobs ADD COLUMN {column} INTEGER NOT NULL DEFAULT 0')
+            for table in ('jobs', 'submissions'):
+                if 'workspace' not in {row['name'] for row in db.execute(f'PRAGMA table_info({table})')}:
+                    db.execute(f"ALTER TABLE {table} ADD COLUMN workspace TEXT NOT NULL DEFAULT ''")
             db.execute('COMMIT')
 
     @contextmanager
@@ -105,41 +112,52 @@ class JobQueue:
             result['result'] = json.loads(row['result'])
         return result
 
-    def get(self, job_id):
+    def get(self, job_id, workspace=None):
+        """A job, only if it belongs to `workspace` when one is given."""
         with self.database() as db:
-            return self.public(db.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone())
+            row = db.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone()
+            return self.public(row if row is not None and workspace in (None, row['workspace']) else None)
 
-    def by_request(self, request_id, kind=None, asset_id=None, payload=None):
+    def by_request(self, request_id, kind=None, asset_id=None, payload=None, workspace=None):
         if not request_id:
             return None
         with self.database() as db:
             entry = db.execute('SELECT * FROM submissions WHERE request_id=?', (request_id,)).fetchone()
             if not entry:
                 return None
+            if workspace is not None and entry['workspace'] != workspace:
+                if kind is not None:
+                    raise ValueError('同一提交标识不能用于不同的任务')
+                return None
             if kind is not None and (entry['kind'], entry['asset_id'], entry['payload']) != (kind, asset_id, encode(payload)):
                 raise ValueError('同一提交标识不能用于不同的任务')
             return self.public(db.execute('SELECT * FROM jobs WHERE id=?', (entry['job_id'],)).fetchone())
 
-    def recent(self, asset_id=None, limit=20):
+    def recent(self, asset_id=None, limit=20, workspace=None):
         with self.database() as db:
-            clause, args = (' WHERE asset_id=?', [asset_id]) if asset_id else ('', [])
-            rows = db.execute('SELECT * FROM jobs'+clause+
+            clauses, args = [], []
+            if asset_id:
+                clauses.append('asset_id=?'); args.append(asset_id)
+            if workspace is not None:
+                clauses.append('workspace=?'); args.append(workspace)
+            rows = db.execute('SELECT * FROM jobs'+(' WHERE '+' AND '.join(clauses) if clauses else '')+
                               " ORDER BY state IN ('queued','running') DESC, created_at DESC LIMIT ?",
                               [*args, min(200, max(1, limit))]).fetchall()
             return [self.public(row, with_result=False) for row in rows]
 
-    def submit(self, kind, asset_id, payload, inputs, request_id=None):
-        previous = self.by_request(request_id, kind, asset_id, payload)
+    def submit(self, kind, asset_id, payload, inputs, request_id=None, workspace=''):
+        previous = self.by_request(request_id, kind, asset_id, payload, workspace)
         if previous:
             return previous
-        fingerprint = hashlib.sha256(encode([kind, asset_id, payload, inputs]).encode()).hexdigest()
+        # The original workbench keeps its fingerprints from before accounts.
+        fingerprint = hashlib.sha256(encode([kind, asset_id, payload, inputs, *([workspace] if workspace else [])]).encode()).hexdigest()
         with self.database() as db:
             db.execute('BEGIN IMMEDIATE')
             # Recheck inside the transaction: two server processes can accept
             # the same network retry at precisely the same time.
             submission = db.execute('SELECT * FROM submissions WHERE request_id=?', (request_id,)).fetchone()
             if submission:
-                if (submission['kind'], submission['asset_id'], submission['payload']) != (kind, asset_id, encode(payload)):
+                if (submission['kind'], submission['asset_id'], submission['payload'], submission['workspace']) != (kind, asset_id, encode(payload), workspace):
                     raise ValueError('同一提交标识不能用于不同的任务')
                 row = db.execute('SELECT * FROM jobs WHERE id=?', (submission['job_id'],)).fetchone()
             else:
@@ -149,20 +167,26 @@ class JobQueue:
                     # still wanted; joining it must not inherit the cancel.
                     db.execute("UPDATE jobs SET cancel_requested=0,message='继续处理中' WHERE id=?", (row['id'],))
                     row = db.execute('SELECT * FROM jobs WHERE id=?', (row['id'],)).fetchone()
+                if row is None and workspace:
+                    active = db.execute("SELECT COUNT(*) FROM jobs WHERE workspace=? AND state IN ('queued','running')",
+                                        (workspace,)).fetchone()[0]
+                    if active >= MAX_ACTIVE_PER_WORKSPACE:
+                        db.execute('ROLLBACK')
+                        raise ValueError(f'已有 {active} 个任务在排队或处理中，请等它们完成后再提交')
                 if row is None:
                     job_id = uuid.uuid4().hex[:16]
-                    db.execute('''INSERT INTO jobs(id,kind,asset_id,input_hash,payload,inputs,state,created_at)
-                                  VALUES(?,?,?,?,?,?,'queued',?)''',
-                               (job_id, kind, asset_id, fingerprint, encode(payload), encode(inputs), time.time()))
+                    db.execute('''INSERT INTO jobs(id,kind,asset_id,input_hash,payload,inputs,state,created_at,workspace)
+                                  VALUES(?,?,?,?,?,?,'queued',?,?)''',
+                               (job_id, kind, asset_id, fingerprint, encode(payload), encode(inputs), time.time(), workspace))
                     row = db.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone()
                 if request_id:
-                    db.execute('INSERT INTO submissions VALUES(?,?,?,?,?)',
-                               (request_id, row['id'], kind, asset_id, encode(payload)))
+                    db.execute('INSERT INTO submissions(request_id,job_id,kind,asset_id,payload,workspace) VALUES(?,?,?,?,?,?)',
+                               (request_id, row['id'], kind, asset_id, encode(payload), workspace))
             db.execute('COMMIT')
         self.wake.set()
         return self.public(row)
 
-    def cancel(self, job_id):
+    def cancel(self, job_id, workspace=None):
         """Stop queued work now and running work at its next stage boundary.
 
         A result committed before that boundary still succeeds: the map has
@@ -173,6 +197,9 @@ class JobQueue:
         with self.database() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT * FROM jobs WHERE id=?', (job_id,)).fetchone()
+            if row is not None and workspace not in (None, row['workspace']):
+                db.execute('ROLLBACK')
+                return None
             if row is not None and row['state'] == 'queued' and not row['recovered']:
                 db.execute("""UPDATE jobs SET state='failed',message='已取消',error=?,finished_at=? WHERE id=?""",
                            (CANCELLED, time.time(), job_id))
@@ -193,7 +220,7 @@ class JobQueue:
         with self.database() as db:
             db.execute('BEGIN IMMEDIATE')
             rows = db.execute("""SELECT id FROM (SELECT id, finished_at, ROW_NUMBER() OVER (
-                                     PARTITION BY asset_id ORDER BY finished_at DESC, id) AS position
+                                     PARTITION BY workspace, asset_id ORDER BY finished_at DESC, id) AS position
                                  FROM jobs WHERE state IN ('succeeded','failed') AND result IS NOT NULL)
                                  WHERE position > ? AND finished_at < ?""", (keep_per_asset, now-keep_sec)).fetchall()
             db.executemany('UPDATE jobs SET result=NULL, result_pruned=1 WHERE id=?', [(row['id'],) for row in rows])
@@ -256,7 +283,7 @@ class JobQueue:
             # the work that remains.
             if cancelled and percent < 100:
                 raise JobCancelled('任务已取消')
-        envelope = {'id': row['id'], 'kind': row['kind'], 'assetId': row['asset_id'],
+        envelope = {'id': row['id'], 'kind': row['kind'], 'assetId': row['asset_id'], 'workspace': row['workspace'],
                     'payload': json.loads(row['payload']), 'inputs': json.loads(row['inputs']),
                     'attempts': row['attempts'], 'recovered': bool(row['recovered'])}
         try:

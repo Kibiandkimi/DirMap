@@ -22,9 +22,8 @@ from .route_scores import improves
 from .schedule import apply_schedule
 from .team_planning import recommend_teams
 from .ocr import label_controls
-from .reference import load_reference
 from .registration import auto_register, extend_transfer_boundary, manual_register, recover_boundary_buildings, register_to_map, warp_overlay
-from . import store, graph_cache, comparisons, layers
+from . import store, graph_cache, comparisons, layers, sites
 from .protocol import ROUTING_SCHEMA
 from .images import read_map_image
 from .recognition import reconcile_controls
@@ -33,6 +32,15 @@ from .vision import TERRAIN_SCHEMA, analyze, colour_masks, read_image, save_anal
 GRAPH_CACHE = {}
 GRAPH_LOCK = threading.RLock()
 NAVIGATION_LOCK = threading.Lock()
+
+
+def graph_key(asset_id):
+    # Every workbench has its own szu-1; never serve another account's graph.
+    return store.current_workspace(), asset_id
+
+
+def forget_graph(asset_id):
+    GRAPH_CACHE.pop(graph_key(asset_id), None)
 
 
 @lru_cache(maxsize=1)
@@ -44,6 +52,9 @@ def implementation_signature():
 
 def job_inputs(kind, asset_id, payload=None):
     """Freeze the inputs which must not change while a job waits/restarts."""
+    if kind == 'site_reference':
+        site = sites.get(asset_id)
+        return {'site': site['id'], 'bbox': site['bbox']}
     with store.LOCK:
         asset = store.get_asset(asset_id)
         state = store.get_state(asset_id)
@@ -58,12 +69,15 @@ def job_inputs(kind, asset_id, payload=None):
         if kind == 'process':
             bases = {}
             for candidate in store.catalog():
+                if candidate['id'] == asset_id or store.site_of(candidate) != store.site_of(asset):
+                    continue
                 base = store.get_state(candidate['id'])
-                if candidate['id'] != asset_id and base and base.get('registration'):
+                if base and base.get('registration'):
                     bases[candidate['id']] = [base['sourceHash'], registration_stamp(base)]
             snapshot['bases'] = bases
-            path = reference_path()
-            snapshot['referenceHash'] = store.file_hash(path) if path.exists() else None
+            site = sites.get(store.site_of(asset))
+            snapshot['site'] = [site['id'], site['origin'], site.get('status')]
+            snapshot['referenceHash'] = sites.reference_hash(site)
         elif state and (state.get('quality') or {}).get('baseAssetId'):
             base = store.get_state(state['quality']['baseAssetId'])
             snapshot['baseRegistration'] = registration_stamp(base) if base else None
@@ -86,6 +100,15 @@ def job_inputs(kind, asset_id, payload=None):
 
 
 def execute_job(job, progress):
+    with store.using(job.get('workspace', store.LEGACY)):
+        if job['kind'] == 'site_reference':
+            if job['inputs'] != job_inputs(job['kind'], job['assetId'], job['payload']):
+                raise ValueError('等待期间场地范围已改变，请重新下载参照')
+            return sites.fetch_reference(job['assetId'], progress)
+        return _execute_job(job, progress)
+
+
+def _execute_job(job, progress):
     asset_id, operation_id = job['assetId'], job['id']
     committed = store.operation_result(asset_id, operation_id)
     if committed is not None:
@@ -134,18 +157,10 @@ def _execute_operation(job, progress):
     return result
 
 
-def reference_path():
-    path = store.DATA/'reference'/'yuehai-osm.json'
-    if not path.exists():
-        path = store.ROOT/'data'/'reference'/'yuehai-osm.json'
-    return path
-
-
-def reference():
-    path = reference_path()
-    if not path.exists():
-        raise ValueError('缺少校园地理参照，请先运行参考下载命令')
-    return load_reference(path)
+def reference(asset_id=None, state=None):
+    """The OSM reference of a map's place, in that map's own local frame."""
+    site_id = store.site_of(store.get_asset(asset_id)) if asset_id else store.DEFAULT_SITE
+    return sites.reference(site_id, Frame.of(state) if state else None)
 
 
 def registration_stamp(state):
@@ -190,7 +205,7 @@ def refresh_ocr(asset_id):
             raise ValueError('识别编号期间地图被修改，已保留最新修改')
         state.update(version=before['version']+1, reviewed=False, graphHash=None, updatedAt=time.time())
         store.save_state(asset_id, state)
-    GRAPH_CACHE.pop(asset_id, None)
+    forget_graph(asset_id)
     return state
 
 
@@ -212,7 +227,8 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
         save_analysis(result, directory)
         progress(65, '生成更新后的障碍图')
         terrain = cv2.imread(str(directory/'terrain.png'), cv2.IMREAD_UNCHANGED)
-        warp_overlay(terrain, Registration.from_dict(state['registration']), directory/'terrain-warp.png', max_side=1200, nearest=True)
+        warp_overlay(terrain, Registration.from_dict(state['registration']), directory/'terrain-warp.png', frame=Frame.of(state),
+                     max_side=1200, nearest=True)
         for key in ('forbiddenPixelFraction', 'restoredCourseInkPixels', 'continuedBarrierPixels',
                     'continuedRoofPixels', 'staircaseCandidates', 'stairTreadPixels', 'pavedBoundaryPixels', 'lowerLevelHatchingPixels'):
             state['statistics'][key] = result['statistics'][key]
@@ -224,7 +240,7 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
                 raise ValueError('识别期间地图被修改，已保留最新修改，请重试')
             store.stage_artifacts(state, directory)
             store.save_state(asset_id, state, operation_id)
-    GRAPH_CACHE.pop(asset_id, None)
+    forget_graph(asset_id)
     progress(90, '已保留点位及教师修正，旧路线已失效')
     del result, terrain  # the graph build below needs that memory
     get_graph(state)
@@ -234,6 +250,7 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
 def _process_asset(asset_id, progress, directory, previous, operation_id=None, preserve_edits=True, preserve_registration=False):
     started = time.perf_counter()
     asset = store.get_asset(asset_id)
+    site = sites.get(store.site_of(asset))
     keep = bool(preserve_edits and previous and previous.get('sourceHash') == asset['sha256'])
     if preserve_registration:
         if not keep or not previous.get('registration'):
@@ -247,9 +264,11 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
     save_analysis(result, directory)
     if image_info['resized'] or image_info['exifOrientation'] != 1:
         cv2.imwrite(str(directory/'working.jpg'), image, [cv2.IMWRITE_JPEG_QUALITY, 94])
-    progress(35, '匹配校园参照与其他原图')
+    progress(35, f'匹配{site["name"]}参照与同一场地的其他原图')
     reg, quality = None, None
     failures = []
+    # Local metres of a kept fit stay in the frame they were measured in.
+    frame = Frame.of(previous) if keep and previous.get('registration') else sites.frame(site)
     keep_registration = (keep and previous.get('registration') and
         (preserve_registration or (previous.get('quality') or {}).get('method') == 'reviewed_landmarks_mesh'
          or (previous.get('quality') or {}).get('method', '').startswith('manual')))
@@ -257,7 +276,7 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
         reg, quality = Registration.from_dict(previous['registration']), copy.deepcopy(previous['quality'])
     else:
         try:
-            geographic_reference = reference()
+            geographic_reference = sites.reference(site['id'], frame)
             reg, quality = auto_register(result['features'], geographic_reference, result['width'], result['height'])
             if result['controls'] and not reg.forward([c['pixel'] for c in result['controls']])[1].all():
                 reg, quality = recover_boundary_buildings(image, reg, quality, geographic_reference)
@@ -265,10 +284,10 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
             failures.append(str(exc))
     # Prefer direct geographic evidence. A low-resolution copy may inherit
     # more reliable detail from a higher-resolution source of the same map.
-    bases = [] if keep_registration else [a for a in store.catalog() if a['id'] != asset_id]
+    bases = [] if keep_registration else [a for a in store.catalog() if a['id'] != asset_id and store.site_of(a) == site['id']]
     for base in bases:
         state = store.get_state(base['id'])
-        if not state or not state.get('registration') or state['quality'].get('baseAssetId'):
+        if not state or not state.get('registration') or state['quality'].get('baseAssetId') or Frame.of(state) != frame:
             continue
         if reg is not None and state['width']*state['height'] < image.shape[0]*image.shape[1]*1.5:
             continue
@@ -289,7 +308,7 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
     state = {'assetId': asset_id, 'name': asset['name'], 'filename': asset['filename'], 'sourceHash': asset['sha256'],
              'width': result['width'], 'height': result['height'], 'controls': result['controls'], 'sourceImage': image_info,
              'statistics': result['statistics'], 'warnings': result['warnings'],
-             'terrainFeatures': result['terrainFeatures'], 'edits': [], 'frame': Frame().as_dict(),
+             'terrainFeatures': result['terrainFeatures'], 'edits': [], 'frame': frame.as_dict(), 'siteId': site['id'],
              'version': (previous or {}).get('version', 0)+1, 'updatedAt': time.time(),
              'reviewed': False, 'quality': quality, 'registration': reg.as_dict() if reg else None,
              'graphHash': None, 'failures': failures, 'terrainSchema': result['terrainSchema']}
@@ -306,16 +325,16 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
         state['frame'] = copy.deepcopy(previous['frame'])
     if reg is not None:
         progress(60, '生成统一坐标叠层与目标点')
-        state['extent'] = warp_overlay(image, reg, directory/'overlay.png')
+        state['extent'] = warp_overlay(image, reg, directory/'overlay.png', frame=frame)
         terrain = cv2.imread(str(directory/'terrain.png'), cv2.IMREAD_UNCHANGED)
-        warp_overlay(terrain, reg, directory/'terrain-warp.png', max_side=1200, nearest=True)
+        warp_overlay(terrain, reg, directory/'terrain-warp.png', frame=frame, max_side=1200, nearest=True)
         project_controls(state)
     else:
         state['warnings'].append('自动配准证据不足，请录入同名点后继续。')
     progress(90, '保存可复核结果')
     state['processingElapsedSec'] = round(time.perf_counter()-started, 3)
     # Generating a new source interpretation invalidates old route versions.
-    GRAPH_CACHE.pop(asset_id, None)
+    forget_graph(asset_id)
     with store.LOCK:
         current = store.get_state(asset_id)
         if (current or {}).get('version', 0) != (previous or {}).get('version', 0):
@@ -343,7 +362,7 @@ def project_controls(state):
     if not state['controls']:
         return
     world, inside = reg.forward([c['pixel'] for c in state['controls']])
-    frame = Frame()
+    frame = Frame.of(state)
     for control, point, valid in zip(state['controls'], world, inside):
         control['lnglat'] = frame.to_lnglat(point).tolist() if valid else None
         control['calibrated'] = bool(valid)
@@ -365,7 +384,7 @@ def get_graph(state):
 
 def _get_graph(state):
     asset_id = state['assetId']
-    cached = GRAPH_CACHE.get(asset_id)
+    cached = GRAPH_CACHE.get(graph_key(asset_id))
     if cached and cached[0] == state['version']:
         return cached[1]
     if not state.get('registration'):
@@ -387,7 +406,7 @@ def _get_graph(state):
     graph.access_resolver = AccessResolver(graph, reg, semantics) if semantics else None
     # At most one native-pixel graph cached: bounded memory for three maps.
     GRAPH_CACHE.clear()
-    GRAPH_CACHE[asset_id] = (state['version'], graph)
+    GRAPH_CACHE[graph_key(asset_id)] = (state['version'], graph)
     return graph
 
 
@@ -420,7 +439,8 @@ def navigate_course(release, request):
         if graph.content_hash != published['graphHash']:
             raise ValueError('通行图已更新，请使用教师提供的新课程链接')
         reg = Registration.from_dict(state['registration'])
-        world = Frame().to_local([request['lnglat']])
+        frame = Frame.of(state)
+        world = frame.to_local([request['lnglat']])
         pixel = reg.inverse(world)[0]
         if not np.isfinite(pixel).all():
             raise ValueError('当前位置超出已校准的课程范围')
@@ -429,11 +449,11 @@ def navigate_course(release, request):
         controls = [lookup[c] for c in remaining]
         team = next(t for t in published['request']['teams'] if t['id'] == route['teamId'])
         bundle = plan_matrix(graph, controls, pixel.tolist(), published['request']['finishPixel'], reg,
-                             start_surface=request.get('surfaceId'), finish_surface=published['request'].get('finishSurfaceId'))
+                             start_surface=request.get('surfaceId'), finish_surface=published['request'].get('finishSurfaceId'), frame=frame)
         if bundle['unresolved']:
             return {'status': 'NEEDS_REVIEW', 'unresolved': bundle['unresolved'],
                     'version': state['version'], 'graphHash': graph.content_hash, 'route': None}
-        geometry = expand_route(graph, bundle, list(range(len(controls)+2)))
+        geometry = expand_route(graph, bundle, list(range(len(controls)+2)), frame)
         travel = geometry['travelWeightM']/team['speedMps']
         service_time = sum(c.get('serviceBaseSec', 5)+team['people']*c.get('servicePerPersonSec', 1) for c in controls)
         # Recheck after computation; a closure saved concurrently must not
@@ -538,9 +558,10 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
     graph = get_graph(state)
     reg = Registration.from_dict(state['registration'])
     progress(40, '计算必到点之间的合法最短路')
+    frame = Frame.of(state)
     bundle = plan_matrix(graph, controls, request['startPixel'], request['finishPixel'], reg,
                          metric='distance' if request['objective'] == 'min_distance' else 'time',
-                         start_surface=request.get('startSurfaceId'), finish_surface=request.get('finishSurfaceId'))
+                         start_surface=request.get('startSurfaceId'), finish_surface=request.get('finishSurfaceId'), frame=frame)
     plan_id = operation_id or uuid.uuid4().hex[:16]
     if bundle['unresolved']:
         if selection or continuing:
@@ -560,7 +581,7 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         for route, team in zip(value['routes'], request['teams']):
             order = tuple(route['order'])
             if order not in geometries:
-                geometries[order] = expand_route(graph, bundle, route['order'])
+                geometries[order] = expand_route(graph, bundle, route['order'], frame)
             route.update(geometries[order])
             route['travelSec'] = route['travelWeightM']/team['speedMps']
         value['rendezvous'] = apply_schedule(value['routes'], controls, request['teams'], request.get('mandatoryControlIds', []))
@@ -740,16 +761,17 @@ def apply_anchors(asset_id, anchors, expected_version=None, operation_id=None):
         x, y = anchor['pixel']
         if not 0 <= x < state['width'] or not 0 <= y < state['height']:
             raise ValueError('同名点超出原图范围')
-    reg, quality = manual_register(anchors)
+    frame = Frame.of(state)
+    reg, quality = manual_register(anchors, frame)
     image = read_image(store.get_asset(asset_id)['path'], (state['width'], state['height']))
     state['registration'] = reg.as_dict()
     state['quality'] = quality
     initial_version = state['version']
     with tempfile.TemporaryDirectory(prefix='.anchors-', dir=store.asset_dir(asset_id)) as temporary:
         directory = Path(temporary)
-        state['extent'] = warp_overlay(image, reg, directory/'overlay.png')
+        state['extent'] = warp_overlay(image, reg, directory/'overlay.png', frame=frame)
         terrain = cv2.imread(str(store.artifact_path(state, 'terrain.png')), cv2.IMREAD_UNCHANGED)
-        warp_overlay(terrain, reg, directory/'terrain-warp.png', max_side=1200, nearest=True)
+        warp_overlay(terrain, reg, directory/'terrain-warp.png', frame=frame, max_side=1200, nearest=True)
         state['version'] += 1
         state['reviewed'] = False
         state['graphHash'] = None
@@ -759,5 +781,5 @@ def apply_anchors(asset_id, anchors, expected_version=None, operation_id=None):
                 raise ValueError('校准期间地图被修改，已保留最新修改')
             store.stage_artifacts(state, directory)
             store.save_state(asset_id, state, operation_id)
-    GRAPH_CACHE.pop(asset_id, None)
+    forget_graph(asset_id)
     return state

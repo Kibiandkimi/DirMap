@@ -33,6 +33,16 @@ class Frame:
     def as_dict(self):
         return {"crs": "WGS84", "origin": [self.lng, self.lat], "unit": "metre", "axes": "east_north"}
 
+    @classmethod
+    def of(cls, state):
+        """The frame a saved map's local metres were measured in.
+
+        Each place has its own origin; maps saved before places existed
+        carry the original campus origin, which is also the default.
+        """
+        origin = ((state or {}).get("frame") or {}).get("origin")
+        return cls(float(origin[0]), float(origin[1])) if origin else cls()
+
 
 def mercator(lnglat):
     points = np.asarray(lnglat, dtype=float)

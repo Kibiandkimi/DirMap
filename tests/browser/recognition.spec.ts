@@ -8,7 +8,8 @@ test('original photo collage imports, finds every control and opens in its worki
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('.control-row').first()).toBeVisible();
-  const imported = page.waitForResponse(response => response.url().endsWith('/api/maps/upload')
+  // The upload names its place in the query string (here the default campus).
+  const imported = page.waitForResponse(response => new URL(response.url()).pathname === '/api/maps/upload'
     && response.request().method() === 'POST');
   const source = process.env.DIRMAP_RECOGNITION_SOURCE || fixture.sourceFile;
   // Workbench originals use source.img internally; upload them under their

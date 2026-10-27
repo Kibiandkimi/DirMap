@@ -1,5 +1,6 @@
 import 'ol/ol.css';
 import './style.css';
+import { transformExtent } from 'ol/proj.js';
 import { CampusMap, teamColors } from './map';
 import { NavigationSensors, type HeadingSample } from './heading';
 import { PixelEditor } from './editor';
@@ -10,7 +11,9 @@ import { teamComparisonHtml } from './team-comparison';
 import { canRefine, refinementHtml } from './plan-refinement';
 import { resultsCsv } from './class-results';
 import { printSheets } from './print';
-import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type AutoTeamRequest, type Catalog, type ClassProgress, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Portal, type Route, type Surface, type TerrainEdit } from './types';
+import { fetchAccount, openSignIn, renderAccountChip, signInGate } from './account';
+import { GroupOverview, GroupPanel } from './groups';
+import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type AccountState, type Anchor, type AutoTeamRequest, type Catalog, type ClassProgress, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Portal, type Route, type Site, type Surface, type TerrainEdit } from './types';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const number = (id: string) => Number($<HTMLInputElement>(id).value);
@@ -38,6 +41,13 @@ let locationFresh = false;
 let selectedTeam: string | null = null;
 let busy = false;
 let courseId = new URLSearchParams(location.search).get('course');
+// `?group=` without a course opens a page for joining a group only.
+const groupCode = new URLSearchParams(location.search).get('group');
+const groupMode = !courseId && groupCode !== null;
+let account: AccountState | null = null;
+let activeSite = stored('dirmap-site') ?? 'szu-yuehai';
+let groupPanel: GroupPanel | null = null;
+let groupOverview: GroupOverview | null = null;
 let completed = new Set<string>();
 let departedMeetings = new Set<string>();
 let checkInTimes: Record<string, number> = {};
@@ -56,23 +66,23 @@ let resumeSensors = false;
 const offRoute = new OffRouteMonitor();
 
 document.querySelector('#app')!.innerHTML = `
-<header class="app-header"><a href="/" class="brand" aria-label="DirMap 首页"><span class="brand-mark"><svg viewBox="0 0 30 32" aria-hidden="true"><path d="M15 2 28 26 15 20 2 26Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M15 9v11" stroke="currentColor" stroke-width="2"/></svg></span><span>DirMap<small>深大定向</small></span></a><div class="header-context"><span class="context-dot"></span>深圳大学 · 粤海校区<span class="header-divider"></span><span id="header-mode">课程工作台</span></div><div class="header-actions"><span id="release-badge" class="status-tag">备课草稿</span><button id="open-help" class="text-button">使用说明</button></div></header>
-<div class="workspace"><aside class="sidebar" id="teacher-panel"><div class="sidebar-intro"><p class="eyebrow">ORIENTEERING CLASSROOM</p><h1>让每一次出发<br>都有方向<span>。</span></h1><p>校准地图，安排路线，一起探索校园。</p></div>
-<section class="source-section"><div class="section-title"><h2>课程地图</h2><button id="upload-button" class="text-button">＋ 导入</button><input id="upload-input" type="file" accept="image/jpeg,image/png" hidden></div><div id="map-cards" class="map-cards"></div><div class="source-actions"><button id="process-current" class="primary-button">自动识别与配准</button><button id="process-all" class="soft-button">处理全部</button></div><div id="job-status" class="job-status hidden" role="status"><div><span id="job-message">准备中</span><span id="job-percent">0%</span></div><progress id="job-progress" max="100" value="0"></progress><button id="cancel-job" class="text-button hidden">取消任务</button></div><div id="map-summary" class="summary-strip">选择地图开始准备课程</div></section>
+<header class="app-header"><a href="/" class="brand" aria-label="DirMap 首页"><span class="brand-mark"><svg viewBox="0 0 30 32" aria-hidden="true"><path d="M15 2 28 26 15 20 2 26Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M15 9v11" stroke="currentColor" stroke-width="2"/></svg></span><span>DirMap<small>定向越野课</small></span></a><div class="header-context"><span class="context-dot"></span><span id="site-name">深圳大学 · 粤海校区</span><span class="header-divider"></span><span id="header-mode">课程工作台</span></div><div class="header-actions"><span id="release-badge" class="status-tag">备课草稿</span><span id="account-slot"></span><button id="open-help" class="text-button">使用说明</button></div></header>
+<div class="workspace"><aside class="sidebar" id="teacher-panel"><div class="sidebar-intro"><p class="eyebrow">ORIENTEERING CLASSROOM</p><h1>让每一次出发<br>都有方向<span>。</span></h1><p>校准地图，安排路线，一起探索校园与公园。</p></div><div id="workbench-notice"></div>
+<section class="source-section"><div class="section-title"><h2>课程地图</h2><button id="upload-button" class="text-button">＋ 导入</button><input id="upload-input" type="file" accept="image/jpeg,image/png" hidden></div><div class="site-picker"><select id="site-select" aria-label="场地"></select><button id="add-site" class="text-button">＋ 场地</button></div><div id="site-status" class="site-status hidden"></div><div id="map-cards" class="map-cards"></div><div class="source-actions"><button id="process-current" class="primary-button">自动识别与配准</button><button id="process-all" class="soft-button">处理全部</button></div><div id="job-status" class="job-status hidden" role="status"><div><span id="job-message">准备中</span><span id="job-percent">0%</span></div><progress id="job-progress" max="100" value="0"></progress><button id="cancel-job" class="text-button hidden">取消任务</button></div><div id="map-summary" class="summary-strip">选择地图开始准备课程</div></section>
 <nav class="tabs" aria-label="工作区域"><button data-tab="course" class="active">课程设置</button><button data-tab="registration">地图配准</button><button data-tab="terrain">通行核验</button></nav>
 <section id="tab-course" class="tab-content"><div class="section-title"><h2>路线规则</h2><span class="step-number">01</span></div><label class="field-label" for="course-mode">访问方式</label><select id="course-mode"><option value="all_visit">每队访问全部目标</option><option value="split_coverage">全班分担全部目标</option><option value="fixed_order">按列表顺序访问</option></select><div class="form-grid"><label>总人数<input id="people" type="number" value="20" min="1" max="500"></label><label>队伍数<input id="teams" type="number" value="4" min="1" max="30"></label><label>步行 / 跑速 <span>m/s</span><input id="speed" type="number" value="1.4" step="0.1" min="0.2" max="10"></label><label>错峰间隔 <span>秒</span><input id="stagger" type="number" value="0" min="0" max="3600"></label></div><p id="group-preview" class="muted compact">每队 5 人 · 同时出发</p><label class="field-label" for="objective">优化目标</label><select id="objective"><option value="min_max_finish_then_sum">优先让最后一队更早完成</option><option value="min_total_time">全班总耗时最短</option></select>
 <div class="section-title section-gap"><h2>起终点与目标</h2><span class="step-number">02</span></div><div class="endpoint-row"><button id="pick-start" class="endpoint-button"><i class="endpoint-dot start"></i><span>在地图选起点</span></button><button id="pick-finish" class="endpoint-button"><i class="endpoint-dot finish"></i><span>在地图选终点</span></button></div><label class="check-label"><input id="return-start" type="checkbox" checked>回到起点结束</label><div class="control-heading"><span id="control-count">尚未识别目标</span><button id="edit-controls" class="text-button">原图校核 ↗</button></div><p class="muted compact">勾选本次课程目标；固定顺序模式可上下调整。</p><div id="control-list" class="control-list"><div class="empty-small">识别后，控制圈会显示在这里。</div></div><button id="plan-button" class="primary-button wide plan-button">生成队伍路线 <span>→</span></button><div id="plan-errors" role="status"></div><div id="route-results"></div>
 <div id="publish-section" class="publish-section hidden"><button id="review-button" class="soft-button wide">核验课程并发布</button><div id="share-result"></div></div></section>
 <section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>地物匹配与局部校准</h2><span class="step-number">01</span></div><p class="muted">先通过水体和建筑匹配到标准地图；同一校园的图幅也会匹配共同地物。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><div id="field-check-card" class="quality-card"><strong>现场 GPS 核查</strong><p class="muted compact">站在原图上能认出的位置（路口、建筑角或目标圈心），用手机当前定位记录核查点，再在原图上点出所站位置。核查点不参与拟合，也不会让路线或已发布课程失效。</p><div id="field-check-summary"></div><button id="add-field-check" class="soft-button wide">＋ 用当前位置添加核查点</button><div id="field-check-list" class="anchor-list"></div></div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
 <section id="tab-terrain" class="tab-content hidden"><div class="section-title"><h2>核对可通行区域</h2><span class="step-number">01</span></div><p class="muted">红色区域为识别出的障碍。重点核对围墙、门洞、水体、禁区和上下层通道。</p><label class="check-label"><input id="show-terrain" type="checkbox">在地图上显示障碍候选</label><button id="edit-terrain" class="primary-button wide section-gap">打开原图修正通行区域</button><div id="terrain-summary" class="quality-card"></div><p class="muted">原图修正保存后需重新生成路线。二维相交不能证明桥上、桥下可以互通。</p><div class="section-title section-gap"><h2>随图图例</h2></div><div id="legend-links" class="legend-links"></div></section></aside>
-<aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><p id="class-clock" class="class-clock" role="timer"></p><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="arrive-finish" class="primary-button wide hidden">已到达终点</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
+<aside id="student-panel" class="sidebar student-panel hidden"><div id="group-only-heading" class="group-keep hidden"><p class="eyebrow">TEAM UP</p><h1>组队定位</h1><p class="muted">输入同伴告诉你的 6 位组队码，或创建新小组再把组队码告诉同伴。</p></div><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><p id="class-clock" class="class-clock" role="timer"></p><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="arrive-finish" class="primary-button wide hidden">已到达终点</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><details id="group-section" class="group-section group-keep"><summary>组队与位置共享</summary><div id="group-panel" class="group-panel"></div></details><details id="group-overview-section" class="group-section hidden"><summary>各小组位置</summary><div id="group-overview" class="group-panel"></div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
 <main class="map-panel"><div id="map" role="application" aria-label="校园标准地图与定向路线"></div><div class="map-topbar"><div class="map-title"><span class="map-kicker">CAMPUS EXPLORER</span><strong id="map-title">深圳大学 · 粤海校区</strong><span id="map-subtitle">标准地图 / WGS84</span></div><div class="layer-tools"><label class="check-label"><input id="standard-map" type="checkbox" checked>标准底图</label><label class="check-label teacher-only"><input id="stitch-maps" type="checkbox">叠合图幅</label><label class="opacity-control">原图 <input id="overlay-opacity" type="range" min="0" max="100" value="70" aria-label="原图透明度"></label></div></div><div id="map-action-hint" class="map-action-hint hidden" role="status"></div><button id="north-button" class="compass-button" title="北向上" aria-label="切换北向上"><span>N</span><svg id="compass-arrow" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 21 25 12 20 3 25Z" fill="#295c46"/><path d="M12 1v19l9 5Z" fill="#abbdb1"/></svg></button><div class="map-bottom"><div class="navigation-card"><button id="follow-button" class="follow-button"><span class="locate-icon">◎</span><span id="follow-label">开始定位与朝向跟随</span></button><div id="sensor-status" class="sensor-status" role="status">手机打开 HTTPS 链接即可启用</div></div><div class="map-key"><span><i class="key-control"></i>目标点</span><span><i class="key-route"></i>队伍路线</span><span id="location-status">位置尚未开启</span></div></div></main></div><div id="toast" class="toast hidden" role="status"></div>`;
 
 const campusMap = new CampusMap($('map'));
 const sensors = new NavigationSensors();
 const phoneLayout = matchMedia('(max-width: 720px), (max-width: 1000px) and (max-height: 540px)');
-document.querySelector('.workspace')!.insertAdjacentHTML('afterend', `<nav class="mobile-dock" aria-label="手机工作区域"><button id="mobile-map" class="active" aria-pressed="true">地图</button><button id="mobile-panel" aria-expanded="false" aria-controls="${courseId ? 'student-panel' : 'teacher-panel'}">${courseId ? '本队路线' : '课程设置'}</button></nav>`);
-for (const id of ['teacher-panel', 'student-panel']) $(id).insertAdjacentHTML('afterbegin', '<button class="mobile-panel-close soft-button" aria-label="收起面板，查看地图">收起 · 查看地图 ↓</button>');
+document.querySelector('.workspace')!.insertAdjacentHTML('afterend', `<nav class="mobile-dock" aria-label="手机工作区域"><button id="mobile-map" class="active" aria-pressed="true">地图</button><button id="mobile-panel" aria-expanded="false" aria-controls="${courseId || groupMode ? 'student-panel' : 'teacher-panel'}">${courseId ? '本队路线' : groupMode ? '小组' : '课程设置'}</button></nav>`);
+for (const id of ['teacher-panel', 'student-panel']) $(id).insertAdjacentHTML('afterbegin', '<button class="mobile-panel-close soft-button group-keep" aria-label="收起面板，查看地图">收起 · 查看地图 ↓</button>');
 document.querySelector('.map-topbar')!.insertAdjacentHTML('beforeend', '<button id="mobile-layers" class="soft-button" aria-expanded="false" aria-controls="map-layers">图层</button>');
 document.querySelector('.layer-tools')!.id = 'map-layers';
 function setMobilePanel(open: boolean) {
@@ -120,14 +130,14 @@ async function renderReleases() {
   const render = ++releaseRender, assetId = activeId;
   let releases: ReleaseSummary[];
   try { releases = await api<ReleaseSummary[]>(`/api/releases?assetId=${encodeURIComponent(assetId)}`); }
-  catch (error) { if (render === releaseRender) $('release-list').innerHTML = `<p class="muted compact">${e(error instanceof ApiError && error.status === 401 ? '填写教师口令后显示已发布课程。' : '暂时无法读取已发布课程。')}</p>`; return; }
+  catch (error) { if (render === releaseRender) $('release-list').innerHTML = `<p class="muted compact">${e(error instanceof ApiError && error.status === 401 ? '登录或填写原工作台的教师口令后显示已发布课程。' : '暂时无法读取已发布课程。')}</p>`; return; }
   if (render !== releaseRender || assetId !== activeId) return;
   const clock = (seconds: number) => new Date(seconds * 1000).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   $('release-list').innerHTML = releases.length ? releases.map(r => {
     const link = new URL(r.url, location.href).href;
     const progress = r.startedTeams ? `${r.startedTeams}/${r.teams} 队已打点 · ${r.finishedTeams} 队完成${r.lastReportAt ? ` · 最近上报 ${clock(r.lastReportAt)}` : ''}` : `${r.teams} 队 · 尚无打点`;
     const session = r.startedAt ? `<button class="text-button" data-session="reset" data-release-id="${e(r.id)}">重置计时</button>` : r.superseded ? '' : `<button class="soft-button" data-session="start" data-release-id="${e(r.id)}">开始计时</button>`;
-    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}${r.startedAt ? ` · ${clock(r.startedAt)} 开课` : ''}</small><small>${progress}</small>${session}</span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印 ↗</a><button class="text-button" data-course-qr="${e(r.id)}" data-course-title="${e(r.title)}">二维码</button></div>`;
+    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}${r.startedAt ? ` · ${clock(r.startedAt)} 开课` : ''}</small><small>${progress}</small>${session}</span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a><a href="${e(link)}#groups" target="_blank" rel="noreferrer" class="text-link">小组位置 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印 ↗</a><button class="text-button" data-course-qr="${e(r.id)}" data-course-title="${e(r.title)}">二维码</button></div>`;
   }).join('') : '<p class="muted compact">本图尚未发布课程。</p>';
 }
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="mixed_coverage">全员必到 + 其余点全班分担</option>');
@@ -169,6 +179,18 @@ $('course-mode').insertAdjacentHTML('afterend', '<div id="mixed-rules" class="qu
 $<HTMLInputElement>('mandatory-order').onchange = () => { resetPlan(); persistRules(); renderState(); };
 $('sensor-status').insertAdjacentHTML('afterend', '<button id="calibrate-compass" class="text-button compass-calibration">校准罗盘</button>');
 $('check-in').insertAdjacentHTML('afterend', '<button id="meeting-departure" class="primary-button wide hidden">全班已到齐，统一出发</button>');
+$('next-control').insertAdjacentHTML('beforebegin', '<div id="team-sync"></div>');
+// Another phone of this team may have checked in first; adopting its record
+// is the student's choice, so an undo here is not silently reverted.
+$('team-sync').onclick = event => {
+  if (!(event.target as HTMLElement).closest('#adopt-team-progress')) return;
+  const route = studentRoute(), team = classProgress?.teams.find(t => t.teamId === route?.teamId);
+  if (!route || !team || courseSuperseded || viewing()) return;
+  for (const id of team.completed) if (!completed.has(id)) { completed.add(id); if (Number.isFinite(team.checkIns[id])) checkInTimes[id] = team.checkIns[id]; }
+  for (const id of team.departed) if (completed.has(id)) departedMeetings.add(id);
+  if (team.arrived && route.controlIds.every(id => completed.has(id)) && arrivedAt === null) arrivedAt = team.arrivedAt ?? Date.now();
+  saveProgress(); resetNavigation(); renderStudent(); notify('已同步本队其他手机的打点');
+};
 $('objective').insertAdjacentHTML('afterend', '<label class="field-label" for="solver-budget">新方案计算预算</label><select id="solver-budget"><option value="5">快速规划 · 5 秒</option><option value="30">较长计算 · 30 秒</option></select>');
 // A different time budget does not invalidate the current route. Continuing
 // that route uses its own button and saved inputs below the result heading.
@@ -213,7 +235,13 @@ async function api<T = unknown>(url: string, options: RequestInit = {}): Promise
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   const token = sessionStorage.getItem('dirmap-admin-token'); if (token) headers.set('X-DirMap-Token', token);
   const response = await fetch(url, { ...options, headers });
-  if (!response.ok) { let message = `${response.status}`; try { const data = await response.json(); message = typeof data.detail === 'string' ? data.detail : '输入格式不正确，请检查人数、队伍及点位'; } catch { /* response had no JSON */ } throw new ApiError(message, response.status); }
+  if (!response.ok) {
+    let message = `${response.status}`, login = false;
+    try { const data = await response.json(); message = typeof data.detail === 'string' ? data.detail : '输入格式不正确，请检查人数、队伍及点位'; login = data.login === true; } catch { /* response had no JSON */ }
+    // A session that ended while working: sign in again in place.
+    if (login && account && catalog && !courseId) openSignIn({ ...account, user: null });
+    throw new ApiError(message, response.status);
+  }
   return response.json() as Promise<T>;
 }
 async function runJob<T>(url: string, body?: object): Promise<T> {
@@ -261,10 +289,10 @@ $('cancel-job').onclick = async () => {
 async function renderJobs() {
   if (courseId) return;
   const jobs = await api<Job[]>('/api/jobs');
-  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线' };
+  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线', site_reference: '下载场地参照' };
   const states: Record<string, string> = { queued: '排队中', running: '处理中', succeeded: '已完成', failed: '未完成' };
   const status = (job: Job) => job.cancelled ? '已取消' : job.cancelRequested ? '正在取消' : job.resultPruned ? '结果已清理' : states[job.state];
-  $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(status(job))} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
+  $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? catalog?.sites?.find(site => site.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(status(job))} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
 }
 function restorePlanFields(request: PlanRequest) {
   if (!state) return;
@@ -296,6 +324,9 @@ async function resumeJob(pending: PendingJob) {
   rememberJob({ id: job.id });
   const result = await watchJob(job);
   catalog = await api('/api/catalog');
+  if (job.kind === 'site_reference') { await selectSite(job.assetId); notify('已载入场地参照'); return; }
+  const owner = catalog.maps.find(map => map.id === job.assetId);
+  if (owner && owner.siteId !== activeSite) { activeSite = owner.siteId; renderCatalog(); void showSiteReference(); }
   if (!await loadState(job.assetId)) return;
   if (['plan', 'auto_teams', 'choose_teams', 'refine_plan', 'confirm_plan'].includes(job.kind)) {
     const restored = result as Plan;
@@ -309,11 +340,13 @@ function needsRecognitionUpdate() {
   return !!state && (!!state.terrainStale || state.terrainSchema !== __DIRMAP_TERRAIN_SCHEMA__);
 }
 function syncTaskButtons() {
-  for (const id of ['process-current', 'process-all', 'upload-button', 'refresh-terrain', 'refresh-recognition']) $<HTMLButtonElement>(id).disabled = busy;
+  // A place switch while another task runs would be ignored, leaving the
+  // picker out of step with the listed maps.
+  for (const id of ['process-current', 'process-all', 'upload-button', 'refresh-terrain', 'refresh-recognition', 'site-select', 'add-site']) $<HTMLButtonElement>(id).disabled = busy;
   $<HTMLButtonElement>('plan-button').disabled = busy || needsRecognitionUpdate();
   $<HTMLButtonElement>('recommend-teams').disabled = busy || needsRecognitionUpdate() || value('course-mode') === 'custom';
   $('auto-team-hint').textContent = value('course-mode') === 'custom' ? '自定义点序已确定队数；切换其他访问方式后可自动比较。' : '';
-  document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => { button.disabled = busy; });
+  document.querySelectorAll<HTMLButtonElement>('[data-map], [data-delete-map], [data-site-action]').forEach(button => { button.disabled = busy; });
   const refine = document.querySelector<HTMLButtonElement>('#refine-plan');
   if (refine) refine.disabled = busy || !canRefine(plan);
   for (const id of ['review-button', 'customize-plan']) {
@@ -326,7 +359,8 @@ function syncTaskButtons() {
   });
 }
 async function task(action: () => Promise<void>) {
-  if (busy) return; busy = true;
+  if (busy) { notify('上一个操作仍在进行，请稍候'); return; }
+  busy = true;
   syncTaskButtons();
   try { await action(); } catch (error) { notify(error instanceof Error ? error.message : String(error), true); $('job-status').classList.add('hidden'); }
   finally { busy = false; syncTaskButtons(); void renderJobs().catch(() => {}); }
@@ -407,15 +441,77 @@ function renderCustomRoutes() {
   const open = new Set(Array.from(document.querySelectorAll<HTMLDetailsElement>('.custom-team[open]')).map(el => el.dataset.teamIndex));
   $('custom-team-routes').innerHTML = courseTeams().map((team, i) => `<details class="custom-team" data-team-index="${i}" ${open.has(String(i)) || (!open.size && i === 0) ? 'open' : ''}><summary>${e(team.id)} · ${team.people} 人</summary><label class="field-label" for="custom-team-${i}">目标点序</label><textarea id="custom-team-${i}" data-custom-team="${e(team.id)}" aria-label="${e(team.id)} 点序" rows="3" placeholder="例如：31 → 42 → 32 → 33">${e(customDrafts[team.id] ?? '')}</textarea><button class="soft-button" data-custom-map="${e(team.id)}">在地图上为${e(team.id)}点选</button></details>`).join('');
 }
+const currentSite = (): Site | undefined => catalog?.sites?.find(site => site.id === activeSite);
+const siteMaps = () => catalog.maps.filter(map => (map.siteId ?? 'szu-yuehai') === activeSite);
 function renderCatalog() {
-  $('map-cards').innerHTML = catalog.maps.map((map, i) => `<button class="map-card ${map.id === activeId ? 'active' : ''}" data-map="${e(map.id)}"><span class="map-index">0${i + 1}</span><span class="map-card-name">${e(map.name)}<small>${map.processed ? `${map.controls} 个候选目标` : '原图待处理'}</small></span><span class="map-card-state">${map.processed ? '✓' : '○'}</span></button>`).join('');
+  if (!catalog.sites.some(site => site.id === activeSite)) activeSite = catalog.sites[0]?.id ?? 'szu-yuehai';
+  $<HTMLSelectElement>('site-select').innerHTML = catalog.sites.map(site => `<option value="${e(site.id)}">${e(site.name)}${site.status === 'ready' ? '' : site.status === 'failed' ? '（参照下载失败）' : '（正在下载参照）'}</option>`).join('');
+  $<HTMLSelectElement>('site-select').value = activeSite;
+  const site = currentSite();
+  $('site-name').textContent = site?.name ?? '定向场地';
+  const status = $('site-status');
+  status.classList.toggle('hidden', !site || (site.builtin && site.status === 'ready'));
+  if (site && !site.builtin) status.innerHTML = site.status === 'ready'
+    ? `OpenStreetMap 参照 ${site.featureCount ?? 0} 个地物 · <button class="text-button" data-site-action="refresh" ${busy ? 'disabled' : ''}>重新下载</button> <button class="text-button" data-site-action="delete" ${busy ? 'disabled' : ''}>删除场地</button>`
+    : site.status === 'failed' ? `<span class="danger">参照下载失败：${e(site.error ?? '请稍后重试')}</span> <button class="text-button" data-site-action="refresh" ${busy ? 'disabled' : ''}>重试</button> <button class="text-button" data-site-action="delete" ${busy ? 'disabled' : ''}>删除场地</button><br>没有参照时也可导入地图，用同名点手动配准。`
+    : '正在下载这个场地的 OpenStreetMap 参照…';
+  const maps = siteMaps();
+  $('map-cards').innerHTML = maps.length ? maps.map((map, i) => `<div class="map-card-wrap"><button class="map-card ${map.id === activeId ? 'active' : ''}" data-map="${e(map.id)}" ${busy ? 'disabled' : ''}><span class="map-index">${String(i + 1).padStart(2, '0')}</span><span class="map-card-name">${e(map.name)}<small>${map.processed ? `${map.controls} 个候选目标` : '原图待处理'}</small></span><span class="map-card-state">${map.processed ? '✓' : '○'}</span></button>${map.builtin ? '' : `<button class="map-delete text-button" data-delete-map="${e(map.id)}" aria-label="删除地图 ${e(map.name)}" title="删除地图" ${busy ? 'disabled' : ''}>×</button>`}</div>`).join('')
+    : `<div class="empty-small">${e(site?.name ?? '这个场地')}还没有地图。点右上角“＋ 导入”，上传定向地图的照片或扫描件（JPEG/PNG）。</div>`;
   $('legend-links').innerHTML = catalog.legends.map(l => `<a href="${e(l.url)}" target="_blank" rel="noreferrer">${e(l.name.includes('aigc') ? '随图定向运动图例（含 AIGC 标记）' : l.name)} <span>↗</span></a>`).join('');
 }
+async function showSiteReference() {
+  const site = activeSite;
+  try { const data = await api<object>(`/api/reference?site=${encodeURIComponent(site)}`); if (site === activeSite) campusMap.setReference(data); }
+  catch { if (site === activeSite) campusMap.setReference({ type: 'FeatureCollection', features: [] }); }
+}
+/** Switch place: its reference, view and first map. */
+async function selectSite(id: string, mapId?: string) {
+  activeSite = id;
+  try { localStorage.setItem('dirmap-site', id); } catch { /* the choice lasts this page */ }
+  renderCatalog();
+  void showSiteReference();
+  const site = currentSite();
+  const target = mapId ?? siteMaps()[0]?.id;
+  if (target) await loadState(target);
+  else { await loadState(''); if (site) campusMap.fitBounds(site.bbox); }
+  if (target && !state?.extent && site) campusMap.fitBounds(site.bbox);
+}
+$('site-select').onchange = () => task(() => selectSite(value('site-select')));
+$('add-site').onclick = () => {
+  const dialog = simpleDialog('添加场地', `<p class="muted">先把地图移动、缩放到场地所在范围（边长 150 m 到 3 km），再填写名称。服务器会从 OpenStreetMap 下载这个范围内的建筑、水体、道路和绿地，用于自动配准和显示，约需 10–60 秒。</p><label class="field-label">场地名称<input id="site-name-input" maxlength="40" placeholder="例如：莲花山公园"></label><p id="site-add-error" class="danger" role="status"></p><button id="site-add-confirm" class="primary-button wide">用当前地图视野创建场地</button><p class="muted compact">没有 OpenStreetMap 地物的地方，也可以导入地图后用同名点手动配准。</p>`);
+  dialog.querySelector<HTMLButtonElement>('#site-add-confirm')!.onclick = () => {
+    const name = dialog.querySelector<HTMLInputElement>('#site-name-input')!.value.trim();
+    if (!name) { dialog.querySelector('#site-add-error')!.textContent = '请填写场地名称'; return; }
+    const extent = campusMap.map.getView().calculateExtent(campusMap.map.getSize());
+    const bbox = transformExtent(extent, 'EPSG:3857', 'EPSG:4326');
+    dialog.close();
+    void task(async () => {
+      const added = await api<{ site: Site; job: Job<Site> }>('/api/sites', { method: 'POST', body: JSON.stringify({ name, bbox }) });
+      catalog = await api('/api/catalog'); activeSite = added.site.id; renderCatalog();
+      try { await watchJob(added.job); notify(`已下载${name}的参照，可以导入这个场地的地图`); }
+      finally { catalog = await api('/api/catalog'); await selectSite(added.site.id); }
+    });
+  };
+};
+$('site-status').onclick = event => {
+  const action = (event.target as HTMLElement).closest<HTMLElement>('[data-site-action]')?.dataset.siteAction;
+  const site = currentSite();
+  if (!action || !site || site.builtin) return;
+  if (action === 'delete' && !confirm(`删除场地“${site.name}”？场地中没有地图时才能删除。`)) return;
+  void task(async () => {
+    if (action === 'delete') { await api(`/api/sites/${encodeURIComponent(site.id)}`, { method: 'DELETE' }); catalog = await api('/api/catalog'); await selectSite(catalog.sites[0].id); return; }
+    const job = await api<Job<Site>>(`/api/sites/${encodeURIComponent(site.id)}/reference`, { method: 'POST' });
+    try { await watchJob(job); notify('已更新场地参照'); }
+    finally { catalog = await api('/api/catalog'); renderCatalog(); void showSiteReference(); }
+  });
+};
 async function loadState(id: string, fit = true) {
   // The latest map choice wins. A slower earlier response must not pair one
   // map's controls with another map's ID, so both change together here.
   const load = ++stateLoad;
-  const next = await api<MapState & { processed: boolean }>(`/api/maps/${id}`);
+  // A place without maps yet has no map to select.
+  const next = id ? await api<MapState & { processed: boolean }>(`/api/maps/${id}`) : { processed: false } as MapState & { processed: boolean };
   if (load !== stateLoad) return false;
   activeId = id; state = next.processed ? next : null; fieldCheckPoints = []; campusMap.setFieldChecks([]); anchors = []; renderAnchors(); resetPlan(); startPixel = finishPixel = null; startSurfaceId = finishSurfaceId = null;
   initializeRules();
@@ -436,14 +532,14 @@ async function loadState(id: string, fit = true) {
     $('pick-finish').querySelector('span')!.textContent = '已识别原图终点';
     $<HTMLInputElement>('return-start').checked = JSON.stringify(startPixel) === JSON.stringify(finishPixel) && startSurfaceId === finishSurfaceId;
   }
-  renderCatalog(); renderState(); void renderReleases(); void renderFieldChecks(); await updateOverlays(); if (fit && state?.extent && load === stateLoad) campusMap.fit(state.extent);
+  renderCatalog(); renderState(); if (id) void renderReleases(); void renderFieldChecks(); await updateOverlays(); if (fit && state?.extent && load === stateLoad) campusMap.fit(state.extent);
   return load === stateLoad;
 }
 async function updateOverlays() {
   const update = ++overlayUpdate;
   let states = state ? [state] : [];
   if ($<HTMLInputElement>('stitch-maps').checked) {
-    const all = await Promise.all(catalog.maps.filter(m => m.processed && m.id !== activeId).map(m => api<MapState>(`/api/maps/${m.id}`)));
+    const all = await Promise.all(siteMaps().filter(m => m.processed && m.id !== activeId).map(m => api<MapState>(`/api/maps/${m.id}`)));
     if (update !== overlayUpdate) return;
     states = [...all, ...states];
   }
@@ -458,13 +554,13 @@ function renderState() {
   renderCustomRoutes();
   groupPreview();
   campusMap.setControls(state?.controls ?? [], state?.surfaces ?? []);
-  $('export-map').setAttribute('href', `/api/maps/${activeId}/export`);
+  $('export-map').setAttribute('href', activeId ? `/api/maps/${activeId}/export` : '#');
   $('release-badge').textContent = state?.reviewed ? '已核验' : '备课草稿';
-  $('map-title').textContent = state?.name ?? catalog.maps.find(map => map.id === activeId)?.name ?? '深圳大学 · 粤海校区';
+  $('map-title').textContent = state?.name ?? catalog.maps.find(map => map.id === activeId)?.name ?? currentSite()?.name ?? '定向场地';
   if (!state) {
-    $('map-subtitle').textContent = '原图待处理';
-    $('map-summary').textContent = '原图尚未处理';
-    $('control-list').innerHTML = '<div class="empty-small">点击“自动识别与配准”开始。</div>';
+    $('map-subtitle').textContent = activeId ? '原图待处理' : '尚未导入地图';
+    $('map-summary').textContent = activeId ? '原图尚未处理' : '导入这个场地的定向地图后开始准备课程';
+    $('control-list').innerHTML = `<div class="empty-small">${activeId ? '点击“自动识别与配准”开始。' : '先导入地图。'}</div>`;
     $('control-count').textContent = '尚未识别目标';
     $('registration-quality').textContent = '完成自动处理后显示匹配结果。';
     $('terrain-summary').textContent = '完成自动处理后显示通行候选。';
@@ -583,11 +679,20 @@ function showPlan(result: Plan) {
 }
 function download(name: string, data: unknown) { const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
-$('map-cards').onclick = event => { const button = (event.target as HTMLElement).closest<HTMLElement>('[data-map]'); if (button && !busy) task(async () => { await loadState(button.dataset.map!); }); };
-$('process-current').onclick = () => task(async () => { await runJob(`/api/maps/${activeId}/process`); catalog = await api('/api/catalog'); await loadState(activeId); notify('识别与配准完成，请核对候选点和通行区域'); });
-$('process-all').onclick = () => task(async () => { for (const map of catalog.maps) { await runJob(`/api/maps/${map.id}/process`); } catalog = await api('/api/catalog'); $<HTMLInputElement>('stitch-maps').checked = true; await loadState(activeId); });
+$('map-cards').onclick = event => {
+  const remove = (event.target as HTMLElement).closest<HTMLElement>('[data-delete-map]');
+  if (remove) {
+    const map = catalog.maps.find(m => m.id === remove.dataset.deleteMap);
+    if (!map || busy || !confirm(`删除地图“${map.name}”？原图、识别结果和路线将一并删除，用它发布的课程会失效。`)) return;
+    void task(async () => { await api(`/api/maps/${encodeURIComponent(map.id)}`, { method: 'DELETE' }); catalog = await api('/api/catalog'); await selectSite(activeSite, map.id === activeId ? undefined : activeId); notify('地图已删除'); });
+    return;
+  }
+  const button = (event.target as HTMLElement).closest<HTMLElement>('[data-map]'); if (button && !busy) task(async () => { await loadState(button.dataset.map!); });
+};
+$('process-current').onclick = () => task(async () => { if (!activeId) throw new Error('请先导入这个场地的地图'); await runJob(`/api/maps/${activeId}/process`); catalog = await api('/api/catalog'); await loadState(activeId); notify('识别与配准完成，请核对候选点和通行区域'); });
+$('process-all').onclick = () => task(async () => { const maps = siteMaps(); if (!maps.length) throw new Error('请先导入这个场地的地图'); for (const map of maps) { await runJob(`/api/maps/${map.id}/process`); } catalog = await api('/api/catalog'); $<HTMLInputElement>('stitch-maps').checked = true; await loadState(activeId || maps[0].id); });
 $('upload-button').onclick = () => $<HTMLInputElement>('upload-input').click();
-$<HTMLInputElement>('upload-input').onchange = event => task(async () => { const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return; const form = new FormData(); form.append('file', file); const asset = await api<{ id: string }>('/api/maps/upload', { method: 'POST', body: form }); catalog = await api('/api/catalog'); await loadState(asset.id); });
+$<HTMLInputElement>('upload-input').onchange = event => task(async () => { const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return; const form = new FormData(); form.append('file', file); (event.target as HTMLInputElement).value = ''; const asset = await api<{ id: string }>(`/api/maps/upload?siteId=${encodeURIComponent(activeSite)}`, { method: 'POST', body: form }); catalog = await api('/api/catalog'); renderCatalog(); await loadState(asset.id); });
 document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b === button)); document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('hidden', tab.id !== `tab-${button.dataset.tab}`)); campusMap.setFieldChecks(registrationTabOpen() ? fieldCheckPoints : []); });
 for (const id of ['people', 'teams', 'stagger', 'speed']) $<HTMLInputElement>(id).oninput = () => { restoredTeams = null; groupPreview(); renderCustomRoutes(); resetPlan(); persistRules(); };
 $<HTMLSelectElement>('objective').onchange = () => { resetPlan(); persistRules(); };
@@ -595,6 +700,7 @@ $<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = [];
 for (const id of ['pick-start', 'pick-finish']) $(id).onclick = () => { if (!state?.registration) { notify('请先完成配准'); return; } mapAction = id === 'pick-start' ? 'start' : 'finish'; $('map-action-hint').textContent = `点击地图中可通行的位置，设置${mapAction === 'start' ? '起点' : '终点'}`; $('map-action-hint').classList.remove('hidden'); setMobilePanel(false); };
 $<HTMLInputElement>('return-start').onchange = () => { if ($<HTMLInputElement>('return-start').checked) { finishPixel = startPixel; finishSurfaceId = startSurfaceId; if (startPixel && state) campusMap.setEndpoint('finish', pixelToLngLat(startPixel, state)); } resetPlan(); renderEndpointSurfaces(); };
 campusMap.onClick = (lnglat, id) => {
+  if (groupPanel?.pick(lnglat)) return;
   if (customMapTeam && state && !mapAction) {
     const control = state.controls.find(c => c.id === id && c.state !== 'rejected' && (c.role ?? 'control') === 'control');
     if (!control) { notify('请点击地图上的目标圆圈'); return; }
@@ -724,7 +830,7 @@ sensors.onHeading = (sample: HeadingSample | null) => {
   if (!northOnly) $('sensor-status').textContent = `${sample.source === 'compass' ? sample.reference === 'true' ? '罗盘方向' : '罗盘方向（北向待校准）' : '行进方向'} ${Math.round(sample.degrees)}°${follow ? ' · 跟随中' : ' · 已暂停跟随'}`;
 };
 sensors.onPosition = position => {
-  lastPosition = position; campusMap.setLocation(position, follow);
+  lastPosition = position; campusMap.setLocation(position, follow); groupPanel?.draw();
   $('location-status').textContent = `定位精度 ±${Math.round(position.coords.accuracy)} m`;
   if (courseId) { renderStudent(); void updateNavigation(position); }
 };
@@ -759,8 +865,9 @@ $('calibrate-compass').onclick = () => {
   dialog.querySelector<HTMLButtonElement>('#clear-compass-calibration')!.onclick = () => { sensors.clearCalibration(); dialog.close(); dialog.remove(); notify('已恢复设备方向'); };
 };
 $('open-help').onclick = () => {
-  const dialog = simpleDialog('使用 DirMap', `<ol class="help-list"><li>选择课程地图，点击“自动识别与配准”。三张内置图可以依次处理并叠合。</li><li>在“原图校核”中核对目标编号和到访位置。配准偏差较大时，在原图与标准地图选择分散的同名点。</li><li>核对围墙、门洞、禁区与桥隧。自动识别是候选结果，未核验时路线保留为草稿。</li><li>填写人数、队数与课程规则，选择起终点并生成路线。“全班分担”与“每队全点”有不同要求。</li><li>发布前确认课程，学生通过课程链接选队、定位并打点。手机传感器需 HTTPS 和浏览器权限。</li></ol><p class="muted">标准地图及校园参照 © OpenStreetMap contributors。三张扫描图无 GPS 元数据；自动匹配误差不等价于现场精度。</p><button id="location-diagnostics" class="soft-button">定位诊断与重试</button><label class="field-label section-gap">教师管理口令（如服务器已配置）<input id="admin-token" type="password" autocomplete="off"></label><button id="save-token" class="soft-button">保存到本次会话</button>`);
-  dialog.querySelector<HTMLButtonElement>('#save-token')!.onclick = () => { sessionStorage.setItem('dirmap-admin-token', value('admin-token')); notify('已保存本次会话口令'); };
+  const dialog = simpleDialog('使用 DirMap', `<ol class="help-list"><li>选择场地（深大粤海校区、大沙河公园，或用“＋ 场地”添加其他地点），导入或选择课程地图，点击“自动识别与配准”。同一场地的图幅可以叠合。</li><li>在“原图校核”中核对目标编号和到访位置。配准偏差较大时，在原图与标准地图选择分散的同名点。</li><li>核对围墙、门洞、禁区与桥隧。自动识别是候选结果，未核验时路线保留为草稿。</li><li>填写人数、队数与课程规则，选择起终点并生成路线。“全班分担”与“每队全点”有不同要求。</li><li>发布前确认课程，学生通过课程链接选队、定位并打点。手机传感器需 HTTPS 和浏览器权限。</li></ol><p class="muted">标准地图及校园参照 © OpenStreetMap contributors。三张扫描图无 GPS 元数据；自动匹配误差不等价于现场精度。</p><button id="location-diagnostics" class="soft-button">定位诊断与重试</button>${account?.user ? '' : '<label class="field-label section-gap">原工作台的教师口令（未登录时使用）<input id="admin-token" type="password" autocomplete="off"></label><button id="save-token" class="soft-button">保存到本次会话</button>'}<p class="muted section-gap">注册账户后，每人有独立的工作台，在自己的工作台中识别地图、生成路线和发布课程不需要教师口令。学生使用课程链接或组队码，无需注册。</p>`);
+  const saveToken = dialog.querySelector<HTMLButtonElement>('#save-token');
+  if (saveToken) saveToken.onclick = () => { sessionStorage.setItem('dirmap-admin-token', value('admin-token')); notify('已保存本次会话口令'); };
   dialog.querySelector<HTMLButtonElement>('#location-diagnostics')!.onclick = () => { dialog.close(); openLocationDiagnostics(); };
 };
 
@@ -819,8 +926,9 @@ $('review-button').onclick = () => {
         : await runJob<Plan>(automatic ? '/api/plans/auto-teams' : '/api/plans', { ...(automatic ?? previousPlan.request!), version: state!.version });
       if (result.request?.teams?.length) restorePlanFields(result.request);
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
-      const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title: '深大定向越野课' }) });
-      const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印各队路线 ↗</a><button class="text-button" data-course-qr="${e(new URL(link).searchParams.get('course') ?? '')}" data-course-title="深大定向越野课">课程二维码</button>`;
+      const title = `${currentSite()?.shortName ?? currentSite()?.name ?? '校园'}定向越野课`;
+      const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title }) });
+      const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a><a href="${e(link)}#groups" target="_blank" rel="noreferrer" class="text-link">各小组实时位置 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印各队路线 ↗</a><button class="text-button" data-course-qr="${e(new URL(link).searchParams.get('course') ?? '')}" data-course-title="${e(title)}">课程二维码</button>`;
       dialog.close(); dialog.remove(); renderState(); void renderReleases(); notify('已生成学生课程链接');
     } catch (error) { $('review-error').textContent = error instanceof Error ? error.message : String(error); button.disabled = false; }
   };
@@ -925,6 +1033,10 @@ function waitingMeeting(): Control | undefined {
 }
 function renderStudent() {
   const route = studentRoute(); if (!route) return;
+  const team = classProgress?.teams.find(t => t.teamId === route.teamId);
+  const ahead = team && !viewing() ? team.completed.filter(id => !completed.has(id)) : [];
+  const teamArrived = !!team?.arrived && arrivedAt === null && route.controlIds.every(id => completed.has(id) || team.completed.includes(id));
+  $('team-sync').innerHTML = ahead.length || (teamArrived && !viewing()) ? `<div class="notice-card team-sync"><strong>队友的手机已${ahead.length ? `打点：${ahead.map(id => e(studentControls.find(c => c.id === id)?.label ?? id)).join('、')}` : '记录到达终点'}</strong><button id="adopt-team-progress" class="soft-button wide">同步到本机</button></div>` : '';
   $('student-overview').innerHTML = `<div class="quality-values"><div><strong>${distance(route.distanceM)}</strong><span>全程距离</span></div><div><strong>${Math.round(route.durationSec / 60)}<small> 分钟</small></strong><span>预计用时（含打点与等待）</span></div></div><p>${route.people} 人同行${route.departureSec ? ` · 开课后 ${minutes(route.departureSec)}出发` : plan?.routes.some(r => r.departureSec > 0) ? ' · 开课即出发，其他队错峰' : ' · 统一出发'}</p>`;
   const surfaceNames = Object.fromEntries((plan?.surfaces ?? []).map(s => [s.id, s.label]));
   if (route.transitions?.length) $('student-overview').insertAdjacentHTML('beforeend', `<div id="student-transitions" class="notice-card"><strong>按标记换层</strong>${route.transitions.map(t => `<p>${e(t.label)}：${e(surfaceNames[t.fromSurface])} → ${e(surfaceNames[t.toSurface])}</p>`).join('')}<p class="muted compact">道路在屏幕上重合不代表互通。换层后请确认当前位置层级。</p></div>`);
@@ -1013,10 +1125,18 @@ $('arrive-finish').onclick = () => {
 $('undo-check-in').onclick = () => { if (courseSuperseded || viewing()) return; if (arrivedAt !== null) { arrivedAt = null; saveProgress(); renderStudent(); return; } const last = [...completed].at(-1); if (last) { completed.delete(last); departedMeetings.delete(last); delete checkInTimes[last]; saveProgress(); resetNavigation(); renderStudent(); } };
 addEventListener('online', () => { void syncProgress(); void refreshClassProgress(); });
 
-async function boot() {
-  const health = await api<{ magneticDeclinationDeg?: number; modelDate?: string; adminTokenRequired?: boolean }>('/api/health').catch(() => ({} as { magneticDeclinationDeg?: number; modelDate?: string }));
+async function applyDeclination(origin?: Pixel) {
+  // The compass corrects magnetic north where the course takes place.
+  const query = origin ? `?lng=${origin[0]}&lat=${origin[1]}` : '';
+  const health = await api<{ magneticDeclinationDeg?: number; modelDate?: string }>('/api/health' + query).catch(() => ({} as { magneticDeclinationDeg?: number; modelDate?: string }));
   sensors.declination = health.modelDate && Math.abs(Date.now() - Date.parse(health.modelDate)) < 31 * 86400000 ? health.magneticDeclinationDeg ?? null : null;
-  api<object>('/api/reference').then(data => campusMap.setReference(data)).catch(() => notify('校园参考暂不可用，正在显示在线底图'));
+}
+function startGroupPanel() {
+  groupPanel = new GroupPanel({ root: $('group-panel'), map: campusMap, notify, courseId, initialCode: groupCode,
+    teamId: () => courseId ? value('student-team') || null : null, ownPosition: () => locationFresh ? lastPosition : null });
+  if (groupCode !== null || groupPanel.active) $<HTMLDetailsElement>('group-section').open = true;
+}
+async function boot() {
   const printTeam = courseId ? new URLSearchParams(location.search).get('print') : null;
   if (courseId && printTeam) {
     const course = await api<{ id: string; title: string; plan: Plan; controls: Control[]; superseded: boolean }>(`/api/releases/${courseId}`);
@@ -1027,7 +1147,11 @@ async function boot() {
   }
   if (courseId) {
     $('teacher-panel').classList.add('hidden'); $('student-panel').classList.remove('hidden'); document.querySelectorAll('.teacher-only').forEach(el => el.classList.add('hidden')); $('header-mode').textContent = '学生导航';
-    const course = await api<{ id: string; title: string; plan: Plan; controls: Control[]; extent: number[]; superseded: boolean; routingSchema?: string; offline?: boolean }>(`/api/releases/${courseId}`);
+    const course = await api<{ id: string; title: string; plan: Plan; controls: Control[]; extent: number[]; superseded: boolean; routingSchema?: string; offline?: boolean; siteName?: string; frame?: { origin: Pixel } }>(`/api/releases/${courseId}`);
+    $('site-name').textContent = course.siteName ?? '深圳大学粤海校区';
+    $('map-title').textContent = course.title; $('map-subtitle').textContent = course.siteName ?? '标准地图 / WGS84';
+    void applyDeclination(course.frame?.origin);
+    api<object>(`/api/releases/${courseId}/reference`).then(data => campusMap.setReference(data)).catch(() => notify('场地参照暂不可用，正在显示在线底图'));
     if (course.superseded || course.routingSchema !== __DIRMAP_ROUTING_SCHEMA__) {
       courseSuperseded = true; $('release-badge').textContent = '课程已更新'; $('sensor-status').textContent = '旧路线已失效，请使用教师提供的新链接';
       $<HTMLButtonElement>('check-in').disabled = true; $<HTMLButtonElement>('undo-check-in').disabled = true; $<HTMLButtonElement>('meeting-departure').disabled = true;
@@ -1063,18 +1187,44 @@ async function boot() {
     releasePoll = setInterval(checkStatus, 15000);
     loadClassStart(); setInterval(renderClassClock, 1000);
     if (!course.offline) void checkStatus();
-    if (location.hash === '#progress') {
+    if (['#progress', '#groups'].includes(location.hash)) {
       // The teacher's progress link only views the class; a stray tap must
       // not report a check-in for whichever team happens to be selected.
-      $('student-panel').classList.add('viewer'); $<HTMLDetailsElement>('class-board').open = true;
-      $('student-progress').insertAdjacentHTML('afterend', '<p id="viewer-note" class="muted compact">查看模式：不记录打点。学生请使用不带 #progress 的课程链接。</p>');
-    }
+      $('student-panel').classList.add('viewer'); $<HTMLDetailsElement>('class-board').open = location.hash === '#progress';
+      $('student-progress').insertAdjacentHTML('afterend', '<p id="viewer-note" class="muted compact">查看模式：不记录打点。学生请使用不带 # 后缀的课程链接。</p>');
+      // The teacher watches every group of the course instead of joining one.
+      $('group-section').classList.add('hidden'); $('group-overview-section').classList.remove('hidden');
+      $<HTMLDetailsElement>('group-overview-section').open = location.hash === '#groups';
+      groupOverview = new GroupOverview(courseId, $('group-overview'), campusMap); groupOverview.start();
+    } else startGroupPanel();
     if (!course.offline) void refreshClassProgress();
+  } else if (groupMode) {
+    $('teacher-panel').classList.add('hidden'); $('student-panel').classList.remove('hidden'); $('student-panel').classList.add('group-only');
+    $('group-only-heading').classList.remove('hidden'); $('header-mode').textContent = '组队定位'; $('release-badge').textContent = '小组';
+    document.querySelectorAll('.teacher-only').forEach(el => el.classList.add('hidden'));
+    $('map-title').textContent = '组队定位'; $('map-subtitle').textContent = '组员共享的位置与集合点'; $('site-name').textContent = '组队定位';
+    void applyDeclination();
+    startGroupPanel();
+    setMobilePanel(true);
   } else {
     // Resume only what was pending when this page opened. A submission made
     // here in the meantime reports its own unconfirmed state instead.
     const pending = pendingJob();
-    catalog = await api<Catalog>('/api/catalog'); if (catalog.maps.length) activeId = catalog.maps[0].id; renderCatalog(); await loadState(activeId);
+    void applyDeclination();
+    account = await fetchAccount();
+    renderAccountChip($('account-slot'), account, notify);
+    try { catalog = await api<Catalog>('/api/catalog'); }
+    catch (error) {
+      if (!(error instanceof ApiError && error.status === 401 && account)) throw error;
+      // This server's workbenches belong to accounts: sign in first.
+      $('teacher-panel').innerHTML = signInGate(account); $('release-badge').textContent = '未登录'; $('header-mode').textContent = '登录';
+      $('teacher-panel').querySelectorAll<HTMLButtonElement>('[data-sign-in]').forEach(button => button.onclick = () => openSignIn(account!, button.dataset.signIn as 'login' | 'register'));
+      setMobilePanel(true);
+      return;
+    }
+    if (account && !account.user) $('workbench-notice').innerHTML = `<div class="notice-card workbench-notice"><strong>正在使用服务器原工作台</strong><p>${account.original.tokenRequired ? '修改需要原教师口令。' : ''}注册账户即可获得自己的独立工作台：导入地图、识别、生成路线和发布课程都不需要教师口令。</p><button class="soft-button" data-sign-in="register">注册或登录</button></div>`;
+    $('workbench-notice').querySelector<HTMLButtonElement>('[data-sign-in]')?.addEventListener('click', () => openSignIn(account!, 'register'));
+    await selectSite(catalog.sites.some(site => site.id === activeSite) ? activeSite : catalog.sites[0].id);
     await renderJobs();
     if (pending && JSON.stringify(pendingJob()) === JSON.stringify(pending)) await task(() => resumeJob(pending));
   }

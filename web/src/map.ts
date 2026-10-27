@@ -12,11 +12,13 @@ import LineString from 'ol/geom/LineString.js';
 import CircleGeometry from 'ol/geom/Circle.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
 import { Circle, Fill, Stroke, Style, Text } from 'ol/style.js';
-import { fromLonLat, toLonLat } from 'ol/proj.js';
+import { fromLonLat, toLonLat, transformExtent } from 'ol/proj.js';
 import { ScaleLine, defaults } from 'ol/control.js';
 import type { Approach, Control, MapState, Pixel, Route, Surface } from './types';
 
 export const teamColors = ['#ec693f', '#416edb', '#9370ca', '#159386', '#bb8426', '#d95492', '#56974e', '#a5513f', '#54869f', '#887760'];
+/** Someone shown on the map: a group member or, for a teacher, a student. */
+export interface MapPerson { id: string; lnglat: Pixel; label: string; color: string; accuracyM?: number | null; help?: boolean; self?: boolean; stale?: boolean }
 export class CampusMap {
   private base = new TileLayer({ source: new OSM(), opacity: .65 });
   private referenceSource = new VectorSource({ attributions: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>' });
@@ -26,6 +28,7 @@ export class CampusMap {
   private endpoints = new VectorSource();
   private approaches = new VectorSource();
   private fieldChecks = new VectorSource();
+  private people = new VectorSource();
   private overlays: ImageLayer<ImageStatic>[] = [];
   private terrain: ImageLayer<ImageStatic> | null = null;
   map: Map;
@@ -35,15 +38,20 @@ export class CampusMap {
   constructor(target: HTMLElement) {
     const reference = new VectorLayer({ source: this.referenceSource, style: feature => {
       const kind = feature.get('kind');
-      if (kind === 'water') return new Style({ fill: new Fill({ color: '#b4dce5' }), stroke: new Stroke({ color: '#8cbdc9', width: 1 }) });
-      if (kind === 'building') return new Style({ fill: new Fill({ color: '#d4dace' }), stroke: new Stroke({ color: '#adb8a9', width: .6 }) });
+      // Park greenery stays under paths and buildings drawn from the same data.
+      if (kind === 'green') return new Style({ fill: new Fill({ color: '#dcebd0b3' }), zIndex: 0 });
+      if (kind === 'waterway') return new Style({ stroke: new Stroke({ color: '#8cbdc9', width: 2 }), zIndex: 1 });
+      if (kind === 'pitch') return new Style({ fill: new Fill({ color: '#e5ecd9' }), stroke: new Stroke({ color: '#bfccb4', width: .8 }), zIndex: 1 });
+      if (kind === 'water') return new Style({ fill: new Fill({ color: '#b4dce5' }), stroke: new Stroke({ color: '#8cbdc9', width: 1 }), zIndex: 1 });
+      if (kind === 'building') return new Style({ fill: new Fill({ color: '#d4dace' }), stroke: new Stroke({ color: '#adb8a9', width: .6 }), zIndex: 3 });
       const highway = feature.get('highway');
-      return new Style({ stroke: new Stroke({ color: ['footway', 'path', 'steps'].includes(highway) ? '#cbd3c4' : '#fcfcf7', width: ['primary', 'secondary'].includes(highway) ? 6 : 2.4 }) });
+      return new Style({ stroke: new Stroke({ color: ['footway', 'path', 'steps'].includes(highway) ? '#cbd3c4' : '#fcfcf7', width: ['primary', 'secondary'].includes(highway) ? 6 : 2.4 }), zIndex: 2 });
     }});
     this.map = new Map({ target, layers: [this.base, reference,
       new VectorLayer({ source: this.routes, zIndex: 30 }), new VectorLayer({ source: this.controls, zIndex: 40 }),
       new VectorLayer({ source: this.endpoints, zIndex: 45 }), new VectorLayer({ source: this.approaches, zIndex: 46 }),
       new VectorLayer({ source: this.fieldChecks, zIndex: 47 }),
+      new VectorLayer({ source: this.people, zIndex: 48 }),
       new VectorLayer({ source: this.location, zIndex: 50 })],
       view: new View({ center: fromLonLat([113.9304, 22.535]), zoom: 16.2, minZoom: 13, maxZoom: 21, enableRotation: true }),
       controls: defaults({ rotate: false }).extend([new ScaleLine({ units: 'metric' })]) });
@@ -156,6 +164,34 @@ export class CampusMap {
     this.location.addFeatures([accuracy, dot]);
     if (follow) this.map.getView().setCenter(point);
   }
+  /** Group members and meeting pins; people without a fix are not drawn. */
+  setPeople(people: MapPerson[], pins: { lnglat: Pixel; label: string }[] = []) {
+    this.people.clear();
+    for (const pin of pins) {
+      const feature = new Feature(new Point(fromLonLat(pin.lnglat)));
+      feature.setStyle(new Style({ image: new Circle({ radius: 9, fill: new Fill({ color: '#f5c542' }), stroke: new Stroke({ color: '#5b4300', width: 2 }) }),
+        text: new Text({ text: `⚑ ${pin.label}`, offsetY: -19, font: '600 12px sans-serif', fill: new Fill({ color: '#5b4300' }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
+      this.people.addFeature(feature);
+    }
+    for (const person of people) {
+      const point = fromLonLat(person.lnglat), styles: Style[] = [];
+      if (person.accuracyM && person.accuracyM > 8 && !person.self) {
+        const halo = new Feature(new CircleGeometry(point, person.accuracyM / Math.cos(person.lnglat[1] * Math.PI / 180)));
+        halo.setStyle(new Style({ fill: new Fill({ color: person.color + '18' }) }));
+        this.people.addFeature(halo);
+      }
+      if (person.help) styles.push(new Style({ image: new Circle({ radius: 15, fill: new Fill({ color: '#d92d2033' }), stroke: new Stroke({ color: '#d92d20', width: 3 }) }) }));
+      styles.push(new Style({ image: new Circle({ radius: person.self ? 6 : 8, fill: new Fill({ color: person.stale ? '#9aa39b' : person.color }), stroke: new Stroke({ color: '#fff', width: 2.5 }) }),
+        text: person.self ? undefined : new Text({ text: person.help ? `${person.label} · 求助` : person.label, offsetY: 18, font: '600 12px sans-serif',
+          fill: new Fill({ color: person.help ? '#b42318' : '#203a2e' }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
+      const feature = new Feature({ geometry: new Point(point), personId: person.id });
+      feature.setStyle(styles);
+      this.people.addFeature(feature);
+    }
+  }
+  centerOn(lnglat: Pixel) { this.map.getView().animate({ center: fromLonLat(lnglat), duration: 300 }); }
+  /** Fit a place's [west, south, east, north] range. */
+  fitBounds(bbox: [number, number, number, number]) { this.fit(transformExtent(bbox, 'EPSG:4326', 'EPSG:3857')); }
   setHeading(degrees: number) { this.map.getView().setRotation(-degrees * Math.PI / 180); }
   northUp() { this.map.getView().animate({ rotation: 0, duration: 250 }); }
   fit(extent: number[]) { this.map.getView().fit(extent, { padding: [60, 60, 60, 60], duration: 400, maxZoom: 18 }); }

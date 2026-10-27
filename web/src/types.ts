@@ -89,8 +89,26 @@ export interface Approach {
   automatic: boolean; offsetM: number; lnglat: Pixel; targetLnglat: Pixel;
   surfaceId?: string;
 }
+export interface Site {
+  id: string; name: string; shortName?: string; origin: Pixel; bbox: [number, number, number, number];
+  builtin: boolean; status: 'ready' | 'pending' | 'fetching' | 'failed'; featureCount?: number; retrievedAt?: number; error?: string | null;
+}
 export interface Catalog { maps: { id: string; name: string; filename: string; sha256?: string; processed: boolean; controls: number | null;
-  courseDefaults?: { mode: string; mandatoryLabels: string[]; mandatoryOrder: boolean; description?: string } | null }[]; legends: { name: string; url: string }[] }
+  siteId: string; builtin?: boolean;
+  courseDefaults?: { mode: string; mandatoryLabels: string[]; mandatoryOrder: boolean; description?: string } | null }[];
+  legends: { name: string; url: string }[]; sites: Site[] }
+export interface AccountState {
+  user: { id: string; username: string; createdAt: number; ownsOriginalWorkbench: boolean } | null;
+  original: { claimed: boolean; tokenRequired: boolean; hasData: boolean | null };
+}
+export interface GroupMember {
+  id: string; name: string; teamId: string | null; color: number; host: boolean; online: boolean; seenAt: number;
+  sharing: boolean; helpAt: number | null;
+  position: { lnglat: Pixel; accuracyM: number; headingDeg: number | null; at: number } | null;
+}
+export interface GroupMessage { seq: number; memberId: string; name?: string; kind: 'text' | 'pin' | 'help' | 'resolved'; text: string | null; at: number; lnglat: Pixel | null }
+export interface GroupInfo { id: string; code: string; title: string; releaseId: string | null; center: Pixel | null; createdAt: number; expiresAt: number; locked: boolean }
+export interface GroupState { group: GroupInfo; me: string; members: GroupMember[]; messages: GroupMessage[]; serverTime: number }
 
 export function localScales(origin: Pixel): Pixel {
   const phi = origin[1] * Math.PI / 180, e = .00669437999014;

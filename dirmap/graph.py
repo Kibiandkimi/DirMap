@@ -469,7 +469,9 @@ def _quadtree_graph(costs, registration, source_hash, edits, step):
     return result
 
 
-def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric='time', start_surface=None, finish_surface=None):
+def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric='time', start_surface=None, finish_surface=None,
+                frame=None):
+    frame = frame or Frame()
     endpoints = [{'id': 'start', 'pixel': start_pixel, 'surfaceId': start_surface}, *controls,
                  {'id': 'finish', 'pixel': finish_pixel, 'surfaceId': finish_surface}]
     nodes, points, unresolved, approaches = [], [], [], []
@@ -489,8 +491,8 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
                                    'pixel': pixel, 'method': resolved['method'], 'automatic': resolved['automatic'],
                                    'offsetM': float(np.linalg.norm(world[0]-exact[0])) if valid[0] else None,
                                    'surfaceId': surface,
-                                   'lnglat': Frame().to_lnglat(world[0]).tolist(),
-                                   'targetLnglat': Frame().to_lnglat(exact[0]).tolist() if valid[0] else None})
+                                   'lnglat': frame.to_lnglat(world[0]).tolist(),
+                                   'targetLnglat': frame.to_lnglat(exact[0]).tolist() if valid[0] else None})
                 endpoint = {**endpoint, 'approachPixel': pixel}
             else:
                 world, inside = registration.forward([pixel])
@@ -502,7 +504,7 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
                     approaches.append({'controlId': endpoint['id'], 'targetPixel': list(endpoint['pixel']),
                         'pixel': list(pixel), 'method': 'layer_position' if surface != 'ground' else 'exact', 'automatic': False,
                         'surfaceId': surface, 'offsetM': float(np.linalg.norm(world[0]-exact[0])) if valid[0] else None,
-                        'lnglat': Frame().to_lnglat(world[0]).tolist(), 'targetLnglat': Frame().to_lnglat(exact[0]).tolist() if valid[0] else None})
+                        'lnglat': frame.to_lnglat(world[0]).tolist(), 'targetLnglat': frame.to_lnglat(exact[0]).tolist() if valid[0] else None})
             if endpoint['id'] == 'start':
                 start_component = graph.components[node]
             endpoints[len(nodes)] = endpoint

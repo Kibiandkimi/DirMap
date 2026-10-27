@@ -64,6 +64,21 @@ class Matcher:
         return score, pairs
 
     def initial(self, width, height):
+        self.seed_kind = 'water'
+        try:
+            return self._water_seed(width, height)
+        except ValueError as failure:
+            # A park sheet often has no enclosed lake: its river runs off the
+            # paper. Seed from distinctive buildings instead. Maps whose water
+            # matches never reach this branch, so their alignment is unchanged.
+            try:
+                result = self._building_seed(width, height)
+            except ValueError:
+                raise failure from None
+            self.seed_kind = 'building'
+            return result
+
+    def _water_seed(self, width, height):
         sources = sorted(self.source['water'], key=lambda f: -f['area'])[:7]
         targets = [f for f in self.target['water'] if f['area'] > 400]
         if not sources or not targets:
@@ -93,6 +108,51 @@ class Matcher:
                             if score > best[0]:
                                 best = (score, matrix, pairs)
         if best[1] is None or len(best[2]) < 6:
+            raise ValueError("自动地物匹配证据不足，请在原图与底图补充同名点")
+        return best[1], candidates
+
+    def _building_seed(self, width, height):
+        """Hypotheses from one large roof each; the sheet must then agree.
+
+        A rectangle's principal axis is ambiguous by quarter turns when it is
+        nearly square. A hypothesis must put the sheet's centre inside the
+        place's reference and must pair more objects than a water seed.
+        """
+        sources = sorted(self.source['building'], key=lambda f: -f['area'])[:8]
+        targets = [f for f in self.target['building'] if f['area'] > 600]
+        if len(sources) < 4 or not targets:
+            raise ValueError("缺少可匹配的建筑")
+        centres = np.array([f['center'] for f in self.target['building']])
+        lower, upper = centres.min(axis=0)-300, centres.max(axis=0)+300
+        middle = np.array([width/2, height/2])
+        best = (-1., None, [])
+        reflect = np.diag([1., -1.])
+        candidates = 0
+        for source in sources:
+            a = principal_angle(np.asarray(source['points']) @ reflect)
+            turns = (0, math.pi/2, math.pi, 3*math.pi/2) if source['aspect'] < 1.4 else (0, math.pi)
+            for target in targets:
+                if abs(math.log(source['aspect']/target['aspect'])) > .35:
+                    continue
+                scale = math.sqrt(target['area']/source['area'])
+                if not 150 < max(width, height)*scale < 4200:
+                    continue
+                b = principal_angle(target['points'])
+                for turn in turns:
+                    angle = b-a+turn
+                    rotate = np.array([[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]])
+                    for factor in (.92, 1, 1.08):
+                        linear = scale*factor*rotate @ reflect
+                        shift = np.array(target['center'])-linear @ source['center']
+                        centre = linear @ middle+shift
+                        if np.any(centre < lower) or np.any(centre > upper):
+                            continue
+                        matrix = np.column_stack((linear, shift))
+                        score, pairs = self.matches(matrix)
+                        candidates += 1
+                        if score > best[0]:
+                            best = (score, matrix, pairs)
+        if best[1] is None or len(best[2]) < 8:
             raise ValueError("自动地物匹配证据不足，请在原图与底图补充同名点")
         return best[1], candidates
 
@@ -308,7 +368,7 @@ def auto_register(features, reference, width, height):
     corners = feature_corner_matches(matcher, matrix, pairs)
     corners += partial_feature_corner_matches(matcher, matrix, width, height)
     reg, quality = fit_observed_landmarks(pairs, corners)
-    quality.update(state='needs_review', method='water_seed_observed_outline_ransac_mesh',
+    quality.update(state='needs_review', method=f'{matcher.seed_kind}_seed_observed_outline_ransac_mesh',
                    candidateTransforms=candidates, observedCornerCount=len(corners),
                    validationScope='按地物整体留出内部核查点，实测边界角点用于拟合；自动对应关系未人工核对，不等价于独立现场定位精度。')
     return reg, quality
