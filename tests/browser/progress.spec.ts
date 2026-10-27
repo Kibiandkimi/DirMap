@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { test, expect, localOnly, type Page } from './fixtures';
 
 async function publishMixedCourse(page: Page) {
@@ -54,6 +55,30 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
   await expect(a.phone.locator(`[data-team-progress="${first.teamId}"]`)).toContainText(`${reached} / ${first.controlIds.length}`);
   await expect(a.phone.locator(`[data-team-progress="${second.teamId}"]`)).toContainText(`${second.controlIds.indexOf(meeting)+1} / ${second.controlIds.length}`);
   await a.phone.locator('#student-panel').screenshot({ path: '/tmp/dirmap-class-progress.png' });
+  const download = a.phone.waitForEvent('download');
+  await a.phone.locator('#export-results').click();
+  const csv = fs.readFileSync(await (await download).path(), 'utf8');
+  const rows = csv.replace(/^\uFEFF/, '').trim().split('\r\n');
+  expect(rows[0]).toBe('队伍,人数,顺序,目标,类型,状态,打点时间（手机记录）');
+  expect(rows).toHaveLength(1+first.controlIds.length+second.controlIds.length);
+  expect(rows.filter(row => row.includes(',已完成,'))).toHaveLength(reached+second.controlIds.indexOf(meeting)+1);
+  await expect(a.phone.locator('.student-stop.done > small').first()).toHaveText(/^已完成 \d{1,2}:\d{2}/);
+  // A check-in made while the previous report is still in flight follows
+  // right after it, well before the next 15-second course check.
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await b.context.route('**/progress', async route => {
+    if (route.request().method() === 'POST') await gate;
+    await route.continue();
+  });
+  const teamB = async () => (await (await page.request.get(`/api/releases/${courseId}/progress`)).json())
+    .teams.find((t: any) => t.teamId === second.teamId);
+  const atMeeting = second.controlIds.indexOf(meeting)+1;
+  await b.phone.locator('#meeting-departure').click();
+  await b.phone.locator('#check-in').click();
+  release();
+  await expect.poll(async () => (await teamB()).completed.length, { timeout: 5000 }).toBe(atMeeting+1);
+  expect((await teamB()).departed).toEqual([meeting]);
   // The next check-in happens without a connection and is shared later.
   await a.context.setOffline(true);
   await a.phone.locator('#meeting-departure').click();
@@ -71,5 +96,19 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
   await a.phone.reload({ waitUntil: 'domcontentloaded' });
   await a.phone.locator('#student-team').selectOption(first.teamId);
   await expect(a.phone.locator('#student-progress')).toHaveText(`${reached+1} / ${first.controlIds.length}`);
+  // After a reload the teacher finds the course and its progress again.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('[data-map="szu-3"]').click();
+  await page.locator('#release-history summary').click();
+  const row = page.locator(`[data-release="${courseId}"]`);
+  await expect(row).toContainText('当前有效');
+  await expect(row).toContainText('2/2 队已打点 · 0 队完成');
+  await expect(row.getByRole('link', { name: '全班进度 ↗' })).toHaveAttribute('href', new RegExp(`course=${courseId}#progress$`));
+  // That link is a read-only view; a stray tap cannot report for a team.
+  await page.goto(await row.getByRole('link', { name: '全班进度 ↗' }).getAttribute('href') as string, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#viewer-note')).toBeVisible();
+  await expect(page.locator('#class-board')).toHaveAttribute('open', '');
+  await expect(page.locator(`[data-team-progress="${second.teamId}"]`)).toBeVisible();
+  for (const id of ['#check-in', '#undo-check-in', '#meeting-departure']) await expect(page.locator(id)).toBeHidden();
   for (const { context } of phones) await context.close();
 });

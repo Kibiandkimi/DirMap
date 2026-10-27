@@ -22,8 +22,8 @@ dialog { border: 1px solid #dde6d4; border-radius: 16px; box-shadow: 0 30px 100p
 .mandatory-order-row { display: flex; align-items: center; gap: 14px; margin-top: 7px; font-size: 11px; }
 .mandatory-order-row span { flex: 1; }
 #location-status { white-space: normal; max-width: 320px; }
-.job-history { margin-top: 12px; font-size: 12px; }
-.job-history summary { cursor: pointer; color: var(--muted, #67796e); }
+.job-history, .release-history { margin-top: 12px; font-size: 12px; }
+.job-history summary, .release-history summary { cursor: pointer; color: var(--muted, #67796e); }
 .job-history-row { display: flex; width: 100%; gap: 8px; justify-content: space-between; align-items: center; text-align: left; padding: 10px 0; border: 0; border-bottom: 1px solid #e2e8e3; background: none; }
 .job-history-row span { min-width: 0; overflow-wrap: anywhere; }
 .job-history-row small { display: block; margin-top: 3px; color: #77857b; font-size: 10px; }
@@ -118,3 +118,5 @@ dialog { border: 1px solid #dde6d4; border-radius: 16px; box-shadow: 0 30px 100p
 .layer-settings input[type="text"], .layer-settings input:not([type]) { max-width: 200px; }
 .surface-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin: 7px 0; }
 .class-board { margin-top: 14px; font-size: 11px; color: #637456; } .class-board summary { cursor: pointer; font-weight: 500; } .class-board-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 7px 0; border-bottom: 1px solid #edf0e8; } .class-board-row small { grid-column: 1/-1; color: #98a68c; } .class-board-row.done strong { color: #4f7f3e; } #meeting-arrivals { font-weight: 500; }
+.release-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 4px 10px; padding: 8px 0; border-bottom: 1px solid #edf0e8; font-size: 11px; color: #5f7352; } .release-row small { display: block; color: #98a68c; font-size: 10px; }
+.student-panel.viewer #check-in, .student-panel.viewer #undo-check-in, .student-panel.viewer #meeting-departure { display: none; }

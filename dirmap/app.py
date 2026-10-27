@@ -7,6 +7,7 @@ import math
 import os
 from pathlib import Path
 import re
+import secrets
 import time
 from typing import Annotated, Literal
 import uuid
@@ -263,7 +264,6 @@ async def origin_guard(request: Request, call_next):
         token = os.environ.get('DIRMAP_ADMIN_TOKEN')
         student_navigation = request.method == 'POST' and re.fullmatch(r'/api/releases/[0-9a-f]{32}/(navigate|progress)', request.url.path)
         if token and not student_navigation:
-            import secrets
             supplied = request.headers.get('x-dirmap-token', '')
             if not secrets.compare_digest(supplied, token):
                 return JSONResponse(status_code=401, content={'detail': '请输入教师管理口令'})
@@ -595,6 +595,30 @@ def release(request: ReleaseRequest):
         shutil.copyfile(store.artifact_path(state, 'overlay.png'), path/'overlay.png')
         store.atomic_json(path/'release.json', result)
         return {'id': release_id, 'url': '/?course='+release_id}
+
+
+@app.get('/api/releases')
+def list_releases(request: Request, assetId: str | None = None, limit: int = 20):
+    # Course links are the students' access; only the teacher may list them.
+    token = os.environ.get('DIRMAP_ADMIN_TOKEN')
+    if token and not secrets.compare_digest(request.headers.get('x-dirmap-token', ''), token):
+        raise HTTPException(401, '请输入教师管理口令')
+    paths = sorted((path for path in (store.DATA/'releases').glob('*/release.json') if re.fullmatch(r'[0-9a-f]{32}', path.parent.name)),
+                   key=lambda path: path.stat().st_mtime, reverse=True)
+    result = []
+    for path in paths:
+        if len(result) >= min(50, max(1, limit)):
+            break
+        release = get_release(path.parent.name)
+        if assetId and release['assetId'] != assetId:
+            continue
+        teams = progress.summary(release)['teams']
+        result.append({'id': release['id'], 'title': release['title'], 'assetId': release['assetId'],
+                       'createdAt': release['createdAt'], 'superseded': release['superseded'], 'url': '/?course='+release['id'],
+                       'teams': len(teams), 'startedTeams': sum(bool(team['completed']) for team in teams),
+                       'finishedTeams': sum(team['finished'] for team in teams),
+                       'lastReportAt': max((team['reportedAt'] for team in teams if team['reportedAt']), default=None)})
+    return result
 
 
 @app.get('/api/releases/{release_id}')

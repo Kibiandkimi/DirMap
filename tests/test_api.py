@@ -582,3 +582,25 @@ def test_students_share_progress_without_the_teacher_token(client, monkeypatch):
     assert client.post('/api/releases/'+'0'*32+'/progress', json=body).status_code == 404
     client.patch('/api/maps/szu-1', json={'version': 1, 'edits': []}, headers={'X-DirMap-Token': 'teacher-only'})
     assert client.post(url, json={**body, 'revision': 2}).status_code == 409
+
+
+def test_teacher_lists_published_courses_with_class_progress(client, monkeypatch):
+    state = store.get_state('szu-1'); state['controls'][0]['state'] = 'accepted'; store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200
+    plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
+    first = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id'], 'title': '第一节'}).json()['id']
+    second = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id'], 'title': '第二节'}).json()['id']
+    (store.DATA/'releases'/'not-a-course').mkdir()
+    client.post(f'/api/releases/{second}/progress', json={'teamId': 'team1', 'deviceId': 'student-phone', 'revision': 1,
+                                                           'completed': ['c1'], 'checkIns': {}, 'departed': []})
+    listed = client.get('/api/releases?assetId=szu-1').json()
+    assert {item['id'] for item in listed} == {first, second}
+    latest = next(item for item in listed if item['id'] == second)
+    assert latest['url'] == '/?course='+second and latest['title'] == '第二节' and not latest['superseded']
+    assert (latest['teams'], latest['startedTeams'], latest['finishedTeams']) == (1, 1, 1) and latest['lastReportAt']
+    assert client.get('/api/releases?assetId=szu-2').json() == []
+    monkeypatch.setenv('DIRMAP_ADMIN_TOKEN', 'teacher-only')
+    assert client.get('/api/releases').status_code == 401
+    assert len(client.get('/api/releases', headers={'X-DirMap-Token': 'teacher-only'}).json()) == 2
+    assert client.get(f'/api/releases/{first}').status_code == 200

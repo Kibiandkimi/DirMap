@@ -8,6 +8,7 @@ import { installOffline, saveOfflineCourse } from './offline';
 import { parseCustomRoutes, routeToken } from './course-routes';
 import { teamComparisonHtml } from './team-comparison';
 import { canRefine, refinementHtml } from './plan-refinement';
+import { resultsCsv } from './class-results';
 import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type AutoTeamRequest, type Catalog, type ClassProgress, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Portal, type Route, type Surface, type TerrainEdit } from './types';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -99,6 +100,24 @@ $('group-preview').insertAdjacentHTML('afterend', '<details class="auto-team-set
 for (const id of ['auto-min-people', 'auto-max-teams', 'auto-gain']) $(id).oninput = () => { resetPlan(); persistRules(); };
 $('map-summary').insertAdjacentHTML('afterend', '<details class="job-history"><summary>处理记录与恢复</summary><p class="muted compact">刷新页面或服务重启后，可在这里接续原任务。</p><button id="refresh-jobs" class="text-button">刷新记录</button><div id="job-history-list"></div></details>');
 $('refresh-jobs').onclick = () => task(renderJobs);
+$('map-summary').insertAdjacentHTML('afterend', '<details id="release-history" class="release-history"><summary>已发布课程</summary><p class="muted compact">本图最近发布的学生链接与全班进度。地图或通行修改后旧课程会失效。</p><div id="release-list"></div></details>');
+$('release-history').addEventListener('toggle', () => { if ($<HTMLDetailsElement>('release-history').open) void renderReleases(); });
+type ReleaseSummary = { id: string; title: string; createdAt: number; superseded: boolean; url: string; teams: number; startedTeams: number; finishedTeams: number; lastReportAt: number | null };
+let releaseRender = 0;
+async function renderReleases() {
+  if (courseId || !$<HTMLDetailsElement>('release-history').open) return;
+  const render = ++releaseRender, assetId = activeId;
+  let releases: ReleaseSummary[];
+  try { releases = await api<ReleaseSummary[]>(`/api/releases?assetId=${encodeURIComponent(assetId)}`); }
+  catch (error) { if (render === releaseRender) $('release-list').innerHTML = `<p class="muted compact">${e(error instanceof ApiError && error.status === 401 ? '填写教师口令后显示已发布课程。' : '暂时无法读取已发布课程。')}</p>`; return; }
+  if (render !== releaseRender || assetId !== activeId) return;
+  const clock = (seconds: number) => new Date(seconds * 1000).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  $('release-list').innerHTML = releases.length ? releases.map(r => {
+    const link = new URL(r.url, location.href).href;
+    const progress = r.startedTeams ? `${r.startedTeams}/${r.teams} 队已打点 · ${r.finishedTeams} 队完成${r.lastReportAt ? ` · 最近上报 ${clock(r.lastReportAt)}` : ''}` : `${r.teams} 队 · 尚无打点`;
+    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}</small><small>${progress}</small></span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a></div>`;
+  }).join('') : '<p class="muted compact">本图尚未发布课程。</p>';
+}
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="mixed_coverage">全员必到 + 其余点全班分担</option>');
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="custom">自定义每队路线</option>');
 $('plan-button').insertAdjacentHTML('beforebegin', '<section id="custom-routes" class="custom-routes hidden"><div class="section-title"><h2>每队目标点序</h2><button id="custom-fill" class="text-button">按列表填入各队</button></div><p class="muted compact">按到访顺序填写目标编号，用空格、逗号或 → 分隔。也可在地图上依次点选。各点之间自动沿可通行路段连接。</p><div id="custom-team-routes"></div><p id="custom-route-error" class="danger" role="status"></p></section>');
@@ -405,7 +424,7 @@ async function loadState(id: string, fit = true) {
     $('pick-finish').querySelector('span')!.textContent = '已识别原图终点';
     $<HTMLInputElement>('return-start').checked = JSON.stringify(startPixel) === JSON.stringify(finishPixel) && startSurfaceId === finishSurfaceId;
   }
-  renderCatalog(); renderState(); await updateOverlays(); if (fit && state?.extent && load === stateLoad) campusMap.fit(state.extent);
+  renderCatalog(); renderState(); void renderReleases(); await updateOverlays(); if (fit && state?.extent && load === stateLoad) campusMap.fit(state.extent);
   return load === stateLoad;
 }
 async function updateOverlays() {
@@ -747,7 +766,7 @@ $('review-button').onclick = () => {
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
       const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title: '深大定向越野课' }) });
       const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a>`;
-      dialog.close(); dialog.remove(); renderState(); notify('已生成学生课程链接');
+      dialog.close(); dialog.remove(); renderState(); void renderReleases(); notify('已生成学生课程链接');
     } catch (error) { $('review-error').textContent = error instanceof Error ? error.message : String(error); button.disabled = false; }
   };
 };
@@ -791,7 +810,12 @@ async function syncProgress() {
     // Offline or unreachable: keep it for the next poll. A rejected report
     // would be rejected again, so stop retrying it.
     if (error instanceof ApiError && error.status >= 400 && error.status < 500 && error.status !== 408 && error.status !== 429) localStorage.removeItem(key + ':unsent');
-  } finally { syncingProgress = false; }
+  } finally {
+    syncingProgress = false;
+    // A check-in made while this report was in flight is sent right away,
+    // not at the next poll; a failed report waits for that poll instead.
+    if (stored(key + ':unsent') === '1' && stored(key + ':revision') !== String(revision)) void syncProgress();
+  }
 }
 async function refreshClassProgress() {
   if (!courseId || courseSuperseded) return;
@@ -806,8 +830,14 @@ function renderClassBoard() {
     const route = plan!.routes.find(r => r.teamId === team.teamId), last = team.completed.at(-1);
     const time = last && team.checkIns[last] ? `（${clock(team.checkIns[last])}）` : '';
     return `<div class="class-board-row ${team.finished ? 'done' : ''}" data-team-progress="${e(team.teamId)}"><strong>${e(team.teamId)}</strong><span>${team.completed.length} / ${route?.controlIds.length ?? 0}</span><small>${team.finished ? `全部目标完成${time}` : last ? `最近 ${label(last)}${time}` : '尚未打点'}</small></div>`;
-  }).join('') + `<p class="muted compact">按各队手机上报的打点汇总，断网的队伍联网后补传。</p>`;
+  }).join('') + `<p class="muted compact">按各队手机上报的打点汇总，断网的队伍联网后补传。</p><button id="export-results" class="text-button">导出成绩表（CSV）</button>`;
 }
+$('class-board-list').addEventListener('click', event => {
+  if (!(event.target as HTMLElement).closest('#export-results') || !plan || !classProgress) return;
+  const url = URL.createObjectURL(new Blob([resultsCsv(plan.routes, classProgress, studentControls, plan.coverage?.mandatoryControlIds ?? [])], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a'); link.href = url; link.download = `dirmap-results-${courseId}.csv`; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 function progressKey() { return `dirmap-progress:${courseId}:${value('student-team')}`; }
 function waitingMeeting(): Control | undefined {
   const last = studentRoute()?.controlIds.filter(id => completed.has(id)).at(-1);
@@ -842,7 +872,7 @@ function renderStudent() {
   $('meeting-departure').classList.toggle('hidden', !waiting);
   $<HTMLButtonElement>('meeting-departure').disabled = courseSuperseded;
   renderClassBoard();
-  $('student-stops').innerHTML = route.controlIds.map((id, i) => `<div class="student-stop ${completed.has(id) ? 'done' : ''}"><i>${completed.has(id) ? '✓' : i + 1}</i><span>目标 ${e(studentControls.find(c => c.id === id)?.label ?? id)}${plan?.coverage?.mandatoryControlIds.length ? `<small> · ${requiredByAll.has(id) ? '全员必到' : '本队分担'}</small>` : ''}</span><small>${completed.has(id) ? '已完成' : '待到访'}</small></div>`).join('');
+  $('student-stops').innerHTML = route.controlIds.map((id, i) => `<div class="student-stop ${completed.has(id) ? 'done' : ''}"><i>${completed.has(id) ? '✓' : i + 1}</i><span>目标 ${e(studentControls.find(c => c.id === id)?.label ?? id)}${plan?.coverage?.mandatoryControlIds.length ? `<small> · ${requiredByAll.has(id) ? '全员必到' : '本队分担'}</small>` : ''}</span><small>${completed.has(id) ? `已完成${checkInTimes[id] ? ' ' + new Date(checkInTimes[id]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : '待到访'}</small></div>`).join('');
 }
 function resetNavigation() {
   navigationRevision++; navigationRoute = null; offRoute.reset();
@@ -883,13 +913,14 @@ $<HTMLSelectElement>('student-team').onchange = () => {
   checkInTimes = Object.fromEntries(Object.entries(checkInTimes).filter(([id, at]) => completed.has(id) && Number.isFinite(at)));
   resetNavigation(); renderStudent(); void syncProgress();
 };
-$('check-in').onclick = () => { if (courseSuperseded || waitingMeeting()) return; const next = studentRoute()?.controlIds.find(id => !completed.has(id)); if (next) { completed.add(next); checkInTimes[next] = Date.now(); saveProgress(); resetNavigation(); renderStudent(); } };
+const viewing = () => $('student-panel').classList.contains('viewer');
+$('check-in').onclick = () => { if (courseSuperseded || waitingMeeting() || viewing()) return; const next = studentRoute()?.controlIds.find(id => !completed.has(id)); if (next) { completed.add(next); checkInTimes[next] = Date.now(); saveProgress(); resetNavigation(); renderStudent(); } };
 $('meeting-departure').onclick = () => {
-  const waiting = waitingMeeting(); if (!waiting || courseSuperseded) return;
+  const waiting = waitingMeeting(); if (!waiting || courseSuperseded || viewing()) return;
   departedMeetings.add(waiting.id); saveProgress();
   resetNavigation(); renderStudent();
 };
-$('undo-check-in').onclick = () => { if (courseSuperseded) return; const last = [...completed].at(-1); if (last) { completed.delete(last); departedMeetings.delete(last); delete checkInTimes[last]; saveProgress(); resetNavigation(); renderStudent(); } };
+$('undo-check-in').onclick = () => { if (courseSuperseded || viewing()) return; const last = [...completed].at(-1); if (last) { completed.delete(last); departedMeetings.delete(last); delete checkInTimes[last]; saveProgress(); resetNavigation(); renderStudent(); } };
 addEventListener('online', () => { void syncProgress(); void refreshClassProgress(); });
 
 async function boot() {
@@ -929,7 +960,12 @@ async function boot() {
         }
       } catch { $('release-badge').textContent = '离线 · 状态未更新'; }
     }, 15000);
-    if (location.hash === '#progress') $<HTMLDetailsElement>('class-board').open = true;
+    if (location.hash === '#progress') {
+      // The teacher's progress link only views the class; a stray tap must
+      // not report a check-in for whichever team happens to be selected.
+      $('student-panel').classList.add('viewer'); $<HTMLDetailsElement>('class-board').open = true;
+      $('student-progress').insertAdjacentHTML('afterend', '<p id="viewer-note" class="muted compact">查看模式：不记录打点。学生请使用不带 #progress 的课程链接。</p>');
+    }
     if (!course.offline) void refreshClassProgress();
   } else {
     // Resume only what was pending when this page opened. A submission made
