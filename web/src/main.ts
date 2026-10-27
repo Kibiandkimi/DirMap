@@ -62,7 +62,7 @@ document.querySelector('#app')!.innerHTML = `
 <section id="tab-course" class="tab-content"><div class="section-title"><h2>路线规则</h2><span class="step-number">01</span></div><label class="field-label" for="course-mode">访问方式</label><select id="course-mode"><option value="all_visit">每队访问全部目标</option><option value="split_coverage">全班分担全部目标</option><option value="fixed_order">按列表顺序访问</option></select><div class="form-grid"><label>总人数<input id="people" type="number" value="20" min="1" max="500"></label><label>队伍数<input id="teams" type="number" value="4" min="1" max="30"></label><label>步行 / 跑速 <span>m/s</span><input id="speed" type="number" value="1.4" step="0.1" min="0.2" max="10"></label><label>错峰间隔 <span>秒</span><input id="stagger" type="number" value="0" min="0" max="3600"></label></div><p id="group-preview" class="muted compact">每队 5 人 · 同时出发</p><label class="field-label" for="objective">优化目标</label><select id="objective"><option value="min_max_finish_then_sum">优先让最后一队更早完成</option><option value="min_total_time">全班总耗时最短</option></select>
 <div class="section-title section-gap"><h2>起终点与目标</h2><span class="step-number">02</span></div><div class="endpoint-row"><button id="pick-start" class="endpoint-button"><i class="endpoint-dot start"></i><span>在地图选起点</span></button><button id="pick-finish" class="endpoint-button"><i class="endpoint-dot finish"></i><span>在地图选终点</span></button></div><label class="check-label"><input id="return-start" type="checkbox" checked>回到起点结束</label><div class="control-heading"><span id="control-count">尚未识别目标</span><button id="edit-controls" class="text-button">原图校核 ↗</button></div><p class="muted compact">勾选本次课程目标；固定顺序模式可上下调整。</p><div id="control-list" class="control-list"><div class="empty-small">识别后，控制圈会显示在这里。</div></div><button id="plan-button" class="primary-button wide plan-button">生成队伍路线 <span>→</span></button><div id="plan-errors" role="status"></div><div id="route-results"></div>
 <div id="publish-section" class="publish-section hidden"><button id="review-button" class="soft-button wide">核验课程并发布</button><div id="share-result"></div></div></section>
-<section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>地物匹配与局部校准</h2><span class="step-number">01</span></div><p class="muted">先通过水体和建筑匹配到标准地图；同一校园的图幅也会匹配共同地物。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
+<section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>地物匹配与局部校准</h2><span class="step-number">01</span></div><p class="muted">先通过水体和建筑匹配到标准地图；同一校园的图幅也会匹配共同地物。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><div id="field-check-card" class="quality-card"><strong>现场 GPS 核查</strong><p class="muted compact">站在原图上能认出的位置（路口、建筑角或目标圈心），用手机当前定位记录核查点，再在原图上点出所站位置。核查点不参与拟合，也不会让路线或已发布课程失效。</p><div id="field-check-summary"></div><button id="add-field-check" class="soft-button wide">＋ 用当前位置添加核查点</button><div id="field-check-list" class="anchor-list"></div></div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
 <section id="tab-terrain" class="tab-content hidden"><div class="section-title"><h2>核对可通行区域</h2><span class="step-number">01</span></div><p class="muted">红色区域为识别出的障碍。重点核对围墙、门洞、水体、禁区和上下层通道。</p><label class="check-label"><input id="show-terrain" type="checkbox">在地图上显示障碍候选</label><button id="edit-terrain" class="primary-button wide section-gap">打开原图修正通行区域</button><div id="terrain-summary" class="quality-card"></div><p class="muted">原图修正保存后需重新生成路线。二维相交不能证明桥上、桥下可以互通。</p><div class="section-title section-gap"><h2>随图图例</h2></div><div id="legend-links" class="legend-links"></div></section></aside>
 <aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
 <main class="map-panel"><div id="map" role="application" aria-label="校园标准地图与定向路线"></div><div class="map-topbar"><div class="map-title"><span class="map-kicker">CAMPUS EXPLORER</span><strong id="map-title">深圳大学 · 粤海校区</strong><span id="map-subtitle">标准地图 / WGS84</span></div><div class="layer-tools"><label class="check-label"><input id="standard-map" type="checkbox" checked>标准底图</label><label class="check-label teacher-only"><input id="stitch-maps" type="checkbox">叠合图幅</label><label class="opacity-control">原图 <input id="overlay-opacity" type="range" min="0" max="100" value="70" aria-label="原图透明度"></label></div></div><div id="map-action-hint" class="map-action-hint hidden" role="status"></div><button id="north-button" class="compass-button" title="北向上" aria-label="切换北向上"><span>N</span><svg id="compass-arrow" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 21 25 12 20 3 25Z" fill="#295c46"/><path d="M12 1v19l9 5Z" fill="#abbdb1"/></svg></button><div class="map-bottom"><div class="navigation-card"><button id="follow-button" class="follow-button"><span class="locate-icon">◎</span><span id="follow-label">开始定位与朝向跟随</span></button><div id="sensor-status" class="sensor-status" role="status">手机打开 HTTPS 链接即可启用</div></div><div class="map-key"><span><i class="key-control"></i>目标点</span><span><i class="key-route"></i>队伍路线</span><span id="location-status">位置尚未开启</span></div></div></main></div><div id="toast" class="toast hidden" role="status"></div>`;
@@ -406,7 +406,7 @@ async function loadState(id: string, fit = true) {
   const load = ++stateLoad;
   const next = await api<MapState & { processed: boolean }>(`/api/maps/${id}`);
   if (load !== stateLoad) return false;
-  activeId = id; state = next.processed ? next : null; anchors = []; renderAnchors(); resetPlan(); startPixel = finishPixel = null; startSurfaceId = finishSurfaceId = null;
+  activeId = id; state = next.processed ? next : null; fieldCheckPoints = []; campusMap.setFieldChecks([]); anchors = []; renderAnchors(); resetPlan(); startPixel = finishPixel = null; startSurfaceId = finishSurfaceId = null;
   initializeRules();
   campusMap.setEndpoint('start', null); campusMap.setEndpoint('finish', null); mapAction = null; $('map-action-hint').classList.add('hidden');
   $('pick-start').querySelector('span')!.textContent = '在地图选起点'; $('pick-finish').querySelector('span')!.textContent = '在地图选终点';
@@ -425,7 +425,7 @@ async function loadState(id: string, fit = true) {
     $('pick-finish').querySelector('span')!.textContent = '已识别原图终点';
     $<HTMLInputElement>('return-start').checked = JSON.stringify(startPixel) === JSON.stringify(finishPixel) && startSurfaceId === finishSurfaceId;
   }
-  renderCatalog(); renderState(); void renderReleases(); await updateOverlays(); if (fit && state?.extent && load === stateLoad) campusMap.fit(state.extent);
+  renderCatalog(); renderState(); void renderReleases(); void renderFieldChecks(); await updateOverlays(); if (fit && state?.extent && load === stateLoad) campusMap.fit(state.extent);
   return load === stateLoad;
 }
 async function updateOverlays() {
@@ -482,6 +482,41 @@ function openEditor(mode: 'inspect' | 'close' | 'anchor' = 'inspect', id: string
     $('map-action-hint').textContent = '在标准地图上点击同一个建筑角或路口'; $('map-action-hint').classList.remove('hidden'); campusMap.setOpacity(.1);
   }, plan?.approaches ?? []).open(mode, id);
 }
+type FieldCheckReport = { checks: { id: string; errorM: number | null; accuracyM: number; usable: boolean; insideRegistration: boolean; recordedAt: number; lnglat: Pixel; predictedLnglat: Pixel | null }[];
+  summary: { count: number; usable: number; medianM?: number; p95M?: number; maxM?: number; accuracyMedianM?: number; meetsThresholds?: boolean;
+    thresholds: { medianM: number; p95M: number; maxM: number }; maxAccuracyM: number; minimumForVerdict: number } };
+let fieldRender = 0;
+let fieldCheckPoints: FieldCheckReport['checks'] = [];
+const registrationTabOpen = () => !$('tab-registration').classList.contains('hidden');
+async function renderFieldChecks() {
+  if (courseId || !state) return;
+  const render = ++fieldRender, assetId = activeId;
+  let result: FieldCheckReport;
+  try { result = await api<FieldCheckReport>(`/api/maps/${encodeURIComponent(assetId)}/field-checks`); } catch { return; }
+  if (render !== fieldRender || assetId !== activeId) return;
+  fieldCheckPoints = result.checks; campusMap.setFieldChecks(registrationTabOpen() ? fieldCheckPoints : []);
+  const s = result.summary, t = s.thresholds;
+  const verdict = s.meetsThresholds === undefined ? `至少 ${s.minimumForVerdict} 个可用点后对照门槛。` : s.meetsThresholds ? '达到独立精度门槛。' : '未达到独立精度门槛，可补同名点重新校准后复查。';
+  $('field-check-summary').innerHTML = s.usable ? `<p><strong>${s.usable}</strong> 个可用点（共 ${s.count} 个）：中位 ${s.medianM} m · P95 ${s.p95M} m · 最大 ${s.maxM} m。门槛为中位 ≤${t.medianM}、P95 ≤${t.p95M}、最大 ≤${t.maxM} m；${verdict}</p><p class="muted compact">误差含手机定位误差（本组精度中位 ${s.accuracyMedianM} m）；精度差于 ${s.maxAccuracyM} m 或在配准范围外的点不计入。</p>`
+    : s.count ? `<p>已记录 ${s.count} 个点，暂无可用点：定位精度需在 ${s.maxAccuracyM} m 以内且位于配准范围内。</p>` : '';
+  $('field-check-list').innerHTML = result.checks.map((c, i) => `<div><span>${i + 1}. ${c.errorM === null ? '配准范围外' : `误差 ${c.errorM.toFixed(1)} m`}</span><small>定位精度 ${Math.round(c.accuracyM)} m${c.usable ? '' : ' · 不计入'}</small><button data-remove-field-check="${e(c.id)}" class="text-button" aria-label="删除核查点 ${i + 1}">×</button></div>`).join('');
+}
+$('field-check-list').addEventListener('click', event => {
+  const id = (event.target as HTMLElement).closest<HTMLElement>('[data-remove-field-check]')?.dataset.removeFieldCheck;
+  if (id) void task(async () => { await api(`/api/maps/${encodeURIComponent(activeId)}/field-checks/${encodeURIComponent(id)}`, { method: 'DELETE' }); await renderFieldChecks(); });
+});
+$('add-field-check').onclick = () => task(async () => {
+  if (!state?.registration || state.registrationStale) throw new Error('请先完成当前地图的配准');
+  if (!navigator.geolocation) throw new Error('此浏览器不能定位');
+  $('field-check-summary').textContent = '正在获取当前位置…';
+  const fix = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }))
+    .catch(() => { void renderFieldChecks(); throw new Error('没有取得当前位置，请允许定位后到开阔处重试'); });
+  notify(fix.coords.accuracy > 10 ? `定位精度约 ${Math.round(fix.coords.accuracy)} m，会保存但不计入统计；可到开阔处重试` : `定位精度约 ${Math.round(fix.coords.accuracy)} m，请在原图上点出你所站的位置`);
+  const pixel = await new Promise<Pixel | null>(resolve => new PixelEditor(state!, saveEdits, resolve, [], () => resolve(null)).open('field'));
+  if (!pixel) { void renderFieldChecks(); return; }
+  await api(`/api/maps/${encodeURIComponent(activeId)}/field-checks`, { method: 'POST', body: JSON.stringify({ pixel, lnglat: [fix.coords.longitude, fix.coords.latitude], accuracyM: fix.coords.accuracy, measuredAt: Date.now() }) });
+  await renderFieldChecks(); notify('已添加核查点');
+});
 function renderAnchors() {
   $('anchor-list').innerHTML = anchors.map((a, i) => `<div><span>${i + 1}. ${a.purpose === 'fit' ? '拟合点' : '核查点'}</span><small>${a.lnglat[0].toFixed(6)}, ${a.lnglat[1].toFixed(6)}</small><button data-remove-anchor="${i}" class="text-button" aria-label="删除同名点 ${i + 1}">×</button></div>`).join('');
   $<HTMLButtonElement>('fit-anchors').disabled = anchors.filter(a => a.purpose === 'fit').length < 3;
@@ -542,7 +577,7 @@ $('process-current').onclick = () => task(async () => { await runJob(`/api/maps/
 $('process-all').onclick = () => task(async () => { for (const map of catalog.maps) { await runJob(`/api/maps/${map.id}/process`); } catalog = await api('/api/catalog'); $<HTMLInputElement>('stitch-maps').checked = true; await loadState(activeId); });
 $('upload-button').onclick = () => $<HTMLInputElement>('upload-input').click();
 $<HTMLInputElement>('upload-input').onchange = event => task(async () => { const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return; const form = new FormData(); form.append('file', file); const asset = await api<{ id: string }>('/api/maps/upload', { method: 'POST', body: form }); catalog = await api('/api/catalog'); await loadState(asset.id); });
-document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b === button)); document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('hidden', tab.id !== `tab-${button.dataset.tab}`)); });
+document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b === button)); document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('hidden', tab.id !== `tab-${button.dataset.tab}`)); campusMap.setFieldChecks(registrationTabOpen() ? fieldCheckPoints : []); });
 for (const id of ['people', 'teams', 'stagger', 'speed']) $<HTMLInputElement>(id).oninput = () => { restoredTeams = null; groupPreview(); renderCustomRoutes(); resetPlan(); persistRules(); };
 $<HTMLSelectElement>('objective').onchange = () => { resetPlan(); persistRules(); };
 $<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = []; customMapTeam = null; $('map-action-hint').classList.add('hidden'); resetPlan(); persistRules(); renderState(); };
@@ -959,7 +994,8 @@ async function boot() {
     releasePoll = setInterval(async () => {
       if (document.hidden || courseSuperseded) return;
       try {
-        const current = await api<{ superseded: boolean; routingSchema?: string; offline?: boolean }>(`/api/releases/${courseId}`);
+        // A few bytes per check instead of the whole course package.
+        const current = await api<{ superseded: boolean; routingSchema?: string; offline?: boolean }>(`/api/releases/${courseId}/status`);
         if (current.superseded || current.routingSchema !== __DIRMAP_ROUTING_SCHEMA__) {
           courseSuperseded = true; navigationRevision++; follow = false; sensors.stop(); campusMap.setRoutes([]);
           $('release-badge').textContent = '课程已更新'; $('sensor-status').textContent = '旧路线已失效，请使用教师提供的新链接';

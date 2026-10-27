@@ -34,6 +34,8 @@ async function limitedFetch(request) {
 
 async function saveJSON(cache, request, response) {
   const headers = new Headers(response.headers);
+  // The stored body is already decoded; keeping these would misdescribe it.
+  headers.delete('Content-Encoding'); headers.delete('Content-Length');
   headers.set('X-DirMap-Saved-At', new Date().toISOString());
   await cache.put(request, new Response(await response.clone().arrayBuffer(), { status: response.status, headers }));
 }

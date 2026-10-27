@@ -10,6 +10,7 @@ import pytest
 from dirmap import store, service
 from dirmap.app import app
 from dirmap.geometry import Frame, Registration, affine_points
+from dirmap.protocol import ROUTING_SCHEMA
 from dirmap.vision import TERRAIN_SCHEMA
 
 
@@ -616,3 +617,38 @@ def test_published_routes_print_per_team(client):
     assert printed.status_code == 200 and printed.headers['content-type'] == 'image/jpeg'
     assert cv2.imdecode(np.frombuffer(printed.content, np.uint8), cv2.IMREAD_COLOR).shape[:2] == (10, 10)
     assert client.get(f'/api/releases/{release_id}/route-map', params={'team': 'nobody'}).status_code == 422
+
+
+def test_field_checks_are_teacher_writes_that_keep_the_map_version(client, monkeypatch):
+    url = '/api/maps/szu-1/field-checks'
+    lnglat = store.get_state('szu-1')['controls'][0]['lnglat']
+    check = {'pixel': [26, 26], 'lnglat': lnglat, 'accuracyM': 4, 'measuredAt': time.time()*1000}
+    added = client.post(url, json=check).json()
+    assert added['checks'][0]['errorM'] == pytest.approx(0, abs=1e-6) and added['summary']['usable'] == 1
+    assert client.get('/api/maps/szu-1').json()['version'] == 1
+    assert client.post(url, json={**check, 'lnglat': [200, 0]}).status_code == 422
+    assert client.post(url, json={**check, 'accuracyM': 0}).status_code == 422
+    monkeypatch.setenv('DIRMAP_ADMIN_TOKEN', 'teacher-only')
+    assert client.post(url, json=check).status_code == 401
+    check_id = added['checks'][0]['id']
+    assert client.delete(f'{url}/{check_id}').status_code == 401
+    assert client.delete(f'{url}/{check_id}', headers={'X-DirMap-Token': 'teacher-only'}).json()['checks'] == []
+    assert client.get(url).json()['summary']['count'] == 0
+
+
+def test_phones_poll_a_small_status_and_course_json_is_compressed(client):
+    state = store.get_state('szu-1'); state['controls'][0]['state'] = 'accepted'; store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200
+    plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
+    release_id = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']}).json()['id']
+    status = client.get(f'/api/releases/{release_id}/status')
+    assert status.json() == {'id': release_id, 'superseded': False, 'routingSchema': ROUTING_SCHEMA}
+    assert len(status.content) < 200
+    full = client.get(f'/api/releases/{release_id}', headers={'Accept-Encoding': 'gzip'})
+    assert full.headers['content-encoding'] == 'gzip' and full.json()['id'] == release_id
+    image = client.get(f'/api/releases/{release_id}/overlay.png', headers={'Accept-Encoding': 'gzip'})
+    assert 'content-encoding' not in image.headers
+    client.patch('/api/maps/szu-1', json={'version': 1, 'edits': [{'kind': 'close', 'pixels': [[22, 22]], 'radiusPx': 5}]})
+    assert client.get(f'/api/releases/{release_id}/status').json()['superseded'] is True
+    assert client.get('/api/releases/'+'0'*32+'/status').status_code == 404

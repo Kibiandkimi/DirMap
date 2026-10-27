@@ -25,6 +25,7 @@ export class CampusMap {
   private location = new VectorSource();
   private endpoints = new VectorSource();
   private approaches = new VectorSource();
+  private fieldChecks = new VectorSource();
   private overlays: ImageLayer<ImageStatic>[] = [];
   private terrain: ImageLayer<ImageStatic> | null = null;
   map: Map;
@@ -42,6 +43,7 @@ export class CampusMap {
     this.map = new Map({ target, layers: [this.base, reference,
       new VectorLayer({ source: this.routes, zIndex: 30 }), new VectorLayer({ source: this.controls, zIndex: 40 }),
       new VectorLayer({ source: this.endpoints, zIndex: 45 }), new VectorLayer({ source: this.approaches, zIndex: 46 }),
+      new VectorLayer({ source: this.fieldChecks, zIndex: 47 }),
       new VectorLayer({ source: this.location, zIndex: 50 })],
       view: new View({ center: fromLonLat([113.9304, 22.535]), zoom: 16.2, minZoom: 13, maxZoom: 21, enableRotation: true }),
       controls: defaults({ rotate: false }).extend([new ScaleLine({ units: 'metric' })]) });
@@ -115,6 +117,23 @@ export class CampusMap {
       feature.setStyle(new Style({ image: new Circle({ radius: 5, fill: new Fill({ color: '#e58824' }), stroke: new Stroke({ color: '#fff', width: 2 }) }),
         text: new Text({ text: a.automatic ? '建议到访' : '到访', offsetY: 16, font: '11px sans-serif', fill: new Fill({ color: '#864809' }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
       this.approaches.addFeature(feature);
+    }
+  }
+  /** GPS check points: a line from the registered position to the phone's
+   * fix, coloured against the median/P95 thresholds, or grey if not counted. */
+  setFieldChecks(checks: { lnglat: Pixel; predictedLnglat: Pixel | null; errorM: number | null; usable: boolean }[]) {
+    this.fieldChecks.clear();
+    for (const check of checks) {
+      const colour = !check.usable || check.errorM === null ? '#8c968a' : check.errorM <= 3 ? '#2f8a4f' : check.errorM <= 8 ? '#d08a1f' : '#c9352f';
+      if (check.predictedLnglat) {
+        const line = new Feature(new LineString([fromLonLat(check.predictedLnglat), fromLonLat(check.lnglat)]));
+        line.setStyle(new Style({ stroke: new Stroke({ color: colour, width: 2, lineDash: [4, 4] }) }));
+        this.fieldChecks.addFeature(line);
+      }
+      const point = new Feature(new Point(fromLonLat(check.lnglat)));
+      point.setStyle(new Style({ image: new Circle({ radius: 5, fill: new Fill({ color: colour }), stroke: new Stroke({ color: '#fff', width: 2 }) }),
+        text: check.errorM === null ? undefined : new Text({ text: `${check.errorM.toFixed(1)} m`, offsetY: -14, font: '11px sans-serif', fill: new Fill({ color: colour }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
+      this.fieldChecks.addFeature(point);
     }
   }
   setEndpoint(name: 'start' | 'finish', lnglat: Pixel | null) {

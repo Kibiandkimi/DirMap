@@ -1,6 +1,6 @@
 import { escapeHtml, type Approach, type Control, type MapState, type Pixel, type Portal, type Surface, type TerrainEdit } from './types';
 
-type Mode = 'inspect' | 'control' | 'approach' | 'open' | 'close' | 'anchor' | 'portal';
+type Mode = 'inspect' | 'control' | 'approach' | 'open' | 'close' | 'anchor' | 'portal' | 'field';
 export class PixelEditor {
   private dialog = document.createElement('dialog');
   private canvas!: HTMLCanvasElement;
@@ -21,8 +21,9 @@ export class PixelEditor {
   private showTerrain = false;
   private showStairs = false;
   private history: { controls: Control[]; edits: TerrainEdit[]; surfaces: Surface[]; portals: Portal[] }[] = [];
+  private picked = false;
 
-  constructor(private state: MapState, private onSave: (controls: Control[], edits: TerrainEdit[], surfaces?: Surface[], portals?: Portal[]) => Promise<void>, private onAnchor: (pixel: Pixel) => void, private suggestions: Approach[] = []) {
+  constructor(private state: MapState, private onSave: (controls: Control[], edits: TerrainEdit[], surfaces?: Surface[], portals?: Portal[]) => Promise<void>, private onAnchor: (pixel: Pixel) => void, private suggestions: Approach[] = [], private onDismiss?: () => void) {
     this.controls = structuredClone(state.controls);
     this.edits = structuredClone(state.edits);
     this.surfaces = structuredClone(state.surfaces ?? []);
@@ -33,7 +34,7 @@ export class PixelEditor {
     this.surfaceId = this.controls.find(c => c.id === selected)?.surfaceId ?? 'ground';
     this.dialog.className = 'editor-dialog';
     this.dialog.innerHTML = `<div class="dialog-heading"><div><span class="eyebrow">原图校核</span><h2>${escapeHtml(this.state.name)}</h2></div><button data-close class="icon-button" aria-label="关闭原图">×</button></div>
-      <div class="editor-toolbar"><select id="edit-mode" aria-label="编辑操作"><option value="inspect">检查 / 选择目标</option><option value="control">新增目标</option><option value="approach">选择目标到访位置</option><option value="close">标记封闭路段</option><option value="open">确认开放通道</option><option value="portal">标记换层入口</option><option value="anchor">添加配准同名点</option></select>
+      <div class="editor-toolbar"><select id="edit-mode" aria-label="编辑操作"><option value="inspect">检查 / 选择目标</option><option value="control">新增目标</option><option value="approach">选择目标到访位置</option><option value="close">标记封闭路段</option><option value="open">确认开放通道</option><option value="portal">标记换层入口</option><option value="anchor">添加配准同名点</option><option value="field" hidden>标记所站位置</option></select>
       <label class="brush-label">笔刷 <input id="brush-size" type="number" value="6" min="1" max="100" aria-label="笔刷半径"></label><button id="undo-edit" class="soft-button">撤销</button><button id="zoom-out" class="icon-button" aria-label="缩小原图">−</button><button id="zoom-in" class="icon-button" aria-label="放大原图">＋</button><label class="check-label"><input id="editor-terrain" type="checkbox">识别障碍</label></div>
       <details class="layer-settings"><summary>桥隧与层级</summary><div id="layer-controls"></div></details><p id="editor-hint" class="muted editor-hint" role="status"></p><div class="editor-viewport"><canvas aria-label="原图及目标点编辑画布"></canvas></div>
       <div class="editor-footer"><span id="edit-selection" class="muted">点击目标可修改编号、删除或确认</span><button id="save-edits" class="primary-button">保存修改</button></div>`;
@@ -133,7 +134,7 @@ export class PixelEditor {
   }
   private pointerDown(event: PointerEvent) {
     const point = this.pixel(event);
-    if (this.mode === 'anchor') { this.onAnchor(point); this.close(); return; }
+    if (this.mode === 'anchor' || this.mode === 'field') { this.picked = true; this.onAnchor(point); this.close(); return; }
     if (this.mode === 'portal') {
       const target = this.dialog.querySelector<HTMLSelectElement>('#portal-target')!.value;
       const length = Number(this.dialog.querySelector<HTMLInputElement>('#portal-length')!.value);
@@ -171,7 +172,7 @@ export class PixelEditor {
     this.stroke = null; this.draw();
   }
   private hint() {
-    const messages: Record<Mode, string> = { inspect: '点击圈心或入口选择对象。缩放后核对细墙、门洞和实际位置。', control: '点击原图新增目标，使用当前编辑层级。', approach: '点击本层实际可以到访的位置，保留原圈心。', open: '沿当前层级可行走的区域描画；不同层级不会自动连接。', close: '沿当前层级的围墙、施工区或禁行线描画。保存后旧路线立即失效。', anchor: '先点击原图中的建筑角或路口，再到标准地图点击同一个位置。', portal: '先在“桥隧与层级”设置入口的另一层，再点击两层实际相接的位置；未经核验的入口不接通。' };
+    const messages: Record<Mode, string> = { inspect: '点击圈心或入口选择对象。缩放后核对细墙、门洞和实际位置。', control: '点击原图新增目标，使用当前编辑层级。', approach: '点击本层实际可以到访的位置，保留原圈心。', open: '沿当前层级可行走的区域描画；不同层级不会自动连接。', close: '沿当前层级的围墙、施工区或禁行线描画。保存后旧路线立即失效。', anchor: '先点击原图中的建筑角或路口，再到标准地图点击同一个位置。', field: '点击你此刻所站位置在原图上的对应点，例如路口、建筑角或目标圈心。', portal: '先在“桥隧与层级”设置入口的另一层，再点击两层实际相接的位置；未经核验的入口不接通。' };
     this.dialog.querySelector('#editor-hint')!.textContent = `当前层级：${this.catalogue().find(s => s.id === this.surfaceId)?.label}。${messages[this.mode]}`;
     this.canvas.style.touchAction = ['open', 'close'].includes(this.mode) ? 'none' : 'auto';
   }
@@ -234,5 +235,5 @@ export class PixelEditor {
       ctx.strokeStyle = '#e58824'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(...a.pixel, 6, 0, Math.PI * 2); ctx.stroke();
     }
   }
-  close() { this.dialog.close(); this.dialog.remove(); }
+  close() { this.dialog.close(); this.dialog.remove(); if (!this.picked) this.onDismiss?.(); }
 }

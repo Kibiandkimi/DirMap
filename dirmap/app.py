@@ -13,11 +13,12 @@ from typing import Annotated, Literal
 import uuid
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import service, store, layers, memory, printing, progress
+from . import service, store, layers, memory, printing, progress, field_checks
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -39,6 +40,9 @@ async def lifespan(app):
 
 
 app = FastAPI(title='DirMap', version='0.1.0', lifespan=lifespan)
+# Course packages are large JSON and the server's link to the class is slow;
+# images are already compressed and stay as they are.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 Point = tuple[FiniteFloat, FiniteFloat]
 
 
@@ -203,6 +207,19 @@ class Anchor(Model):
     pixel: Point
     lnglat: Point
     purpose: Literal['fit', 'validation'] = 'fit'
+
+
+class FieldCheck(Model):
+    pixel: Point
+    lnglat: Point
+    accuracyM: FiniteFloat = Field(gt=0, le=1000)
+    measuredAt: FiniteFloat
+
+    @model_validator(mode='after')
+    def plausible_position(self):
+        if not (-180 <= self.lnglat[0] <= 180 and -90 <= self.lnglat[1] <= 90):
+            raise ValueError('经纬度无效')
+        return self
 
 
 class AnchorRequest(Model):
@@ -520,6 +537,21 @@ def anchors(asset_id: str, request: AnchorRequest, http_request: Request):
     return submit_job(http_request, 'anchors', asset_id, request.model_dump(), request.version)
 
 
+@app.get('/api/maps/{asset_id}/field-checks')
+def list_field_checks(asset_id: str):
+    return field_checks.report(asset_id)
+
+
+@app.post('/api/maps/{asset_id}/field-checks')
+def add_field_check(asset_id: str, check: FieldCheck):
+    return field_checks.add(asset_id, check.model_dump())
+
+
+@app.delete('/api/maps/{asset_id}/field-checks/{check_id}')
+def remove_field_check(asset_id: str, check_id: str):
+    return field_checks.remove(asset_id, check_id)
+
+
 @app.post('/api/maps/{asset_id}/review')
 def review(asset_id: str, request: ReviewRequest):
     with store.LOCK:
@@ -634,6 +666,13 @@ def get_release(release_id: str):
                            or value.get('routingSchema') != ROUTING_SCHEMA
                            or service.registration_stale(state))
     return value
+
+
+@app.get('/api/releases/{release_id}/status')
+def release_status(release_id: str):
+    # Phones poll this; the full course is downloaded once when opened.
+    release = get_release(release_id)
+    return {'id': release['id'], 'superseded': release['superseded'], 'routingSchema': release.get('routingSchema')}
 
 
 @app.get('/api/releases/{release_id}/route-map')
