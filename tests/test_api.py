@@ -604,3 +604,15 @@ def test_teacher_lists_published_courses_with_class_progress(client, monkeypatch
     assert client.get('/api/releases').status_code == 401
     assert len(client.get('/api/releases', headers={'X-DirMap-Token': 'teacher-only'}).json()) == 2
     assert client.get(f'/api/releases/{first}').status_code == 200
+
+
+def test_published_routes_print_per_team(client):
+    state = store.get_state('szu-1'); state['controls'][0]['state'] = 'accepted'; store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200
+    plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
+    release_id = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']}).json()['id']
+    printed = client.get(f'/api/releases/{release_id}/route-map', params={'team': 'team1'})
+    assert printed.status_code == 200 and printed.headers['content-type'] == 'image/jpeg'
+    assert cv2.imdecode(np.frombuffer(printed.content, np.uint8), cv2.IMREAD_COLOR).shape[:2] == (10, 10)
+    assert client.get(f'/api/releases/{release_id}/route-map', params={'team': 'nobody'}).status_code == 422

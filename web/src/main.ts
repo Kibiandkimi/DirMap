@@ -9,6 +9,7 @@ import { parseCustomRoutes, routeToken } from './course-routes';
 import { teamComparisonHtml } from './team-comparison';
 import { canRefine, refinementHtml } from './plan-refinement';
 import { resultsCsv } from './class-results';
+import { printSheets } from './print';
 import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type Anchor, type AutoTeamRequest, type Catalog, type ClassProgress, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Portal, type Route, type Surface, type TerrainEdit } from './types';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -63,7 +64,7 @@ document.querySelector('#app')!.innerHTML = `
 <div id="publish-section" class="publish-section hidden"><button id="review-button" class="soft-button wide">核验课程并发布</button><div id="share-result"></div></div></section>
 <section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>地物匹配与局部校准</h2><span class="step-number">01</span></div><p class="muted">先通过水体和建筑匹配到标准地图；同一校园的图幅也会匹配共同地物。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
 <section id="tab-terrain" class="tab-content hidden"><div class="section-title"><h2>核对可通行区域</h2><span class="step-number">01</span></div><p class="muted">红色区域为识别出的障碍。重点核对围墙、门洞、水体、禁区和上下层通道。</p><label class="check-label"><input id="show-terrain" type="checkbox">在地图上显示障碍候选</label><button id="edit-terrain" class="primary-button wide section-gap">打开原图修正通行区域</button><div id="terrain-summary" class="quality-card"></div><p class="muted">原图修正保存后需重新生成路线。二维相交不能证明桥上、桥下可以互通。</p><div class="section-title section-gap"><h2>随图图例</h2></div><div id="legend-links" class="legend-links"></div></section></aside>
-<aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
+<aside id="student-panel" class="sidebar student-panel hidden"><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
 <main class="map-panel"><div id="map" role="application" aria-label="校园标准地图与定向路线"></div><div class="map-topbar"><div class="map-title"><span class="map-kicker">CAMPUS EXPLORER</span><strong id="map-title">深圳大学 · 粤海校区</strong><span id="map-subtitle">标准地图 / WGS84</span></div><div class="layer-tools"><label class="check-label"><input id="standard-map" type="checkbox" checked>标准底图</label><label class="check-label teacher-only"><input id="stitch-maps" type="checkbox">叠合图幅</label><label class="opacity-control">原图 <input id="overlay-opacity" type="range" min="0" max="100" value="70" aria-label="原图透明度"></label></div></div><div id="map-action-hint" class="map-action-hint hidden" role="status"></div><button id="north-button" class="compass-button" title="北向上" aria-label="切换北向上"><span>N</span><svg id="compass-arrow" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 21 25 12 20 3 25Z" fill="#295c46"/><path d="M12 1v19l9 5Z" fill="#abbdb1"/></svg></button><div class="map-bottom"><div class="navigation-card"><button id="follow-button" class="follow-button"><span class="locate-icon">◎</span><span id="follow-label">开始定位与朝向跟随</span></button><div id="sensor-status" class="sensor-status" role="status">手机打开 HTTPS 链接即可启用</div></div><div class="map-key"><span><i class="key-control"></i>目标点</span><span><i class="key-route"></i>队伍路线</span><span id="location-status">位置尚未开启</span></div></div></main></div><div id="toast" class="toast hidden" role="status"></div>`;
 
 const campusMap = new CampusMap($('map'));
@@ -115,7 +116,7 @@ async function renderReleases() {
   $('release-list').innerHTML = releases.length ? releases.map(r => {
     const link = new URL(r.url, location.href).href;
     const progress = r.startedTeams ? `${r.startedTeams}/${r.teams} 队已打点 · ${r.finishedTeams} 队完成${r.lastReportAt ? ` · 最近上报 ${clock(r.lastReportAt)}` : ''}` : `${r.teams} 队 · 尚无打点`;
-    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}</small><small>${progress}</small></span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a></div>`;
+    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}</small><small>${progress}</small></span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印 ↗</a></div>`;
   }).join('') : '<p class="muted compact">本图尚未发布课程。</p>';
 }
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="mixed_coverage">全员必到 + 其余点全班分担</option>');
@@ -765,7 +766,7 @@ $('review-button').onclick = () => {
       if (result.request?.teams?.length) restorePlanFields(result.request);
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
       const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title: '深大定向越野课' }) });
-      const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a>`;
+      const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印各队路线 ↗</a>`;
       dialog.close(); dialog.remove(); renderState(); void renderReleases(); notify('已生成学生课程链接');
     } catch (error) { $('review-error').textContent = error instanceof Error ? error.message : String(error); button.disabled = false; }
   };
@@ -911,6 +912,7 @@ $<HTMLSelectElement>('student-team').onchange = () => {
   departedMeetings = new Set([...departedMeetings].filter(id => completed.has(id) && plan?.coverage?.mandatoryControlIds.includes(id)));
   try { checkInTimes = JSON.parse(localStorage.getItem(progressKey() + ':times') ?? '{}') ?? {}; } catch { checkInTimes = {}; }
   checkInTimes = Object.fromEntries(Object.entries(checkInTimes).filter(([id, at]) => completed.has(id) && Number.isFinite(at)));
+  $('print-team').setAttribute('href', `/?course=${courseId}&print=${encodeURIComponent(value('student-team'))}`);
   resetNavigation(); renderStudent(); void syncProgress();
 };
 const viewing = () => $('student-panel').classList.contains('viewer');
@@ -927,6 +929,14 @@ async function boot() {
   const health = await api<{ magneticDeclinationDeg?: number; modelDate?: string; adminTokenRequired?: boolean }>('/api/health').catch(() => ({} as { magneticDeclinationDeg?: number; modelDate?: string }));
   sensors.declination = health.modelDate && Math.abs(Date.now() - Date.parse(health.modelDate)) < 31 * 86400000 ? health.magneticDeclinationDeg ?? null : null;
   api<object>('/api/reference').then(data => campusMap.setReference(data)).catch(() => notify('校园参考暂不可用，正在显示在线底图'));
+  const printTeam = courseId ? new URLSearchParams(location.search).get('print') : null;
+  if (courseId && printTeam) {
+    const course = await api<{ id: string; title: string; plan: Plan; controls: Control[]; superseded: boolean }>(`/api/releases/${courseId}`);
+    document.documentElement.classList.add('print-page');
+    document.body.innerHTML = printSheets(course, printTeam);
+    document.getElementById('print-now')!.onclick = () => print();
+    return;
+  }
   if (courseId) {
     $('teacher-panel').classList.add('hidden'); $('student-panel').classList.remove('hidden'); document.querySelectorAll('.teacher-only').forEach(el => el.classList.add('hidden')); $('header-mode').textContent = '学生导航';
     const course = await api<{ id: string; title: string; plan: Plan; controls: Control[]; extent: number[]; superseded: boolean; routingSchema?: string; offline?: boolean }>(`/api/releases/${courseId}`);

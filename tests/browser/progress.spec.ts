@@ -110,5 +110,22 @@ test('phones share check-ins so a class meeting shows who has arrived, and offli
   await expect(page.locator('#class-board')).toHaveAttribute('open', '');
   await expect(page.locator(`[data-team-progress="${second.teamId}"]`)).toBeVisible();
   for (const id of ['#check-in', '#undo-check-in', '#meeting-departure']) await expect(page.locator(id)).toBeHidden();
+  // Paper backup: one page per team with the server-drawn route.
+  await expect(a.phone.locator('#print-team')).toHaveAttribute('href', `/?course=${courseId}&print=${encodeURIComponent(first.teamId)}`);
+  await page.goto(`http://127.0.0.1:8768/?course=${courseId}&print=all`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.print-sheet')).toHaveCount(2);
+  await expect(page.locator('.print-sheet').first().locator('tbody tr')).toHaveCount(first.controlIds.length);
+  await expect.poll(() => page.locator('.print-map').evaluateAll(images => images.every(image => (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
+  await page.locator('.print-sheet').first().screenshot({ path: '/tmp/dirmap-print-sheet.png' });
+  const pdf = (await page.pdf({ format: 'A4' })).toString('latin1');
+  expect((pdf.match(/\/Type\s*\/Page[^s]/g) ?? []).length).toBe(2);
+  // The added class view and print link fit a small phone.
+  await b.phone.setViewportSize({ width: 360, height: 640 });
+  await b.phone.locator('#mobile-panel').click();
+  await b.phone.locator('#class-board summary').click();
+  await expect(b.phone.locator(`[data-team-progress="${first.teamId}"]`)).toBeVisible();
+  expect(await b.phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await b.phone.locator('#class-board').scrollIntoViewIfNeeded();
+  await b.phone.screenshot({ path: '/tmp/dirmap-class-board-phone.png' });
   for (const { context } of phones) await context.close();
 });

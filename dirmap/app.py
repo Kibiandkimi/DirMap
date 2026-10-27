@@ -13,11 +13,11 @@ from typing import Annotated, Literal
 import uuid
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import service, store, layers, memory, progress
+from . import service, store, layers, memory, printing, progress
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -634,6 +634,13 @@ def get_release(release_id: str):
                            or value.get('routingSchema') != ROUTING_SCHEMA
                            or service.registration_stale(state))
     return value
+
+
+@app.get('/api/releases/{release_id}/route-map')
+def route_map(release_id: str, team: str):
+    release = get_release(release_id)
+    image = printing.route_map(release, team, store.DATA/'releases'/release_id/'overlay.png')
+    return Response(image, media_type='image/jpeg', headers={'Cache-Control': 'public, max-age=3600'})
 
 
 @app.get('/api/releases/{release_id}/progress')
