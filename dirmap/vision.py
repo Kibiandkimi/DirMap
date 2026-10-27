@@ -345,6 +345,7 @@ def analyze(image, labeler=None):
         if rectangularity > .72 and feature['area'] > height*width*.0004 and feature['aspect'] < 3.5:
             feature['rectangularity'] = float(rectangularity)
             features.append(feature)
+    del h, s, v, pitch_ink  # full-size scratch; later steps peak higher
     controls = detect_controls(masks['course_ink'])
     classify_course_symbols(masks['course_ink'], controls)
     ocr = labeler(masks['purple'], controls, masks['course_text']) if labeler else None
@@ -352,6 +353,8 @@ def analyze(image, labeler=None):
     restrictions = purple_restrictions(masks['purple'], controls, annotations)
     recovered, hidden, continued_barriers = restore(image, masks['purple'], annotations, restrictions, masks['black'], controls)
     terrain_masks = colour_masks(recovered)
+    for kind in ('purple', 'course_ink', 'course_text'):
+        del terrain_masks[kind]  # course ink was separated above
     lower_stripes, lower_area, lower_features = lower_level_hatching(recovered, controls)
     # Only traversal changes. Registration keeps the full building outline,
     # which is what a reference footprint over a passable lower level shows.

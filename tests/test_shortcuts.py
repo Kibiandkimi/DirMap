@@ -129,3 +129,23 @@ def test_warped_registration_keeps_new_edges_inside_one_affine_piece():
     assert checked > 0
     a, b = graph.snap([13.5, 9.5]), graph.snap([21.5, 13.5])
     assert pieces[a] != pieces[b] and graph.weights[a, b] == 0
+
+
+def test_shared_sort_builds_the_same_csr_as_coo_conversion_and_rejects_repeats():
+    from scipy.sparse import coo_matrix
+    from dirmap.graph import _symmetric_csr
+    rng = np.random.default_rng(7)
+    count = 500
+    keys = np.unique(rng.integers(0, count, (3000, 2)) @ np.array([count, 1]))
+    a, b = (keys//count).astype(np.int32), (keys % count).astype(np.int32)
+    a, b = a[a < b], b[a < b]
+    weights, lengths = rng.random(len(a)), rng.random(len(a))
+    weighted, distances = _symmetric_csr(count, a, b, weights, lengths)
+    row, col = np.concatenate((a, b)), np.concatenate((b, a))
+    for built, values in ((weighted, weights), (distances, lengths)):
+        expected = coo_matrix((np.concatenate((values, values)), (row, col)), shape=(count, count)).tocsr()
+        for key in ('indices', 'indptr', 'data'):
+            assert np.array_equal(getattr(built, key), getattr(expected, key))
+            assert getattr(built, key).dtype == getattr(expected, key).dtype
+    with pytest.raises(ValueError, match='重复'):
+        _symmetric_csr(count, np.r_[a, a[:1]], np.r_[b, b[:1]], np.r_[weights, 1.], np.r_[lengths, 1.])

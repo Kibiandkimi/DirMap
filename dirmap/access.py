@@ -19,8 +19,16 @@ class AccessResolver:
         self.components = {}
         self.scale = float(np.sqrt(abs(np.linalg.det(registration.affine[:, :2]))))
 
+    def release(self):
+        """Drop full-image labels between plans; the cached graph outlives them.
+
+        Rebinding keeps a concurrent resolution's own reference valid.
+        """
+        self.components = {}
+
     def _components(self, kind):
-        if kind not in self.components:
+        parts = self.components.get(kind)
+        if parts is None:
             mask = self.semantics.get(kind)
             if mask is None:
                 return None
@@ -30,8 +38,8 @@ class AccessResolver:
                 # tiny fountain's cross symbol. It never modifies terrain.
                 mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
             _, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
-            self.components[kind] = (labels, stats)
-        return self.components[kind]
+            parts = self.components[kind] = (labels, stats)
+        return parts
 
     def _feature(self, kind, point, circle_radius):
         point = np.asarray(point, dtype=float)

@@ -17,7 +17,7 @@
 ./tools/run.sh
 ```
 
-已在 Ubuntu 26.04、Python 3.14.4、Node 24.16.0 验证。依赖锁为 `requirements.lock` 与 `package-lock.json`。Python、Node、OCR 和通行图缓存均放在 `/tmp`；无需下载大模型、浏览器或启动 Codespace。已有 C++ 编译器时会编译一个很小的最短路加速模块，没有编译器则使用 SciPy。
+已在 Ubuntu 26.04、Python 3.14.4、Node 24.16.0 验证。服务进程会让大数组直接向系统申请和归还内存，并在每个任务后释放空闲页；最大的拼版图（3613×4096 工作图）一次通行更新峰值约 0.94 GiB，结束后约 0.55 GiB，可用 `python3 -B tools/benchmark_memory.py --baseline <提交>` 对照。依赖锁为 `requirements.lock` 与 `package-lock.json`。Python、Node、OCR 和通行图缓存均放在 `/tmp`；无需下载大模型、浏览器或启动 Codespace。已有 C++ 编译器时会编译一个很小的最短路加速模块，没有编译器则使用 SciPy。
 
 识别、通行更新、同名点校准和规划任务保存在 `data/jobs/queue.sqlite3`。页面刷新后会接续正在查看的任务，也可从地图列表下的“处理记录与恢复”重新打开结果。服务重启会先检查原任务是否已经提交，再继续未完成的计算；期间有教师修改或程序更新时会保留新数据并要求重新提交。新的障碍图与叠层按整套文件发布，重启不会混用不同版本。
 

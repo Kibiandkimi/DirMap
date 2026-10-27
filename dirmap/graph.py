@@ -307,6 +307,27 @@ def build_graph(costs, registration, source_hash, edits=None, step=4, adaptive=T
     return graph
 
 
+def _symmetric_csr(count, a, b, weights, lengths):
+    """Weights and lengths of one undirected edge list as canonical CSR.
+
+    A single sort shared by both matrices gives the same arrays as two COO
+    conversions, without their scratch copies. Pairs are unique, so unlike
+    COO conversion nothing could be summed; a repeated pair is an error.
+    """
+    row, col = np.concatenate((a, b)), np.concatenate((b, a))
+    order = np.argsort(row.astype(np.int64)*count+col)  # unique keys: any sort gives one order
+    row, col = row[order], col[order]
+    if len(row) > 1 and np.any((row[1:] == row[:-1]) & (col[1:] == col[:-1])):
+        raise ValueError('通行图含有重复连接')
+    dtype = np.int32 if max(count, len(row)) < np.iinfo(np.int32).max else np.int64
+    indptr = np.searchsorted(row, np.arange(count+1)).astype(dtype)
+    col = col.astype(dtype, copy=False)
+    del row
+    def matrix(values):
+        return csr_matrix((np.concatenate((values, values))[order], col.copy(), indptr.copy()), shape=(count, count))
+    return matrix(weights), matrix(lengths)
+
+
 def _uniform_shortcuts(costs, owners, pixels, positions, cell_sizes, terrain, registration):
     """Add 2:1 directions inside uniform ground without skipping pixel walls.
 
@@ -394,6 +415,7 @@ def _quadtree_graph(costs, registration, source_hash, edits, step):
         terrain_values.append(padded[yy*size, xx*size])
         count += len(xx)
         size //= 2
+    del padded, tiles, expanded, assigned
     if count < 2:
         raise ValueError('配准范围内没有足够可通行区域')
     pixels = np.concatenate(centres)
@@ -420,8 +442,15 @@ def _quadtree_graph(costs, registration, source_hash, edits, step):
             keep &= (owners[sy, tx] >= 0) & (owners[ty, sx] >= 0)
         a, b = a[keep].astype(np.int64), b[keep].astype(np.int64)
         keys.append(np.minimum(a, b)*count+np.maximum(a, b))
-    pairs = np.unique(np.concatenate(keys))
+        del a, b, keep
+    pairs = np.concatenate(keys)
+    del keys
+    # Sorting in place and dropping repeats equals np.unique, several times
+    # faster here and without its extra copies.
+    pairs.sort()
+    pairs = pairs[np.r_[True, pairs[1:] != pairs[:-1]]]
     a, b = (pairs//count).astype(np.int32), (pairs % count).astype(np.int32)
+    del pairs
     lengths = np.linalg.norm(positions[a]-positions[b], axis=1)
     # The line between centres of adjacent square cells crosses their shared
     # face at this size ratio. Each leaf has a uniform terrain cost.
@@ -429,13 +458,12 @@ def _quadtree_graph(costs, registration, source_hash, edits, step):
     sa, sb, slengths, sweights = _uniform_shortcuts(costs, owners, pixels, positions, cell_sizes, terrain, registration)
     a, b = np.concatenate((a, sa)), np.concatenate((b, sb))
     lengths, weights = np.concatenate((lengths, slengths)), np.concatenate((weights, sweights))
-    row, col = np.concatenate((a, b)), np.concatenate((b, a))
-    shape = (count, count)
-    weighted = coo_matrix((np.concatenate((weights, weights)), (row, col)), shape=shape).tocsr()
-    distances = coo_matrix((np.concatenate((lengths, lengths)), (row, col)), shape=shape).tocsr()
+    weighted, distances = _symmetric_csr(count, a, b, weights, lengths)
+    del a, b, lengths, weights, sa, sb, slengths, sweights
     digest = hashlib.sha256(json.dumps({'source': source_hash, 'registration': registration.as_dict(),
-                                        'edits': edits, 'step': step, 'schema': ROUTING_SCHEMA}, sort_keys=True).encode()+costs.tobytes()).hexdigest()[:20]
-    result = RasterGraph(weighted, distances, pixels, positions, costs, digest, step, True)
+                                        'edits': edits, 'step': step, 'schema': ROUTING_SCHEMA}, sort_keys=True).encode())
+    digest.update(np.ascontiguousarray(costs).data)  # same hash as appending tobytes(), without the copy
+    result = RasterGraph(weighted, distances, pixels, positions, costs, digest.hexdigest()[:20], step, True)
     result.cell_sizes = cell_sizes
     result.owner = owners
     return result
@@ -482,6 +510,8 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
             points.append(world[0])
         except ValueError as exc:
             unresolved.append({'id': endpoint['id'], 'message': str(exc)})
+    if resolver is not None:
+        resolver.release()
     if unresolved:
         return {'unresolved': unresolved, 'approaches': approaches}
     components = [int(graph.components[n]) for n in nodes]

@@ -15,6 +15,8 @@ import threading
 import time
 import uuid
 
+from . import memory
+
 
 log = logging.getLogger(__name__)
 CANCELLED = 'JobCancelled'
@@ -271,6 +273,9 @@ class JobQueue:
             with self.database() as db:
                 db.execute("""UPDATE jobs SET state='succeeded',progress=100,result=?,
                               message='处理完成',finished_at=? WHERE id=?""", (result, time.time(), row['id']))
+        finally:
+            # Large scratch arrays of this job are garbage now.
+            memory.release()
 
     def serve(self):
         while not self.stop.is_set():

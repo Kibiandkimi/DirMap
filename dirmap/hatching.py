@@ -42,6 +42,8 @@ def lower_level_hatching(image, controls):
     _, saturation, value = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
     grey = (saturation <= 48) & (value >= 125) & (value <= 225)
     light = (saturation <= 55) & (value >= 230)
+    dark = ((value < 110) & (saturation < 115)).astype(np.uint8)
+    del saturation, value  # each scratch array below is the image's size
     if not grey.any() or not light.any():
         return empty, empty.copy(), []
     half_width = max(1.3, radius*.07+.5)
@@ -50,9 +52,9 @@ def lower_level_hatching(image, controls):
     for offset in range(1, max(3, round(radius*.18))+1):
         positive |= _shift(light, offset, offset)
         negative |= _shift(light, -offset, -offset)
-    dark = ((value < 110) & (saturation < 115)).astype(np.uint8)
     protected_edges = cv2.dilate(dark, np.ones((3, 3), np.uint8)) > 0
     narrow = (grey & thin & positive & negative & ~protected_edges).astype(np.uint8)
+    del light, thin, positive, negative, dark, protected_edges
     length = max(11, round(radius*.65))
     kernel = np.fliplr(np.eye(length, dtype=np.uint8))
     lines = cv2.morphologyEx(narrow, cv2.MORPH_OPEN, kernel) > 0
@@ -63,6 +65,7 @@ def lower_level_hatching(image, controls):
         ahead, behind = _shift(lines, period, period), _shift(lines, -period, -period)
         seed |= lines & ((ahead & behind) | (ahead & _shift(lines, period*2, period*2))
                          | (behind & _shift(lines, -period*2, -period*2)))
+    del lines
     join = max(5, round(radius*.45)) | 1
     square = np.ones((join, join), np.uint8)
     envelopes = cv2.dilate(seed.astype(np.uint8), square)
@@ -76,7 +79,10 @@ def lower_level_hatching(image, controls):
         box = cv2.minAreaRect(np.column_stack((xx+x, yy+y)).astype(np.float32))
         if min(box[1]) >= max(18, radius):
             keep[index] = True
-    supported = seed & keep[regions]
+    kept = keep[regions]
+    del envelopes, regions
+    supported = seed & kept
+    del seed
     if not supported.any():
         return empty, empty.copy(), []
     count, labels = cv2.connectedComponents(narrow, connectivity=8)
@@ -94,9 +100,10 @@ def lower_level_hatching(image, controls):
     connected[np.unique(groups[supported])] = True
     connected[0] = False
     selected[np.unique(labels[candidates & connected[groups]])] = True
+    del candidates, groups
     selected[0] = False
     accepted = selected[labels] & grey
-    area = cv2.morphologyEx((accepted | keep[regions]).astype(np.uint8), cv2.MORPH_CLOSE, square) > 0
+    area = cv2.morphologyEx((accepted | kept).astype(np.uint8), cv2.MORPH_CLOSE, square) > 0
     features = []
     contours, _ = cv2.findContours(area.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for contour in contours:

@@ -226,6 +226,7 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
             store.save_state(asset_id, state, operation_id)
     GRAPH_CACHE.pop(asset_id, None)
     progress(90, '已保留点位及教师修正，旧路线已失效')
+    del result, terrain  # the graph build below needs that memory
     get_graph(state)
     return state
 
@@ -323,6 +324,7 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
         store.save_state(asset_id, state, operation_id)
     if reg is not None:
         progress(95, '准备可复用的通行图')
+        del result, image, terrain  # the graph build below needs that memory
         try:
             get_graph(state)
         except ValueError as exc:

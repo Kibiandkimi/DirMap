@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import service, store, layers
+from . import service, store, layers, memory
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -27,6 +27,7 @@ from .vision import read_image
 
 @asynccontextmanager
 async def lifespan(app):
+    memory.configure()
     queue = JobQueue(store.DATA, service.execute_job, maintenance=store.prune_history)
     app.state.jobs = queue
     queue.start()

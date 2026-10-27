@@ -121,3 +121,16 @@ def test_teacher_closure_of_a_point_feature_is_not_bypassed_by_an_approach():
     resolver = AccessResolver(graph, reg, masks)
     with pytest.raises(ValueError, match='封闭'):
         resolver.resolve({'id': 'closed-point', 'pixel': [46, 41], 'radiusPx': 15})
+
+
+def test_full_image_labels_are_released_between_plans_without_changing_results():
+    masks, reg = scene()
+    cv2.circle(masks['point_ink'], (47, 42), 2, 1, -1)
+    graph = graph_for(masks, reg)
+    control = {'id': '31', 'pixel': [47, 42], 'radiusPx': 15}
+    first = plan_matrix(graph, [control], [20, 42], [20, 42], reg)
+    assert graph.access_resolver.components == {}
+    second = plan_matrix(graph, [control], [20, 42], [20, 42], reg)
+    assert first['approaches'] == second['approaches'] and first['nodes'] == second['nodes']
+    np.testing.assert_array_equal(first['matrix'], second['matrix'])
+    assert graph.access_resolver.components == {}
