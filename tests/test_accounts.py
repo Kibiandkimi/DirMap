@@ -274,6 +274,7 @@ def test_workbench_requests_and_images_reject_a_different_page_account(server):
     assert second.patch(path, json=body, headers={'Origin': 'http://testserver', 'X-DirMap-Workbench': right}).status_code == 200
     image = f'/assets/maps/{asset["id"]}/overlay.png'
     assert second.get(image, params={'workbench': wrong}).status_code == 409
+    assert second.get(image, params={'workbench': wrong}, headers={'X-DirMap-Workbench': right}).status_code == 409
     visible = second.get(image, params={'workbench': right})
     assert visible.status_code == 200 and visible.headers['cache-control'] == 'no-store'
     assert second.get(path).headers['cache-control'] == 'no-store'

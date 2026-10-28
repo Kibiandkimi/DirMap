@@ -424,9 +424,10 @@ async def origin_guard(request: Request, call_next):
     if scope != 'open':
         user = current_user(request)
         expected = request.headers.get('x-dirmap-workbench')
+        claims = [expected]
         if request.url.path.startswith('/assets/maps/'):
-            expected = expected or request.query_params.get('workbench')
-        if ((expected is not None and expected != accounts.workbench_scope(user))
+            claims.append(request.query_params.get('workbench'))
+        if (any(claim is not None and claim != accounts.workbench_scope(user) for claim in claims)
                 or (user and request.method in WRITES and request.headers.get('origin') and expected is None)):
             return JSONResponse(status_code=409, content={'detail': '登录账号或工作台已变化，请刷新页面后再操作', 'accountChanged': True})
     if scope != 'open' and current_user(request) is None:

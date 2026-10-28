@@ -8,7 +8,7 @@
     "dirmap/__init__.py": "f7517574b64d3cfe871994511a5993e794bed3206c5d8313d471480b4516966c",
     "dirmap/access.py": "9c3b27f5168d05d2981756e29bee063c260cc5a23786eac74d5dc0387612322a",
     "dirmap/accounts.py": "0ccda90156efe37e3c0958e3fd96ac62a31e25e9449bdd325e23e2c81a075445",
-    "dirmap/app.py": "54b11ea02dfc17e540e8a673219c83d987ee73d614e453a29af647b2edd15603",
+    "dirmap/app.py": "e70a72fdec374e74c9eba23c891a2264945d912ec440b92b3a2f453f1eeb4f7b",
     "dirmap/comparisons.py": "ee4cdc32107b0037236829c7cd982f25167e0471510234f661ac7beeb2f7f1e2",
     "dirmap/exact.py": "b28b9e4c0539902c33cd938f8e3d97690c7711f89a737bd7093246382b986e03",
     "dirmap/field_checks.py": "635acf288cf39d6f9b85cb8289a2b3c236116193da94c84f5daf900390b2844c",
@@ -84,7 +84,7 @@
     "tests/navigation.test.ts": "89478098abf908831b36c5fc4e90a5fd743a1f9a0b145cc0706878c351cb97aa",
     "tests/route-arrows.test.ts": "3a88fe15b224d964294e3617ad155bedf6f81d4583c37cb42f507f86654a611c",
     "tests/test_access.py": "90748ec58a7ab578257efc57029effd348ac2c8c0765be08fcd0a6f838c485bb",
-    "tests/test_accounts.py": "dc5ecc3cdd06f10eef3b741086992fa572652641bee6af617ebe385db3324e14",
+    "tests/test_accounts.py": "b8b9e6442c0f75a04b17ca0020402f58988f3708595bc582d256eac2936ed86c",
     "tests/test_api.py": "e6d6a1a3a3cd600a38c3832195c4434355143fa4cb9068e36c857fde530f1f6c",
     "tests/test_browser_server.py": "bde1d2bc43fecaa0f4db1a2e44ed01637084ee1c37f5285475697b1e3f764021",
     "tests/test_continuation.py": "ee71a35732a47527616c54bd8dcb81fde7298dbb2ff173151bec3f544cb43a7c",
@@ -150,7 +150,7 @@
     "web/src/workbench.ts": "7e13bb86e7903669e4a1f99b1c30f248e13d481418eabf0a36b6b9fdc3984afd",
     "web/sw.js": "3eb86e22708fbf043e819d13f7b6fca74c988cc5311990c27817b6bba65cd060"
   },
-  "sourceFingerprint": "0fd1d7b11e5fae2bb1c86497705ee6e6f5923690e8086fea68841f86d51485dd",
+  "sourceFingerprint": "c01177f6602beb59ebb10482b995c92221665bd6d918719484f0ee74de117d32",
   "localPython": {
     "fullSuite": {
       "passed": 342,
@@ -506,5 +506,12 @@
   "existingWorkspacesReplaced": false,
   "allAutomatedChecksPassed": true,
   "goalComplete": false,
-  "remaining": "Real 大沙河公园 map input and independent field/device acceptance remain outstanding."
+  "remaining": "Real 大沙河公园 map input and independent field/device acceptance remain outstanding.",
+  "liveFollowup": {
+    "change": "Both the request header and image URL workbench identifiers must match the signed-in account.",
+    "validation": "python3 -B -m pytest -q tests/test_accounts.py tests/test_access.py tests/test_api.py",
+    "passed": 64,
+    "failures": 0,
+    "temporaryAccountsAndDirectoriesRemoved": 2
+  }
 }
