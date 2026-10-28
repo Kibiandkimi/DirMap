@@ -1,4 +1,5 @@
 import { escapeHtml, type Approach, type Control, type MapState, type Pixel, type Portal, type Surface, type TerrainEdit } from './types';
+import { ImageViewport } from './image-viewport';
 
 type Mode = 'inspect' | 'control' | 'approach' | 'open' | 'close' | 'anchor' | 'portal' | 'field';
 export class PixelEditor {
@@ -16,8 +17,10 @@ export class PixelEditor {
   private mode: Mode = 'inspect';
   private selected: string | null = null;
   private stroke: Pixel[] | null = null;
-  private zoom = 1;
-  private baseWidth = 800;
+  private viewport!: ImageViewport;
+  private viewScale = 1;
+  private panOnly = false;
+  private pendingPixel: Pixel | null = null;
   private showTerrain = false;
   private showStairs = false;
   private history: { controls: Control[]; edits: TerrainEdit[]; surfaces: Surface[]; portals: Portal[] }[] = [];
@@ -35,8 +38,9 @@ export class PixelEditor {
     this.dialog.className = 'editor-dialog';
     this.dialog.innerHTML = `<div class="dialog-heading"><div><span class="eyebrow">原图校核</span><h2>${escapeHtml(this.state.name)}</h2></div><button data-close class="icon-button" aria-label="关闭原图">×</button></div>
       <div class="editor-toolbar"><select id="edit-mode" aria-label="编辑操作"><option value="inspect">检查 / 选择目标</option><option value="control">新增目标</option><option value="approach">选择目标到访位置</option><option value="close">标记封闭路段</option><option value="open">确认开放通道</option><option value="portal">标记换层入口</option><option value="anchor">添加配准同名点</option><option value="field" hidden>标记所站位置</option></select>
-      <label class="brush-label">笔刷 <input id="brush-size" type="number" value="6" min="1" max="100" aria-label="笔刷半径"></label><button id="undo-edit" class="soft-button">撤销</button><button id="zoom-out" class="icon-button" aria-label="缩小原图">−</button><button id="zoom-in" class="icon-button" aria-label="放大原图">＋</button><label class="check-label"><input id="editor-terrain" type="checkbox">识别障碍</label></div>
-      <details class="layer-settings"><summary>桥隧与层级</summary><div id="layer-controls"></div></details><p id="editor-hint" class="muted editor-hint" role="status"></p><div class="editor-viewport"><canvas aria-label="原图及目标点编辑画布"></canvas></div>
+      <label class="brush-label">笔刷 <input id="brush-size" type="number" value="6" min="1" max="100" aria-label="笔刷半径"></label><button id="undo-edit" class="soft-button">撤销</button><button id="pan-image" class="soft-button" aria-pressed="false">移动地图</button><button id="zoom-out" class="icon-button" aria-label="缩小原图">−</button><button id="zoom-in" class="icon-button" aria-label="放大原图">＋</button><button id="fit-image" class="text-button">全图</button><span id="image-zoom" class="muted"></span><label class="check-label"><input id="editor-terrain" type="checkbox">识别障碍</label></div>
+      <details class="layer-settings"><summary>桥隧与层级</summary><div id="layer-controls"></div></details><p id="editor-hint" class="muted editor-hint" role="status"></p><div class="editor-viewport" tabindex="0" aria-label="原图视野，可拖动、滚轮或双指缩放"><canvas aria-label="原图及目标点编辑画布"></canvas></div>
+      <div id="point-confirmation" class="point-confirmation hidden"><span id="point-preview" role="status"></span><button id="confirm-point" class="primary-button" disabled>确认选点</button><button id="cancel-point" class="text-button">取消选点</button></div>
       <div class="editor-footer"><span id="edit-selection" class="muted">点击目标可修改编号、删除或确认</span><button id="save-edits" class="primary-button">保存修改</button></div>`;
     document.body.append(this.dialog); this.dialog.showModal();
     if (this.state.sourceImage?.resized) {
@@ -48,21 +52,36 @@ export class PixelEditor {
       '<label class="check-label"><input id="editor-stairs" type="checkbox">楼梯与下层候选</label>');
     this.canvas = this.dialog.querySelector('canvas')!;
     this.canvas.width = this.state.width; this.canvas.height = this.state.height;
-    this.baseWidth = Math.min(this.state.width, Math.max(300, this.dialog.clientWidth - 40)); this.resize();
+    this.viewport = new ImageViewport(this.dialog.querySelector('.editor-viewport')!, this.canvas, {
+      tap: point => { if (!this.panOnly) this.pickPoint(point); },
+      drawing: () => !this.panOnly && ['open', 'close'].includes(this.mode),
+      stroke: (phase, point) => {
+        if (phase === 'start') this.stroke = [point!];
+        else if (phase === 'cancel') this.stroke = null;
+        else if (this.stroke && point) this.stroke.push(point);
+        if (phase === 'end') this.endStroke();
+        this.draw();
+      },
+      change: scale => {
+        if (this.viewScale === scale) return; // A pan only moves the existing canvas.
+        this.viewScale = scale; this.dialog.querySelector('#image-zoom')!.textContent = `${Math.round(scale * 100)}%`; this.draw();
+      },
+    });
     const select = this.dialog.querySelector<HTMLSelectElement>('#edit-mode')!; select.value = mode;
-    select.onchange = () => { this.mode = select.value as Mode; this.hint(); };
+    select.onchange = () => { this.mode = select.value as Mode; this.pendingPixel = null; this.panOnly = false; this.hint(); this.renderPick(); this.draw(); };
+    if (mode === 'field') { select.disabled = true; this.dialog.querySelector('.layer-settings')!.classList.add('hidden'); }
     this.dialog.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => this.close();
-    this.dialog.addEventListener('cancel', () => this.close());
-    this.dialog.querySelector<HTMLButtonElement>('#zoom-in')!.onclick = () => { this.zoom = Math.min(5, this.zoom * 1.4); this.resize(); };
-    this.dialog.querySelector<HTMLButtonElement>('#zoom-out')!.onclick = () => { this.zoom = Math.max(.7, this.zoom / 1.4); this.resize(); };
+    this.dialog.addEventListener('cancel', event => { event.preventDefault(); this.close(); });
+    this.dialog.querySelector<HTMLButtonElement>('#zoom-in')!.onclick = () => this.viewport.zoom(1.4);
+    this.dialog.querySelector<HTMLButtonElement>('#zoom-out')!.onclick = () => this.viewport.zoom(1 / 1.4);
+    this.dialog.querySelector<HTMLButtonElement>('#fit-image')!.onclick = () => this.viewport.fit();
+    this.dialog.querySelector<HTMLButtonElement>('#pan-image')!.onclick = () => { this.panOnly = !this.panOnly; this.hint(); };
+    this.dialog.querySelector<HTMLButtonElement>('#confirm-point')!.onclick = () => this.confirmPoint();
+    this.dialog.querySelector<HTMLButtonElement>('#cancel-point')!.onclick = () => { this.pendingPixel = null; this.renderPick(); this.draw(); };
     this.dialog.querySelector<HTMLButtonElement>('#undo-edit')!.onclick = () => { const previous = this.history.pop(); if (previous) { this.controls = previous.controls; this.edits = previous.edits; this.surfaces = previous.surfaces; this.portals = previous.portals; this.renderLayers(); this.draw(); this.selection(); } };
     this.dialog.querySelector<HTMLInputElement>('#editor-terrain')!.onchange = event => { this.showTerrain = (event.target as HTMLInputElement).checked; this.draw(); };
     const stairToggle = this.dialog.querySelector<HTMLInputElement>('#editor-stairs');
     if (stairToggle) stairToggle.onchange = () => { this.showStairs = stairToggle.checked; this.draw(); };
-    this.canvas.onpointerdown = event => this.pointerDown(event);
-    this.canvas.onpointermove = event => { if (this.stroke) { this.stroke.push(this.pixel(event)); this.draw(); } };
-    this.canvas.onpointerup = () => this.endStroke();
-    this.canvas.onpointercancel = () => this.endStroke();
     const source = this.state.sourceImage;
     const transformed = source && (source.resized || source.exifOrientation !== 1);
     this.image.onload = () => this.draw();
@@ -74,7 +93,7 @@ export class PixelEditor {
       try { await this.onSave(this.controls, this.edits, this.surfaces, this.portals); this.close(); }
       catch (error) { this.dialog.querySelector('#editor-hint')!.textContent = String(error); button.disabled = false; }
     };
-    this.renderLayers(); this.hint(); this.selection();
+    this.renderLayers(); this.hint(); this.selection(); this.renderPick();
   }
   private remember() { this.history.push({ controls: structuredClone(this.controls), edits: structuredClone(this.edits), surfaces: structuredClone(this.surfaces), portals: structuredClone(this.portals) }); }
   private catalogue(): Surface[] { return [{ id: 'ground', label: '地面', level: 0, accepted: true }, ...this.surfaces]; }
@@ -127,13 +146,32 @@ export class PixelEditor {
       } catch (error) { this.dialog.querySelector('#editor-hint')!.textContent = String(error); }
     };
   }
-  private resize() { this.canvas.style.width = `${this.baseWidth * this.zoom}px`; this.canvas.style.height = 'auto'; }
-  private pixel(event: PointerEvent): Pixel {
-    const rect = this.canvas.getBoundingClientRect();
-    return [Math.max(0, Math.min(this.state.width - 1, (event.clientX - rect.left) / rect.width * this.state.width)), Math.max(0, Math.min(this.state.height - 1, (event.clientY - rect.top) / rect.height * this.state.height))];
+  private pickPoint(point: Pixel) {
+    if (this.mode !== 'inspect') {
+      if (this.mode === 'approach' && !this.controls.some(c => c.id === this.selected)) { this.dialog.querySelector('#editor-hint')!.textContent = '请先切到“检查”，点击需要设置到访位置的目标。'; return; }
+      this.pendingPixel = point; this.renderPick(); this.draw(); return;
+    }
+    this.applyPoint(point);
   }
-  private pointerDown(event: PointerEvent) {
-    const point = this.pixel(event);
+  private renderPick() {
+    const pickOnly = this.mode === 'anchor' || this.mode === 'field';
+    const picking = !!this.pendingPixel || pickOnly;
+    this.dialog.querySelector('#point-confirmation')!.classList.toggle('hidden', !picking);
+    this.dialog.querySelector('#edit-selection')!.classList.toggle('hidden', picking);
+    const save = this.dialog.querySelector<HTMLButtonElement>('#save-edits')!;
+    save.classList.toggle('hidden', pickOnly); save.disabled = !!this.pendingPixel;
+    this.dialog.querySelector<HTMLButtonElement>('#confirm-point')!.disabled = !this.pendingPixel;
+    this.dialog.querySelector('#point-preview')!.textContent = this.pendingPixel
+      ? `已选原图位置 ${this.pendingPixel.map(n => n.toFixed(1)).join(', ')}。可继续点选调整，再确认。`
+      : '点选后显示标记，确认前可反复调整。';
+  }
+  private confirmPoint() {
+    if (!this.pendingPixel) return;
+    const point = this.pendingPixel;
+    this.pendingPixel = null; this.applyPoint(point);
+    if (this.dialog.isConnected) { this.renderPick(); this.draw(); }
+  }
+  private applyPoint(point: Pixel) {
     if (this.mode === 'anchor' || this.mode === 'field') { this.picked = true; this.onAnchor(point); this.close(); return; }
     if (this.mode === 'portal') {
       const target = this.dialog.querySelector<HTMLSelectElement>('#portal-target')!.value;
@@ -146,7 +184,6 @@ export class PixelEditor {
         lengthM: length, costFactor: cost, accepted: this.dialog.querySelector<HTMLInputElement>('#portal-accepted')!.checked });
       this.selected = id; this.draw(); this.selection(); return;
     }
-    if (this.mode === 'open' || this.mode === 'close') { this.remember(); this.canvas.setPointerCapture(event.pointerId); this.stroke = [point]; this.canvas.style.touchAction = 'none'; return; }
     if (this.mode === 'control') {
       this.remember(); const id = `manual-${crypto.randomUUID().slice(0, 8)}`;
       this.controls.push({ id, label: `新点${this.controls.length + 1}`, pixel: point, surfaceId: this.surfaceId, required: true, radiusPx: this.state.width / 60, state: 'accepted', serviceBaseSec: 5, servicePerPersonSec: 1 });
@@ -166,15 +203,17 @@ export class PixelEditor {
   }
   private endStroke() {
     if (!this.stroke) return;
+    this.remember();
     this.edits.push({ kind: this.mode as 'open' | 'close', pixels: this.stroke, radiusPx: Math.max(1, Math.min(100, Number(this.dialog.querySelector<HTMLInputElement>('#brush-size')!.value) || 6)),
       cost: Math.max(1, Math.min(10, Number(this.dialog.querySelector<HTMLInputElement>('#surface-cost')!.value) || 1)), surfaceId: this.surfaceId,
       separateGround: this.mode === 'open' && this.surfaceId !== 'ground' && this.dialog.querySelector<HTMLInputElement>('#separate-ground')!.checked });
     this.stroke = null; this.draw();
   }
   private hint() {
-    const messages: Record<Mode, string> = { inspect: '点击圈心或入口选择对象。缩放后核对细墙、门洞和实际位置。', control: '点击原图新增目标，使用当前编辑层级。', approach: '点击本层实际可以到访的位置，保留原圈心。', open: '沿当前层级可行走的区域描画；不同层级不会自动连接。', close: '沿当前层级的围墙、施工区或禁行线描画。保存后旧路线立即失效。', anchor: '先点击原图中的建筑角或路口，再到标准地图点击同一个位置。', field: '点击你此刻所站位置在原图上的对应点，例如路口、建筑角或目标圈心。', portal: '先在“桥隧与层级”设置入口的另一层，再点击两层实际相接的位置；未经核验的入口不接通。' };
-    this.dialog.querySelector('#editor-hint')!.textContent = `当前层级：${this.catalogue().find(s => s.id === this.surfaceId)?.label}。${messages[this.mode]}`;
-    this.canvas.style.touchAction = ['open', 'close'].includes(this.mode) ? 'none' : 'auto';
+    const messages: Record<Mode, string> = { inspect: '点击圈心或入口选择对象。', control: '点选新增目标的位置，再确认。', approach: '点选实际可以到访的位置，再确认；保留原圈心。', open: '沿当前层级可行走的区域描画；“移动地图”可拖动视野。', close: '沿当前层级的禁行线描画；“移动地图”可拖动视野。', anchor: '点选原图中的建筑角或路口，确认后再到标准地图选同一位置。', field: '点选你此刻所站位置在原图上的对应点，核对标记后确认。', portal: '在层级设置中选择另一层，再点选入口位置并确认。' };
+    this.dialog.querySelector('#editor-hint')!.textContent = this.panOnly ? '移动模式：拖动原图；滚轮或双指缩放。再次点击“移动地图”继续编辑。' : `${messages[this.mode]}${['open', 'close'].includes(this.mode) ? '' : '拖动可平移；'}滚轮或双指可缩放。`;
+    this.dialog.querySelector('#pan-image')!.setAttribute('aria-pressed', String(this.panOnly));
+    this.canvas.style.cursor = this.panOnly ? 'grab' : 'crosshair';
   }
   private selection() {
     const el = this.dialog.querySelector('#edit-selection')!;
@@ -234,6 +273,16 @@ export class PixelEditor {
       if (!a.automatic || this.controls.find(c => c.id === a.controlId)?.approachPixel) continue;
       ctx.strokeStyle = '#e58824'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(...a.pixel, 6, 0, Math.PI * 2); ctx.stroke();
     }
+    if (this.pendingPixel) {
+      const [x, y] = this.pendingPixel, radius = 11 / this.viewScale;
+      ctx.save(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 5 / this.viewScale;
+      for (const color of ['#fff', '#e35e22']) {
+        ctx.strokeStyle = color; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.moveTo(x - radius * 1.6, y); ctx.lineTo(x + radius * 1.6, y);
+        ctx.moveTo(x, y - radius * 1.6); ctx.lineTo(x, y + radius * 1.6); ctx.stroke(); ctx.lineWidth = 2 / this.viewScale;
+      }
+      ctx.restore();
+    }
   }
-  close() { this.dialog.close(); this.dialog.remove(); if (!this.picked) this.onDismiss?.(); }
+  close() { this.viewport.destroy(); this.dialog.close(); this.dialog.remove(); if (!this.picked) this.onDismiss?.(); }
 }

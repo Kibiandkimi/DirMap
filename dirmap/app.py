@@ -1,9 +1,10 @@
 """Run with: python -m uvicorn dirmap.app:app --port 8765."""
 
 import asyncio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 import hashlib
 import math
+import logging
 import os
 from pathlib import Path
 import re
@@ -20,7 +21,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import accounts, groups, service, store, layers, memory, printing, progress, field_checks, sites
+from . import accounts, groups, photos, service, store, layers, memory, printing, progress, field_checks, sites
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -35,9 +36,20 @@ async def lifespan(app):
     queue = JobQueue(store.DATA, service.execute_job, maintenance=store.prune_history)
     app.state.jobs = queue
     queue.start()
+    async def retain_groups():
+        while True:
+            try:
+                await anyio.to_thread.run_sync(groups.prune)
+            except Exception:
+                logging.getLogger(__name__).exception('Group retention will retry in one minute')
+            await asyncio.sleep(60)
+    retention = asyncio.create_task(retain_groups())
     try:
         yield
     finally:
+        retention.cancel()
+        with suppress(asyncio.CancelledError):
+            await retention
         await asyncio.to_thread(queue.close)
 
 
@@ -308,6 +320,14 @@ class GroupManage(Model):
     memberId: str | None = Field(default=None, pattern=r'^[0-9a-f]{8}$')
 
 
+class PhotoExport(Model):
+    format: Literal['pdf', 'long-image', 'images']
+
+
+class PhotoFinish(Model):
+    exportId: str = Field(pattern=r'^[0-9a-f]{32}$')
+
+
 class SiteRequest(Model):
     name: str = Field(min_length=1, max_length=40)
     bbox: tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat]
@@ -351,6 +371,16 @@ async def auth_error(request, exc):
 async def group_gone(request, exc):
     # The phone forgets this membership instead of retrying it.
     return JSONResponse(status_code=410, content={'detail': str(exc)})
+
+
+@app.exception_handler(photos.PhotoConflict)
+async def photo_conflict(request, exc):
+    return JSONResponse(status_code=409, content={'detail': str(exc)})
+
+
+@app.exception_handler(photos.PhotoStorageFull)
+async def photo_storage_full(request, exc):
+    return JSONResponse(status_code=507, content={'detail': str(exc)})
 
 
 WRITES = ('POST', 'PUT', 'PATCH', 'DELETE')
@@ -1039,6 +1069,43 @@ def leave_group(group_id: str, request: Request):
 @app.post('/api/groups/{group_id}/manage')
 def manage_group(group_id: str, body: GroupManage, request: Request):
     return groups.manage(group_id, group_member(request, group_id), body.action, body.memberId)
+
+
+@app.get('/api/groups/{group_id}/photos')
+def group_photos(group_id: str, request: Request):
+    return photos.album(group_id, group_member(request, group_id))
+
+
+@app.put('/api/groups/{group_id}/photos/{control_id}')
+def upload_group_photo(group_id: str, control_id: str, request: Request, file: Annotated[UploadFile, File()]):
+    return photos.put(group_id, group_member(request, group_id), control_id,
+                      request.headers.get('x-dirmap-photo-revision', ''), file.file,
+                      request.headers.get('x-dirmap-photo-upload', ''))
+
+
+@app.get('/api/groups/{group_id}/photos/{control_id}/image')
+def group_photo_image(group_id: str, control_id: str, revision: str, request: Request, thumbnail: bool = False):
+    image = photos.picture(group_id, group_member(request, group_id), control_id, revision, thumbnail)
+    return Response(image, media_type='image/jpeg', headers={'Content-Encoding': 'identity'})
+
+
+@app.delete('/api/groups/{group_id}/photos/{control_id}')
+def delete_group_photo(group_id: str, control_id: str, request: Request):
+    return photos.delete(group_id, group_member(request, group_id), control_id, request.headers.get('x-dirmap-photo-revision', ''))
+
+
+@app.post('/api/groups/{group_id}/photos/export')
+def export_group_photos(group_id: str, body: PhotoExport, request: Request):
+    result = photos.export(group_id, group_member(request, group_id), body.format)
+    return Response(result['content'], media_type=result['mediaType'], headers={
+        'Content-Disposition': f'attachment; filename="{result["filename"]}"', 'Content-Encoding': 'identity',
+        'X-DirMap-Photo-Export': result['exportId'], 'X-DirMap-Photo-Count': str(result['count']),
+    })
+
+
+@app.post('/api/groups/{group_id}/photos/finish')
+def finish_group_photos(group_id: str, body: PhotoFinish, request: Request):
+    return photos.finish(group_id, group_member(request, group_id), body.exportId)
 
 
 @app.get('/api/releases/{release_id}/reference')

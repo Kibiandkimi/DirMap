@@ -2,6 +2,7 @@ import 'ol/ol.css';
 import './style.css';
 import { transformExtent } from 'ol/proj.js';
 import { CampusMap, teamColors } from './map';
+import { MapPointPicker } from './map-picker';
 import { NavigationSensors, type HeadingSample } from './heading';
 import { PixelEditor } from './editor';
 import { OffRouteMonitor, remainingPath } from './navigation';
@@ -32,8 +33,6 @@ let restoredTeams: PlanRequest['teams'] | null = null;
 let customMapTeam: string | null = null;
 let startPixel: Pixel | null = null, finishPixel: Pixel | null = null;
 let startSurfaceId: string | null = null, finishSurfaceId: string | null = null;
-let mapAction: 'start' | 'finish' | 'anchor' | null = null;
-let pendingAnchor: Pixel | null = null;
 let anchors: Anchor[] = [];
 let follow = false, northOnly = false;
 let lastPosition: GeolocationPosition | null = null;
@@ -80,11 +79,21 @@ document.querySelector('#app')!.innerHTML = `
 
 const campusMap = new CampusMap($('map'));
 const sensors = new NavigationSensors();
+const mapPicker = new MapPointPicker(campusMap, $('map-action-hint'), () => {
+  follow = false; if (sensors.active) $('follow-label').textContent = '继续跟随';
+  customMapTeam = null; setMobilePanel(false);
+});
 const phoneLayout = matchMedia('(max-width: 720px), (max-width: 1000px) and (max-height: 540px)');
 document.querySelector('.workspace')!.insertAdjacentHTML('afterend', `<nav class="mobile-dock" aria-label="手机工作区域"><button id="mobile-map" class="active" aria-pressed="true">地图</button><button id="mobile-panel" aria-expanded="false" aria-controls="${courseId || groupMode ? 'student-panel' : 'teacher-panel'}">${courseId ? '本队路线' : groupMode ? '小组' : '课程设置'}</button></nav>`);
 for (const id of ['teacher-panel', 'student-panel']) $(id).insertAdjacentHTML('afterbegin', '<button class="mobile-panel-close soft-button group-keep" aria-label="收起面板，查看地图">收起 · 查看地图 ↓</button>');
 document.querySelector('.map-topbar')!.insertAdjacentHTML('beforeend', '<button id="mobile-layers" class="soft-button" aria-expanded="false" aria-controls="map-layers">图层</button>');
 document.querySelector('.layer-tools')!.id = 'map-layers';
+document.querySelector('.layer-tools')!.insertAdjacentHTML('beforeend', '<label class="check-label"><input id="route-arrows" type="checkbox" checked>路线箭头</label><label class="check-label"><input id="location-direction" type="checkbox" checked>我的方向</label>');
+for (const [id, apply] of [['route-arrows', (on: boolean) => campusMap.setRouteArrows(on)], ['location-direction', (on: boolean) => campusMap.setDirectionVisible(on)]] as const) {
+  const checkbox = $<HTMLInputElement>(id);
+  checkbox.checked = stored(`dirmap-${id}`) !== 'false'; apply(checkbox.checked);
+  checkbox.onchange = () => { apply(checkbox.checked); try { localStorage.setItem(`dirmap-${id}`, String(checkbox.checked)); } catch { /* keep this session's preference */ } };
+}
 function setMobilePanel(open: boolean) {
   open = phoneLayout.matches && open;
   if (open && customMapTeam) { customMapTeam = null; $('map-action-hint').classList.add('hidden'); }
@@ -157,6 +166,7 @@ $('custom-team-routes').oninput = event => {
 $('custom-team-routes').onclick = event => {
   const button = (event.target as HTMLElement).closest<HTMLElement>('[data-custom-map]');
   if (!button || !state?.registration) return;
+  mapPicker.cancel();
   customMapTeam = button.dataset.customMap!;
   $('map-action-hint').innerHTML = `${e(customMapTeam)}：依次点选目标 <button id="finish-map-route" class="soft-button">完成点选</button>`;
   $('finish-map-route').onclick = () => { customMapTeam = null; $('map-action-hint').classList.add('hidden'); setMobilePanel(true); };
@@ -515,7 +525,7 @@ async function loadState(id: string, fit = true) {
   if (load !== stateLoad) return false;
   activeId = id; state = next.processed ? next : null; fieldCheckPoints = []; campusMap.setFieldChecks([]); anchors = []; renderAnchors(); resetPlan(); startPixel = finishPixel = null; startSurfaceId = finishSurfaceId = null;
   initializeRules();
-  campusMap.setEndpoint('start', null); campusMap.setEndpoint('finish', null); mapAction = null; $('map-action-hint').classList.add('hidden');
+  campusMap.setEndpoint('start', null); campusMap.setEndpoint('finish', null); mapPicker.cancel(); $('map-action-hint').classList.add('hidden');
   $('pick-start').querySelector('span')!.textContent = '在地图选起点'; $('pick-finish').querySelector('span')!.textContent = '在地图选终点';
   const starts = state?.controls.filter(c => ['start', 'start_finish'].includes(c.role ?? '') && c.calibrated && c.state !== 'rejected') ?? [];
   const finishes = state?.controls.filter(c => ['finish', 'start_finish'].includes(c.role ?? '') && c.calibrated && c.state !== 'rejected') ?? [];
@@ -584,9 +594,17 @@ async function saveEdits(controls: Control[], edits: TerrainEdit[], surfaces?: S
 }
 function openEditor(mode: 'inspect' | 'close' | 'anchor' = 'inspect', id: string | null = null) {
   if (!state) { notify('请先识别原图'); return; }
-  new PixelEditor(state, saveEdits, pixel => { pendingAnchor = pixel; mapAction = 'anchor';
-    setMobilePanel(false);
-    $('map-action-hint').textContent = '在标准地图上点击同一个建筑角或路口'; $('map-action-hint').classList.remove('hidden'); campusMap.setOpacity(.1);
+  mapPicker.cancel();
+  const source = state;
+  new PixelEditor(source, saveEdits, pixel => { void (async () => {
+    if (state !== source) return;
+    const purpose = $<HTMLInputElement>('validation-anchor').checked ? 'validation' : 'fit';
+    campusMap.setOpacity(.1);
+    const lnglat = await mapPicker.choose('在标准地图选择同一建筑角或路口', { back: () => openEditor('anchor') });
+    campusMap.setOpacity(number('overlay-opacity') / 100);
+    if (!lnglat || state !== source) return;
+    anchors.push({ pixel, lnglat, purpose }); renderAnchors(); notify('同名点已添加，地图上保留编号标记');
+  })();
   }, plan?.approaches ?? []).open(mode, id);
 }
 type FieldCheckReport = { checks: { id: string; errorM: number | null; accuracyM: number; usable: boolean; insideRegistration: boolean; recordedAt: number; lnglat: Pixel; predictedLnglat: Pixel | null }[];
@@ -613,6 +631,7 @@ $('field-check-list').addEventListener('click', event => {
   if (id) void task(async () => { await api(`/api/maps/${encodeURIComponent(activeId)}/field-checks/${encodeURIComponent(id)}`, { method: 'DELETE' }); await renderFieldChecks(); });
 });
 $('add-field-check').onclick = () => task(async () => {
+  mapPicker.cancel();
   if (!state?.registration || state.registrationStale) throw new Error('请先完成当前地图的配准');
   if (!navigator.geolocation) throw new Error('此浏览器不能定位');
   $('field-check-summary').textContent = '正在获取当前位置…';
@@ -625,6 +644,7 @@ $('add-field-check').onclick = () => task(async () => {
   await renderFieldChecks(); notify('已添加核查点');
 });
 function renderAnchors() {
+  campusMap.setAnchors(anchors);
   $('anchor-list').innerHTML = anchors.map((a, i) => `<div><span>${i + 1}. ${a.purpose === 'fit' ? '拟合点' : '核查点'}</span><small>${a.lnglat[0].toFixed(6)}, ${a.lnglat[1].toFixed(6)}</small><button data-remove-anchor="${i}" class="text-button" aria-label="删除同名点 ${i + 1}">×</button></div>`).join('');
   $<HTMLButtonElement>('fit-anchors').disabled = anchors.filter(a => a.purpose === 'fit').length < 3;
 }
@@ -696,24 +716,37 @@ $<HTMLInputElement>('upload-input').onchange = event => task(async () => { const
 document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b === button)); document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('hidden', tab.id !== `tab-${button.dataset.tab}`)); campusMap.setFieldChecks(registrationTabOpen() ? fieldCheckPoints : []); });
 for (const id of ['people', 'teams', 'stagger', 'speed']) $<HTMLInputElement>(id).oninput = () => { restoredTeams = null; groupPreview(); renderCustomRoutes(); resetPlan(); persistRules(); };
 $<HTMLSelectElement>('objective').onchange = () => { resetPlan(); persistRules(); };
-$<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = []; customMapTeam = null; $('map-action-hint').classList.add('hidden'); resetPlan(); persistRules(); renderState(); };
-for (const id of ['pick-start', 'pick-finish']) $(id).onclick = () => { if (!state?.registration) { notify('请先完成配准'); return; } mapAction = id === 'pick-start' ? 'start' : 'finish'; $('map-action-hint').textContent = `点击地图中可通行的位置，设置${mapAction === 'start' ? '起点' : '终点'}`; $('map-action-hint').classList.remove('hidden'); setMobilePanel(false); };
+$<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = []; customMapTeam = null; mapPicker.cancel(); $('map-action-hint').classList.add('hidden'); resetPlan(); persistRules(); renderState(); };
+for (const id of ['pick-start', 'pick-finish']) $(id).onclick = async () => {
+  if (!state?.registration || state.registrationStale) { notify('请先完成配准'); return; }
+  const source = state, start = id === 'pick-start';
+  const lnglat = await mapPicker.choose(`设置${start ? '起点' : '终点'}`, {
+    validate: point => lngLatToPixel(point, source) ? null : '超出已校准范围，请补充同名点',
+  });
+  if (!lnglat || state !== source) return;
+  const pixel = lngLatToPixel(lnglat, state)!;
+  if (start) {
+    startPixel = pixel; campusMap.setEndpoint('start', lnglat); $('pick-start').querySelector('span')!.textContent = '起点已设置';
+    if ($<HTMLInputElement>('return-start').checked) {
+      finishPixel = pixel; finishSurfaceId = startSurfaceId; campusMap.setEndpoint('finish', lnglat);
+      $('pick-finish').querySelector('span')!.textContent = '回到起点结束';
+    }
+  } else {
+    finishPixel = pixel; campusMap.setEndpoint('finish', lnglat); $('pick-finish').querySelector('span')!.textContent = '终点已设置';
+    $<HTMLInputElement>('return-start').checked = false;
+  }
+  resetPlan(); renderEndpointSurfaces();
+};
 $<HTMLInputElement>('return-start').onchange = () => { if ($<HTMLInputElement>('return-start').checked) { finishPixel = startPixel; finishSurfaceId = startSurfaceId; if (startPixel && state) campusMap.setEndpoint('finish', pixelToLngLat(startPixel, state)); } resetPlan(); renderEndpointSurfaces(); };
 campusMap.onClick = (lnglat, id) => {
-  if (groupPanel?.pick(lnglat)) return;
-  if (customMapTeam && state && !mapAction) {
+  if (mapPicker.pick(lnglat)) return;
+  if (customMapTeam && state) {
     const control = state.controls.find(c => c.id === id && c.state !== 'rejected' && (c.role ?? 'control') === 'control');
     if (!control) { notify('请点击地图上的目标圆圈'); return; }
     const token = routeToken(control.id, state.controls), previous = customDrafts[customMapTeam] ?? '';
     if (previous.split(/[\s,，、;；→>]+/u).includes(token)) { notify('本队已包含这个目标'); return; }
     customDrafts[customMapTeam] = previous.trim() ? previous.trim()+' → '+token : token;
     control.required = true; resetPlan(); persistRules(); renderState(); notify(`已为${customMapTeam}添加目标 ${control.label}`); return;
-  }
-  if (mapAction === 'anchor' && pendingAnchor) { anchors.push({ pixel: pendingAnchor, lnglat, purpose: $<HTMLInputElement>('validation-anchor').checked ? 'validation' : 'fit' }); pendingAnchor = null; mapAction = null; renderAnchors(); $('map-action-hint').classList.add('hidden'); campusMap.setOpacity(number('overlay-opacity') / 100); return; }
-  if (mapAction && state) { const pixel = lngLatToPixel(lnglat, state); if (!pixel) { notify('此位置超出已校准范围，请补充同名点'); return; }
-    if (mapAction === 'start') { startPixel = pixel; $('pick-start').querySelector('span')!.textContent = '起点已设置'; campusMap.setEndpoint('start', lnglat); if ($<HTMLInputElement>('return-start').checked) finishPixel = pixel; }
-    else { finishPixel = pixel; $<HTMLInputElement>('return-start').checked = false; $('pick-finish').querySelector('span')!.textContent = '终点已设置'; campusMap.setEndpoint('finish', lnglat); }
-    mapAction = null; $('map-action-hint').classList.add('hidden'); resetPlan(); return;
   }
   if (id && !courseId) openEditor('inspect', id);
 };
@@ -825,6 +858,7 @@ $('recommend-teams').onclick = () => task(async () => {
 $('follow-button').onclick = async () => { if (courseSuperseded) { notify('旧路线已失效，请使用教师提供的新课程链接', true); return; } northOnly = false; follow = true; await sensors.start(); if (sensors.active) $('follow-label').textContent = '跟随已开启'; };
 $('north-button').onclick = () => { northOnly = true; campusMap.northUp(); $('compass-arrow').style.transform = 'rotate(0deg)'; $('sensor-status').textContent = '北向上 · 点击跟随按钮恢复朝向跟随'; };
 sensors.onHeading = (sample: HeadingSample | null) => {
+  campusMap.setLocationHeading(sample);
   if (!sample) { if (sensors.active && !northOnly) $('sensor-status').textContent = '等待可靠朝向 · 可缓慢走动或校准罗盘'; return; }
   if (follow && !northOnly) { campusMap.setHeading(sample.degrees); $('compass-arrow').style.transform = `rotate(${-sample.degrees}deg)`; }
   if (!northOnly) $('sensor-status').textContent = `${sample.source === 'compass' ? sample.reference === 'true' ? '罗盘方向' : '罗盘方向（北向待校准）' : '行进方向'} ${Math.round(sample.degrees)}°${follow ? ' · 跟随中' : ' · 已暂停跟随'}`;
@@ -1068,6 +1102,13 @@ function renderStudent() {
   $<HTMLButtonElement>('meeting-departure').disabled = courseSuperseded;
   renderClassBoard();
   $('student-stops').innerHTML = route.controlIds.map((id, i) => `<div class="student-stop ${completed.has(id) ? 'done' : ''}"><i>${completed.has(id) ? '✓' : i + 1}</i><span>目标 ${e(studentControls.find(c => c.id === id)?.label ?? id)}${plan?.coverage?.mandatoryControlIds.length ? `<small> · ${requiredByAll.has(id) ? '全员必到' : '本队分担'}</small>` : ''}</span><small>${completed.has(id) ? `已完成${checkInTimes[id] ? ' ' + new Date(checkInTimes[id]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : '待到访'}</small></div>`).join('');
+  const photoTarget = waiting ?? next;
+  if (!viewing()) {
+    $('next-control').insertAdjacentHTML('beforeend', `<button class="soft-button student-photo-button" data-student-photo="${e(photoTarget?.id ?? '')}">${photoTarget ? `为 ${e(photoTarget.label)} 拍照 / 查看小组照片` : '整理并导出小组照片'}</button>`);
+    $('student-stops').querySelectorAll<HTMLElement>('.student-stop').forEach((row, i) => {
+      row.insertAdjacentHTML('beforeend', `<button class="text-button" data-student-photo="${e(route.controlIds[i])}" aria-label="目标 ${e(studentControls.find(c => c.id === route.controlIds[i])?.label)} 的小组照片">照片</button>`);
+    });
+  }
 }
 function resetNavigation() {
   navigationRevision++; navigationRoute = null; offRoute.reset();
@@ -1133,7 +1174,8 @@ async function applyDeclination(origin?: Pixel) {
 }
 function startGroupPanel() {
   groupPanel = new GroupPanel({ root: $('group-panel'), map: campusMap, notify, courseId, initialCode: groupCode,
-    teamId: () => courseId ? value('student-team') || null : null, ownPosition: () => locationFresh ? lastPosition : null });
+    teamId: () => courseId ? value('student-team') || null : null, ownPosition: () => locationFresh ? lastPosition : null,
+    pickPoint: title => mapPicker.choose(title) });
   if (groupCode !== null || groupPanel.active) $<HTMLDetailsElement>('group-section').open = true;
 }
 async function boot() {
@@ -1155,6 +1197,10 @@ async function boot() {
     if (course.superseded || course.routingSchema !== __DIRMAP_ROUTING_SCHEMA__) {
       courseSuperseded = true; $('release-badge').textContent = '课程已更新'; $('sensor-status').textContent = '旧路线已失效，请使用教师提供的新链接';
       $<HTMLButtonElement>('check-in').disabled = true; $<HTMLButtonElement>('undo-check-in').disabled = true; $<HTMLButtonElement>('meeting-departure').disabled = true;
+      // A changed route must not strand the group's already captured photos.
+      if (!['#progress', '#groups'].includes(location.hash)) {
+        startGroupPanel(); $<HTMLDetailsElement>('group-section').open = true; setMobilePanel(true);
+      }
       throw new Error('这份课程的地图或通行状态已更新，请向教师获取新链接');
     }
     plan = course.plan; studentControls = course.controls; $('course-title').textContent = course.title;
@@ -1229,6 +1275,12 @@ async function boot() {
     if (pending && JSON.stringify(pendingJob()) === JSON.stringify(pending)) await task(() => resumeJob(pending));
   }
 }
+document.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLElement>('[data-student-photo]');
+  if (!button || viewing()) return;
+  if (!groupPanel?.active) { $<HTMLDetailsElement>('group-section').open = true; setMobilePanel(true); }
+  groupPanel?.openPhotos(button.dataset.studentPhoto || undefined);
+});
 async function cacheStudentCourse() {
   if (!courseId || courseSuperseded) return;
   $('offline-status').textContent = '正在保存原图、路线与目标…';

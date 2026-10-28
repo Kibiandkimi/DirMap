@@ -67,6 +67,9 @@ def test_host_locks_removes_and_disbands_and_others_cannot(server):
     gone = server.post(f'/api/groups/{member["groupId"]}/sync', json={}, headers={'X-DirMap-Member': member['token']})
     assert gone.status_code == 410
     assert manage(host, action='close').json() == {'closed': True}
+    with groups.database() as db:
+        assert db.execute('SELECT COUNT(*) FROM members WHERE group_id=?', (host['groupId'],)).fetchone()[0] == 0
+        assert db.execute('SELECT COUNT(*) FROM messages WHERE group_id=?', (host['groupId'],)).fetchone()[0] == 0
     assert server.post(f'/api/groups/{host["groupId"]}/sync', json={}, headers={'X-DirMap-Member': host['token']}).status_code == 410
     # The code of a disbanded group is free again and no longer joins it.
     assert server.post('/api/groups/join', json={'code': host['group']['code'], 'name': '迟到'}).status_code == 422

@@ -138,6 +138,66 @@ html.print-page, html.print-page body { height: auto; overflow: auto; background
 .claim-original { padding: 10px; border: 1px solid var(--border); border-radius: 9px; background: #f7f9f3; }
 .login-gate { padding: 18px 0; } .login-gate h1 { font-size: 27px; line-height: 1.43; font-weight: 600; letter-spacing: -.04em; margin: 10px 0 12px; } .login-gate h1 span { color: var(--orange); } .login-gate > p { color: var(--muted); font-size: 12px; } .login-actions { display: flex; gap: 10px; margin: 20px 0; } .login-actions button { flex: 1; }
 .workbench-notice { margin: 0 0 18px; } .workbench-notice .soft-button { margin-top: 6px; }
+
+.editor-dialog[open] { display: flex; flex-direction: column; height: min(920px, 95dvh); }
+.editor-dialog .dialog-heading, .editor-dialog > .editor-toolbar, .editor-hint { flex-shrink: 0; }
+.editor-dialog .layer-settings { flex-shrink: 0; max-height: 26dvh; overflow: auto; margin: 0 0 8px; }
+.editor-viewport { position: relative; flex: 1 1 260px; min-height: 100px; height: auto; overflow: hidden; touch-action: none; overscroll-behavior: contain; }
+.editor-viewport canvas { position: absolute; top: 0; left: 0; margin: 0; max-width: none; transform-origin: 0 0; touch-action: none; }
+.editor-viewport:focus-visible { outline: 2px solid #327a5d; outline-offset: 2px; }
+.editor-footer { flex-shrink: 0; max-height: 27dvh; overflow: auto; }
+.editor-footer:has(#save-edits.hidden):has(#edit-selection.hidden) { display: none; }
+#pan-image[aria-pressed="true"] { background: #315b43; color: white; }
+#image-zoom { font-size: 11px; min-width: 35px; }
+.point-confirmation { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 10px; flex-shrink: 0; }
+.point-confirmation > span { flex: 1 1 200px; font-size: 12px; color: #855025; }
+.point-confirmation button { min-height: 42px; }
+.map-action-hint:has(.map-pick-actions) { width: min(420px, calc(100% - 88px)); }
+.map-action-hint strong, .map-action-hint > span, .map-action-hint > small { display: block; margin-bottom: 7px; }
+.map-action-hint > small { opacity: .85; }
+.map-pick-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.map-pick-actions button { min-height: 40px; }
+.map-pick-actions .primary-button { background: #f2f8ed; color: #234d35; }
+.group-photo-section { margin: 12px 0; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.group-photo-section .compact { margin: 7px 0 0; }
+.photo-dialog[open] { display: flex; flex-direction: column; width: min(760px, 96vw); max-height: 94dvh; }
+.photo-dialog .dialog-heading, .photo-dialog > p, .photo-footer { flex-shrink: 0; }
+.photo-dialog > p { margin: 6px 0; }
+.photo-status { color: #866029; font-size: 12px; line-height: 1.6; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; overflow-y: auto; min-height: 0; padding: 5px 2px; overscroll-behavior: contain; }
+.checkpoint-photo { padding: 10px; border: 1px solid #dce5d6; border-radius: 10px; background: #f6f8f1; }
+.checkpoint-photo.pending { border-color: #d8b36e; }
+.checkpoint-photo.highlight { outline: 2px solid #e39547; outline-offset: -2px; }
+.checkpoint-photo > strong { display: block; font-size: 13px; margin-bottom: 7px; overflow-wrap: anywhere; }
+.checkpoint-photo > small { display: block; color: #6c8061; font-size: 10px; margin: 5px 0; overflow-wrap: anywhere; }
+.photo-preview { display: grid; place-items: center; width: 100%; aspect-ratio: 4/3; border-radius: 6px; overflow: hidden; padding: 0; color: #869579; background: #e5ebdf; font-size: 12px; }
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.photo-actions button { min-height: 36px; padding: 6px; font-size: 11px; flex: 1 0 auto; }
+.photo-footer { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; }
+.photo-footer button { min-height: 44px; flex: 1; }
+.photo-preview-dialog { width: min(960px, 96vw); max-height: 95dvh; overflow: auto; }
+.photo-preview-dialog > img { display: block; width: 100%; max-height: 76dvh; object-fit: contain; }
+.photo-export-dialog p { font-size: 12px; line-height: 1.7; }
+.photo-export-dialog #make-photo-export { margin-top: 14px; }
+.photo-export-dialog #download-photos { display: inline-block; margin: 8px 0; }
+.photo-export-dialog #finish-photo-export { margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border); }
+.student-photo-button { margin-top: 13px; min-height: 42px; font-size: 11px; }
+.student-stop [data-student-photo] { font-size: 11px; min-height: 36px; padding: 4px; }
+@media (max-width:720px), (max-height:540px) {
+  .editor-dialog[open] { width: 98vw; max-width: 98vw; height: 97dvh; max-height: 97dvh; padding: 10px; }
+  .editor-dialog .dialog-heading { padding-bottom: 7px; }
+  .editor-dialog .dialog-heading h2 { font-size: 15px; }
+  .editor-toolbar button { min-height: 36px; }
+  .editor-dialog .layer-settings { padding: 6px; }
+  .point-confirmation > span { flex-basis: 100%; font-size: 11px; }
+  .map-action-hint:has(.map-pick-actions) { left: 12px; transform: none; width: min(420px, calc(100% - 80px)); max-width: none; }
+  .map-pick-actions button { padding: 8px; font-size: 11px; }
+  .photo-dialog[open] { padding: 12px; width: 98vw; max-width: 98vw; max-height: 96dvh; }
+  .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .checkpoint-photo { padding: 8px; }
+  .photo-dialog .dialog-heading { padding-bottom: 8px; }
+}
 .group-section { margin: 14px 0; padding: 12px; border: 1px solid #dbe3d8; border-radius: 10px; background: #fbfcf8; } .group-section > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: #315b43; }
 .group-join { display: flex; gap: 8px; margin: 10px 0; } .group-join input { flex: 1; min-width: 0; letter-spacing: .2em; } .group-join button { white-space: nowrap; }
 .group-code-card { display: flex; align-items: center; gap: 10px; margin: 10px 0 2px; padding: 10px 12px; border-radius: 10px; background: #edf4e6; } .group-code-card span { font-size: 10px; color: #6c8461; } .group-code-card strong { font-size: 22px; letter-spacing: .12em; color: #26583f; font-variant-numeric: tabular-nums; } .group-code-card button { margin-left: auto; }

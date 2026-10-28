@@ -1,6 +1,7 @@
 import { activePins, formatCode, memberSummary, mergeMessages, relativeTime } from './group-geo.ts';
 import { teamColors, type CampusMap, type MapPerson } from './map';
 import { escapeHtml as e, type GroupMember, type GroupMessage, type GroupState, type Pixel } from './types';
+import { GroupPhotoAlbum } from './group-photos';
 
 const MEMBERSHIP_KEY = 'dirmap-group-v1';
 const NAME_KEY = 'dirmap-group-name';
@@ -36,6 +37,7 @@ export interface GroupOptions {
   /** The page's own location fix while it follows the phone, if any. */
   ownPosition: () => GeolocationPosition | null;
   initialCode?: string | null;
+  pickPoint: (title: string) => Promise<Pixel | null>;
 }
 
 /** One phone's membership of a group: its panel, map layer and sync loop. */
@@ -49,10 +51,10 @@ export class GroupPanel {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private failures = 0;
   private syncing = false;
-  private picking = false;
   private loaded = false;
   private focused = false;
   private alerted = new Set<string>();
+  private photos: GroupPhotoAlbum | null = null;
 
   constructor(private options: GroupOptions) {
     options.root.addEventListener('click', event => this.click(event));
@@ -73,11 +75,19 @@ export class GroupPanel {
 
   get active() { return this.membership !== null; }
   get groupId() { return this.membership?.groupId ?? null; }
+  openPhotos(controlId?: string) {
+    if (!this.photos) { this.options.notify('先创建或加入小组，再共同拍照打点。'); return; }
+    if (controlId && this.options.courseId !== this.membership?.releaseId) {
+      this.options.notify('当前小组属于另一份课程，请核对相册中的课程名称。'); controlId = undefined;
+    }
+    this.photos.open(controlId);
+  }
 
   private input(id: string) { return this.options.root.querySelector<HTMLInputElement>('#'+id)!; }
   private element(id: string) { return this.options.root.querySelector<HTMLElement>('#'+id); }
 
   private renderShell() {
+    this.photos?.destroy(); this.photos = null;
     const root = this.options.root;
     if (!this.membership) {
       const name = read<string>(NAME_KEY) ?? '';
@@ -90,6 +100,7 @@ export class GroupPanel {
     }
     root.innerHTML = `<div class="group-code-card"><span>组队码</span><strong id="group-code-text">${e(formatCode(this.membership.code))}</strong><button class="text-button" data-group-action="invite">复制邀请链接</button></div>
       <p id="group-meta" class="muted compact">正在连接小组…</p>
+      <section id="group-photo-section" class="group-photo-section"></section>
       <label class="check-label group-share"><input id="group-share" type="checkbox" ${this.watch !== null ? 'checked' : ''}>共享我的位置</label>
       <p id="group-share-status" class="muted compact"></p>
       <div id="group-help" class="group-help hidden" role="alert"></div>
@@ -100,6 +111,7 @@ export class GroupPanel {
       <div id="group-messages" class="group-messages" aria-live="polite"></div>
       <div id="group-host" class="group-host"></div>
       <button class="text-button" data-group-action="leave">退出小组</button>`;
+    this.photos = new GroupPhotoAlbum(this.element('group-photo-section')!, this.membership, this.options.notify);
     this.update();
   }
 
@@ -122,7 +134,7 @@ export class GroupPanel {
     else if (action === 'join') void this.join();
     else if (action === 'send') void this.send('text', this.input('group-text').value);
     else if (action === 'invite') void this.invite();
-    else if (action === 'pin') { this.picking = true; this.options.notify('在地图上点击集合位置'); }
+    else if (action === 'pin') void this.pickMeeting();
     else if (action === 'help') void this.help();
     else if (action === 'resolved') void this.send('resolved');
     else if (action === 'leave') void this.leave();
@@ -174,6 +186,7 @@ export class GroupPanel {
   }
 
   private forget(message?: string) {
+    this.photos?.destroy(true); this.photos = null;
     this.stopSharing();
     write(MEMBERSHIP_KEY, null);
     this.membership = null; this.state = null; this.messages = []; this.after = 0; this.loaded = false;
@@ -223,6 +236,7 @@ export class GroupPanel {
   private apply(state: GroupState) {
     const incoming = state.messages.filter(m => m.seq > this.after);
     this.state = state;
+    this.photos?.syncHint(state.photoRevision);
     this.messages = mergeMessages(this.messages, state.messages);
     this.after = Math.max(this.after, ...state.messages.map(m => m.seq));
     if (this.loaded) {
@@ -290,13 +304,12 @@ export class GroupPanel {
     this.options.map.setPeople(people, activePins(this.messages, now).map(m => ({ lnglat: m.lnglat!, label: m.text ?? '集合点' })));
   }
 
-  /** A map tap while choosing a meeting point; true when it was used. */
-  pick(lnglat: Pixel): boolean {
-    if (!this.picking) return false;
-    this.picking = false;
+  private async pickMeeting() {
+    const membership = this.membership;
+    const lnglat = await this.options.pickPoint('选择小组集合位置');
+    if (!lnglat || !membership || this.membership !== membership) return;
     const label = prompt('集合点名称', '集合点');
     if (label !== null) void this.send('pin', label || '集合点', lnglat);
-    return true;
   }
 
   private async send(kind: GroupMessage['kind'], text?: string, lnglat?: Pixel) {
@@ -358,7 +371,7 @@ export class GroupPanel {
   private async manage(action: 'lock' | 'unlock' | 'close' | 'remove', memberId?: string) {
     const membership = this.membership;
     if (!membership) return;
-    if (action === 'close' && !confirm('解散后所有组员退出，位置和消息随之删除。确定吗？')) return;
+    if (action === 'close' && !confirm('解散后所有组员退出，位置、消息和全部小组照片会删除。请先导出需要保留的照片，确定解散吗？')) return;
     try {
       const result = await request<GroupState | { closed: true }>(`/api/groups/${membership.groupId}/manage`, { action, memberId: memberId ?? null }, membership.token);
       if ('closed' in result) { this.forget(); this.options.notify('小组已解散'); return; }
@@ -371,7 +384,7 @@ export class GroupPanel {
 
   private async leave() {
     const membership = this.membership;
-    if (!membership || !confirm('退出后你的位置将从小组中删除。确定退出吗？')) return;
+    if (!membership || !confirm('退出会删除你的位置和本机待上传照片；最后一人退出时小组照片也会清空。请先导出需要保留的照片，确定退出吗？')) return;
     try { await request(`/api/groups/${membership.groupId}/leave`, {}, membership.token); }
     catch { /* leaving locally still stops sharing; the group expires on its own */ }
     this.forget();

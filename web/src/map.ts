@@ -11,10 +11,12 @@ import Point from 'ol/geom/Point.js';
 import LineString from 'ol/geom/LineString.js';
 import CircleGeometry from 'ol/geom/Circle.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
-import { Circle, Fill, Stroke, Style, Text } from 'ol/style.js';
+import { Circle, Fill, Stroke, Style, Text, RegularShape } from 'ol/style.js';
 import { fromLonLat, toLonLat, transformExtent } from 'ol/proj.js';
 import { ScaleLine, defaults } from 'ol/control.js';
-import type { Approach, Control, MapState, Pixel, Route, Surface } from './types';
+import type { Anchor, Approach, Control, MapState, Pixel, Route, Surface } from './types';
+import type { HeadingSample } from './heading';
+import { routeArrows } from './route-arrows';
 
 export const teamColors = ['#ec693f', '#416edb', '#9370ca', '#159386', '#bb8426', '#d95492', '#56974e', '#a5513f', '#54869f', '#887760'];
 /** Someone shown on the map: a group member or, for a teacher, a student. */
@@ -29,6 +31,13 @@ export class CampusMap {
   private approaches = new VectorSource();
   private fieldChecks = new VectorSource();
   private people = new VectorSource();
+  private picks = new VectorSource();
+  private anchorPoints = new VectorSource();
+  private direction = new VectorSource();
+  private arrowsVisible = true;
+  private directionVisible = true;
+  private heading: HeadingSample | null = null;
+  private position: { point: number[]; fresh: boolean } | null = null;
   private overlays: ImageLayer<ImageStatic>[] = [];
   private terrain: ImageLayer<ImageStatic> | null = null;
   map: Map;
@@ -52,7 +61,10 @@ export class CampusMap {
       new VectorLayer({ source: this.endpoints, zIndex: 45 }), new VectorLayer({ source: this.approaches, zIndex: 46 }),
       new VectorLayer({ source: this.fieldChecks, zIndex: 47 }),
       new VectorLayer({ source: this.people, zIndex: 48 }),
-      new VectorLayer({ source: this.location, zIndex: 50 })],
+      new VectorLayer({ source: this.anchorPoints, zIndex: 49 }),
+      new VectorLayer({ source: this.direction, zIndex: 50 }),
+      new VectorLayer({ source: this.location, zIndex: 51 }),
+      new VectorLayer({ source: this.picks, zIndex: 60 })],
       view: new View({ center: fromLonLat([113.9304, 22.535]), zoom: 16.2, minZoom: 13, maxZoom: 21, enableRotation: true }),
       controls: defaults({ rotate: false }).extend([new ScaleLine({ units: 'metric' })]) });
     this.map.on('singleclick', event => {
@@ -107,7 +119,22 @@ export class CampusMap {
         const points = route.geometry.slice(section.startIndex, section.endIndex+1);
         if (points.length < 2) continue;
         const feature = new Feature(new LineString(points.map(p => fromLonLat(p))));
-        feature.setStyle([new Style({ stroke: new Stroke({ color: '#ffffffe6', width: 7 }) }), new Style({ stroke: new Stroke({ color: teamColors[i % teamColors.length], width: 4, lineDash: section.surfaceId === 'ground' ? undefined : section.level < 0 ? [3, 6] : [12, 5] }) })]);
+        const color = teamColors[i % teamColors.length];
+        const lines = [new Style({ stroke: new Stroke({ color: '#ffffffe6', width: 7 }) }), new Style({ stroke: new Stroke({ color, width: 4, lineDash: section.surfaceId === 'ground' ? undefined : section.level < 0 ? [3, 6] : [12, 5] }) })];
+        let lastResolution = 0, arrows: Style[] = [];
+        feature.set('routeSection', true);
+        feature.setStyle((_feature, resolution) => {
+          if (!this.arrowsVisible) return lines;
+          if (resolution !== lastResolution) {
+            lastResolution = resolution;
+            arrows = routeArrows(feature.getGeometry()!.getCoordinates(), resolution * 85).map(arrow => new Style({
+              geometry: new Point(arrow.point), zIndex: 1,
+              image: new RegularShape({ points: 3, radius: 7, rotation: arrow.rotation, rotateWithView: true,
+                fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 2 }) }),
+            }));
+          }
+          return [...lines, ...arrows];
+        });
         this.routes.addFeature(feature);
       }
       for (const transition of route.transitions ?? []) {
@@ -115,6 +142,54 @@ export class CampusMap {
         marker.setStyle(new Style({ image: new Circle({ radius: 7, fill: new Fill({ color: '#fff' }), stroke: new Stroke({ color: teamColors[i % teamColors.length], width: 2 }) }), text: new Text({ text: transition.label, offsetY: 16, font: '11px sans-serif', fill: new Fill({ color: '#244d3b' }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
         this.routes.addFeature(marker);
       }
+    });
+  }
+  setRouteArrows(visible: boolean) { this.arrowsVisible = visible; this.routes.changed(); }
+  setDirectionVisible(visible: boolean) { this.directionVisible = visible; this.drawDirection(); }
+  setLocationHeading(sample: HeadingSample | null) {
+    const next = sample && Number.isFinite(sample.degrees) ? sample : null;
+    const unchanged = next?.degrees === this.heading?.degrees && next?.source === this.heading?.source && next?.reference === this.heading?.reference;
+    this.heading = next;
+    if (!unchanged) this.drawDirection();
+  }
+  private drawDirection() {
+    if (!this.directionVisible || !this.heading || !this.position?.fresh) {
+      // Sensors report missing headings at 20 Hz. Clearing even an empty
+      // source invalidates OpenLayers and redraws the whole map every time.
+      if (!this.direction.isEmpty()) this.direction.clear();
+      return;
+    }
+    this.direction.clear();
+    const point = this.position.point, sample = this.heading, angle = sample.degrees * Math.PI / 180;
+    const color = sample.source === 'compass' ? '#246ed1' : '#187c6c';
+    const marker = new Feature(new Point(point));
+    marker.set('source', sample.source);
+    marker.setStyle((_feature, resolution) => {
+      const tip = [point[0] + Math.sin(angle) * resolution * 30, point[1] + Math.cos(angle) * resolution * 30];
+      return [new Style({ geometry: new LineString([point, tip]), stroke: new Stroke({ color: '#fff', width: 6 }) }),
+        new Style({ geometry: new LineString([point, tip]), stroke: new Stroke({ color, width: 3, lineDash: sample.source === 'course' ? [4, 3] : undefined }) }),
+        new Style({ geometry: new Point(tip), image: new RegularShape({ points: 3, radius: 7, rotation: angle, rotateWithView: true, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 2 }) }),
+          text: new Text({ text: sample.source === 'compass' ? '手机指向' : '行进方向', offsetY: 16, font: '11px sans-serif', fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 3 }) }) })];
+    });
+    this.direction.addFeature(marker);
+  }
+  setPickPreview(lnglat: Pixel | null, label = '待确认', valid = true) {
+    this.picks.clear();
+    if (!lnglat) return;
+    const color = valid ? '#e35e22' : '#c32c30';
+    const feature = new Feature(new Point(fromLonLat(lnglat)));
+    feature.setStyle(new Style({ image: new Circle({ radius: 11, fill: new Fill({ color: '#ffffff88' }), stroke: new Stroke({ color, width: 3 }) }),
+      text: new Text({ text: `＋ ${label}`, offsetY: -24, font: 'bold 13px sans-serif', fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 4 }) }) }));
+    this.picks.addFeature(feature);
+  }
+  setAnchors(anchors: Anchor[]) {
+    this.anchorPoints.clear();
+    anchors.forEach((anchor, i) => {
+      const color = anchor.purpose === 'fit' ? '#126b93' : '#a26d13';
+      const feature = new Feature(new Point(fromLonLat(anchor.lnglat)));
+      feature.setStyle(new Style({ image: new Circle({ radius: 6, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 2 }) }),
+        text: new Text({ text: `${anchor.purpose === 'fit' ? '拟合' : '核查'} ${i + 1}`, offsetY: -17, font: '12px sans-serif', fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
+      this.anchorPoints.addFeature(feature);
     });
   }
   setApproaches(approaches: Approach[]) {
@@ -162,6 +237,7 @@ export class CampusMap {
     const dot = new Feature(new Point(point));
     dot.setStyle(new Style({ image: new Circle({ radius: 7, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
     this.location.addFeatures([accuracy, dot]);
+    this.position = { point, fresh }; this.drawDirection();
     if (follow) this.map.getView().setCenter(point);
   }
   /** Group members and meeting pins; people without a fix are not drawn. */

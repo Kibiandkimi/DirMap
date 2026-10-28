@@ -12,11 +12,13 @@ test('a teacher records GPS check points on site and sees the independent error 
   await page.locator('#add-field-check').click();
   await expect(page.locator('dialog canvas')).toBeVisible();
   await expect(page.locator('#editor-hint')).toContainText('所站位置');
-  await page.locator('dialog canvas').evaluate((canvas, [x, y, width, height]) => {
+  const position = await page.locator('dialog canvas').evaluate((canvas, [x, y, width, height]) => {
     const box = canvas.getBoundingClientRect();
-    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1,
-      clientX: box.x+x/width*box.width, clientY: box.y+y/height*box.height }));
+    return { x: box.x+x/width*box.width, y: box.y+y/height*box.height };
   }, [control.pixel[0], control.pixel[1], state.width, state.height]);
+  await page.mouse.click(position.x, position.y);
+  await expect(page.locator('dialog')).toBeVisible();
+  await page.locator('#confirm-point').click();
   await expect(page.locator('dialog')).toHaveCount(0);
   await expect(page.locator('#field-check-list > div')).toHaveCount(1);
   await expect(page.locator('#field-check-list')).toContainText('误差 0.0 m');

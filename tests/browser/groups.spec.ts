@@ -68,6 +68,7 @@ test('classmates team up with a temporary code to share positions, messages, a m
   a.phone.once('dialog', dialog => dialog.accept('东门集合'));
   await a.phone.locator('[data-group-action="pin"]').click();
   await a.phone.locator('#map').click({ position: { x: 500, y: 400 } });
+  await a.phone.locator('#confirm-map-point').click();
   await expect(b.phone.locator('#group-messages')).toContainText('⚑ 东门集合', { timeout: 10000 });
 
   b.phone.once('dialog', dialog => dialog.accept());

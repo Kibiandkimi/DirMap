@@ -184,9 +184,14 @@ class NoDevelopmentTools(importlib.abc.MetaPathFinder):
             raise ModuleNotFoundError('Development tools are absent from the production artifact')
 sys.meta_path.insert(0, NoDevelopmentTools())
 from dirmap import images
+from dirmap import photos
+from PIL import Image
 assert pathlib.Path(images.__file__).resolve().is_relative_to(pathlib.Path.cwd())
 image, info = images.read_map_image('map.png')
 assert image.shape == (7, 11, 3) and info['encodedSize'] == [11, 7]
+stamped = photos.watermark(Image.new('RGB', (640, 480), 'white'), '补点31')
+assert stamped.getpixel((25, 450)) != (255, 255, 255)
+assert pathlib.Path('dirmap/photo-font.json').is_file()
 '''
     result = subprocess.run([sys.executable, '-B', '-c', script], cwd=target,
                             env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}, capture_output=True, text=True)

@@ -108,7 +108,7 @@ export interface GroupMember {
 }
 export interface GroupMessage { seq: number; memberId: string; name?: string; kind: 'text' | 'pin' | 'help' | 'resolved'; text: string | null; at: number; lnglat: Pixel | null }
 export interface GroupInfo { id: string; code: string; title: string; releaseId: string | null; center: Pixel | null; createdAt: number; expiresAt: number; locked: boolean }
-export interface GroupState { group: GroupInfo; me: string; members: GroupMember[]; messages: GroupMessage[]; serverTime: number }
+export interface GroupState { group: GroupInfo; me: string; members: GroupMember[]; messages: GroupMessage[]; serverTime: number; photoCount?: number; photoRevision?: string }
 
 export function localScales(origin: Pixel): Pixel {
   const phi = origin[1] * Math.PI / 180, e = .00669437999014;

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-27T21:55:11Z",
+  "checkedAt": "2026-10-28T15:29:06Z",
   "site": "dashahe-park",
   "scope": "由大沙河公园 OSM 参照按 ISSprOM 配色渲染的合成短距离图，已知旋转与比例；验证场地坐标系、参照与完整处理流程，不代表真实印刷公园地图的识别精度。",
   "synthetic": {
@@ -13,7 +13,7 @@
     "controls": 8,
     "jpegBytes": 439333
   },
-  "processingSec": 51.2,
+  "processingSec": 51.0,
   "registration": {
     "method": "building_seed_observed_outline_ransac_mesh",
     "fitCount": 195,

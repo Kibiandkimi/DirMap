@@ -59,6 +59,7 @@ test('teacher draws an explicit upper surface and portal, then publishes layered
   await page.locator('#portal-accepted').check();
   await page.getByLabel('编辑操作').selectOption('portal');
   const entrance = await point(page, 120, 40); await page.mouse.click(entrance.x, entrance.y);
+  await page.locator('#confirm-point').click();
   await page.locator('#portal-label').fill('北侧入口');
   await page.getByLabel('编辑操作').selectOption('inspect');
   const target = await point(page, 120, 180); await page.mouse.click(target.x, target.y);
@@ -73,6 +74,7 @@ test('teacher draws an explicit upper surface and portal, then publishes layered
   await page.locator('#start-surface').selectOption('ground');
   await page.locator('#pick-start').click();
   await page.evaluate(position => (window as any).dirmap.campusMap.onClick(position, null), coordinate(60, 180));
+  await page.locator('#confirm-map-point').click();
   await page.locator('#mobile-panel').click();
   await page.locator('#people').fill('4'); await page.locator('#teams').fill('1');
   const planning = page.waitForResponse(r => r.url().endsWith('/api/plans') && r.request().method() === 'POST');

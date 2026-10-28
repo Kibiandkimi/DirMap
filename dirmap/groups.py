@@ -75,6 +75,25 @@ def database():
                         PRIMARY KEY(group_id, seq));
                     CREATE TABLE IF NOT EXISTS attempts (key TEXT NOT NULL, at REAL NOT NULL);
                     CREATE INDEX IF NOT EXISTS group_attempt_key ON attempts(key, at);
+                    CREATE TABLE IF NOT EXISTS group_photos (
+                        group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+                        control_id TEXT NOT NULL, revision TEXT NOT NULL, member_id TEXT NOT NULL,
+                        width INTEGER NOT NULL, height INTEGER NOT NULL, bytes INTEGER NOT NULL,
+                        uploaded_at REAL NOT NULL, PRIMARY KEY(group_id, control_id));
+                    CREATE TABLE IF NOT EXISTS photo_exports (
+                        id TEXT PRIMARY KEY, group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+                        member_id TEXT NOT NULL, manifest TEXT NOT NULL, created_at REAL NOT NULL);
+                    CREATE TABLE IF NOT EXISTS photo_uploads (
+                        group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+                        member_id TEXT NOT NULL, upload_id TEXT NOT NULL, control_id TEXT NOT NULL,
+                        PRIMARY KEY(group_id, member_id, upload_id));
+                    CREATE TABLE IF NOT EXISTS photo_gc (
+                        group_id TEXT NOT NULL, revision TEXT NOT NULL, PRIMARY KEY(group_id, revision));
+                    CREATE TRIGGER IF NOT EXISTS delete_photo_files AFTER DELETE ON group_photos
+                        BEGIN INSERT OR IGNORE INTO photo_gc VALUES(OLD.group_id, OLD.revision); END;
+                    CREATE TRIGGER IF NOT EXISTS replace_photo_files AFTER UPDATE OF revision ON group_photos
+                        WHEN OLD.revision != NEW.revision
+                        BEGIN INSERT OR IGNORE INTO photo_gc VALUES(OLD.group_id, OLD.revision); END;
                 ''')
                 _schema.add(str(path))
         db.execute('PRAGMA synchronous=NORMAL')
@@ -93,6 +112,10 @@ def transaction():
         except BaseException:
             db.execute('ROLLBACK')
             raise
+        try:
+            remove_photo_files(db)
+        except sqlite3.Error:
+            pass  # A competing writer can leave cleanup to the next request.
 
 
 def token_hash(token):
@@ -102,6 +125,47 @@ def token_hash(token):
 def expire(db, now):
     db.execute('DELETE FROM groups WHERE active_at<? OR created_at<?', (now-IDLE_SEC, now-MAX_AGE_SEC))
     db.execute('DELETE FROM attempts WHERE at<?', (now-24*3600,))
+    db.execute('DELETE FROM photo_exports WHERE created_at<?', (now-MAX_AGE_SEC,))
+
+
+def remove_photo_files(db):
+    """A committed delete queues file removal, including cascaded expiry.
+
+    Crashes between the commit and unlink leave a durable cleanup record.
+    JPEGs never live in SQLite, so deletion returns their disk space at once.
+    """
+    for row in db.execute('SELECT * FROM photo_gc LIMIT 500').fetchall():
+        directory = store.DATA/'group-photos'/row['group_id']
+        try:
+            for suffix in ('.jpg', '-thumb.jpg'):
+                (directory/(row['revision']+suffix)).unlink(missing_ok=True)
+            db.execute('DELETE FROM photo_gc WHERE group_id=? AND revision=?', (row['group_id'], row['revision']))
+            try:
+                directory.rmdir()
+            except OSError:
+                pass  # Other checkpoints still have photos.
+        except OSError:
+            pass  # Retry on the next group operation or retention pass.
+
+
+def prune(now=None):
+    now = time.time() if now is None else now
+    with transaction() as db:
+        expire(db, now)
+        # A crash before the metadata commit may leave an unreferenced file.
+        # Uploads also hold this transaction while publishing their files.
+        live = {(r['group_id'], r['revision']) for r in db.execute('SELECT group_id, revision FROM group_photos')}
+        for directory in (store.DATA/'group-photos').glob('*'):
+            if not directory.is_dir():
+                continue
+            for path in directory.glob('*.jpg'):
+                revision = path.stem.removesuffix('-thumb')
+                if (directory.name, revision) not in live:
+                    path.unlink(missing_ok=True)
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
 
 
 def limited(db, key, limit, now):
@@ -245,7 +309,7 @@ def leave(group_id, token, now=None):
             successor = db.execute('SELECT id FROM members WHERE group_id=? AND removed=0 ORDER BY joined_at, rowid LIMIT 1',
                                    (group_id,)).fetchone()
             if successor is None:
-                db.execute('UPDATE groups SET closed=1 WHERE id=?', (group_id,))
+                db.execute('DELETE FROM groups WHERE id=?', (group_id,))
             else:
                 db.execute('UPDATE members SET host=1 WHERE group_id=? AND id=?', (group_id, successor['id']))
 
@@ -266,7 +330,8 @@ def manage(group_id, token, action, target=None, now=None):
             db.execute('''UPDATE members SET removed=1, sharing=0, lng=NULL, lat=NULL, accuracy=NULL, heading=NULL,
                           fix_at=NULL, help_at=NULL WHERE group_id=? AND id=?''', (group_id, target))
         elif action == 'close':
-            db.execute('UPDATE groups SET closed=1 WHERE id=?', (group_id,))
+            # Cascades remove messages, positions, photos and export receipts.
+            db.execute('DELETE FROM groups WHERE id=?', (group_id,))
             return {'closed': True}
         else:
             raise GroupError('操作无效')
@@ -300,7 +365,9 @@ def view(db, group_id, member_id, after, now):
                  'kind': row['kind'], 'text': row['text'], 'at': row['created_at'],
                  'lnglat': [row['lng'], row['lat']] if row['lng'] is not None else None}
                 for row in db.execute('SELECT * FROM messages WHERE group_id=? AND seq>? ORDER BY seq', (group_id, after))]
-    return {'group': group_view(group), 'me': member_id, 'members': members_view(db, group_id, now),
+    revisions = [r[0] for r in db.execute('SELECT revision FROM group_photos WHERE group_id=? ORDER BY control_id', (group_id,))]
+    return {'group': group_view(group), 'photoCount': len(revisions), 'photoRevision': hashlib.sha256('|'.join(revisions).encode()).hexdigest()[:16],
+            'me': member_id, 'members': members_view(db, group_id, now),
             'messages': messages, 'serverTime': now}
 
 

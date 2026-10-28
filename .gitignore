@@ -12,6 +12,12 @@ data/uploads.json
 data/jobs/
 data/releases/
 data/backups/
+data/accounts.sqlite3*
+data/groups.sqlite3*
+data/workspaces/
+data/group-photos/
+data/sites/
+data/sites.json
 evidence/checkpoints/
 test-results/
 playwright-report/

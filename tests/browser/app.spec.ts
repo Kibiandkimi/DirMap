@@ -105,6 +105,7 @@ test('actual image graph to course form to rendered multi-team paths', async ({ 
     return map.getPixelFromCoordinate([lon, lat]);
   }, fixture.startLnglat);
   await page.locator('#map').click({ position: { x: pixel[0], y: pixel[1] } });
+  await page.locator('#confirm-map-point').click();
   await expect(page.locator('#pick-start')).toContainText('已设置');
   await page.locator('#plan-button').click();
   await expect(page.locator('.route-card')).toHaveCount(3, { timeout: 30000 });
