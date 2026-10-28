@@ -1,0 +1,510 @@
+{
+  "checkedAt": "2026-10-28T19:52:23.055920+00:00",
+  "scope": "Public starter-map provenance, per-account workbench/browser state, account-switch request binding and claim safeguards.",
+  "baseCommit": "5071ca4a42519f8c28ec547c0583b2a908f68a33",
+  "sourceSha256": {
+    ".github/workflows/deploy.yml": "139c361aea2c3ffa17a74ce88b8da3ec67ee20902e499e2a36953089cd10a9ae",
+    "deploy/package.py": "7fb9721d68e136ccadfb683d6e8c5896256c0dfb5b0250bfe81cc1f9ddc1adbf",
+    "dirmap/__init__.py": "f7517574b64d3cfe871994511a5993e794bed3206c5d8313d471480b4516966c",
+    "dirmap/access.py": "9c3b27f5168d05d2981756e29bee063c260cc5a23786eac74d5dc0387612322a",
+    "dirmap/accounts.py": "0ccda90156efe37e3c0958e3fd96ac62a31e25e9449bdd325e23e2c81a075445",
+    "dirmap/app.py": "54b11ea02dfc17e540e8a673219c83d987ee73d614e453a29af647b2edd15603",
+    "dirmap/comparisons.py": "ee4cdc32107b0037236829c7cd982f25167e0471510234f661ac7beeb2f7f1e2",
+    "dirmap/exact.py": "b28b9e4c0539902c33cd938f8e3d97690c7711f89a737bd7093246382b986e03",
+    "dirmap/field_checks.py": "635acf288cf39d6f9b85cb8289a2b3c236116193da94c84f5daf900390b2844c",
+    "dirmap/geometry.py": "225e96867402ed6c6f97a88f6da5a8d9aa580c22d9f659d081f1701b2b484220",
+    "dirmap/graph.py": "d59de8a26558e7c6c8c9692166c60c7a7b49bc4eab69bbb23123f38d4af870fb",
+    "dirmap/graph_cache.py": "61b06854f6581d80e646036338dc26c7e2afa480d9c9200cc5516479a497df3e",
+    "dirmap/groups.py": "c04c5f1aca6411a4404b3cea93971f55647a87eaa0f590c55b9f648975498de5",
+    "dirmap/hatching.py": "811d64466344b4d49f232a80ba34ef92c1caa71ec164062408658b0e73d0a2c1",
+    "dirmap/image_metadata.py": "1d458a25fa5669e379704a96a9e3e75760d6d5c1c1b91a529495c3d3853a44d9",
+    "dirmap/images.py": "470891a3c6cc3fe2d9e7914c462fbd58cbdf62f08727f5b9889633338230ed47",
+    "dirmap/jobs.py": "461c44fb4f13cace0b07055ffc9b929884d13867a54bfce05e32f5873b9587a5",
+    "dirmap/layers.py": "b60f76b6fde1d3db7eae19e0d21561b3080b2b0a6a9a3bebe3e9e012d3ac1b48",
+    "dirmap/memory.py": "b126bc380c7b26308ff7453bbf80a1fe2fa0456eb7b4f5677311812393d16604",
+    "dirmap/native.py": "006ea15c372e9a4c1360a8d7e2893b986d8651b72713bb579a91be2868add615",
+    "dirmap/ocr.py": "f1624ed771ce1300ca2d50fa73b4b47ce251ecaf5be20d2b45b7dac60b6818e4",
+    "dirmap/optimizer.py": "03e32a9a4152ceb6cd75cfc83dde4b689b30406d8f18d5cafa9d9f5c093301ee",
+    "dirmap/overprint.py": "d80993cd9154e73c25cd314aab3e21b14fbfa7686cdc902b80f64e6c5a772096",
+    "dirmap/photo-font.json": "d3ba0fcb7380635fea49140329da3f9fbc69c77011b37e9be58838fc3bde03e5",
+    "dirmap/photos.py": "8b68465934bf58d134412d1c89336561d416c03d786d4ac166817f87d58f9e36",
+    "dirmap/printing.py": "4d8d6148bfb18a6694a434693116cd59421f5f1aab4fe837397216fe4c1f7970",
+    "dirmap/progress.py": "d6ea900edc99b459a21e8642c3bdbde27480779a86b3c5cd156242bb32186b44",
+    "dirmap/protocol.py": "2d0591c983bffa84eca476d4d4925d7d520bf8f45d2f3568d6cbafcc600daf38",
+    "dirmap/recognition.py": "b6651229da03742c8486ad24d70f260654d775c1baae88925bf120539fc9323f",
+    "dirmap/reference-dashahe-park.json": "e749e3c26fe448a0e552eb6456c19a7c1c03131bd7bfe5f548b2091ad2ad28eb",
+    "dirmap/reference.py": "53a1eed64b0b2f2639b4580e139328bdda7d2ef3ab6997a96063051cf1c28f73",
+    "dirmap/registration.py": "fe6f464af1f35edc1f30d46141d26eea9189324d313957e684260ab02e8d2913",
+    "dirmap/route_scores.py": "dbf997cc8c19a910d496069fcd25749d472af0cfe06c4530a2b6447d46b8ae71",
+    "dirmap/route_search.py": "83845b745362b6448f69e41709ecaaa67dadf85a506612952a7af518165861ac",
+    "dirmap/samples.py": "374120d0b629ce68e3d6366f4d1943ba842d1338b424f2ae1c65bf6c529b8399",
+    "dirmap/schedule.py": "d46cf655f11cd9e135d39bd57da5f3c8013056e8a58e20e968f47231efcdd8a8",
+    "dirmap/schemas.json": "be50f9fa84f97887befd6417d09f8bbcbb1919cd9b3569ba766c9328f2ff3081",
+    "dirmap/service.py": "77579ff83434f5e43505bcf81a568fff9e67001d75419d7ba0c408cd88e988bf",
+    "dirmap/sites.json": "7822438b7dcac13c6eca6b41a55efe9c5509c455f499636a07ca9c141289d7dc",
+    "dirmap/sites.py": "af5beabc443c137625f411f1cc12739536c927e62ff772d725ab9647808bbec7",
+    "dirmap/stairs.py": "7dfa48eb0090d39f70cd03ee137bbfe704e565e6b5cee9af3dd11106de04928a",
+    "dirmap/store.py": "ab4596f5a29d457a0c3ade72a416d714c9428df3853c8c4b0045aa7c1aa9c232",
+    "dirmap/symbols.py": "e0dfe3f4c7f732905cfbfa94e95396bfb357424da873f2ed468aad78772cdfb0",
+    "dirmap/team_planning.py": "bbb4310b1590dde618d47acc33de9fe95b597838c62cb55ebd67f7a1de928404",
+    "dirmap/vision.py": "b037ee9d84f9e290dd75678918104e374f30be84a9c3ce08a108c276486938d4",
+    "package-lock.json": "b37305d20923103a2d9929beccd880b236155905d672fae8afc559cb04ba2f01",
+    "package.json": "4931206e5c3332518306bd6cd2dff9f580cd42956ec6ba6f40b1279a2c7c60a8",
+    "playwright.config.ts": "8d6117520b60f8aceb36557e6b085a2692032990d16ddaf1305a24f38fb8a230",
+    "requirements.lock": "30a286190699af6b21895e84bc10c13230c4113ffbecdf1f03b97eb85f248b97",
+    "requirements.txt": "c6e0d360a616df084c7e08d96d9a920105dd86953ddd1bc366b6cbbcd073a841",
+    "tests/browser/accounts.spec.ts": "8276a52925d6a76cf0f4efc5b470ea0a79c74b0591738c40aded191742dd8252",
+    "tests/browser/app.spec.ts": "f00194addc265664ea4a2ae8d236e6240cbdd4c153a68dbe922d1f15d6d650ff",
+    "tests/browser/auto-teams.spec.ts": "80359823845956d2f2140e2b630340a87083039c28b0e33807846dbaa3fe2b62",
+    "tests/browser/cancel.spec.ts": "34031324c401f9e3495f93b73740df80190bf1b6e88f038175855998c0ce79ff",
+    "tests/browser/custom.spec.ts": "4680b8b78acce8d6146fe4ad236279907d084ede0ac1de514ebbb570c1e67318",
+    "tests/browser/directions.spec.ts": "94d00a70363269354f5b6d6b56bc468830413a5257755baca6778620a2951d16",
+    "tests/browser/field-checks.spec.ts": "3386d70b3e76ad3537110955fc32c9076f30e87fe1a9d646ebe107a55b583c71",
+    "tests/browser/fixtures.ts": "7ad2f1c4795aaf2e6ac20d7e6749a050321ebe8414dcce87c894985deb6a8198",
+    "tests/browser/geolocation.spec.ts": "b4bde6252a439351a456d897b92b48f263d01a453a83d051bc8ab83d05881b79",
+    "tests/browser/groups.spec.ts": "44181600998a2da15672e25cd0b8a21e761010158c1078acbcba9db9b864a326",
+    "tests/browser/jobs.spec.ts": "74db79b246fe96e343446d2b755a7b7ca94a90fbb0e629edf2ef16de68a8d1c3",
+    "tests/browser/layers.spec.ts": "a29501495cbde97659cc086375d7f714ef85343d3dc17a4ddb5adf9ece3c46da",
+    "tests/browser/map-switch.spec.ts": "f72980a5a67d64e6681c048a872ce98604a3865a49d05a949a92851c7cc1c26f",
+    "tests/browser/mixed.spec.ts": "80ecf2a84af71e76b826d6b078568415b4b3b75348b295064183c8e4599d6133",
+    "tests/browser/mobile.spec.ts": "2d304dbf9d6967b1fbdeb9978f11d2d2c3d79b9c60ad18fec37a14f0c56c9aca",
+    "tests/browser/photos.spec.ts": "28b62258aa24d94bed7b2fb1a9f4fef982296f2d10e33b76de35be02b9f7ee1f",
+    "tests/browser/point-picking.spec.ts": "077fd9cf91a2a8afbed690231a030ce1f66fbcaabf7d5cd0289d1ef49994a189",
+    "tests/browser/progress.spec.ts": "bf9590332e2e5291227c51c78a067dbee82fd8a289a5f208c76e0c1e68a01eed",
+    "tests/browser/recognition-upgrade.spec.ts": "b23012a00bdf9cd2556750b806746be73f119aa8cf87abb0bc697cab72a96a6c",
+    "tests/browser/recognition.spec.ts": "2de1ea56109b515d3cd414fe0d4cc0a706305e7985accea22e195b3b6e31b122",
+    "tests/browser/refinement.spec.ts": "f53e64a4a7df86a89a6102e637dfa52f582495e487192bc6b22538ab80eb93ca",
+    "tests/browser/symbols.spec.ts": "d18372876baeff971e90e6690dc4e7b688ac38cccfdefb6057c2a4e53e5c08e0",
+    "tests/class-results.test.ts": "fa800b0a928690af86ee14d87828fb2908c2385d8239171eed0faadd2c52a991",
+    "tests/conftest.py": "ed408763cd0d31f4187214bdc4046f6087fc06a43f9a6f3fe7c513ab0d942d57",
+    "tests/course-routes.test.ts": "a37a9bea3141ddc77f55aedb725584acf96162407e35007f672e44a830431562",
+    "tests/geolocation.test.ts": "3c02f280977db68816ce33b2bafc043438edc749314cf9f546a56664a3b640ca",
+    "tests/group.test.ts": "86f58fbb944ba3fd0f24d3a32f52234c4f8d08c294aa5fe8b58502fb2b1ef066",
+    "tests/heading.test.ts": "eea3b94f600151a78de26e5b47367b42ad4366e9f2b083f09c82bf02eded55b8",
+    "tests/navigation.test.ts": "89478098abf908831b36c5fc4e90a5fd743a1f9a0b145cc0706878c351cb97aa",
+    "tests/route-arrows.test.ts": "3a88fe15b224d964294e3617ad155bedf6f81d4583c37cb42f507f86654a611c",
+    "tests/test_access.py": "90748ec58a7ab578257efc57029effd348ac2c8c0765be08fcd0a6f838c485bb",
+    "tests/test_accounts.py": "dc5ecc3cdd06f10eef3b741086992fa572652641bee6af617ebe385db3324e14",
+    "tests/test_api.py": "e6d6a1a3a3cd600a38c3832195c4434355143fa4cb9068e36c857fde530f1f6c",
+    "tests/test_browser_server.py": "bde1d2bc43fecaa0f4db1a2e44ed01637084ee1c37f5285475697b1e3f764021",
+    "tests/test_continuation.py": "ee71a35732a47527616c54bd8dcb81fde7298dbb2ff173151bec3f544cb43a7c",
+    "tests/test_core.py": "f81620b4be73394545e766328021c76088846cf1602cce38ea32c7a52198be8c",
+    "tests/test_course_symbols.py": "7dcf173ae4b9f98b5a31803af39da01521c9a0d4e39ad1cbba1e744a1ecda29c",
+    "tests/test_deploy.py": "20bb62fec73af292d86a0a115ef6a347f84ba0c91df6651498c12d255a976afd",
+    "tests/test_exact.py": "ab0ebbc66ac0e28b126e525cca1c2703258b46e0781eae5413abcca998e360f5",
+    "tests/test_field_checks.py": "65889abed4e66f9e0da22fb6386aab423443fb082309d03f4647f22bb2cb0969",
+    "tests/test_graph_cache.py": "e24b93215446f0c705574bd982a8bd41a36aa6dd3580d4a29adbc647627734ff",
+    "tests/test_groups.py": "9e42707c07e4568bcf8c82678cd366b0300fdc9c1aa7a6cce9f50a267cb060b7",
+    "tests/test_hatching.py": "7b98e86ec9681537f54cfadf147586210f8a30b8fea9684df26c26f067385907",
+    "tests/test_images.py": "766c7129028bb509f66ca4cde9b41a02f63e632ecee77f2070a6498a2e3ff3bf",
+    "tests/test_jobs.py": "2abc112cc39f0fe5a22c932d4ef49c43c3843ba59cf330ea822a6e88c1eca8de",
+    "tests/test_layer_api.py": "6beaa1a70726ed35881dd76110d788c48341259e373254e5f4f193fc4d224877",
+    "tests/test_layers.py": "dcbf04a7a47439194c216d064ccf2b92c96921fe9b32dbe00e035ac0f209f844",
+    "tests/test_memory.py": "e2ff9c43edaf2849e69e175318eed4c787b4d0f9dc82b4fe6c6d8eea14d52f47",
+    "tests/test_mixed.py": "9484118bba376975013f7c616c9926f053f8cf9f2e89720ec9eddee5d9e4f88f",
+    "tests/test_native.py": "63fdf36679d58d497bcf8c75b93561bdbecb4d47f90e89e3baf1aa76166333b4",
+    "tests/test_ocr.py": "56c0d2eeca82ed5c0b9c338bdff6cf7eba0eb675a9fc3b6cb0116765d4896ffe",
+    "tests/test_overprint.py": "a34e264f37ce42128fae00923812f13062f34934d866f71c56d0c25b5b1c22f1",
+    "tests/test_photos.py": "8f26024575dbe7c13858fffa86cddc20dd183e1203c6abff7b6ae5c503c364af",
+    "tests/test_printing.py": "7b0a6047c4cfbd3549344b0fde1bbdca5645cea3043118a131ef903d96a41410",
+    "tests/test_progress.py": "1b06d10cdcda5349fc5012b19286a84b8ca19d494668870d16a1e48ba2e03fe0",
+    "tests/test_recognition.py": "957efe33af82429b8266d0ea7732bfbe2c002434ce94c4895c5aeb3cab8a9e54",
+    "tests/test_registration.py": "46cc85b83d4b890e1bfb75b99476e3d9cd5db04dd2142364c5a873832ed055e5",
+    "tests/test_route_scores.py": "5dd13cec30a48d14ade1cc0ba859751dcb6f8cf020fa1c81e5711c59bc681353",
+    "tests/test_route_search.py": "03bd4d9fa6d2437cf9543753a9d8b6d9b07581359b2e19ccd2c948870878950e",
+    "tests/test_samples.py": "824e2b74b963f75a0d0a419e43dd7960ce2e461556112bf51f81872105d533f8",
+    "tests/test_schedule.py": "f23a057885b4588df83e6f5db926263d8e698607400f9500a6fd611afc891bc9",
+    "tests/test_semantics.py": "f66cd83df0c2fd4790350a8bb8ada5334d83939c536dae605ba8c724794e393c",
+    "tests/test_shortcuts.py": "d2fb56816888bb1c6c13a2fe6f3bd865fc8bfaf53e9969ca4717d23da7f85432",
+    "tests/test_sites.py": "a7d21a01cd77da1a0a6bd8b194ef02fbabe336305f49272e5cdece0025597843",
+    "tests/test_stairs.py": "de6bf267bbd48096e84f976a3dd3a73e7be6f3ed53b72555f9a854e39c99d690",
+    "tests/test_store.py": "7ceab90a685960aa459e9dc92e986dbbe6ea1bd853179b2cf4dc0fad01c4d286",
+    "tests/test_team_planning.py": "a6a76d5ec79e963f56c550ce9b5bcc81ee180c41e99820b569b647c59d492782",
+    "tools/browser_server.py": "08c04c1783ff70f935a5dff305531faea95c6ab61a2a0650ab8e361c61e676e9",
+    "tools/build_samples.py": "e2415f1623ec4948fee31aadc6f998177757c64f0ea226c629b612d28e886b1b",
+    "tools/setup.sh": "e295f202d7428bb1e0c2aeb38117fedcca62c8974978fcff19ad3f9295257028",
+    "web/src/account.ts": "bf4265af2c1a57b660c8edde013a33ec4d7a0f9e8db608e031d8db90bd365e58",
+    "web/src/class-results.ts": "5c2f2016d370bc5a11523c214ef410b04a4a1f97f1f58a5632655a47cd736b83",
+    "web/src/course-routes.ts": "c9b949650b639d3296f20be0ad775dff3596286c8f808bb0df69e778a07b5150",
+    "web/src/editor.ts": "e11986e53605cae0733c07e9c88b8c17406662e18ff86bf8d831b25ef8b1037b",
+    "web/src/geolocation.ts": "df253498ff2d57a8ee964ce4d485b15393bf7dd33a8bf9124114c09751d025b2",
+    "web/src/group-geo.ts": "924457462c95827823508e1d73d38d8f49c62f7af173176ad27534ae002cfd2a",
+    "web/src/group-photos.ts": "24146095d8497082cde2c4b2f18cb4771bb9ba84b511c9a3b8eb6480db4bd76c",
+    "web/src/groups.ts": "196b6f5bf5f4ee9187e5f55344b947a1366bf9b22c9619a594be5a1689ff2037",
+    "web/src/heading.ts": "722e32f895b805c600b87faadd8486d5120fb7fad28d119dfac294111e3f58a4",
+    "web/src/image-viewport.ts": "79913cb895bf3ff73bcf01bcbefb1b4d4a56267a42c5c5085257882b73980970",
+    "web/src/location-tracker.ts": "bb026356b67eb8786af24f1ebe1e88852a957674091a5e6b1773fa867932f84c",
+    "web/src/main.ts": "cce148bb432c201705ef1440cd665c2602a9b3cb1183c9f210e734ed40bd4a58",
+    "web/src/map-picker.ts": "249004fb75c0777efaa1086d8d62b2b29db1531db1ead3ec99a4e7c11be00af2",
+    "web/src/map.ts": "f5aaf4a25ce49835cdb9d39deb540b57313dad3c3c39f307f32b475fbd6ced38",
+    "web/src/navigation.ts": "dc7427756203306d8059a775d5bcce2f96bfce9ed2b6d04d4405f1fe4b5a5bf6",
+    "web/src/offline.ts": "6af40bca1b5278402b27c50c2cd187cd9cab0900f224230025e11482fcd3715b",
+    "web/src/photo-drafts.ts": "589751596a8360192b980d71983af8c198dfc9e6ea812f0234ddd5adc1c7e0bf",
+    "web/src/plan-refinement.ts": "a387c3cac34f826c79edc6b72f64e220c2b03ccbd89b5e64c313ef8ab7177494",
+    "web/src/print.ts": "f4289eba3c84da78004ab4e903df81a77c2bbeddeb49d86a209a5c4642c53a19",
+    "web/src/route-arrows.ts": "6847148ce638c6c3c33bd711e83bb379b10733ec5c48998496506c3fbf6864fb",
+    "web/src/style.css": "f537067bbe00151219774fb217556e0eeacb14c97c86278b55969cc91ebd71bb",
+    "web/src/team-comparison.ts": "d58748423535142ea71860db527d0235fd5426f52293195b43d419325f300065",
+    "web/src/types.ts": "3597fffd74ff07458f31cd7f92f55a95c9262a7b7233cffb17d51a0eaa1a0e29",
+    "web/src/vite-env.d.ts": "3a56057a19ed87d85fce11ce1dd68a0bdfd5c2a3a614511e9f2c364aa42392fa",
+    "web/src/workbench.ts": "7e13bb86e7903669e4a1f99b1c30f248e13d481418eabf0a36b6b9fdc3984afd",
+    "web/sw.js": "3eb86e22708fbf043e819d13f7b6fca74c988cc5311990c27817b6bba65cd060"
+  },
+  "sourceFingerprint": "0fd1d7b11e5fae2bb1c86497705ee6e6f5923690e8086fea68841f86d51485dd",
+  "localPython": {
+    "fullSuite": {
+      "passed": 342,
+      "failures": 0,
+      "durationSec": 169.322
+    },
+    "finalTargetedCheck": {
+      "command": "python3 -B -m pytest -q tests/test_samples.py tests/test_accounts.py tests/test_deploy.py",
+      "passed": 32,
+      "failures": 0,
+      "note": "Includes the added cache-version regression and final packaging changes after the full run."
+    }
+  },
+  "frontend": {
+    "passed": 26,
+    "failures": 0
+  },
+  "buildPassed": true,
+  "browser": {
+    "command": "DIRMAP_DATA_DIR=<prepared temporary data copy> DIRMAP_BROWSER_PATH=/usr/bin/google-chrome npm run test:browser",
+    "stats": {
+      "startTime": "2026-10-28T19:37:30.236Z",
+      "duration": 617631.879,
+      "expected": 50,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "file": "accounts.spec.ts",
+        "name": "switching accounts in one browser isolates course drafts, pending jobs and map image caches",
+        "status": "passed",
+        "durationMs": 25371
+      },
+      {
+        "file": "accounts.spec.ts",
+        "name": "an account works in its own workbench with places such as 大沙河公园",
+        "status": "passed",
+        "durationMs": 8514
+      },
+      {
+        "file": "accounts.spec.ts",
+        "name": "once the original workbench is claimed, visitors are asked to sign in",
+        "status": "passed",
+        "durationMs": 848
+      },
+      {
+        "file": "app.spec.ts",
+        "name": "three real maps, source editor, local overlays and independent review state",
+        "status": "passed",
+        "durationMs": 3598
+      },
+      {
+        "file": "app.spec.ts",
+        "name": "rendered compass cardinal directions put the heading at the top",
+        "status": "passed",
+        "durationMs": 963
+      },
+      {
+        "file": "app.spec.ts",
+        "name": "absolute orientation, relative rejection, user drag and north-up reset",
+        "status": "passed",
+        "durationMs": 2681
+      },
+      {
+        "file": "app.spec.ts",
+        "name": "phone layout has no horizontal overflow and source editing is reachable",
+        "status": "passed",
+        "durationMs": 1257
+      },
+      {
+        "file": "app.spec.ts",
+        "name": "actual image graph to course form to rendered multi-team paths",
+        "status": "passed",
+        "durationMs": 10429
+      },
+      {
+        "file": "app.spec.ts",
+        "name": "built application serves working same-origin planning requests",
+        "status": "passed",
+        "durationMs": 2614
+      },
+      {
+        "file": "app.spec.ts",
+        "name": "publish, phone offline reload, check-ins, rejoin remaining targets and invalidate stale releases",
+        "status": "passed",
+        "durationMs": 16882
+      },
+      {
+        "file": "auto-teams.spec.ts",
+        "name": "automatic team benefits choose a count, survive reload and publish the chosen teams offline",
+        "status": "passed",
+        "durationMs": 18628
+      },
+      {
+        "file": "auto-teams.spec.ts",
+        "name": "teacher can adopt another compared count and publish its exact reviewed routes",
+        "status": "passed",
+        "durationMs": 18756
+      },
+      {
+        "file": "cancel.spec.ts",
+        "name": "a teacher can cancel a long recognition job without changing the map",
+        "status": "passed",
+        "durationMs": 2721
+      },
+      {
+        "file": "custom.spec.ts",
+        "name": "phone custom routes retain each team order, report gathering waits and survive reload/publication",
+        "status": "passed",
+        "durationMs": 9581
+      },
+      {
+        "file": "directions.spec.ts",
+        "name": "route and own-heading arrows respect direction, map rotation, freshness and saved switches",
+        "status": "passed",
+        "durationMs": 2083
+      },
+      {
+        "file": "field-checks.spec.ts",
+        "name": "a teacher records GPS check points on site and sees the independent error without changing the map",
+        "status": "passed",
+        "durationMs": 3657
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "OpenHarmony WeChat keeps moving for a minute with non-Unix and stuck provider timestamps",
+        "status": "passed",
+        "durationMs": 9146
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "watch stalls after its first fix; repeated one-shot requests continue to move the map",
+        "status": "passed",
+        "durationMs": 5625
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "a stationary zero-clock stream stays live, while an exact positive-clock replay needs a new request",
+        "status": "passed",
+        "durationMs": 3575
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "standard clocks reject stale, future and malformed fixes without erasing a recent good position",
+        "status": "passed",
+        "durationMs": 2780
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "a pending request neither multiplies nor overrides a watch that has recovered",
+        "status": "passed",
+        "durationMs": 2845
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "a missing native timeout is recovered and retired request callbacks cannot overwrite new fixes",
+        "status": "passed",
+        "durationMs": 3715
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "high-accuracy failure switches provider and can later regain an accurate position",
+        "status": "passed",
+        "durationMs": 2337
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "permission denial stops automatic requests, preserves compass and allows explicit retry",
+        "status": "passed",
+        "durationMs": 7152
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "repeated provider errors back off, and a good watch fix resets the recovery delay",
+        "status": "passed",
+        "durationMs": 3540
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "background and page-cache restoration retire watch and request callbacks without stopping later recovery",
+        "status": "passed",
+        "durationMs": 7770
+      },
+      {
+        "file": "geolocation.spec.ts",
+        "name": "the phone diagnostic view identifies this fix and contains no coordinates",
+        "status": "passed",
+        "durationMs": 1935
+      },
+      {
+        "file": "groups.spec.ts",
+        "name": "classmates team up with a temporary code to share positions, messages, a meeting point and a call for help",
+        "status": "passed",
+        "durationMs": 43315
+      },
+      {
+        "file": "groups.spec.ts",
+        "name": "a group can be joined without a course from an invitation link",
+        "status": "passed",
+        "durationMs": 1562
+      },
+      {
+        "file": "jobs.spec.ts",
+        "name": "reload recovers the original real-map plan after losing progress connection",
+        "status": "passed",
+        "durationMs": 7452
+      },
+      {
+        "file": "jobs.spec.ts",
+        "name": "reload recovers the original real-map plan after losing submission response",
+        "status": "passed",
+        "durationMs": 8182
+      },
+      {
+        "file": "layers.spec.ts",
+        "name": "teacher draws an explicit upper surface and portal, then publishes layered navigation offline",
+        "status": "passed",
+        "durationMs": 28311
+      },
+      {
+        "file": "map-switch.spec.ts",
+        "name": "a slower earlier map response cannot replace the map chosen afterwards",
+        "status": "passed",
+        "durationMs": 1554
+      },
+      {
+        "file": "map-switch.spec.ts",
+        "name": "a place chosen while the first map loads keeps the view on that place",
+        "status": "passed",
+        "durationMs": 1793
+      },
+      {
+        "file": "mixed.spec.ts",
+        "name": "map 3 mixed rules plan all actual controls and retain a configurable compulsory order",
+        "status": "passed",
+        "durationMs": 15908
+      },
+      {
+        "file": "mixed.spec.ts",
+        "name": "mixed rules survive publication and offline reload while obsolete routing data is refused offline",
+        "status": "passed",
+        "durationMs": 15067
+      },
+      {
+        "file": "mobile.spec.ts",
+        "name": "map stays primary and editing is reachable at 390 x 844",
+        "status": "passed",
+        "durationMs": 1910
+      },
+      {
+        "file": "mobile.spec.ts",
+        "name": "map stays primary and editing is reachable at 360 x 640",
+        "status": "passed",
+        "durationMs": 2010
+      },
+      {
+        "file": "mobile.spec.ts",
+        "name": "map stays primary and editing is reachable at 844 x 390",
+        "status": "passed",
+        "durationMs": 2029
+      },
+      {
+        "file": "mobile.spec.ts",
+        "name": "map stays primary and editing is reachable at 915 x 412",
+        "status": "passed",
+        "durationMs": 1952
+      },
+      {
+        "file": "mobile.spec.ts",
+        "name": "phone location normalizes WebView clocks, keeps compass working and ignores retired callbacks",
+        "status": "passed",
+        "durationMs": 1270
+      },
+      {
+        "file": "photos.spec.ts",
+        "name": "a group shares checkpoint photos, recovers an offline upload, exports all three formats and clears only downloaded versions",
+        "status": "passed",
+        "durationMs": 31164
+      },
+      {
+        "file": "photos.spec.ts",
+        "name": "queued photos recover a lost upload reply without overwriting the shared photo",
+        "status": "passed",
+        "durationMs": 11446
+      },
+      {
+        "file": "point-picking.spec.ts",
+        "name": "original and standard map picks can be zoomed, adjusted and cancelled before confirmation",
+        "status": "passed",
+        "durationMs": 2642
+      },
+      {
+        "file": "point-picking.spec.ts",
+        "name": "new checkpoints remain a single preview, and changing start or finish does not commit on tap",
+        "status": "passed",
+        "durationMs": 2609
+      },
+      {
+        "file": "progress.spec.ts",
+        "name": "phones share check-ins so a class meeting shows who has arrived, and offline check-ins catch up",
+        "status": "passed",
+        "durationMs": 19056
+      },
+      {
+        "file": "recognition-upgrade.spec.ts",
+        "name": "obsolete recognition can be refreshed without losing calibration or teacher edits, then planned",
+        "status": "passed",
+        "durationMs": 68892
+      },
+      {
+        "file": "recognition.spec.ts",
+        "name": "original photo collage imports, finds every control and opens in its working pixel frame",
+        "status": "passed",
+        "durationMs": 87337
+      },
+      {
+        "file": "refinement.spec.ts",
+        "name": "continue the chosen real-map team count, recover during computation, and publish exact refined routes offline",
+        "status": "passed",
+        "durationMs": 57343
+      },
+      {
+        "file": "symbols.spec.ts",
+        "name": "an imported course with separate start and finish plans and publishes between its recognized endpoints",
+        "status": "passed",
+        "durationMs": 18786
+      }
+    ]
+  },
+  "publicSamples": {
+    "buildCommand": "source tools/runtime-env.sh && python3 -B tools/build_samples.py",
+    "maps": 3,
+    "files": 18,
+    "bundleBytes": 13746116,
+    "expandedBytes": 11036281,
+    "localBundleSha256": "67ddb3907cde78f7404e19c90cc426c8a7daefdd24e82ed47953fd0293802f92",
+    "terrainSchema": "print-scale-boundaries-v7-course-symbols",
+    "source": "Original program images and public references in an empty temporary workbench; no account states copied."
+  },
+  "verified": [
+    "Registration no longer copies private labels, edits or calibration from the original owner.",
+    "New accounts still receive processed public samples and share immutable files.",
+    "Bad bundles and changed interpretation versions cannot publish or reuse invalid cached starters.",
+    "Pruning old shared snapshots leaves account hard links readable.",
+    "Claiming the original workbench preserves existing edits and processing history by rejecting nonempty replacements.",
+    "Private writes are bound to the page account; workbench ownership is checked again on acquiring the data lock.",
+    "Workspaces and private map images do not use a shared HTTP cache.",
+    "Two accounts in one browser retain different drafts and do not resume an unowned legacy pending job.",
+    "Other workbench tabs follow account changes and legacy teacher credentials are cleared."
+  ],
+  "existingWorkspacesReplaced": false,
+  "allAutomatedChecksPassed": true,
+  "goalComplete": false,
+  "remaining": "Real 大沙河公园 map input and independent field/device acceptance remain outstanding."
+}

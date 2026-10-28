@@ -1,5 +1,6 @@
 import { escapeHtml, type Approach, type Control, type MapState, type Pixel, type Portal, type Surface, type TerrainEdit } from './types';
 import { ImageViewport } from './image-viewport';
+import { mapAssetUrl } from './workbench';
 
 type Mode = 'inspect' | 'control' | 'approach' | 'open' | 'close' | 'anchor' | 'portal' | 'field';
 export class PixelEditor {
@@ -46,7 +47,7 @@ export class PixelEditor {
     if (this.state.sourceImage?.resized) {
       const source = this.state.sourceImage;
       this.dialog.querySelector('.editor-toolbar')!.insertAdjacentHTML('afterend',
-        `<p class="muted compact">以 ${source.workingSize.join(' × ')} 像素校核；<a href="/assets/maps/${this.state.assetId}/original" target="_blank" rel="noreferrer">查看 ${source.orientedSourceSize.join(' × ')} 像素原文件</a>。</p>`);
+        `<p class="muted compact">以 ${source.workingSize.join(' × ')} 像素校核；<a href="${escapeHtml(mapAssetUrl(this.state, 'original', false))}" target="_blank" rel="noreferrer">查看 ${source.orientedSourceSize.join(' × ')} 像素原文件</a>。</p>`);
     }
     if (this.state.terrainFeatures?.length) this.dialog.querySelector('.editor-toolbar')!.insertAdjacentHTML('beforeend',
       '<label class="check-label"><input id="editor-stairs" type="checkbox">楼梯与下层候选</label>');
@@ -85,9 +86,8 @@ export class PixelEditor {
     const source = this.state.sourceImage;
     const transformed = source && (source.resized || source.exifOrientation !== 1);
     this.image.onload = () => this.draw();
-    this.image.src = transformed ? `/assets/maps/${this.state.assetId}/working.jpg?v=${this.state.version}`
-      : `/assets/maps/${this.state.assetId}/original`;
-    this.terrain.onload = () => this.draw(); this.terrain.src = `/assets/maps/${this.state.assetId}/terrain.png?v=${this.state.version}`;
+    this.image.src = mapAssetUrl(this.state, transformed ? 'working.jpg' : 'original', !!transformed);
+    this.terrain.onload = () => this.draw(); this.terrain.src = mapAssetUrl(this.state, 'terrain.png');
     this.dialog.querySelector<HTMLButtonElement>('#save-edits')!.onclick = async () => {
       const button = this.dialog.querySelector<HTMLButtonElement>('#save-edits')!; button.disabled = true;
       try { await this.onSave(this.controls, this.edits, this.surfaces, this.portals); this.close(); }

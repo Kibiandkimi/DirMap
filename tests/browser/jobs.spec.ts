@@ -28,12 +28,12 @@ for (const dropResponse of [false, true]) {
     }
     await page.locator('#plan-button').click();
     const job = await accepted;
-    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('dirmap-pending-job-v1') ?? 'null')?.requestId);
+    await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('dirmap-workbench-v2:original-anonymous:pending-job') ?? 'null')?.requestId);
     if (dropResponse) {
       await expect(page.locator('#plan-button')).toBeEnabled();
-      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('dirmap-pending-job-v1')!).id)).toBeUndefined();
+      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('dirmap-workbench-v2:original-anonymous:pending-job')!).id)).toBeUndefined();
     } else {
-      await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('dirmap-pending-job-v1') ?? 'null')?.id);
+      await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('dirmap-workbench-v2:original-anonymous:pending-job') ?? 'null')?.id);
       await page.unroute(/\/api\/jobs\/[0-9a-f]{16}$/);
     }
     await page.reload();
@@ -47,7 +47,7 @@ for (const dropResponse of [false, true]) {
     await expect(page.locator('#stagger')).toHaveValue('20');
     await expect(page.locator('#mixed-coverage-result')).toContainText('其余 13 个点均已分配');
     expect(submissions).toBe(1);
-    expect(await page.evaluate(() => localStorage.getItem('dirmap-pending-job-v1'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('dirmap-workbench-v2:original-anonymous:pending-job'))).toBeNull();
     const current = await (await page.request.get('/api/jobs/'+job.id)).json();
     expect(current.state).toBe('succeeded'); expect(current.attempts).toBe(1);
     expect(current.result.request.teams.map((team: any) => team.departureSec)).toEqual([0, 20, 40]);

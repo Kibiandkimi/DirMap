@@ -13,6 +13,7 @@ import { canRefine, refinementHtml } from './plan-refinement';
 import { resultsCsv } from './class-results';
 import { printSheets } from './print';
 import { fetchAccount, openSignIn, renderAccountChip, signInGate } from './account';
+import { setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
 import { GroupOverview, GroupPanel } from './groups';
 import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type AccountState, type Anchor, type AutoTeamRequest, type Catalog, type ClassProgress, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Portal, type Route, type Site, type Surface, type TerrainEdit } from './types';
 
@@ -44,7 +45,7 @@ let courseId = new URLSearchParams(location.search).get('course');
 const groupCode = new URLSearchParams(location.search).get('group');
 const groupMode = !courseId && groupCode !== null;
 let account: AccountState | null = null;
-let activeSite = stored('dirmap-site') ?? 'szu-yuehai';
+let activeSite = 'szu-yuehai';
 let groupPanel: GroupPanel | null = null;
 let groupOverview: GroupOverview | null = null;
 let completed = new Set<string>();
@@ -230,24 +231,25 @@ if (import.meta.env.DEV) (window as Window & { dirmap?: unknown }).dirmap = { ca
 
 function notify(message: string, error = false) { $('toast').textContent = message; $('toast').classList.remove('hidden'); $('toast').classList.toggle('error', error); setTimeout(() => $('toast').classList.add('hidden'), 7000); }
 class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
-const pendingJobKey = 'dirmap-pending-job-v1';
+const pendingJobKey = () => workbenchKey('pending-job');
 type PendingJob = { id?: string; requestId?: string };
 function rememberJob(pending: PendingJob | null) {
-  try { if (pending) localStorage.setItem(pendingJobKey, JSON.stringify(pending)); else localStorage.removeItem(pendingJobKey); }
+  try { if (pending) localStorage.setItem(pendingJobKey(), JSON.stringify(pending)); else localStorage.removeItem(pendingJobKey()); }
   catch { /* The server history remains available if local storage is denied. */ }
 }
 function pendingJob(): PendingJob | null {
-  try { const saved = JSON.parse(localStorage.getItem(pendingJobKey) ?? 'null'); return saved && (typeof saved.id === 'string' || typeof saved.requestId === 'string') ? saved : null; }
+  try { const saved = JSON.parse(localStorage.getItem(pendingJobKey()) ?? 'null'); return saved && (typeof saved.id === 'string' || typeof saved.requestId === 'string') ? saved : null; }
   catch { return null; }
 }
 async function api<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
+  const scope = workbenchScope(); if (scope !== null) headers.set('X-DirMap-Workbench', scope);
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   const token = sessionStorage.getItem('dirmap-admin-token'); if (token) headers.set('X-DirMap-Token', token);
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetch(url, { ...options, headers, cache: 'no-store' });
   if (!response.ok) {
     let message = `${response.status}`, login = false;
-    try { const data = await response.json(); message = typeof data.detail === 'string' ? data.detail : '输入格式不正确，请检查人数、队伍及点位'; login = data.login === true; } catch { /* response had no JSON */ }
+    try { const data = await response.json(); message = typeof data.detail === 'string' ? data.detail : '输入格式不正确，请检查人数、队伍及点位'; login = data.login === true; if (data.accountChanged) location.reload(); } catch { /* response had no JSON */ }
     // A session that ended while working: sign in again in place.
     if (login && account && catalog && !courseId) openSignIn({ ...account, user: null });
     throw new ApiError(message, response.status);
@@ -376,7 +378,7 @@ async function task(action: () => Promise<void>) {
   finally { busy = false; syncTaskButtons(); void renderJobs().catch(() => {}); }
 }
 function resetPlan() { planRevision++; plan = null; selectedTeam = null; campusMap.setRoutes([]); campusMap.setApproaches([]); $('route-results').innerHTML = ''; $('plan-errors').innerHTML = ''; $('publish-section').classList.add('hidden'); }
-function rulesKey() { return 'dirmap-course-rules-v1:' + (catalog.maps.find(m => m.id === activeId)?.sha256 ?? activeId); }
+function rulesKey() { return workbenchKey('rules:' + (catalog.maps.find(m => m.id === activeId)?.sha256 ?? activeId)); }
 function restoreAutoTeamFields(settings: Pick<AutoTeamRequest, 'minPeoplePerTeam' | 'maxTeams' | 'targetGainFraction'>) {
   if (Number.isInteger(settings.minPeoplePerTeam) && settings.minPeoplePerTeam >= 1 && settings.minPeoplePerTeam <= 500) $<HTMLInputElement>('auto-min-people').value = String(settings.minPeoplePerTeam);
   if (Number.isInteger(settings.maxTeams) && settings.maxTeams >= 1 && settings.maxTeams <= 30) $<HTMLInputElement>('auto-max-teams').value = String(settings.maxTeams);
@@ -478,7 +480,7 @@ async function showSiteReference() {
 /** Switch place: its reference, view and first map. */
 async function selectSite(id: string, mapId?: string) {
   activeSite = id;
-  try { localStorage.setItem('dirmap-site', id); } catch { /* the choice lasts this page */ }
+  try { localStorage.setItem(workbenchKey('site'), id); } catch { /* the choice lasts this page */ }
   renderCatalog();
   void showSiteReference();
   const site = currentSite();
@@ -1255,9 +1257,12 @@ async function boot() {
   } else {
     // Resume only what was pending when this page opened. A submission made
     // here in the meantime reports its own unconfirmed state instead.
-    const pending = pendingJob();
     void applyDeclination();
     account = await fetchAccount();
+    if (!account) throw new Error('暂时无法确认登录状态，请检查连接后刷新页面');
+    setWorkbench(account);
+    activeSite = stored(workbenchKey('site')) ?? 'szu-yuehai';
+    const pending = pendingJob();
     renderAccountChip($('account-slot'), account, notify);
     try { catalog = await api<Catalog>('/api/catalog'); }
     catch (error) {
@@ -1287,4 +1292,5 @@ async function cacheStudentCourse() {
   try { await saveOfflineCourse(courseId); $('offline-status').textContent = '本课已保存；断网后可查看原图、路线并记录打点。'; }
   catch (error) { $('offline-status').textContent = error instanceof Error ? error.message : String(error); }
 }
+if ((!courseId && !groupMode) || location.hash === '#groups') watchAccountChanges(() => location.reload());
 boot().catch(error => notify(error instanceof Error ? error.message : String(error), true));

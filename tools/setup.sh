@@ -18,4 +18,6 @@ elif [ -L node_modules ] && [ ! -e node_modules ]; then
   ln -sfn "$DIRMAP_NODE_DIR/node_modules" node_modules
 fi
 npm run build
+python3 -B tools/build_samples.py
+python3 -B -c 'from dirmap.accounts import seed_workspace; from dirmap.store import LEGACY; seed_workspace(LEGACY)'
 python3 -B tools/prepare_maps.py

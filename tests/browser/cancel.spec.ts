@@ -17,7 +17,7 @@ test('a teacher can cancel a long recognition job without changing the map', asy
   const after = await (await page.request.get('/api/maps/szu-2')).json();
   expect(after.version).toBe(before.version);
   expect(after.controls).toEqual(before.controls);
-  expect(await page.evaluate(() => localStorage.getItem('dirmap-pending-job-v1'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('dirmap-workbench-v2:original-anonymous:pending-job'))).toBeNull();
   await page.locator('.job-history summary').click();
   await expect(page.locator(`[data-resume-job="${job.id}"]`)).toContainText('已取消');
   await expect(page.locator('#plan-button')).toBeEnabled();

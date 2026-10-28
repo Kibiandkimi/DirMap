@@ -2,7 +2,7 @@
 
 向 `main` 推送后，[工作流](../.github/workflows/deploy.yml) 在 Ubuntu 24.04 / Python 3.12 / Node 24 中运行后端、API、任务恢复、部署和前端测试，构建网页，再上传经过哈希校验的发布包。PR 只测试，不能部署。也可在 Actions 页面手动运行最新 `main`。
 
-部署沿用 `DirMapDeploy` 的服务器结构：`/opt/dirmap/releases/` 保存版本，`current` 原子切换，systemd 重启应用，`data/` 继续保存教学数据。发布包不含上传地图、校核状态、任务、课堂包、教师口令、证书或 nginx 配置。
+部署沿用 `DirMapDeploy` 的服务器结构：`/opt/dirmap/releases/` 保存版本，`current` 原子切换，systemd 重启应用，`data/` 继续保存教学数据。发布包不含上传地图、校核状态、任务、课堂包、教师口令、证书或 nginx 配置。流水线会在空的临时工作台中处理三张程序自带原图，生成 `dirmap/public-samples.json` 随包发布；新账号从这份公共样例初始化。首次使用解包约 11 MB，多个账户共享不可变文件，服务器只保留两代解包缓存。
 
 服务器用 `/api/health` 中的 `revision` 核实新进程确实运行了本次提交，再由 Actions 校验公网 HTTPS。启动或内部健康检查失败时恢复旧版本；公网不可达但内部正常时工作流报告失败并保留正常服务。成功后保留最近五个发布版本，其中包含当前版本和上一个版本。
 
@@ -40,6 +40,7 @@ source tools/runtime-env.sh
 python3 -B -m pytest -q tests/test_deploy.py
 bash -n deploy/*.sh
 npm run build
+python3 -B tools/build_samples.py
 python3 -B deploy/package.py --revision "$(git rev-parse HEAD)" --output /tmp/dirmap-release.tar.gz
 ```
 

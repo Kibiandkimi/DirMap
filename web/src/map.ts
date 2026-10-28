@@ -17,6 +17,7 @@ import { ScaleLine, defaults } from 'ol/control.js';
 import type { Anchor, Approach, Control, MapState, Pixel, Route, Surface } from './types';
 import type { HeadingSample } from './heading';
 import { routeArrows } from './route-arrows';
+import { mapAssetUrl } from './workbench';
 
 export const teamColors = ['#ec693f', '#416edb', '#9370ca', '#159386', '#bb8426', '#d95492', '#56974e', '#a5513f', '#54869f', '#887760'];
 /** Someone shown on the map: a group member or, for a teacher, a student. */
@@ -93,7 +94,7 @@ export class CampusMap {
     this.overlays = [];
     for (const state of [...states].sort((a, b) => Number(a.assetId === activeId) - Number(b.assetId === activeId))) {
       if (!state.extent || !state.registration || state.registrationStale) continue;
-      const layer = new ImageLayer({ source: new ImageStatic({ url: `/assets/maps/${state.assetId}/overlay.png?v=${state.version}`, imageExtent: state.extent, projection: 'EPSG:3857' }),
+      const layer = new ImageLayer({ source: new ImageStatic({ url: mapAssetUrl(state, 'overlay.png'), imageExtent: state.extent, projection: 'EPSG:3857' }),
         opacity: state.assetId === activeId ? opacity : opacity * .6, zIndex: 10 });
       this.overlays.push(layer); this.map.addLayer(layer);
     }
@@ -107,7 +108,7 @@ export class CampusMap {
     if (this.terrain) this.map.removeLayer(this.terrain);
     this.terrain = null;
     if (!state?.extent || state.registrationStale || !visible) return;
-    this.terrain = new ImageLayer({ source: new ImageStatic({ url: `/assets/maps/${state.assetId}/terrain-warp.png?v=${state.version}`, imageExtent: state.extent, projection: 'EPSG:3857' }), opacity: .8, zIndex: 20 });
+    this.terrain = new ImageLayer({ source: new ImageStatic({ url: mapAssetUrl(state, 'terrain-warp.png'), imageExtent: state.extent, projection: 'EPSG:3857' }), opacity: .8, zIndex: 20 });
     this.map.addLayer(this.terrain);
   }
   setRoutes(routes: Route[], selected: string | null = null) {

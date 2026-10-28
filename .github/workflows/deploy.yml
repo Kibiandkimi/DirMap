@@ -36,6 +36,8 @@ jobs:
           python -m pip install --no-cache-dir -r requirements.lock pytest==9.0.2
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
+      - name: Prepare public starter maps from original images
+        run: python -B tools/build_samples.py
       - name: Test Python, API, recovery and deployment
         run: python -B -m pytest -q tests
       - name: Test and build the web application

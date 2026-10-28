@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 import numpy as np
 import pytest
 
-from dirmap import accounts, service, store
-from dirmap.app import app
+from dirmap import accounts, samples, service, store
+from dirmap.app import Control, app
 from dirmap.geometry import Registration, affine_points
 from dirmap.vision import TERRAIN_SCHEMA
 
@@ -159,11 +159,26 @@ def test_new_account_may_claim_the_original_workbench_before_it_has_its_own_work
     assert busy.post('/api/auth/claim-original', json={}).status_code == 400
 
 
-def test_new_workbench_starts_from_processed_samples_sharing_their_files(server):
+def public_sample_bundle(directory):
+    data = directory/'public-source'
+    for asset in store.builtin_maps():
+        state = fixture_state(asset['id'], asset['sha256'])
+        state['controls'][0].update(state='candidate', labelSource='tesseract')
+        target = data/'projects'/asset['id']; target.mkdir(parents=True)
+        np.savez_compressed(target/'terrain.npz', costs=np.ones((41, 41), np.float32))
+        cv2.imwrite(str(target/'overlay.png'), np.zeros((10, 10, 4), np.uint8))
+        store.atomic_json(target/'state.json', state)
+    samples.write_bundle(data, samples.BUNDLE)
+    return data
+
+
+def test_new_workbench_starts_from_processed_samples_sharing_their_files(server, tmp_path):
+    public_sample_bundle(tmp_path)
     asset = store.builtin_maps()[0]
     with store.using(store.LEGACY):
         state = fixture_state(asset['id'], asset['sha256'])
         state.update(reviewed=True, review={'notes': 'owner review'})
+        state['controls'][0].update(label='私有目标', labelSource='manual', manualFields=['label'])
         directory = store.asset_dir(asset['id'])/'derived'/('a'*32)
         directory.mkdir(parents=True)
         np.savez_compressed(directory/'terrain.npz', costs=np.ones((41, 41), np.float32))
@@ -175,16 +190,105 @@ def test_new_workbench_starts_from_processed_samples_sharing_their_files(server)
     workspace = client_workspace(teacher)
     copied = teacher.get(f'/api/maps/{asset["id"]}').json()
     assert copied['controls'][0]['label'] == '31' and copied['reviewed'] is False and 'review' not in copied
-    source = store.DATA/'projects'/asset['id']/'derived'/('a'*32)/'terrain.npz'
-    target = store.workspace_root(workspace)/'projects'/asset['id']/'derived'/('a'*32)/'terrain.npz'
+    source = samples.source_root()/'projects'/asset['id']/'terrain.npz'
+    target = store.workspace_root(workspace)/'projects'/asset['id']/'terrain.npz'
     assert os.stat(source).st_ino == os.stat(target).st_ino
     assert not list((store.workspace_root(workspace)/'projects'/asset['id']).glob('plan-*.json'))
     # Editing the copy leaves the owner's map untouched.
     patch = {'version': copied['version'], 'controls': [{k: v for k, v in copied['controls'][0].items()
-                                                         if k not in ('lnglat', 'calibrated')} | {'label': '99'}]}
+                                                         if k in Control.model_fields} | {'label': '99'}]}
     assert teacher.patch(f'/api/maps/{asset["id"]}', json=patch).status_code == 200
     with store.using(store.LEGACY):
-        assert store.get_state(asset['id'])['controls'][0]['label'] == '31'
+        assert store.get_state(asset['id'])['controls'][0]['label'] == '私有目标'
+    second = account('another-newcomer')
+    assert second.get(f'/api/maps/{asset["id"]}').json()['controls'][0]['label'] == '31'
+    other = store.workspace_root(client_workspace(second))/'projects'/asset['id']/'terrain.npz'
+    assert other.stat().st_ino == target.stat().st_ino
+
+
+def test_registration_cannot_copy_the_original_owners_private_edits(server):
+    asset = store.builtin_maps()[0]
+    save_fixture(asset['id'], asset['sha256'])
+    owner = account('original-owner', claimOriginal=True)
+    changed = owner.patch(f'/api/maps/{asset["id"]}', json={
+        'version': 1,
+        'controls': [{'id': 'c1', 'label': '私有训练点', 'pixel': [26, 26], 'radiusPx': 3, 'required': True, 'state': 'accepted'}],
+        'edits': [{'kind': 'close', 'pixels': [[10, 11], [12, 13]], 'radiusPx': 2}],
+    })
+    assert changed.status_code == 200
+    assert TestClient(app).get(f'/api/maps/{asset["id"]}').status_code == 401
+    newcomer = account('independent-user')
+    visible = newcomer.get(f'/api/maps/{asset["id"]}')
+    assert visible.status_code == 200 and '私有训练点' not in visible.text
+    assert visible.json().get('edits', []) == []
+    assert owner.get(f'/api/maps/{asset["id"]}').json()['controls'][0]['label'] == '私有训练点'
+
+
+def test_claiming_original_cannot_discard_work_on_a_sample_map(server):
+    teacher = account('sample-editor')
+    workspace = client_workspace(teacher)
+    with store.using(workspace):
+        save_fixture()
+        state = store.get_state('szu-1'); state['controls'][0]['label'] = '我的改点'
+        store.save_state('szu-1', state)
+    refused = teacher.post('/api/auth/claim-original', json={})
+    assert refused.status_code == 400
+    assert client_workspace(teacher) == workspace
+    assert teacher.get('/api/maps/szu-1').json()['controls'][0]['label'] == '我的改点'
+
+
+def test_untouched_public_samples_can_be_replaced_when_claiming_original(server, tmp_path):
+    public_sample_bundle(tmp_path)
+    teacher = account('clean-starter')
+    assert teacher.get('/api/maps/szu-1').json()['processed'] is True
+    result = teacher.post('/api/auth/claim-original', json={})
+    assert result.status_code == 200 and result.json()['user']['ownsOriginalWorkbench'] is True
+
+
+def test_a_broken_public_bundle_does_not_fall_back_to_private_starters(server):
+    asset = store.builtin_maps()[0]
+    save_fixture(asset['id'], asset['sha256'])
+    state = store.get_state(asset['id']); state['controls'][0]['label'] = 'private starter'
+    store.save_state(asset['id'], state)
+    samples.BUNDLE.write_text('invalid bundle')
+    newcomer = account('no-private-fallback')
+    assert newcomer.get(f'/api/maps/{asset["id"]}').json()['processed'] is False
+
+
+def test_workbench_requests_and_images_reject_a_different_page_account(server):
+    first, second = account('page-a'), account('page-b')
+    asset = store.builtin_maps()[0]
+    for client in (first, second):
+        with store.using(client_workspace(client)):
+            save_fixture(asset['id'], asset['sha256'])
+    wrong = accounts.workbench_scope(accounts.session_user(first.cookies.get(accounts.COOKIE)))
+    right = accounts.workbench_scope(accounts.session_user(second.cookies.get(accounts.COOKIE)))
+    path = f'/api/maps/{asset["id"]}'
+    body = {'version': 1, 'edits': [{'kind': 'close', 'pixels': [[10, 10]], 'radiusPx': 2}]}
+    rejected = second.patch(path, json=body, headers={'X-DirMap-Workbench': wrong})
+    assert rejected.status_code == 409 and rejected.json()['accountChanged'] is True
+    assert second.get(path).json()['edits'] == []
+    # Old browser tabs without an account binding cannot write using a newly
+    # switched cookie; explicit API clients without Origin remain supported.
+    assert second.patch(path, json=body, headers={'Origin': 'http://testserver'}).status_code == 409
+    assert second.patch(path, json=body, headers={'Origin': 'http://testserver', 'X-DirMap-Workbench': right}).status_code == 200
+    image = f'/assets/maps/{asset["id"]}/overlay.png'
+    assert second.get(image, params={'workbench': wrong}).status_code == 409
+    visible = second.get(image, params={'workbench': right})
+    assert visible.status_code == 200 and visible.headers['cache-control'] == 'no-store'
+    assert second.get(path).headers['cache-control'] == 'no-store'
+
+
+def test_a_write_waiting_for_the_data_lock_rechecks_its_workbench(server, monkeypatch):
+    teacher = account('late-write')
+    workspace = client_workspace(teacher)
+    with store.using(workspace):
+        save_fixture()
+    with monkeypatch.context() as changed:
+        changed.setattr(accounts, 'workspace_matches', lambda *args: False)
+        response = teacher.patch('/api/maps/szu-1', json={'version': 1, 'edits': [{'kind': 'close', 'pixels': [[10, 10]], 'radiusPx': 2}]})
+        assert response.status_code == 409 and response.json()['accountChanged'] is True
+    assert teacher.get('/api/maps/szu-1').json()['edits'] == []
 
 
 def test_sign_in_sign_out_password_change_and_throttling(server, monkeypatch):

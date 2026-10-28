@@ -383,6 +383,11 @@ async def photo_storage_full(request, exc):
     return JSONResponse(status_code=507, content={'detail': str(exc)})
 
 
+@app.exception_handler(store.WorkspaceChanged)
+async def workspace_changed(request, exc):
+    return JSONResponse(status_code=409, content={'detail': str(exc), 'accountChanged': True})
+
+
 WRITES = ('POST', 'PUT', 'PATCH', 'DELETE')
 OPEN_PATHS = re.compile(r'/api/(?:health|auth/[a-z-]+|groups(?:/.*)?)')
 STUDENT_READS = re.compile(r'/api/releases/[0-9a-f]{32}(?:/(?:status|progress|overlay\.png|route-map|qr\.png|reference))?')
@@ -416,6 +421,14 @@ async def origin_guard(request: Request, call_next):
             if urlparse(origin).netloc != request.headers.get('host'):
                 return JSONResponse(status_code=403, content={'detail': '不允许跨站修改课程'})
     scope = access_scope(request.method, request.url.path)
+    if scope != 'open':
+        user = current_user(request)
+        expected = request.headers.get('x-dirmap-workbench')
+        if request.url.path.startswith('/assets/maps/'):
+            expected = expected or request.query_params.get('workbench')
+        if ((expected is not None and expected != accounts.workbench_scope(user))
+                or (user and request.method in WRITES and request.headers.get('origin') and expected is None)):
+            return JSONResponse(status_code=409, content={'detail': '登录账号或工作台已变化，请刷新页面后再操作', 'accountChanged': True})
     if scope != 'open' and current_user(request) is None:
         if not await anyio.to_thread.run_sync(original_open):
             return JSONResponse(status_code=401, content={'detail': '请先登录', 'login': True})
@@ -428,7 +441,7 @@ async def origin_guard(request: Request, call_next):
     response = await call_next(request)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    if request.url.path.startswith(('/api/jobs', '/api/groups', '/api/auth')) or request.url.path.endswith(('/progress', '/groups')):
+    if scope != 'open' or request.url.path.startswith(('/api/jobs', '/api/groups', '/api/auth')) or request.url.path.endswith(('/progress', '/groups')):
         response.headers['Cache-Control'] = 'no-store'
     return response
 
@@ -445,7 +458,10 @@ class AccountMiddleware:
         token = Request(scope).cookies.get(accounts.COOKIE)
         user = await anyio.to_thread.run_sync(accounts.session_user, token) if token else None
         scope['dirmap.user'] = user
-        with store.using(user['workspace'] if user else store.LEGACY):
+        guard = None
+        if access_scope(scope['method'], scope['path']) != 'open':
+            guard = (lambda: accounts.workspace_matches(user['id'], user['workspace'])) if user else (lambda: accounts.legacy_owner() is None)
+        with store.using(user['workspace'] if user else store.LEGACY), store.guarded(guard):
             await self.app(scope, receive, send)
 
 

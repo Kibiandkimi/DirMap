@@ -17,7 +17,7 @@ REVISION = 'a'*40
 
 
 def fixture(root):
-    files = {'dirmap/app.py': '# application', 'requirements.lock': 'numpy==2.5.4\n',
+    files = {'dirmap/app.py': '# application', 'dirmap/public-samples.json': '{"schema":1}', 'requirements.lock': 'numpy==2.5.4\n',
              'web/dist/index.html': '<html>app</html>', 'web/dist/sw.js': '// worker',
              'deploy/receiver.py': '# receiver', 'deploy/run-server.sh': '# runner',
              'data/uploads.json': 'teaching data', 'data/projects/test/source.img': 'private map',

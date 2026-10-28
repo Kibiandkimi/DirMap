@@ -10,6 +10,7 @@ then on visitors without a session no longer reach it.
 from contextlib import contextmanager
 import hashlib
 import hmac
+import logging
 import os
 import re
 import secrets
@@ -18,8 +19,9 @@ import sqlite3
 import threading
 import time
 import unicodedata
+import zipfile
 
-from . import store
+from . import samples, store
 
 COOKIE = 'dirmap_session'
 SESSION_SEC = 30*86400
@@ -110,6 +112,42 @@ def validate(username, password):
 def legacy_owner():
     with database() as db:
         return public(db.execute('SELECT * FROM users WHERE workspace=?', (store.LEGACY,)).fetchone())
+
+
+def workbench_scope(user):
+    return (user['id'] + (':original' if user['workspace'] == store.LEGACY else ':personal')) if user else 'original-anonymous'
+
+
+def workspace_matches(user_id, workspace):
+    with database() as db:
+        return db.execute('SELECT 1 FROM users WHERE id=? AND workspace=?', (user_id, workspace)).fetchone() is not None
+
+
+def _workspace_has_work(workspace):
+    root = store.workspace_root(workspace)
+    if store.read_json(root/'uploads.json', []) or store.read_json(root/'sites.json', []) or owned_releases(workspace):
+        return True
+    allowed = {root/'uploads.json', root/'sites.json'}
+    for asset in store.builtin_maps():
+        path = root/'projects'/asset['id']/'state.json'
+        if path.exists():
+            try:
+                state = store.read_json(path)
+                if not samples.untouched(state):
+                    return True
+                allowed.add(path)
+                allowed.update(path.parent/name for name in state['artifacts'].values())
+            except (OSError, ValueError, KeyError, TypeError):
+                return True
+    if any(path.is_file() and path not in allowed for path in root.rglob('*')):
+        return True
+    history = store.DATA/'jobs'/'queue.sqlite3'
+    if history.is_file():
+        with sqlite3.connect(history.resolve().as_uri()+'?mode=ro', uri=True) as db:
+            if 'workspace' in {row[1] for row in db.execute('PRAGMA table_info(jobs)')}:
+                if db.execute('SELECT 1 FROM jobs WHERE workspace=? LIMIT 1', (workspace,)).fetchone():
+                    return True
+    return False
 
 
 def legacy_has_data():
@@ -228,20 +266,22 @@ def claim_legacy(user, legacy_token):
     if previous == store.LEGACY:
         return user
     root = store.workspace_root(previous)
-    with store.using(previous):
-        if store.read_json(store.uploads_path(), []) or store.read_json(root/'sites.json', []) or owned_releases(previous):
-            raise AuthError('这个账户已有自己的地图或课程，不能再认领原工作台；请用新账户认领')
-    with database() as db:
-        db.execute('BEGIN IMMEDIATE')
-        try:
-            if db.execute('SELECT 1 FROM users WHERE workspace=?', (store.LEGACY,)).fetchone():
-                raise AuthError('原工作台已归属其他账户')
-            db.execute('UPDATE users SET workspace=? WHERE id=?', (store.LEGACY, user['id']))
-            db.execute('COMMIT')
-        except BaseException:
-            db.execute('ROLLBACK')
-            raise
-    shutil.rmtree(root, ignore_errors=True)
+    with store.LOCK:
+        if not workspace_matches(user['id'], previous):
+            raise AuthError('工作台已变化，请刷新后再操作')
+        if _workspace_has_work(previous):
+            raise AuthError('这个账户已有自己的修改或处理记录，不能替换工作台；请用空白账户认领')
+        with database() as db:
+            db.execute('BEGIN IMMEDIATE')
+            try:
+                if db.execute('SELECT 1 FROM users WHERE workspace=?', (store.LEGACY,)).fetchone():
+                    raise AuthError('原工作台已归属其他账户')
+                db.execute('UPDATE users SET workspace=? WHERE id=?', (store.LEGACY, user['id']))
+                db.execute('COMMIT')
+            except BaseException:
+                db.execute('ROLLBACK')
+                raise
+        shutil.rmtree(root, ignore_errors=True)
     return {**user, 'workspace': store.LEGACY, 'ownsOriginalWorkbench': True}
 
 
@@ -251,36 +291,48 @@ def owned_releases(workspace):
 
 
 def seed_workspace(workspace):
-    """Start a new workbench with the processed sample sheets, sharing files.
-
-    Derived files are immutable generations, so hard links cost no space and
-    a later change in either workbench writes new files. Teacher review,
-    plans, GPS checks and uploads stay with their owner; the copy must be
-    reviewed again before its own courses are published.
-    """
+    """Clone only public starter maps. An owner's workbench is never a seed."""
     root = store.workspace_root(workspace)
-    (root/'projects').mkdir(parents=True, exist_ok=True)
     with store.LOCK:
+        try:
+            public = samples.source_root()
+        except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile):
+            logging.getLogger(__name__).exception('Public starter maps are unavailable; the workbench can process the original images')
+            return
+        if public is None:
+            return
         for asset in store.builtin_maps():
-            source = store.DATA/'projects'/asset['id']
+            source = public/'projects'/asset['id']
             state = store.read_json(source/'state.json')
             if not state or state.get('sourceHash') != asset['sha256']:
                 continue
             target = root/'projects'/asset['id']
-            names = state.get('artifacts') or {name: name for name in store.ARTIFACT_NAMES if (source/name).exists()}
+            # This also lets setup initialize an empty original workbench
+            # without replacing any existing edits or processing output.
+            if target.exists() and any(target.iterdir()):
+                continue
+            created = []
             try:
-                for relative in names.values():
+                for relative in state['artifacts'].values():
                     destination = target/relative
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     try:
                         os.link(source/relative, destination)
+                        created.append(destination)
                     except OSError:
-                        shutil.copy2(source/relative, destination)
+                        with (source/relative).open('rb') as incoming, destination.open('xb') as outgoing:
+                            created.append(destination)
+                            shutil.copyfileobj(incoming, outgoing)
+                state.update(reviewed=False, seededFrom='public-samples', seededBundle=public.name, updatedAt=time.time())
+                state['seededStateHash'] = samples.state_hash(state)
+                store.atomic_json(target/'state.json', state)
             except OSError:
-                shutil.rmtree(target, ignore_errors=True)
+                if (target/'state.json').is_file():
+                    continue  # The atomic publication completed before a directory-sync error.
+                for path in created:
+                    path.unlink(missing_ok=True)
+                try:
+                    target.rmdir()
+                except OSError:
+                    pass
                 continue
-            for key in ('lastOperationId', 'review'):
-                state.pop(key, None)
-            state['reviewed'] = False
-            state['seededFrom'] = 'original-workbench'
-            store.atomic_json(target/'state.json', state)

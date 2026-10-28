@@ -23,10 +23,10 @@ def build_package(root, output, revision):
                                            'deploy/receiver.py', 'deploy/run-server.sh'))]
     files = {p.relative_to(root).as_posix(): p for p in candidates
              if p.is_file() and not p.is_symlink() and allowed_file(p.relative_to(root).as_posix())}
-    required = {'dirmap/app.py', 'web/dist/index.html', 'web/dist/sw.js', 'requirements.lock',
+    required = {'dirmap/app.py', 'dirmap/public-samples.json', 'web/dist/index.html', 'web/dist/sw.js', 'requirements.lock',
                 'deploy/receiver.py', 'deploy/run-server.sh'}
     if not required.issubset(files):
-        raise ValueError('Build the application before packaging; required release files are missing')
+        raise ValueError('Build the application and public samples before packaging; required release files are missing')
     manifest = {'schema': 1, 'revision': revision, 'createdAt': datetime.now(timezone.utc).isoformat(),
                 'files': {name: digest(files[name]) for name in sorted(files)}}
     output.parent.mkdir(parents=True, exist_ok=True)

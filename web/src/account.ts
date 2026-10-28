@@ -1,4 +1,5 @@
 import { escapeHtml as e, type AccountState } from './types';
+import { announceAccount } from './workbench';
 
 export async function fetchAccount(): Promise<AccountState | null> {
   try { const response = await fetch('/api/auth/me', { signal: AbortSignal.timeout(15000) }); return response.ok ? await response.json() : null; }
@@ -9,6 +10,7 @@ async function post(url: string, body: object): Promise<AccountState> {
   const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : '请检查用户名和密码');
+  announceAccount(data as AccountState);
   return data as AccountState;
 }
 
@@ -74,7 +76,7 @@ export function openAccount(state: AccountState, notify: (message: string, error
   const box = dialog('我的账户', `<p><strong>${e(user.username)}</strong>${user.ownsOriginalWorkbench ? ' · 原工作台' : ' · 独立工作台'}</p>
     <p class="muted compact">工作台中的地图、计算记录和已发布课程只属于这个账户。</p>
     <details><summary>修改密码</summary><form id="password-form" class="account-form"><label class="field-label">原密码<input id="old-password" type="password" autocomplete="current-password" required></label><label class="field-label">新密码<input id="new-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"></label><button class="soft-button wide" type="submit">保存新密码</button><p class="muted compact">保存后，其他设备上的登录将退出。</p></form></details>
-    ${claimable(state) && !user.ownsOriginalWorkbench ? `<details><summary>认领服务器原工作台</summary><p class="muted compact">把原有的地图、路线和课程归入本账户，本账户新建的空工作台随之替换。只适用于还没有导入地图或发布课程的账户。</p>${state.original.tokenRequired ? '<label class="field-label">原教师口令<input id="claim-token" type="password" autocomplete="off"></label>' : ''}<button id="claim-original" class="soft-button wide">认领原工作台</button></details>` : ''}
+    ${claimable(state) && !user.ownsOriginalWorkbench ? `<details><summary>认领服务器原工作台</summary><p class="muted compact">把原有的地图、路线和课程归入本账户，本账户新建的空工作台随之替换。只适用于尚未修改地图、计算路线或留下处理记录的账户。</p>${state.original.tokenRequired ? '<label class="field-label">原教师口令<input id="claim-token" type="password" autocomplete="off"></label>' : ''}<button id="claim-original" class="soft-button wide">认领原工作台</button></details>` : ''}
     <p id="account-error" class="danger" role="status"></p>
     <button id="sign-out" class="text-button wide">退出登录</button>`);
   const error = (message: string) => { box.querySelector('#account-error')!.textContent = message; };
@@ -91,7 +93,10 @@ export function openAccount(state: AccountState, notify: (message: string, error
     try { await post('/api/auth/claim-original', { originalToken: box.querySelector<HTMLInputElement>('#claim-token')?.value || null }); location.reload(); }
     catch (failure) { error(failure instanceof Error ? failure.message : String(failure)); }
   };
-  box.querySelector<HTMLButtonElement>('#sign-out')!.onclick = async () => { await fetch('/api/auth/logout', { method: 'POST' }); location.reload(); };
+  box.querySelector<HTMLButtonElement>('#sign-out')!.onclick = async () => {
+    try { await post('/api/auth/logout', {}); location.reload(); }
+    catch (failure) { error(failure instanceof Error ? failure.message : String(failure)); }
+  };
 }
 
 /** Header control: who is signed in, or a way to sign in. */

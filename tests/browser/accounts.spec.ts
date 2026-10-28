@@ -1,6 +1,61 @@
 import fs from 'node:fs';
 import { test, expect, localOnly } from './fixtures';
 
+test('switching accounts in one browser isolates course drafts, pending jobs and map image caches', async ({ page, context }) => {
+  test.setTimeout(120000);
+  const first = `scope-a-${Date.now() % 1000000}`, second = `scope-b-${Date.now() % 1000000}`;
+  const password = 'orienteering-scope';
+  const enter = async (name: string, register: boolean) => {
+    await page.locator('#account-open').click();
+    if (register) await page.locator('[data-account-mode="register"]').click();
+    await page.locator('#account-name').fill(name); await page.locator('#account-password').fill(password);
+    if (register) await page.locator('#account-confirm').fill(password);
+    await page.locator('#account-submit').click();
+    await expect(page.locator('#account-open')).toHaveText(name);
+    await expect(page.locator('.control-row').first()).toBeVisible();
+  };
+  const leave = async () => {
+    await page.locator('#account-open').click(); await page.locator('#sign-out').click();
+    await expect(page.locator('#account-open')).toHaveText('登录 / 注册');
+  };
+  const overlay = () => page.evaluate(() => (window as any).dirmap.campusMap.overlays[0].getSource().getUrl());
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#account-open')).toBeVisible();
+  await enter(first, true);
+  const defaults = { people: await page.locator('#people').inputValue(), teams: await page.locator('#teams').inputValue() };
+  const firstImage = await overlay();
+  await page.locator('#people').fill('77'); await page.locator('#teams').fill('7');
+  const peer = await context.newPage();
+  await peer.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(peer.locator('#account-open')).toHaveText(first);
+  await expect(peer.locator('#people')).toHaveValue('77');
+
+  const resumed: string[] = [];
+  await page.route('**/api/jobs/old-private-job', async route => {
+    resumed.push(route.request().url()); await route.fulfill({ status: 404, json: { detail: 'not this account' } });
+  });
+  await page.evaluate(() => {
+    localStorage.setItem('dirmap-pending-job-v1', JSON.stringify({ id: 'old-private-job' }));
+    sessionStorage.setItem('dirmap-admin-token', 'legacy-token-from-another-workbench');
+  });
+  await leave();
+  await expect(peer.locator('#account-open')).toHaveText('登录 / 注册');
+  expect(await page.evaluate(() => sessionStorage.getItem('dirmap-admin-token'))).toBeNull();
+  await enter(second, true);
+  await expect(peer.locator('#account-open')).toHaveText(second);
+  await expect(page.locator('#people')).toHaveValue(defaults.people);
+  await expect(page.locator('#teams')).toHaveValue(defaults.teams);
+  const secondImage = await overlay();
+  expect(new URL(secondImage, page.url()).searchParams.get('workbench')).not.toEqual(new URL(firstImage, page.url()).searchParams.get('workbench'));
+  await page.waitForLoadState('networkidle');
+  expect(resumed).toEqual([]);
+  await page.locator('#people').fill('18'); await page.locator('#teams').fill('3');
+  await leave(); await enter(first, false);
+  await expect(page.locator('#people')).toHaveValue('77');
+  await expect(page.locator('#teams')).toHaveValue('7');
+  await peer.close();
+});
+
 test('an account works in its own workbench with places such as 大沙河公园', async ({ page, browser }) => {
   test.setTimeout(120000);
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));

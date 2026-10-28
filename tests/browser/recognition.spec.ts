@@ -42,7 +42,7 @@ test('original photo collage imports, finds every control and opens in its worki
   expect((await preview).status()).toBe(200);
   await expect(page.locator('dialog canvas')).toHaveAttribute('width', String(state.width));
   await expect(page.locator('dialog canvas')).toHaveAttribute('height', String(state.height));
-  await expect(page.locator(`dialog a[href="/assets/maps/${asset.id}/original"]`)).toBeVisible();
+  await expect(page.locator(`dialog a[href^="/assets/maps/${asset.id}/original?"]`)).toBeVisible();
   const dimensions = await page.evaluate((url: string) => new Promise<number[]>((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve([image.naturalWidth, image.naturalHeight]);

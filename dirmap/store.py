@@ -20,6 +20,20 @@ DATA = Path(os.environ.get('DIRMAP_DATA_DIR', str(ROOT/'data')))
 # the workbench they act on, so map IDs such as szu-1 never cross accounts.
 LEGACY = ''
 CURRENT = contextvars.ContextVar('dirmap_workspace', default=LEGACY)
+ACCESS_GUARD = contextvars.ContextVar('dirmap_workspace_guard', default=None)
+
+
+class WorkspaceChanged(ValueError):
+    pass
+
+
+@contextmanager
+def guarded(check):
+    token = ACCESS_GUARD.set(check)
+    try:
+        yield
+    finally:
+        ACCESS_GUARD.reset(token)
 
 
 def valid_workspace(workspace):
@@ -86,6 +100,9 @@ class DataLock:
                 self.local.stream = (DATA/'.write.lock').open('a+b')
                 try:
                     fcntl.flock(self.local.stream, fcntl.LOCK_EX)
+                    guard = ACCESS_GUARD.get()
+                    if guard is not None and not guard():
+                        raise WorkspaceChanged('登录账号或工作台已变化，请刷新页面后再操作')
                 except BaseException:
                     self.local.stream.close()
                     raise
