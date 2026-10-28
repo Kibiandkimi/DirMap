@@ -248,25 +248,39 @@ export class GroupPhotoAlbum {
     if (!control || (!control.photo && !draft)) return;
     try {
       const blob = draft?.blob ?? await (await this.request(`/${encodeURIComponent(controlId)}/image?revision=${control.photo!.revision}`)).blob();
-      if (this.destroyed) return;
-      const url = URL.createObjectURL(blob), dialog = document.createElement('dialog'); dialog.className = 'photo-preview-dialog';
-      dialog.innerHTML = `<div class="dialog-heading"><h2>检查点 ${e(control.label)}</h2><button class="icon-button" aria-label="关闭照片">×</button></div><img src="${url}" alt="检查点 ${e(control.label)}"><p class="muted compact">导出时会加上检查点编号水印。</p>`;
-      document.body.append(dialog); dialog.showModal();
-      dialog.querySelector('button')!.onclick = () => dialog.close();
-      dialog.addEventListener('close', () => { URL.revokeObjectURL(url); dialog.remove(); }, { once: true });
-      this.abort.signal.addEventListener('abort', () => dialog.close(), { once: true });
+      this.showImage(blob, `检查点 ${control.label}`, '导出时会加上检查点编号水印。');
     } catch (error) { this.notify(error instanceof Error ? error.message : '无法加载照片', true); }
+  }
+  private showImage(blob: Blob, title: string, caption: string, long = false): HTMLDialogElement | null {
+    if (this.destroyed) return null;
+    const url = URL.createObjectURL(blob), dialog = document.createElement('dialog');
+    dialog.className = `photo-preview-dialog${long ? ' photo-export-preview' : ''}`;
+    dialog.setAttribute('aria-label', title);
+    dialog.innerHTML = `<div class="dialog-heading"><h2>${e(title)}</h2><button class="icon-button" data-close-photo-preview aria-label="关闭照片预览">×</button></div>
+      <div class="photo-preview-viewport"><img src="${url}" alt="${e(title)}"></div><p class="muted compact">${e(caption)}</p>`;
+    document.body.append(dialog); dialog.showModal();
+    const close = () => dialog.close();
+    dialog.querySelector<HTMLButtonElement>('[data-close-photo-preview]')!.onclick = close;
+    this.abort.signal.addEventListener('abort', close, { once: true });
+    dialog.addEventListener('close', () => {
+      this.abort.signal.removeEventListener('abort', close);
+      URL.revokeObjectURL(url); dialog.remove();
+    }, { once: true });
+    return dialog;
   }
   private export() {
     if (!this.album?.count || this.drafts.length || this.uploading) return;
     const dialog = document.createElement('dialog'); dialog.className = 'info-dialog photo-export-dialog'; this.exportDialog = dialog;
     dialog.innerHTML = `<div class="dialog-heading"><h2>导出小组照片</h2><button class="icon-button" aria-label="关闭照片导出">×</button></div><p>导出小组已上传的全部照片，每张带检查点编号水印。</p><label class="field-label">导出格式<select id="photo-export-format"><option value="pdf">PDF · 每张照片一页</option><option value="long-image">长图 · 全部照片纵向拼接</option><option value="images">多图 · ZIP 内每点一张 JPG</option></select></label><p class="muted compact">长图在照片较多时会缩小；需要保持清晰可选择 PDF 或多图。</p><button id="make-photo-export" class="primary-button wide">生成并下载</button><p id="photo-export-status" role="status"></p><a id="download-photos" class="text-link hidden">重新下载</a><button id="share-photos" class="soft-button wide hidden">分享文件到其他应用</button><div id="finish-photo-export" class="hidden"><p class="muted">先打开导出文件确认完整，并保存或提交到其他平台。结束后会删除小组中本次导出的照片；之后新上传或替换的照片会保留。</p><button id="finish-photos" class="danger-button wide">已保存，结束并清空已导出照片</button></div>`;
     document.body.append(dialog); dialog.showModal();
+    dialog.querySelector('#share-photos')!.insertAdjacentHTML('beforebegin', '<button id="view-photo-export" class="soft-button wide hidden">查看水印长图 / 保存图片</button>');
     const abort = new AbortController();
     let downloadUrl: string | null = null, exportId: string | null = null;
+    let preview: HTMLDialogElement | null = null;
     dialog.querySelector<HTMLButtonElement>('.dialog-heading button')!.onclick = () => dialog.close();
     dialog.addEventListener('close', () => {
       abort.abort(); dialog.remove(); if (this.exportDialog === dialog) this.exportDialog = null;
+      preview?.close();
       if (downloadUrl) { const url = downloadUrl; setTimeout(() => URL.revokeObjectURL(url), 30000); }
     }, { once: true });
     const status = dialog.querySelector('#photo-export-status')!;
@@ -276,6 +290,7 @@ export class GroupPhotoAlbum {
       dialog.querySelector('#finish-photo-export')!.classList.add('hidden');
       dialog.querySelector('#download-photos')!.classList.add('hidden');
       dialog.querySelector('#share-photos')!.classList.add('hidden');
+      dialog.querySelector('#view-photo-export')!.classList.add('hidden');
       try {
         const format = dialog.querySelector<HTMLSelectElement>('#photo-export-format')!.value;
         const result = await this.request('/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format }), signal: abort.signal }, 120000);
@@ -286,13 +301,32 @@ export class GroupPhotoAlbum {
         if (downloadUrl) URL.revokeObjectURL(downloadUrl); downloadUrl = URL.createObjectURL(blob);
         const link = dialog.querySelector<HTMLAnchorElement>('#download-photos')!;
         link.href = downloadUrl; link.download = filename; link.classList.remove('hidden'); link.click();
-        status.textContent = `已生成 ${result.headers.get('X-DirMap-Photo-Count')} 张照片的文件。若未开始下载，可点击“重新下载”。`;
+        const count = result.headers.get('X-DirMap-Photo-Count');
+        const formatName = format === 'pdf' ? 'PDF' : format === 'images' ? '多图 ZIP' : '长图';
+        status.textContent = `已生成 ${count} 张照片的${formatName}文件。若未开始下载，可点击“重新下载”。`;
         dialog.querySelector('#finish-photo-export')!.classList.remove('hidden');
+        const view = dialog.querySelector<HTMLButtonElement>('#view-photo-export')!;
+        view.classList.toggle('hidden', format !== 'long-image');
+        view.onclick = () => {
+          preview?.close();
+          preview = this.showImage(blob, `小组水印长图 · ${count} 张照片`, '下滑核对照片与编号；长按图片查看保存选项。', true);
+        };
         const file = new File([blob], filename, { type: blob.type }), share = dialog.querySelector<HTMLButtonElement>('#share-photos')!;
-        share.classList.toggle('hidden', !navigator.canShare?.({ files: [file] }));
+        let canShare = false;
+        try { canShare = typeof navigator.share === 'function' && !!navigator.canShare?.({ files: [file] }); }
+        catch { /* A WebView's sharing policy must not invalidate a completed download. */ }
+        share.classList.toggle('hidden', !canShare); share.disabled = false;
+        const sharedExportId = exportId;
+        const current = () => !abort.signal.aborted && exportId === sharedExportId;
         share.onclick = async () => {
-          try { await navigator.share({ files: [file], title: '小组检查点照片' }); }
-          catch { status.textContent = '分享未完成，照片仍保留；也可以下载后自行提交。'; }
+          share.disabled = true;
+          try {
+            await navigator.share({ files: [file], title: '小组检查点照片' });
+            if (current()) status.textContent = '文件已交给系统分享，请确认已保存或提交后再清空小组照片。';
+          } catch (error) {
+            if (current()) status.textContent = error instanceof DOMException && error.name === 'AbortError'
+              ? '已取消分享，导出文件和小组照片仍保留。' : '分享暂不可用，导出文件仍可下载，小组照片保留。';
+          } finally { if (current()) share.disabled = false; }
         };
       } catch (error) { if (!abort.signal.aborted) status.textContent = error instanceof PhotoError ? error.message : '导出未完成，小组照片仍保留。请检查连接后重试。'; }
       finally { button.disabled = false; }

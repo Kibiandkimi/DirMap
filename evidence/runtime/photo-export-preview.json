@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-10-28T16:19:34.065707+00:00",
+  "scope": "Watermarked long-image preview and mobile file-sharing behavior in the existing shared photo flow. Browser capabilities are simulated; real app menus and delivery to another platform still need a phone check.",
+  "sourceSha256": {
+    "web/src/group-photos.ts": "24146095d8497082cde2c4b2f18cb4771bb9ba84b511c9a3b8eb6480db4bd76c",
+    "web/src/style.css": "f537067bbe00151219774fb217556e0eeacb14c97c86278b55969cc91ebd71bb",
+    "tests/browser/photos.spec.ts": "28b62258aa24d94bed7b2fb1a9f4fef982296f2d10e33b76de35be02b9f7ee1f"
+  },
+  "buildPassed": true,
+  "browser": {
+    "command": "source tools/runtime-env.sh && DIRMAP_BROWSER_PATH=/usr/bin/google-chrome npm run test:browser -- tests/browser/photos.spec.ts",
+    "stats": {
+      "startTime": "2026-10-28T16:11:45.191Z",
+      "duration": 52760.945,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "verified": [
+    "A throwing native sharing capability check cannot change a successful export into a failure.",
+    "All three formats still download; only the long image has an in-page preview.",
+    "The preview contains the full three-photo watermarked image and scrolls without hiding its close control in portrait and landscape.",
+    "Native sharing receives a complete generated PDF File directly from a user gesture.",
+    "Cancelling or denying sharing keeps the downloaded file and shared photos.",
+    "The existing offline upload, lost reply, shared replacement and finish-version cleanup scenarios continue to pass."
+  ],
+  "screenshot": {
+    "path": "evidence/runtime/classroom-interactions/photo-export-preview-phone.png",
+    "sha256": "7b71e601db1a5312cc3f7d1d20f8cb0f6ebadaf34aef45b7e4522707b31c0420"
+  },
+  "allChecksPassed": true,
+  "physicalPhoneVerified": false
+}

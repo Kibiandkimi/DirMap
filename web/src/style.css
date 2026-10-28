@@ -176,8 +176,12 @@ html.print-page, html.print-page body { height: auto; overflow: auto; background
 .photo-actions button { min-height: 36px; padding: 6px; font-size: 11px; flex: 1 0 auto; }
 .photo-footer { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; }
 .photo-footer button { min-height: 44px; flex: 1; }
-.photo-preview-dialog { width: min(960px, 96vw); max-height: 95dvh; overflow: auto; }
-.photo-preview-dialog > img { display: block; width: 100%; max-height: 76dvh; object-fit: contain; }
+.photo-preview-dialog[open] { display: flex; flex-direction: column; width: min(960px, 96vw); max-height: 95dvh; overflow: hidden; }
+.photo-preview-dialog .dialog-heading, .photo-preview-dialog > p { flex-shrink: 0; }
+.photo-preview-dialog > p { font-size: 12px; line-height: 1.6; margin: 10px 0 0; }
+.photo-preview-viewport { min-height: 0; max-height: 72dvh; overflow: auto; overscroll-behavior: contain; }
+.photo-preview-viewport img { display: block; width: 100%; max-height: 72dvh; object-fit: contain; }
+.photo-export-preview .photo-preview-viewport img { max-height: none; }
 .photo-export-dialog p { font-size: 12px; line-height: 1.7; }
 .photo-export-dialog #make-photo-export { margin-top: 14px; }
 .photo-export-dialog #download-photos { display: inline-block; margin: 8px 0; }

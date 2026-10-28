@@ -25,6 +25,14 @@ test('a group shares checkpoint photos, recovers an offline upload, exports all 
   const id = await course(page);
   const openPhone = async () => {
     const context = await localOnly(await browser.newContext({ viewport: { width: 390, height: 844 } }));
+    // A WebView may expose the API but reject the capability check itself.
+    // Downloading an already generated file must still succeed in that case.
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: async () => {} });
+      Object.defineProperty(navigator, 'canShare', {
+        configurable: true, value: () => { throw new DOMException('Sharing is unavailable', 'NotAllowedError'); },
+      });
+    });
     const phone = await context.newPage();
     await phone.goto(`http://127.0.0.1:8768/?course=${id}`, { waitUntil: 'domcontentloaded' });
     await expect(phone.locator('#offline-status')).toContainText('本课已保存', { timeout: 20000 });
@@ -80,6 +88,10 @@ test('a group shares checkpoint photos, recovers an offline upload, exports all 
     await expect(a.phone.locator('.checkpoint-photo.pending')).toHaveCount(0);
     expect(await a.phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await a.phone.screenshot({ path: '/tmp/dirmap-group-photos-phone.png' });
+    await a.phone.locator(`[data-photo-id="${ids[0]}"] [data-photo-action="preview"]`).click();
+    await expect(a.phone.locator('.photo-preview-dialog')).toBeVisible();
+    await expect.poll(() => a.phone.locator('.photo-preview-dialog img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(800);
+    await a.phone.locator('[data-close-photo-preview]').click();
 
     await a.phone.locator('#export-photos').click();
     // A lost export never exposes the destructive finish action.
@@ -102,7 +114,58 @@ test('a group shares checkpoint photos, recovers an offline upload, exports all 
       else if (format === 'images') expect(bytes.subarray(0, 2).toString()).toBe('PK');
       else expect(bytes.subarray(0, 2).toString('hex')).toBe('ffd8');
       await expect(a.phone.locator('#photo-export-status')).toContainText('已生成 3 张照片');
+      await expect(a.phone.locator('#share-photos')).toBeHidden();
+      if (format === 'long-image') {
+        await a.phone.locator('#view-photo-export').click();
+        const preview = a.phone.locator('.photo-export-preview');
+        await expect(preview).toBeVisible();
+        await expect.poll(() => preview.locator('img').evaluate((img: HTMLImageElement) => img.naturalHeight)).toBe(1824);
+        const viewport = preview.locator('.photo-preview-viewport');
+        expect(await viewport.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+        expect(await a.phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await a.phone.screenshot({ path: '/tmp/dirmap-photo-export-preview-phone.png' });
+        await viewport.evaluate(el => { el.scrollTop = el.scrollHeight; });
+        // The close control stays outside the scrolling strip.
+        const close = preview.locator('[data-close-photo-preview]'), box = (await close.boundingBox())!;
+        expect(box.y).toBeGreaterThanOrEqual(0); expect(box.y + box.height).toBeLessThan(844);
+        await a.phone.setViewportSize({ width: 844, height: 390 });
+        const landscape = await close.boundingBox();
+        expect(landscape!.y).toBeGreaterThanOrEqual(0); expect(landscape!.y + landscape!.height).toBeLessThan(390);
+        expect(await a.phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await a.phone.setViewportSize({ width: 390, height: 844 });
+        await close.click();
+      } else await expect(a.phone.locator('#view-photo-export')).toBeHidden();
     }
+    // Supported sharing receives the generated file directly from a real tap.
+    await a.phone.evaluate(() => {
+      (window as any).sharedPhotos = [];
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+      Object.defineProperty(navigator, 'share', { configurable: true, value: async ({ files }: ShareData) => {
+        const active = navigator.userActivation.isActive, file = files![0];
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        (window as any).sharedPhotos.push({ name: file.name, type: file.type, bytes: file.size, active, prefix: String.fromCharCode(...bytes.slice(0, 5)) });
+        if ((window as any).cancelPhotoShare) throw new DOMException('Cancelled', 'AbortError');
+        if ((window as any).denyPhotoShare) throw new DOMException('Denied', 'NotAllowedError');
+      } });
+    });
+    await a.phone.locator('#photo-export-format').selectOption('pdf');
+    const sharingFile = a.phone.waitForEvent('download');
+    await a.phone.locator('#make-photo-export').click(); await sharingFile;
+    await a.phone.locator('#share-photos').click();
+    await expect(a.phone.locator('#photo-export-status')).toContainText('文件已交给系统分享');
+    const shared = await a.phone.evaluate(() => (window as any).sharedPhotos[0]);
+    expect(shared).toMatchObject({ type: 'application/pdf', active: true, prefix: '%PDF-' });
+    expect(shared.name).toMatch(/\.pdf$/); expect(shared.bytes).toBeGreaterThan(1000);
+    await a.phone.evaluate(() => { (window as any).cancelPhotoShare = true; });
+    await a.phone.locator('#share-photos').click();
+    await expect(a.phone.locator('#photo-export-status')).toContainText('已取消分享');
+    await expect(a.phone.locator('#share-photos')).toBeEnabled();
+    await expect(a.phone.locator('#photo-album-title')).toContainText('已上传 3 张');
+    await a.phone.evaluate(() => { (window as any).cancelPhotoShare = false; (window as any).denyPhotoShare = true; });
+    await a.phone.locator('#share-photos').click();
+    await expect(a.phone.locator('#photo-export-status')).toContainText('分享暂不可用');
+    await expect(a.phone.locator('#download-photos')).toBeVisible();
+    await expect(a.phone.locator('#finish-photos')).toBeEnabled();
     // A teammate's replacement during export must survive finishing it.
     await upload(b.phone, ids[0]);
     await expect(b.phone.locator('.checkpoint-photo.pending')).toHaveCount(0);
