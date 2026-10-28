@@ -948,6 +948,7 @@ def load_release(release_id):
         state = store.get_state(value['assetId']) if store.valid_project(value['assetId']) else None
         value['superseded'] = (not state or state['version'] != value['version']
                                or state['graphHash'] != value['plan']['graphHash']
+                               or state.get('terrainSchema') != service.TERRAIN_SCHEMA
                                or value.get('routingSchema') != ROUTING_SCHEMA
                                or service.registration_stale(state))
     return value

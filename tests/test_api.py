@@ -513,6 +513,19 @@ def navigation_request(registration, pixel, completed=None):
             'timestampMs': time.time()*1000, 'completedControlIds': completed or []}
 
 
+def test_outdated_interpretation_is_reported_before_student_navigation(client, monkeypatch):
+    release_id, reg = navigation_release(client)
+    path = f'/api/releases/{release_id}'
+    original = client.get(path).json()
+    assert original['superseded'] is False
+    monkeypatch.setattr(service, 'TERRAIN_SCHEMA', 'new-course-symbol-interpretation')
+    assert client.get('/api/maps/szu-1').json()['terrainStale'] is True
+    assert client.get(path + '/status').json()['superseded'] is True
+    outdated = client.get(path).json()
+    assert outdated['superseded'] is True and outdated['plan'] == original['plan']
+    assert client.post(path + '/navigate', json=navigation_request(reg, [28, 15])).status_code == 409
+
+
 def test_student_rejoin_preserves_assignment_order_and_never_saves_location(client, monkeypatch):
     release_id, reg = navigation_release(client)
     snapshot = {str(p): p.read_bytes() for p in store.DATA.rglob('*') if p.is_file()}
