@@ -110,7 +110,12 @@ test('standard clocks reject stale, future and malformed fixes without erasing a
   await expect(page.locator('#location-status')).toHaveText('定位精度 ±6 m');
   await page.clock.runFor(11000);
   await expect(page.locator('#location-status')).toContainText('位置暂未更新');
-  const color = await page.evaluate(() => (window as any).dirmap.campusMap.location.getFeatures()[1].getStyle().getImage().getFill().getColor());
+  const color = await page.evaluate(() => {
+    const map = (window as any).dirmap.campusMap;
+    const point = map.location.getFeatures().find((f: any) => f.getGeometry().getType() === 'Point');
+    const styles = point.getStyleFunction()(point, map.map.getView().getResolution());
+    return (Array.isArray(styles) ? styles[0] : styles).getImage().getFill().getColor();
+  });
   expect(color).toBe('#7b858e');
   await fix(page, 'now', 113.931, 'requests');
   await expectLongitude(page, 113.931);

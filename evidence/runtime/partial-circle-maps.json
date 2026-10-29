@@ -1,0 +1,196 @@
+{
+  "checkedAt": "2026-10-29T10:17:38.364922+00:00",
+  "scope": "Run the real pipeline on published orienteering maps of another park.\n\nThe repository has no orienteering map of 大沙河公园 or of any park besides\nthe campus. NYC Parks publishes course maps of Alley Pond Park (New York,\n© NYC Parks 2020) for free download and printing. They are forest-style ISOM\nmaps: black houses, overprinted course ink, sequence numbers 1, 2, 3. This\ndownloads two of them into a temporary directory (they never enter the\nrepository), renders them at 200 dpi, adds the park as a place from its\nOpenStreetMap features and runs upload → recognition → registration →\nplanning. Detected circles and read numbers are compared with the printed\ncourse; the map is drawn to magnetic north, so the fitted rotation can be\ncompared with the WMM-2020 declination there, which no fit uses.\n\nThis checks robustness on another cartographer's sheets. It is not an\naccuracy measurement on the ground and not a test of a 大沙河公园 map.",
+  "sources": [
+    {
+      "id": "beginner-1",
+      "url": "https://www.nycgovparks.org/pagefiles/163/Alley-Pond-2020-Beginners1-horizontal-11x8-5__6050e9d89dc7b.pdf",
+      "sha256": "af3e84f03fdfec22d580cac91e97c729a4143c0ad654b04100f0fa0a74a423fc",
+      "rendering": "pdftoppm 200 dpi JPEG q92"
+    },
+    {
+      "id": "intermediate-1",
+      "url": "https://www.nycgovparks.org/pagefiles/170/Alley-Pond-Park-Intermediate-1-Orienteering-Course__616869fa5d110.pdf",
+      "sha256": "141ca54e7400f7230717577a4b59441f901cef1bf8be19ce1cef319cfb79f50b",
+      "rendering": "pdftoppm 200 dpi JPEG q92"
+    }
+  ],
+  "license": "Maps © NYC Parks 2020, used as local test input only; not stored in the repository.",
+  "site": {
+    "name": "Alley Pond Park",
+    "bbox": [
+      -73.755,
+      40.737,
+      -73.731,
+      40.7515
+    ]
+  },
+  "magneticDeclinationDeg": -12.85,
+  "current": {
+    "maps": [
+      {
+        "id": "beginner-1",
+        "processingSec": 67.3,
+        "size": [
+          2200,
+          1700
+        ],
+        "detection": {
+          "printedControls": 8,
+          "found": 8,
+          "missed": [],
+          "extraCircles": 0,
+          "startFound": true
+        },
+        "numbers": {
+          "readCorrectly": 6,
+          "readWrongly": [
+            {
+              "printed": "1",
+              "read": "4"
+            }
+          ],
+          "unread": 1
+        },
+        "registration": {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "fitCount": 271,
+          "validationCount": 139,
+          "medianErrorM": 2.49,
+          "p95ErrorM": 6.22,
+          "maxErrorM": 17.81,
+          "sheetUpBearingDeg": -12.11,
+          "metresPerPixel": 0.766
+        },
+        "calibratedControls": 8,
+        "plan": {
+          "status": "NEEDS_REVIEW",
+          "routes": 0,
+          "unresolved": 3
+        }
+      },
+      {
+        "id": "intermediate-1",
+        "processingSec": 90.4,
+        "size": [
+          2200,
+          1700
+        ],
+        "detection": {
+          "printedControls": 12,
+          "found": 12,
+          "missed": [],
+          "extraCircles": 0,
+          "startFound": true
+        },
+        "numbers": {
+          "readCorrectly": 7,
+          "readWrongly": [],
+          "unread": 5
+        },
+        "registration": {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "fitCount": 150,
+          "validationCount": 101,
+          "medianErrorM": 3.17,
+          "p95ErrorM": 13.5,
+          "maxErrorM": 24.99,
+          "sheetUpBearingDeg": -12.13,
+          "metresPerPixel": 0.762
+        },
+        "calibratedControls": 9,
+        "plan": {
+          "status": "NEEDS_REVIEW",
+          "routes": 0,
+          "unresolved": 1
+        }
+      }
+    ],
+    "referenceFeatures": 3727
+  },
+  "baseline": {
+    "revision": "7688377ce891a0e603e148d145305b92341dff26",
+    "maps": [
+      {
+        "id": "beginner-1",
+        "processingSec": 66.0,
+        "size": [
+          2200,
+          1700
+        ],
+        "detection": {
+          "printedControls": 8,
+          "found": 8,
+          "missed": [],
+          "extraCircles": 0,
+          "startFound": true
+        },
+        "numbers": {
+          "readCorrectly": 6,
+          "readWrongly": [
+            {
+              "printed": "1",
+              "read": "4"
+            }
+          ],
+          "unread": 1
+        },
+        "registration": {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "fitCount": 271,
+          "validationCount": 139,
+          "medianErrorM": 2.49,
+          "p95ErrorM": 6.22,
+          "maxErrorM": 17.81,
+          "sheetUpBearingDeg": -12.11,
+          "metresPerPixel": 0.766
+        },
+        "calibratedControls": 8,
+        "plan": {
+          "status": "NEEDS_REVIEW",
+          "routes": 0,
+          "unresolved": 3
+        }
+      },
+      {
+        "id": "intermediate-1",
+        "processingSec": 82.5,
+        "size": [
+          2200,
+          1700
+        ],
+        "detection": {
+          "printedControls": 12,
+          "found": 11,
+          "missed": [
+            "6"
+          ],
+          "extraCircles": 0,
+          "startFound": true
+        },
+        "numbers": {
+          "readCorrectly": 6,
+          "readWrongly": [],
+          "unread": 5
+        },
+        "registration": {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "fitCount": 150,
+          "validationCount": 101,
+          "medianErrorM": 3.17,
+          "p95ErrorM": 13.5,
+          "maxErrorM": 24.99,
+          "sheetUpBearingDeg": -12.13,
+          "metresPerPixel": 0.762
+        },
+        "calibratedControls": 8,
+        "plan": {
+          "status": "NEEDS_REVIEW",
+          "routes": 0,
+          "unresolved": 1
+        }
+      }
+    ],
+    "referenceFeatures": 3727
+  }
+}

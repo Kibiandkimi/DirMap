@@ -94,3 +94,26 @@ test('new checkpoints remain a single preview, and changing start or finish does
   await page.keyboard.press('Escape'); expect(await endpoints()).toEqual(changed);
   await expect(page.locator('#map-action-hint')).toBeHidden();
 });
+
+test('a target number used twice is flagged in the target list', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.control-row').first()).toBeVisible();
+  const state = await (await page.request.get('/api/maps/szu-1')).json();
+  const [first, second] = state.controls.filter((c: any) => (c.role ?? 'control') === 'control');
+  const controls = state.controls.map((c: any) => ({ id: c.id, label: c.id === second.id ? first.label : c.label, pixel: c.pixel,
+    approachPixel: c.approachPixel ?? null, surfaceId: c.surfaceId ?? null, role: c.role ?? 'control', radiusPx: c.radiusPx,
+    required: c.required, state: c.state, serviceBaseSec: c.serviceBaseSec, servicePerPersonSec: c.servicePerPersonSec }));
+  const saved = await page.request.patch('/api/maps/szu-1', { data: { version: state.version, controls, edits: state.edits } });
+  expect(saved.ok()).toBeTruthy();
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator(`.control-row[data-id="${first.id}"]`)).toContainText('编号重复');
+    await expect(page.locator(`.control-row[data-id="${second.id}"]`)).toContainText('编号重复');
+    await expect(page.locator('.control-row', { hasText: '编号重复' })).toHaveCount(2);
+  } finally {
+    // Later specs share this workbench copy and review the original numbers.
+    const restored = controls.map((c: any) => c.id === second.id ? { ...c, label: second.label } : c);
+    const current = await (await page.request.get('/api/maps/szu-1')).json();
+    expect((await page.request.patch('/api/maps/szu-1', { data: { version: current.version, controls: restored, edits: current.edits } })).ok()).toBeTruthy();
+  }
+});

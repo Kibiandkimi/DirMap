@@ -702,3 +702,20 @@ def test_course_qr_code_opens_the_student_link(client):
     for origin in ('javascript:alert(1)', 'https://host/path', 'https://host?x=1'):
         assert client.get(f'/api/releases/{release_id}/qr.png', params={'origin': origin}).status_code == 422
     assert client.get('/api/releases/'+'0'*32+'/qr.png', params={'origin': 'https://host'}).status_code == 404
+
+
+def test_review_rejects_required_targets_that_share_a_number(client):
+    # A misread lone digit can repeat another target's number; students
+    # could not tell the two apart, so the teacher must correct it first.
+    state = store.get_state('szu-1')
+    state['controls'][0]['state'] = 'accepted'
+    state['controls'].append({**state['controls'][0], 'id': 'c2', 'pixel': [32, 26]})
+    service.project_controls(state)
+    store.save_state('szu-1', state)
+    review = {'version': 1, 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True}
+    response = client.post('/api/maps/szu-1/review', json=review)
+    assert response.status_code == 422 and '编号重复：31' in response.text
+    state = store.get_state('szu-1')
+    state['controls'][1]['label'] = '32'
+    store.save_state('szu-1', state)
+    assert client.post('/api/maps/szu-1/review', json=review).status_code == 200

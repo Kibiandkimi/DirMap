@@ -2,6 +2,7 @@ import copy
 
 import cv2
 import numpy as np
+import pytest
 
 from dirmap.recognition import reconcile_controls
 from dirmap.vision import colour_masks, detect_controls, refine_circle
@@ -79,6 +80,41 @@ def test_overprinted_circles_over_colour_and_under_black_paths_are_found():
     assert len(controls) == 3
     for centre, control in zip(sorted(centres, key=lambda p: (p[1], p[0])), controls):
         np.testing.assert_allclose(control['pixel'], centre, atol=2.5)
+
+
+@pytest.mark.parametrize('rotation,radius,gap', [(0, 18, 48), (45, 24, 54), (135, 32, 48),
+                                                (225, 24, 54), (300, 18, 48)])
+def test_circle_cut_to_show_ground_detail_uses_the_other_circles_print_scale(rotation, radius, gap):
+    image = np.full((500, 700, 3), 255, np.uint8)
+    ink = (170, 0, 230)
+    centers = [(100, 100), (300, 100), (500, 100)]
+    for center in centers:
+        cv2.circle(image, center, radius, ink, 2, cv2.LINE_AA)
+    partial = (300, 300)
+    cv2.ellipse(image, partial, (radius, radius), rotation, gap/2, 360-gap/2, ink, 2, cv2.LINE_AA)
+    mask = colour_masks(image)['course_ink']
+    assert len(detect_controls(mask)) == 3  # Complete-ring detection alone misses it.
+    found = detect_controls(mask, image)
+    assert len(found) == 4
+    for point in [*centers, partial]:
+        assert min(np.linalg.norm(np.array(c['pixel'])-point) for c in found) < 2.5
+
+
+def test_partial_circle_needs_independent_complete_circles_and_rejects_other_arcs():
+    image = np.full((550, 850, 3), 255, np.uint8)
+    ink = (170, 0, 230)
+    # Several Hough votes from the same incomplete ring are not a scale reference.
+    cv2.ellipse(image, (400, 350), (24, 24), 30, 28, 332, ink, 2, cv2.LINE_AA)
+    assert not detect_controls(colour_masks(image)['course_ink'], image)
+    for center in [(150, 100), (400, 100), (650, 100)]:
+        cv2.circle(image, center, 24, ink, 2, cv2.LINE_AA)
+    # C-shaped ink, a half circle and a different-size incomplete circle.
+    cv2.ellipse(image, (150, 350), (24, 24), 0, 55, 305, ink, 2, cv2.LINE_AA)
+    cv2.ellipse(image, (650, 350), (24, 24), 0, 0, 180, ink, 2, cv2.LINE_AA)
+    cv2.ellipse(image, (650, 450), (38, 38), 0, 28, 332, ink, 2, cv2.LINE_AA)
+    found = detect_controls(colour_masks(image)['course_ink'], image)
+    assert len(found) == 4
+    assert min(np.linalg.norm(np.array(c['pixel'])-[400, 350]) for c in found) < 2.5
 
 
 def test_pale_patterns_over_green_and_black_lines_are_not_overprinted_ink():

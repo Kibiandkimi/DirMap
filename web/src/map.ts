@@ -9,9 +9,10 @@ import ImageStatic from 'ol/source/ImageStatic.js';
 import Feature from 'ol/Feature.js';
 import Point from 'ol/geom/Point.js';
 import LineString from 'ol/geom/LineString.js';
+import Polygon from 'ol/geom/Polygon.js';
 import CircleGeometry from 'ol/geom/Circle.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
-import { Circle, Fill, Stroke, Style, Text, RegularShape } from 'ol/style.js';
+import { Circle, Fill, Stroke, Style, Text } from 'ol/style.js';
 import { fromLonLat, toLonLat, transformExtent } from 'ol/proj.js';
 import { ScaleLine, defaults } from 'ol/control.js';
 import type { Anchor, Approach, Control, MapState, Pixel, Route, Surface } from './types';
@@ -20,6 +21,26 @@ import { routeArrows } from './route-arrows';
 import { mapAssetUrl } from './workbench';
 
 export const teamColors = ['#ec693f', '#416edb', '#9370ca', '#159386', '#bb8426', '#d95492', '#56974e', '#a5513f', '#54869f', '#887760'];
+const LOCATION = '#347fe5';
+// Symbols drawn in screen pixels pointing north, as navigation apps draw
+// them: a chevron inside the route line, and an arrow for the walker.
+const CHEVRON = [[-3.4, -1.9], [0, 1.9], [3.4, -1.9]];
+const WALKER = [[0, 12], [9, -9], [0, -4], [-9, -9], [0, 12]];
+// The phone's heading is a beam fanning out from the location dot, fading.
+const BEAM = [[10, 24, '4d'], [24, 38, '33'], [38, 52, '1a']] as const;
+const BEAM_HALF_ANGLE = Math.PI / 6;
+
+/** A pixel `shape` at `point`, turned clockwise by `rotation` and sized for
+ * the view's `resolution`, so it turns and scales with the map. */
+function placed(point: number[], shape: number[][], rotation: number, resolution: number) {
+  const sin = Math.sin(rotation), cos = Math.cos(rotation);
+  return shape.map(([x, y]) => [point[0] + (x * cos + y * sin) * resolution, point[1] + (y * cos - x * sin) * resolution]);
+}
+function beamBand(inner: number, outer: number) {
+  const angles = Array.from({ length: 9 }, (_, i) => -BEAM_HALF_ANGLE + i * BEAM_HALF_ANGLE / 4);
+  const ring = [...angles.map(a => [Math.sin(a) * outer, Math.cos(a) * outer]), ...angles.reverse().map(a => [Math.sin(a) * inner, Math.cos(a) * inner])];
+  return [...ring, ring[0]];
+}
 /** Someone shown on the map: a group member or, for a teacher, a student. */
 export interface MapPerson { id: string; lnglat: Pixel; label: string; color: string; accuracyM?: number | null; help?: boolean; self?: boolean; stale?: boolean }
 export class CampusMap {
@@ -39,6 +60,7 @@ export class CampusMap {
   private directionVisible = true;
   private heading: HeadingSample | null = null;
   private position: { point: number[]; fresh: boolean } | null = null;
+  private walking = false;
   private overlays: ImageLayer<ImageStatic>[] = [];
   private terrain: ImageLayer<ImageStatic> | null = null;
   map: Map;
@@ -63,8 +85,10 @@ export class CampusMap {
       new VectorLayer({ source: this.fieldChecks, zIndex: 47 }),
       new VectorLayer({ source: this.people, zIndex: 48 }),
       new VectorLayer({ source: this.anchorPoints, zIndex: 49 }),
-      new VectorLayer({ source: this.direction, zIndex: 50 }),
-      new VectorLayer({ source: this.location, zIndex: 51 }),
+      // A fresh heading/fix must be visible even during a north-up animation
+      // or a pinch gesture; these layers contain only the user's marker.
+      new VectorLayer({ source: this.location, zIndex: 50, updateWhileAnimating: true, updateWhileInteracting: true }),
+      new VectorLayer({ source: this.direction, zIndex: 51, updateWhileAnimating: true, updateWhileInteracting: true }),
       new VectorLayer({ source: this.picks, zIndex: 60 })],
       view: new View({ center: fromLonLat([113.9304, 22.535]), zoom: 16.2, minZoom: 13, maxZoom: 21, enableRotation: true }),
       controls: defaults({ rotate: false }).extend([new ScaleLine({ units: 'metric' })]) });
@@ -121,17 +145,16 @@ export class CampusMap {
         if (points.length < 2) continue;
         const feature = new Feature(new LineString(points.map(p => fromLonLat(p))));
         const color = teamColors[i % teamColors.length];
-        const lines = [new Style({ stroke: new Stroke({ color: '#ffffffe6', width: 7 }) }), new Style({ stroke: new Stroke({ color, width: 4, lineDash: section.surfaceId === 'ground' ? undefined : section.level < 0 ? [3, 6] : [12, 5] }) })];
+        const lines = [new Style({ stroke: new Stroke({ color: '#ffffffe6', width: 10 }) }), new Style({ stroke: new Stroke({ color, width: 6, lineDash: section.surfaceId === 'ground' ? undefined : section.level < 0 ? [4, 7] : [14, 6] }) })];
         let lastResolution = 0, arrows: Style[] = [];
         feature.set('routeSection', true);
         feature.setStyle((_feature, resolution) => {
           if (!this.arrowsVisible) return lines;
           if (resolution !== lastResolution) {
             lastResolution = resolution;
-            arrows = routeArrows(feature.getGeometry()!.getCoordinates(), resolution * 85).map(arrow => new Style({
-              geometry: new Point(arrow.point), zIndex: 1,
-              image: new RegularShape({ points: 3, radius: 7, rotation: arrow.rotation, rotateWithView: true,
-                fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 2 }) }),
+            arrows = routeArrows(feature.getGeometry()!.getCoordinates(), resolution * 72).map(arrow => new Style({
+              geometry: new LineString(placed(arrow.point, CHEVRON, arrow.rotation, resolution)), zIndex: 1,
+              stroke: new Stroke({ color: '#fff', width: 2.2, lineCap: 'round', lineJoin: 'round' }),
             }));
           }
           return [...lines, ...arrows];
@@ -154,6 +177,8 @@ export class CampusMap {
     if (!unchanged) this.drawDirection();
   }
   private drawDirection() {
+    const walking = this.directionVisible && this.heading?.source === 'course' && !!this.position?.fresh;
+    if (walking !== this.walking) { this.walking = walking; this.location.changed(); }
     if (!this.directionVisible || !this.heading || !this.position?.fresh) {
       // Sensors report missing headings at 20 Hz. Clearing even an empty
       // source invalidates OpenLayers and redraws the whole map every time.
@@ -162,16 +187,13 @@ export class CampusMap {
     }
     this.direction.clear();
     const point = this.position.point, sample = this.heading, angle = sample.degrees * Math.PI / 180;
-    const color = sample.source === 'compass' ? '#246ed1' : '#187c6c';
     const marker = new Feature(new Point(point));
     marker.set('source', sample.source);
-    marker.setStyle((_feature, resolution) => {
-      const tip = [point[0] + Math.sin(angle) * resolution * 30, point[1] + Math.cos(angle) * resolution * 30];
-      return [new Style({ geometry: new LineString([point, tip]), stroke: new Stroke({ color: '#fff', width: 6 }) }),
-        new Style({ geometry: new LineString([point, tip]), stroke: new Stroke({ color, width: 3, lineDash: sample.source === 'course' ? [4, 3] : undefined }) }),
-        new Style({ geometry: new Point(tip), image: new RegularShape({ points: 3, radius: 7, rotation: angle, rotateWithView: true, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 2 }) }),
-          text: new Text({ text: sample.source === 'compass' ? '手机指向' : '行进方向', offsetY: 16, font: '11px sans-serif', fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 3 }) }) })];
-    });
+    // Facing (compass) shows as a beam behind the dot; walking (GPS course)
+    // turns the dot into an arrow. The layer panel explains both.
+    marker.setStyle((_feature, resolution) => sample.source === 'course'
+      ? [new Style({ geometry: new Polygon([placed(point, WALKER, angle, resolution)]), fill: new Fill({ color: LOCATION }), stroke: new Stroke({ color: '#fff', width: 2.5, lineJoin: 'round' }) })]
+      : BEAM.map(([inner, outer, alpha]) => new Style({ geometry: new Polygon([placed(point, beamBand(inner, outer), angle, resolution)]), fill: new Fill({ color: LOCATION + alpha }) })));
     this.direction.addFeature(marker);
   }
   setPickPreview(lnglat: Pixel | null, label = '待确认', valid = true) {
@@ -231,12 +253,13 @@ export class CampusMap {
   }
   setLocation(position: GeolocationPosition, follow: boolean, fresh = true) {
     this.location.clear();
-    const color = fresh ? '#347fe5' : '#7b858e';
+    const color = fresh ? LOCATION : '#7b858e';
     const coords: Pixel = [position.coords.longitude, position.coords.latitude], point = fromLonLat(coords);
     const accuracy = new Feature(new CircleGeometry(point, position.coords.accuracy / Math.cos(coords[1] * Math.PI / 180)));
     accuracy.setStyle(new Style({ fill: new Fill({ color: color + '20' }), stroke: new Stroke({ color: color + '50', width: 1 }) }));
     const dot = new Feature(new Point(point));
-    dot.setStyle(new Style({ image: new Circle({ radius: 7, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 3 }) }) }));
+    const dotStyle = new Style({ image: new Circle({ radius: 7, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 3 }) }) });
+    dot.setStyle(() => this.walking ? undefined : dotStyle);
     this.location.addFeatures([accuracy, dot]);
     this.position = { point, fresh }; this.drawDirection();
     if (follow) this.map.getView().setCenter(point);

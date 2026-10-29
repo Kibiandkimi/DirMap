@@ -1,0 +1,497 @@
+{
+  "checkedAt": "2026-10-29T10:42:01.030783+00:00",
+  "scope": "Navigation direction rendering, duplicate checkpoint numbers, and partial circle recognition. Local simulated browser sensors and development map inventories do not verify field position accuracy or physical-device behavior.",
+  "baseRevision": "7688377ce891a0e603e148d145305b92341dff26",
+  "sourceSha256": {
+    "dirmap/app.py": "85445af10f55f369ca12e5561ddb2983ef20ebf5fd0e056e72d830c6c51cb351",
+    "dirmap/vision.py": "00475dc23ab8750dd423e0462d460bfb2b0ec714a8ca3c369f701d93a9ac7637",
+    "dirmap/schemas.json": "d580b58d1bf20234887ee2c8c9a63d49c78bb826c0ef7d9134f29ce5e59a1604",
+    "web/src/main.ts": "25d176e6c55b3636782ed898c88362f24dfa01aa0cddfbfd08c60f127dab4e99",
+    "web/src/map.ts": "d8d15c1f20c16d18a127daf3f4546041a9aeddb4bf8d0e9fec206f1b4fa166dc",
+    "tests/browser/directions.spec.ts": "fef6e74b35d32fcb1512e37f821a3b66812e06c164e53db6e140948f741f40ab",
+    "tests/browser/geolocation.spec.ts": "304ba1e9c064058e6f9489f8550a38ccb7639e9851c7becd043bc2ca4dc1efe7",
+    "tests/browser/point-picking.spec.ts": "9fa43e9a345a00daa5871935ab763b051c9a6cc19a8eaf97c7bd857128062344",
+    "tests/test_api.py": "ad83bac00d671f96535462478b7c44df2f7da9845a06df414d53d17421f72c31",
+    "tests/test_recognition.py": "af18ee97fb4dae55dd35774d4ec7703f1bc0b13e1208e22ce950c9e23e3e0aeb",
+    "tools/verify_external_maps.py": "bd1aa334dc443ec5d27dbb0c1b2397bca829947354aac5127b33958eb4852045"
+  },
+  "schemas": {
+    "routing": "native-quadtree-v8-explicit-surfaces",
+    "terrain": "print-scale-boundaries-v8-partial-circles"
+  },
+  "validation": {
+    "python": {
+      "command": "python3 -B -m pytest -q tests",
+      "passed": 354,
+      "failed": 0,
+      "log": "/tmp/dirmap-20261029-python.log"
+    },
+    "frontend": {
+      "command": "npm test && npm run build",
+      "passed": 26,
+      "buildPassed": true
+    },
+    "browser": {
+      "uniqueScenarios": 52,
+      "allPassedAfterTestFix": true,
+      "initialRun": {
+        "startTime": "2026-10-29T10:22:38.153Z",
+        "duration": 694182.039,
+        "expected": 51,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "focusedRerun": {
+        "startTime": "2026-10-29T10:38:46.332Z",
+        "duration": 10984.378,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "testFix": "The location dot now uses a style function so it can turn into a walking arrow. The stale-position color assertion was changed to evaluate getStyleFunction() rather than treating getStyle() as a Style. The expected stale color and recovery assertions are unchanged.",
+      "scenarios": [
+        {
+          "file": "accounts.spec.ts",
+          "title": "switching accounts in one browser isolates course drafts, pending jobs and map image caches",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "accounts.spec.ts",
+          "title": "an account works in its own workbench with places such as 大沙河公园",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "accounts.spec.ts",
+          "title": "once the original workbench is claimed, visitors are asked to sign in",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "app.spec.ts",
+          "title": "three real maps, source editor, local overlays and independent review state",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "app.spec.ts",
+          "title": "rendered compass cardinal directions put the heading at the top",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "app.spec.ts",
+          "title": "absolute orientation, relative rejection, user drag and north-up reset",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "app.spec.ts",
+          "title": "phone layout has no horizontal overflow and source editing is reachable",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "app.spec.ts",
+          "title": "actual image graph to course form to rendered multi-team paths",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "app.spec.ts",
+          "title": "built application serves working same-origin planning requests",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "app.spec.ts",
+          "title": "publish, phone offline reload, check-ins, rejoin remaining targets and invalidate stale releases",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "auto-teams.spec.ts",
+          "title": "automatic team benefits choose a count, survive reload and publish the chosen teams offline",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "auto-teams.spec.ts",
+          "title": "teacher can adopt another compared count and publish its exact reviewed routes",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "cancel.spec.ts",
+          "title": "a teacher can cancel a long recognition job without changing the map",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "custom.spec.ts",
+          "title": "phone custom routes retain each team order, report gathering waits and survive reload/publication",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "directions.spec.ts",
+          "title": "route and own-heading arrows respect direction, map rotation, freshness and saved switches",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "directions.spec.ts",
+          "title": "phone direction markers keep the geographic bearing when the map turns and zooms",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "field-checks.spec.ts",
+          "title": "a teacher records GPS check points on site and sees the independent error without changing the map",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "OpenHarmony WeChat keeps moving for a minute with non-Unix and stuck provider timestamps",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "watch stalls after its first fix; repeated one-shot requests continue to move the map",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "a stationary zero-clock stream stays live, while an exact positive-clock replay needs a new request",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "standard clocks reject stale, future and malformed fixes without erasing a recent good position",
+          "outcome": "passed",
+          "verifiedBy": "focused-rerun-after-test-fix"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "a pending request neither multiplies nor overrides a watch that has recovered",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "a missing native timeout is recovered and retired request callbacks cannot overwrite new fixes",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "high-accuracy failure switches provider and can later regain an accurate position",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "permission denial stops automatic requests, preserves compass and allows explicit retry",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "repeated provider errors back off, and a good watch fix resets the recovery delay",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "background and page-cache restoration retire watch and request callbacks without stopping later recovery",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "geolocation.spec.ts",
+          "title": "the phone diagnostic view identifies this fix and contains no coordinates",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "groups.spec.ts",
+          "title": "classmates team up with a temporary code to share positions, messages, a meeting point and a call for help",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "groups.spec.ts",
+          "title": "a group can be joined without a course from an invitation link",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "jobs.spec.ts",
+          "title": "reload recovers the original real-map plan after losing progress connection",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "jobs.spec.ts",
+          "title": "reload recovers the original real-map plan after losing submission response",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "layers.spec.ts",
+          "title": "teacher draws an explicit upper surface and portal, then publishes layered navigation offline",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "map-switch.spec.ts",
+          "title": "a slower earlier map response cannot replace the map chosen afterwards",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "map-switch.spec.ts",
+          "title": "a place chosen while the first map loads keeps the view on that place",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "mixed.spec.ts",
+          "title": "map 3 mixed rules plan all actual controls and retain a configurable compulsory order",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "mixed.spec.ts",
+          "title": "mixed rules survive publication and offline reload while obsolete routing data is refused offline",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "mobile.spec.ts",
+          "title": "map stays primary and editing is reachable at 390 x 844",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "mobile.spec.ts",
+          "title": "map stays primary and editing is reachable at 360 x 640",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "mobile.spec.ts",
+          "title": "map stays primary and editing is reachable at 844 x 390",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "mobile.spec.ts",
+          "title": "map stays primary and editing is reachable at 915 x 412",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "mobile.spec.ts",
+          "title": "phone location normalizes WebView clocks, keeps compass working and ignores retired callbacks",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "photos.spec.ts",
+          "title": "a group shares checkpoint photos, recovers an offline upload, exports all three formats and clears only downloaded versions",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "photos.spec.ts",
+          "title": "queued photos recover a lost upload reply without overwriting the shared photo",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "point-picking.spec.ts",
+          "title": "original and standard map picks can be zoomed, adjusted and cancelled before confirmation",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "point-picking.spec.ts",
+          "title": "new checkpoints remain a single preview, and changing start or finish does not commit on tap",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "point-picking.spec.ts",
+          "title": "a target number used twice is flagged in the target list",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "progress.spec.ts",
+          "title": "phones share check-ins so a class meeting shows who has arrived, and offline check-ins catch up",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "recognition-upgrade.spec.ts",
+          "title": "obsolete recognition can be refreshed without losing calibration or teacher edits, then planned",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "recognition.spec.ts",
+          "title": "original photo collage imports, finds every control and opens in its working pixel frame",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "refinement.spec.ts",
+          "title": "continue the chosen real-map team count, recover during computation, and publish exact refined routes offline",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        },
+        {
+          "file": "symbols.spec.ts",
+          "title": "an imported course with separate start and finish plans and publishes between its recognized endpoints",
+          "outcome": "passed",
+          "verifiedBy": "full-run"
+        }
+      ]
+    },
+    "recognition": {
+      "cases": 7,
+      "distinctInputMaps": 4,
+      "passed": true,
+      "originalFileUnchanged": true,
+      "report": "new-map-recognition.json"
+    },
+    "externalParkMaps": {
+      "baselineFound": 19,
+      "found": 20,
+      "printedControls": 20,
+      "extraCircles": 0,
+      "registrationUnchanged": true,
+      "report": "partial-circle-maps.json"
+    },
+    "animationRendering": {
+      "method": "Browser canvas pixel comparison using the same current marker shapes, with OpenLayers updateWhileAnimating disabled/enabled on the position and direction layers. During a 10 second north-up animation, change from an east compass beam to a north walking arrow, render and sample the new arrow position. This controls only the batching flags, not a complete historical build.",
+      "observations": [
+        {
+          "updateWhileAnimating": false,
+          "animating": true,
+          "opaqueBluePixelsAtNewArrow": 0,
+          "pixels": [
+            254,
+            255,
+            255,
+            245,
+            254,
+            255,
+            255,
+            245,
+            252,
+            253,
+            254,
+            230,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            168,
+            200,
+            244,
+            255,
+            168,
+            200,
+            244,
+            255,
+            191,
+            214,
+            247,
+            255
+          ]
+        },
+        {
+          "updateWhileAnimating": true,
+          "animating": true,
+          "opaqueBluePixelsAtNewArrow": 5,
+          "pixels": [
+            130,
+            176,
+            239,
+            255,
+            192,
+            215,
+            247,
+            255,
+            255,
+            255,
+            255,
+            255,
+            57,
+            130,
+            229,
+            255,
+            104,
+            160,
+            235,
+            255,
+            255,
+            255,
+            255,
+            255,
+            52,
+            127,
+            229,
+            255,
+            52,
+            127,
+            229,
+            255,
+            222,
+            234,
+            251,
+            255
+          ]
+        }
+      ]
+    },
+    "publicSamples": {
+      "output": "/home/kibi/Work/DirMap/dirmap/public-samples.json",
+      "maps": 3,
+      "files": 18,
+      "bytes": 13746141,
+      "expandedBytes": 11036284,
+      "sha256": "5b9b9fb271124eb9adf89f4ceff64021071f05678545d4142e05b6e80a4f9115"
+    }
+  },
+  "screenshots": {
+    "compass": "/tmp/dirmap-phone-compass.png",
+    "walking": "/tmp/dirmap-phone-course.png",
+    "scope": "390 x 844 viewport with the original campus overlay. The fixed right-angle route is a rendering test input, not a route-planning or passage-legality check."
+  },
+  "teachingData": "Recognition refresh and browser work used an isolated /tmp copy. Public starter maps were rebuilt from the three unedited source images in another empty temporary workbench. No accounts or group photos were copied into the validation fixture.",
+  "remaining": [
+    "Independent field registration and semantic ground truth",
+    "Automatic bridge/tunnel/level connections and complete map-symbol semantics",
+    "Physical iOS/Android sensor and field-navigation acceptance",
+    "A real 大沙河公园 orienteering map for end-to-end acceptance"
+  ],
+  "completeGoal": false
+}

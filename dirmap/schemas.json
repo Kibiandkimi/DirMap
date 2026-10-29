@@ -1,4 +1,4 @@
 {
   "routing": "native-quadtree-v8-explicit-surfaces",
-  "terrain": "print-scale-boundaries-v7-course-symbols"
+  "terrain": "print-scale-boundaries-v8-partial-circles"
 }

@@ -264,11 +264,15 @@ def detect_controls(purple, image=None):
         small = cv2.resize(image, mask.shape[::-1], interpolation=interpolation)
         mask |= overprinted_course_ink(small)
         occluded = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)[..., 2] < 110
-        candidates += ring_candidates(mask, scale, occluded, known=candidates)
+        # Cartographers cut circles to leave important ground detail visible.
+        # Only look for these incomplete rings at a size established by at
+        # least three independent, complete circles on this sheet.
+        radius = repeated_ring_radius(distinct_rings(candidates))
+        candidates += ring_candidates(mask, scale, occluded, known=candidates, gap_radius=radius)
     return accept_rings(candidates, purple)
 
 
-def ring_candidates(mask, scale, occluded=None, known=()):
+def ring_candidates(mask, scale, occluded=None, known=(), gap_radius=None):
     smoothed = cv2.GaussianBlur(mask, (3, 3), 0.8)
     distance = cv2.distanceTransform(255-mask, cv2.DIST_L2, 3)
     # A collage's white margin and photo panels do not set the printed
@@ -343,7 +347,17 @@ def ring_candidates(mask, scale, occluded=None, known=()):
             yy = np.rint(y+(radius+delta)*np.sin(theta)).astype(int)
             ring_samples.append(mask[yy, xx] > 0)
         ring_density = float(np.mean(ring_samples))
-        if coverage < .94 or min(quadrants) < .80 or density > .32 or ring_density-density < .25:
+        complete = coverage >= .94 and min(quadrants) >= .80
+        partial = False
+        if not complete and gap_radius is not None and .88*gap_radius <= radius/scale <= 1.12*gap_radius:
+            # Need ink on at least 3/4 of the circumference, every quadrant,
+            # and no single gap over 60 degrees. A C, semicircle, hatching or
+            # a filled patch cannot supply the same distributed evidence.
+            missing = ~(covered | hidden)
+            runs = np.diff(np.flatnonzero(np.r_[True, ~np.tile(missing, 2), True])) - 1
+            partial = (covered.mean() >= .75 and coverage >= .82 and min(quadrants) >= .3
+                       and runs.max(initial=0) <= len(theta)/6 and ring_density-density >= .35)
+        if not (complete or partial) or density > .32 or ring_density-density < .25:
             continue
         candidates.append({'pixel': [float(x/scale), float(y/scale)],
                            'radiusPx': float(radius/scale), 'confidence': round(coverage, 3),
@@ -352,7 +366,7 @@ def ring_candidates(mask, scale, occluded=None, known=()):
     return candidates
 
 
-def accept_rings(candidates, purple):
+def distinct_rings(candidates):
     # Nested rings at the finish are ONE checkpoint. Keep the stronger fit.
     accepted = []
     for item in sorted(candidates, key=lambda c: -c['confidence']):
@@ -360,17 +374,28 @@ def accept_rings(candidates, purple):
                for other in accepted):
             continue
         accepted.append(item)
-    if len(accepted) >= 3:
+    return accepted
+
+
+def repeated_ring_radius(candidates):
+    if len(candidates) >= 3:
         # A sheet's printed control circles share a scale; the holes in
         # nearby numerals are usually much smaller. Infer that scale from
         # repeated rings instead of tying it to image or paper dimensions.
-        radii = np.asarray([item['radiusPx'] for item in accepted])
+        radii = np.asarray([item['radiusPx'] for item in candidates])
         support = np.abs(np.log(radii[:, None]/radii[None, :])) <= np.log(1.18)
         counts = support.sum(axis=1)
         best = max(range(len(radii)), key=lambda i: (counts[i], radii[i]))
         if counts[best] >= 3:
-            typical = float(np.median(radii[support[best]]))
-            accepted = [item for item in accepted if .68*typical <= item['radiusPx'] <= 1.45*typical]
+            return float(np.median(radii[support[best]]))
+    return None
+
+
+def accept_rings(candidates, purple):
+    accepted = distinct_rings(candidates)
+    typical = repeated_ring_radius(accepted)
+    if typical is not None:
+        accepted = [item for item in accepted if .68*typical <= item['radiusPx'] <= 1.45*typical]
     for item in accepted:
         item['pixel'], item['radiusPx'] = refine_circle(purple, item['pixel'], item['radiusPx'])
     accepted.sort(key=lambda c: (c['pixel'][1], c['pixel'][0]))

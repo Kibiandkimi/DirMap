@@ -1,6 +1,7 @@
 """Run with: python -m uvicorn dirmap.app:app --port 8765."""
 
 import asyncio
+from collections import Counter
 from contextlib import asynccontextmanager, suppress
 import hashlib
 import math
@@ -854,6 +855,10 @@ def review(asset_id: str, request: ReviewRequest):
             raise ValueError('请先完成配准、点位和可通行区域核验')
         if any(c['required'] and (not c.get('calibrated') or c['state'] != 'accepted') for c in state['controls']):
             raise ValueError('仍有必到点未确认或超出配准范围')
+        # Students find targets by number; two alike usually mean a misread.
+        labels = Counter(c['label'] for c in state['controls'] if c['required'] and c.get('role', 'control') == 'control')
+        if repeated := sorted(label for label, count in labels.items() if count > 1):
+            raise ValueError(f'必到点编号重复：{"、".join(repeated)}，请先在原图中改正编号')
         state.update(reviewed=True, review={'at': time.time(), **request.model_dump()})
         store.save_state(asset_id, state)
         return state

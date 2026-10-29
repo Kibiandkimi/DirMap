@@ -96,7 +96,9 @@ def run(code, cache, reference=None):
                 created = client.post('/api/sites', json=SITE).json()
                 site = created['site']
                 wait(client, created['job'])
-            report['referencePath'] = str(store.workspace_root()/'sites'/site['id']/'reference.json')
+            # When reusing a reference, the next (baseline) process needs
+            # its durable input path, not this disposable workbench copy.
+            report['referencePath'] = str(reference or store.workspace_root()/'sites'/site['id']/'reference.json')
             report['referenceFeatures'] = len(sites.reference(site['id']))
             for item in MAPS:
                 image = cache/(item['id']+'.jpg')
@@ -178,7 +180,7 @@ def main():
     centre = ((SITE['bbox'][1]+SITE['bbox'][3])/2, (SITE['bbox'][0]+SITE['bbox'][2])/2)
     report['magneticDeclinationDeg'] = round(GeoMag(coefficients_file='wmm/WMM_2020.COF').calculate(
         glat=centre[0], glon=centre[1], alt=0, time=DECLINATION_YEAR).d, 2)
-    report['current'] = run(ROOT, args.cache)
+    report['current'] = run(ROOT, args.cache, args.reference)
     if args.baseline:
         with tempfile.TemporaryDirectory(prefix='dirmap-baseline-') as directory:
             archive = subprocess.run(['git', '-C', str(ROOT), 'archive', args.baseline, 'dirmap'], check=True, capture_output=True).stdout
