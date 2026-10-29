@@ -37,12 +37,15 @@ async def lifespan(app):
     app.state.jobs = queue
     queue.start()
     async def retain_groups():
+        # The first pass waits too: tests that fix the clock start at once,
+        # and a pass that had already read the real time would expire their
+        # new groups.
         while True:
+            await asyncio.sleep(60)
             try:
                 await anyio.to_thread.run_sync(groups.prune)
             except Exception:
                 logging.getLogger(__name__).exception('Group retention will retry in one minute')
-            await asyncio.sleep(60)
     retention = asyncio.create_task(retain_groups())
     try:
         yield
