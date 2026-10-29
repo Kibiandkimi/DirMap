@@ -47,16 +47,20 @@ class Matcher:
             area_error = np.abs(np.log(np.array([f['area'] for f in sources])[:, None]*scale2 / area[indexes]))
             aspect_error = np.abs(np.log(np.array([f['aspect'] for f in sources])[:, None] / aspect[indexes]))
             combined = distance + 15*area_error + 10*aspect_error
+            plausible = (distance <= max_distance) & (area_error <= 1.1) & (aspect_error <= .8)
             best = np.argmin(combined, axis=1)
             used = set()
             order = np.argsort(combined[np.arange(len(sources)), best])
             for i in order:
                 j = int(best[i])
                 target_index = int(indexes[i, j])
-                if target_index in used or distance[i, j] > max_distance or area_error[i, j] > 1.1 or aspect_error[i, j] > .8:
+                if target_index in used or not plausible[i, j]:
                     continue
                 used.add(target_index)
-                weight = 4. if kind == 'water' else 1.
+                # Over an estate of similar houses almost any hypothesis
+                # finds a nearby "match", so such a pairing is weak evidence.
+                # Share its vote among the equally plausible neighbours.
+                weight = (4. if kind == 'water' else 1.)/plausible[i].sum()
                 score += weight*math.exp(-.5*(combined[i, j]/25)**2)
                 pairs.append({'pixel': sources[i]['center'], 'local': targets[target_index]['center'],
                               'sourceIndex': int(i), 'referenceId': targets[target_index]['id'], 'kind': kind,

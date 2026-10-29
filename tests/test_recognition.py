@@ -57,3 +57,35 @@ def test_deleted_automatic_candidate_is_not_resurrected():
     point = {'id': 'c1', 'label': '31', 'pixel': [100, 100], 'radiusPx': 20, 'state': 'candidate'}
     result, _ = reconcile_controls([point], {'controls': [], 'recognitionExclusions': [point]})
     assert not result
+
+
+def test_overprinted_circles_over_colour_and_under_black_paths_are_found():
+    # Forest-style maps print the course with the overprint effect: the
+    # magenta multiplies the ground, red over yellow open land and nearly
+    # black where it crosses a black path.
+    ground = np.full((900, 1200, 3), 255, np.uint8)
+    ground[:, 600:] = (60, 190, 250)                       # yellow open land (BGR)
+    cv2.line(ground, (300, 120), (300, 780), (25, 25, 25), 4)   # a black path
+    for x in range(640, 1180, 26):
+        cv2.circle(ground, (x, 300), 4, (255, 255, 255), -1)    # scattered dots
+    ink = np.full_like(ground, 255)
+    centres = [(276, 450), (880, 300), (900, 650)]
+    for centre in centres:
+        cv2.circle(ink, centre, 24, (140, 0, 230), 3, cv2.LINE_AA)
+    image = (ground.astype(np.uint16)*ink//255).astype(np.uint8)
+    masks = colour_masks(image)
+    assert len(detect_controls(masks['course_ink'])) < 3
+    controls = detect_controls(masks['course_ink'], image)
+    assert len(controls) == 3
+    for centre, control in zip(sorted(centres, key=lambda p: (p[1], p[0])), controls):
+        np.testing.assert_allclose(control['pixel'], centre, atol=2.5)
+
+
+def test_pale_patterns_over_green_and_black_lines_are_not_overprinted_ink():
+    from dirmap.vision import overprinted_course_ink
+    image = np.full((300, 300, 3), (150, 220, 150), np.uint8)   # green
+    for x in range(0, 300, 9):
+        cv2.line(image, (x, 0), (x, 299), (200, 200, 200), 2)   # pale stripes
+    cv2.line(image, (0, 150), (299, 160), (20, 20, 20), 3)      # black path
+    cv2.putText(image, '12', (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (20, 20, 20), 3)
+    assert not overprinted_course_ink(image).any()

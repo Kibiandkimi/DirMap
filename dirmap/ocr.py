@@ -59,8 +59,10 @@ def label_controls(purple, controls, text_ink=None):
             for row in csv.DictReader(io.StringIO(process.stdout), delimiter='\t'):
                 text = row.get('text', '').strip()
                 confidence = float(row.get('conf', -1))
-                label = re.fullmatch(r'(?:[1-9]-)?([1-9]\d{1,2})', text)
-                if not label or confidence < 65:
+                label = re.fullmatch(r'(?:[1-9]-)?([1-9]\d{0,2})', text)
+                # Course maps number controls 1, 2, 3...; a lone digit is
+                # also what a stroke fragment reads as, so it needs more.
+                if not label or confidence < (80 if len(label.group(1)) == 1 else 65):
                     continue
                 center = np.array([offset[0]-border+(int(row['left'])+int(row['width'])/2)/scale,
                                    offset[1]-border+(int(row['top'])+int(row['height'])/2)/scale])
@@ -140,6 +142,9 @@ def label_controls(purple, controls, text_ink=None):
                     continue
                 score = (100-word['confidence'])/8+dist/max(1, radius)
                 options.append((score, word['label'], word['confidence'], word['box']))
+            # A lone digit beside a longer number is a fragment of it.
+            if any(len(option[1]) > 1 for option in options):
+                options = [option for option in options if len(option[1]) > 1]
             if options:
                 _, label, confidence, box = min(options)
                 control.update(label=label, labelSource='tesseract', labelConfidence=round(confidence/100, 3), labelPixelBox=box)

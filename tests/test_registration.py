@@ -148,3 +148,50 @@ def test_a_sheet_without_matching_water_is_seeded_from_its_buildings():
         assert '水体' in str(error)
     else:
         raise AssertionError('three roofs must not seed a registration')
+
+
+def rectangle(centre, size, turn=0.):
+    rotate = np.array([[np.cos(turn), np.sin(turn)], [-np.sin(turn), np.cos(turn)]])
+    return np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]])*np.asarray(size)/2 @ rotate+centre
+
+
+def test_an_estate_of_similar_houses_does_not_outvote_the_true_alignment():
+    # A park sheet's houses stand south of its ponds, and the reference has
+    # only some of them. Turning the sheet about a pond lays its rows over a
+    # dense estate off the sheet, where every house finds some neighbour.
+    rng = np.random.default_rng(3)
+    truth = np.array([[1., 0, -500], [0, -1, 500]])
+    to_pixels = lambda local: np.linalg.solve(truth[:, :2], (np.asarray(local, float)-truth[:, 2]).T).T
+    reference, features = [], []
+    drawn = lambda points, kind: features.append({'kind': kind, **polygon_properties(to_pixels(points))})
+    surveyed = lambda points, kind: reference.append({'id': f'{kind}-{len(reference)}', 'kind': kind, **polygon_properties(points)})
+    for pond in ([[-30, 285], [30, 285], [30, 315], [-30, 315]], [[130, 65], [170, 65], [170, 90], [130, 90]]):
+        drawn(pond, 'water')
+        surveyed(pond, 'water')
+    for index in range(56):
+        house = rectangle([-280+index % 14*40, -440+index//14*50], (12, 8))
+        drawn(house, 'building')
+        if index % 3 == 0:
+            surveyed(house, 'building')
+    for _ in range(700):
+        surveyed(rectangle(rng.uniform([-380, 760], [380, 1140]), rng.uniform([9, 6], [15, 10]), rng.uniform(0, np.pi)), 'building')
+    matrix, _ = Matcher(features, reference).initial(1000, 1000)
+    centres = [f['center'] for f in features]
+    np.testing.assert_allclose(affine_points(matrix, centres), affine_points(truth, centres), atol=.5)
+
+
+def test_black_roofs_join_the_grey_ones_but_not_lines_letters_or_outlines():
+    from dirmap.vision import black_roofs, colour_masks
+    image = np.full((600, 600, 3), 255, np.uint8)
+    for x in range(60, 540, 40):
+        cv2.rectangle(image, (x, 80), (x+18, 92), (0, 0, 0), -1)            # houses
+    cv2.line(image, (40, 200), (560, 210), (0, 0, 0), 3)                    # a path
+    cv2.putText(image, 'Alley Pond', (60, 300), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 0), 2)
+    cv2.rectangle(image, (200, 400), (320, 470), (128, 128, 128), -1)       # a grey roof
+    cv2.rectangle(image, (200, 400), (320, 470), (0, 0, 0), 4)              # ...and its outline
+    cv2.circle(image, (450, 450), 26, (180, 0, 200), 3)                     # a control circle
+    masks = colour_masks(image)
+    controls = [{'radiusPx': 26., 'role': 'control'}]
+    roofs = black_roofs(masks['black'], masks['building'], controls, image.shape[0]*image.shape[1])
+    centres = sorted(np.round(f['center']).astype(int).tolist() for f in roofs)
+    assert len(roofs) == 12 and all(80 <= y <= 92 for _, y in centres)

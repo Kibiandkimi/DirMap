@@ -25,7 +25,7 @@ from dirmap.vision import colour_masks, detect_controls
 def check(image, name, labels, expected_positions=None, start_position=None, tolerance_px=None):
     started = time.perf_counter()
     masks = colour_masks(image)
-    controls = detect_controls(masks['course_ink'])
+    controls = detect_controls(masks['course_ink'], image)
     classify_course_symbols(masks['course_ink'], controls)
     ocr = label_controls(masks['purple'], controls, masks['course_text'])
     normal = [c for c in controls if c['role'] == 'control']

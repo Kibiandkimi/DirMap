@@ -157,6 +157,30 @@ def region_features(mask, kind, image_area, close=3):
     return sorted(features, key=lambda f: -f['area'])
 
 
+def black_roofs(black, roofs, controls, image_area):
+    """Solid black roofs, as forest and park maps print them, for matching.
+
+    A sprint map fills roofs grey; a forest-style map fills them black like
+    its paths, fences and lettering. Opening by about 0.6 mm at print scale,
+    a fifth of a control circle's radius, keeps only areas too wide for a
+    line or a letter. Black outlining a grey roof adds no new landmark.
+    """
+    radii = [c['radiusPx'] for c in controls if c.get('role', 'control') == 'control']
+    size = round(float(np.median(radii))*.2) if radii else round(np.sqrt(image_area)/420)
+    size = max(3, size) | 1
+    solid = cv2.morphologyEx(black, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size)))
+    grey = cv2.morphologyEx(roofs, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    result = []
+    for feature in region_features(solid, 'building', image_area):
+        outline = np.round(feature['points']).astype(np.int32)
+        x, y, w, h = cv2.boundingRect(outline)
+        inside = np.zeros((h, w), np.uint8)
+        cv2.fillPoly(inside, [outline-[x, y]], 1)
+        if np.mean(grey[y:y+h, x:x+w][inside > 0] > 0) < .2:
+            result.append(feature)
+    return result
+
+
 def refine_circle(ink, pixel, radius):
     """Fit the stroke centreline at working resolution, after coarse Hough.
 
@@ -206,12 +230,45 @@ def refine_circle(ink, pixel, radius):
     return centre.tolist(), radius
 
 
-def detect_controls(purple):
+def overprinted_course_ink(image):
+    """Course purple printed with the overprint effect, over any ground.
+
+    Overprinted ink multiplies the colour beneath: magenta over yellow open
+    land prints red, over green dark violet. Dividing by the local ground,
+    the median of a window much wider than the ink lines, recovers the ink
+    colour. Only a strongly purple result counts; pale greys over green and
+    black lines over anything do not.
+    """
+    ground = cv2.medianBlur(image, 15)
+    ink = cv2.divide(image, ground, scale=255).astype(np.int16)
+    b, g, r = ink[..., 0], ink[..., 1], ink[..., 2]
+    darker = np.abs(image.astype(np.int16)-ground).sum(axis=2) > 60
+    return ((r-g > 60) & (b-g > 40) & (r > 85) & (b > 75) & darker).astype(np.uint8)*255
+
+
+def detect_controls(purple, image=None):
+    """Course circles in the course ink mask.
+
+    Given the map `image`, a second pass also reads ink printed with the
+    overprint effect, and judges a ring only where dark lines do not hide it:
+    overprinted magenta over a black path prints nearly black. That pass only
+    adds circles; ones the plain ink shows stay exactly as found.
+    """
     height, width = purple.shape
     scale = min(2., 1800/max(height, width))
-    mask = cv2.resize(purple, None, fx=scale, fy=scale,
-                      interpolation=cv2.INTER_CUBIC if scale > 1 else cv2.INTER_AREA)
+    interpolation = cv2.INTER_CUBIC if scale > 1 else cv2.INTER_AREA
+    mask = cv2.resize(purple, None, fx=scale, fy=scale, interpolation=interpolation)
     mask = (mask > 75).astype(np.uint8)*255
+    candidates = ring_candidates(mask, scale)
+    if image is not None:
+        small = cv2.resize(image, mask.shape[::-1], interpolation=interpolation)
+        mask |= overprinted_course_ink(small)
+        occluded = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)[..., 2] < 110
+        candidates += ring_candidates(mask, scale, occluded, known=candidates)
+    return accept_rings(candidates, purple)
+
+
+def ring_candidates(mask, scale, occluded=None, known=()):
     smoothed = cv2.GaussianBlur(mask, (3, 3), 0.8)
     distance = cv2.distanceTransform(255-mask, cv2.DIST_L2, 3)
     # A collage's white margin and photo panels do not set the printed
@@ -226,8 +283,13 @@ def detect_controls(purple):
         return []
     candidates = []
     theta = np.linspace(0, 2*np.pi, 120, endpoint=False)
+    # Where dark lines may hide the ring, they may also carry it.
+    support = mask > 0 if occluded is None else (mask > 0) | occluded
+    seen = np.array([c['pixel'] for c in known]).reshape(-1, 2)*scale
     for x, y, radius in circles[0]:
         if x-radius < 0 or y-radius < 0 or x+radius >= mask.shape[1] or y+radius >= mask.shape[0]:
+            continue
+        if len(seen) and np.min(np.hypot(*(seen-[x, y]).T)) < radius*.8:
             continue
         # Most Hough votes in text and hatching are not rings. Reject poor
         # seeds cheaply before the more precise centre/radius refinement.
@@ -240,20 +302,18 @@ def detect_controls(purple):
             continue
         # Refine the Hough radius and centre on the original ink. A one-pixel
         # error can suppress a genuine thin circle at this working scale.
-        best_ring = (-1., float(x), float(y), float(radius))
         shifts = np.linspace(-min(4., radius*.15), min(4., radius*.15), 5)
         radius_shifts = np.linspace(-min(3., radius*.15), min(3., radius*.15), 7)
-        for delta_x in shifts:
-            for delta_y in shifts:
-                for delta_r in radius_shifts:
-                    ring_x = np.rint(x+delta_x+(radius+delta_r)*np.cos(theta)).astype(int)
-                    ring_y = np.rint(y+delta_y+(radius+delta_r)*np.sin(theta)).astype(int)
-                    if ring_x.min() < 0 or ring_y.min() < 0 or ring_x.max() >= mask.shape[1] or ring_y.max() >= mask.shape[0]:
-                        continue
-                    value = float(np.mean(mask[ring_y, ring_x] > 0))
-                    if value > best_ring[0]:
-                        best_ring = (value, float(x+delta_x), float(y+delta_y), float(radius+delta_r))
-        _, x, y, radius = best_ring
+        # Every shifted ring at once, in (x, y, radius) order: the first best wins.
+        delta_x, delta_y, delta_r = (grid.ravel() for grid in np.meshgrid(shifts, shifts, radius_shifts, indexing='ij'))
+        ring_x = np.rint((x+delta_x)[:, None]+(radius+delta_r)[:, None]*np.cos(theta)).astype(int)
+        ring_y = np.rint((y+delta_y)[:, None]+(radius+delta_r)[:, None]*np.sin(theta)).astype(int)
+        inside = (ring_x.min(axis=1) >= 0) & (ring_y.min(axis=1) >= 0) & (ring_x.max(axis=1) < mask.shape[1]) & (ring_y.max(axis=1) < mask.shape[0])
+        if not inside.any():
+            continue
+        values = np.where(inside, support[np.clip(ring_y, 0, mask.shape[0]-1), np.clip(ring_x, 0, mask.shape[1]-1)].mean(axis=1), -1.)
+        best = int(np.argmax(values))
+        x, y, radius = float(x+delta_x[best]), float(y+delta_y[best]), float(radius+delta_r[best])
         if radius < min_radius or x-radius < 2 or y-radius < 2 or x+radius >= mask.shape[1]-2 or y+radius >= mask.shape[0]-2:
             continue
         offsets = np.linspace(-min(2., radius*.08), min(2., radius*.08), 5)
@@ -263,8 +323,16 @@ def detect_controls(purple):
             yy = np.clip(np.rint(y+(radius+delta)*np.sin(theta)).astype(int), 0, mask.shape[0]-1)
             samples.append(distance[yy, xx])
         covered = np.min(samples, axis=0) < max(.8, min(1.2, radius*.045))
-        coverage = float(covered.mean())
-        quadrants = [chunk.mean() for chunk in np.array_split(covered, 4)]
+        hidden = np.zeros_like(covered)
+        if occluded is not None:
+            # A dark path printed across the ring hides it; judge the rest.
+            ring_x = np.clip(np.rint(x+radius*np.cos(theta)).astype(int), 0, mask.shape[1]-1)
+            ring_y = np.clip(np.rint(y+radius*np.sin(theta)).astype(int), 0, mask.shape[0]-1)
+            hidden = occluded[ring_y, ring_x] & ~covered
+            if hidden.mean() > .15:
+                continue
+        coverage = float(covered.sum()/max(1, (~hidden).sum()))
+        quadrants = [c.sum()/max(1, (~h).sum()) for c, h in zip(np.array_split(covered, 4), np.array_split(hidden, 4))]
         inner_r = max(2, round(radius*.55))
         inner = mask[max(0, round(y)-inner_r):round(y)+inner_r,
                      max(0, round(x)-inner_r):round(x)+inner_r]
@@ -281,6 +349,10 @@ def detect_controls(purple):
                            'radiusPx': float(radius/scale), 'confidence': round(coverage, 3),
                            'ringDensity': round(ring_density, 3),
                            'state': 'candidate', 'labelSource': 'unread', 'label': ''})
+    return candidates
+
+
+def accept_rings(candidates, purple):
     # Nested rings at the finish are ONE checkpoint. Keep the stronger fit.
     accepted = []
     for item in sorted(candidates, key=lambda c: -c['confidence']):
@@ -346,8 +418,9 @@ def analyze(image, labeler=None):
             feature['rectangularity'] = float(rectangularity)
             features.append(feature)
     del h, s, v, pitch_ink  # full-size scratch; later steps peak higher
-    controls = detect_controls(masks['course_ink'])
+    controls = detect_controls(masks['course_ink'], image)
     classify_course_symbols(masks['course_ink'], controls)
+    features += black_roofs(masks['black'], masks['building'], controls, height*width)
     ocr = labeler(masks['purple'], controls, masks['course_text']) if labeler else None
     annotations = annotation_mask(masks['purple'], controls, masks['course_text'])
     restrictions = purple_restrictions(masks['purple'], controls, annotations)
