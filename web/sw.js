@@ -3,6 +3,7 @@
 // The build inserts a content fingerprint so every new application refreshes
 // its offline shell, even when the worker's logic itself has not changed.
 const SHELL = 'dirmap-shell-__DIRMAP_BUILD_ID__';
+const BUILD_ASSETS = '__DIRMAP_ASSETS__';
 const COURSES = 'dirmap-courses-v1';
 const RELEASE = /^\/api\/releases\/([0-9a-f]{32})$/;
 const OVERLAY = /^\/api\/releases\/[0-9a-f]{32}\/overlay\.png$/;
@@ -12,7 +13,8 @@ self.addEventListener('install', event => event.waitUntil((async () => {
   const response = await fetch('/', { cache: 'reload' });
   if (!response.ok) throw new Error('Cannot download application shell');
   const html = await response.clone().text();
-  const assets = [...html.matchAll(/(?:src|href)=["'](\/assets\/[^"']+\.(?:js|css))["']/g)].map(match => match[1]);
+  const assets = [...new Set([...(Array.isArray(BUILD_ASSETS) ? BUILD_ASSETS : []),
+    ...[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"']+\.(?:js|css))["']/g)].map(match => match[1])])];
   const cache = await caches.open(SHELL);
   await cache.put('/index.html', response);
   await cache.addAll(assets);

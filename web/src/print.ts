@@ -1,4 +1,5 @@
 import { escapeHtml as e, type Control, type Plan } from './types';
+import { elevationSummary } from './elevation-profile';
 
 const minutes = (seconds: number) => `${Math.round(seconds / 60)} 分钟`;
 const distance = (metres: number) => metres >= 1000 ? `${(metres / 1000).toFixed(2)} km` : `${Math.round(metres)} m`;
@@ -13,7 +14,7 @@ export function printSheets(course: { id: string; title: string; plan: Plan; con
   const meetings = new Set(course.plan.coverage?.mandatoryControlIds ?? []);
   const sheets = routes.map(route => `<section class="print-sheet">
     <header><div><span class="eyebrow">DirMap · 定向越野课</span><h1>${e(course.title)} · ${e(route.teamId)}</h1></div>
-      <p>${route.people} 人 · 全程 ${distance(route.distanceM)} · 预计 ${minutes(route.durationSec)}${route.departureSec ? ` · 开课后 ${minutes(route.departureSec)}出发` : ' · 统一出发'}</p></header>
+      <p>${route.people} 人 · 全程 ${distance(route.distanceM)} · 预计 ${minutes(route.durationSec)}${route.departureSec ? ` · 开课后 ${minutes(route.departureSec)}出发` : ' · 统一出发'}</p>${elevationSummary(route, false, false)}</header>
     <img class="print-map" src="/api/releases/${e(course.id)}/route-map?team=${encodeURIComponent(route.teamId)}" alt="${e(route.teamId)} 的路线图">
     <table><thead><tr><th>顺序</th><th>目标</th><th>类型</th><th>计划到达</th><th>打点时间</th></tr></thead><tbody>${route.controlIds.map((id, index) => {
       const stop = route.stops?.find(s => s.controlId === id);

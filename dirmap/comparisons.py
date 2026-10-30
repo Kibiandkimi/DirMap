@@ -59,6 +59,8 @@ def freeze_bundle(bundle):
     return {'matrix': bundle['matrix'].tolist(), 'nodes': list(map(int, bundle['nodes'])),
             'world': bundle['world'].tolist(), 'connectors': bundle['connectors'].tolist(),
             'connectorWeights': bundle['connectorWeights'].tolist(),
+            'connectorOutWeights': bundle.get('connectorOutWeights', bundle['connectorWeights']).tolist(),
+            'connectorInWeights': bundle.get('connectorInWeights', bundle['connectorWeights']).tolist(),
             'pixels': [e.get('approachPixel') or e['pixel'] for e in bundle['endpoints']],
             'surfaces': [e.get('surfaceId', 'ground') for e in bundle['endpoints']]}
 
@@ -93,7 +95,7 @@ def used_paths(graph, bundle, orders):
             for a, b in pairs}
 
 
-def create(state, request, result, bundle, metrics, identifier, graph_hash, implementation):
+def create(state, request, result, bundle, metrics, identifier, graph_hash, implementation, elevation_snapshot=None):
     candidates = result.pop('_teamCandidates', None)
     if candidates is None:
         candidates = {str(len(request['teams'])): candidate(result, request['teams'])}
@@ -105,6 +107,8 @@ def create(state, request, result, bundle, metrics, identifier, graph_hash, impl
                'pathHashes': {f'{a}:{b}': value['pathHash'] for (a, b), value in metrics.items()},
                'request': copy.deepcopy(request), 'recommendation': copy.deepcopy(result.get('teamRecommendation')),
                'createdAt': time.time()}
+    if elevation_snapshot is not None:
+        content['elevationSnapshot'] = copy.deepcopy(elevation_snapshot)
     return {'content': content, 'token': fingerprint(content)}
 
 
@@ -148,7 +152,7 @@ def verify_and_restore(saved, state, graph, bundle, implementation):
     # Confirming an inferred approach at the identical pixel may introduce
     # sub-micrometre floating roundoff in a repeated transform. Restore the
     # original numeric model after checking every physical input/path above.
-    for key in ('matrix', 'world', 'connectors', 'connectorWeights'):
+    for key in ('matrix', 'world', 'connectors', 'connectorWeights', 'connectorOutWeights', 'connectorInWeights'):
         bundle[key] = np.asarray(frozen[key], dtype=float)
 
 

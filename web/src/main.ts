@@ -11,6 +11,7 @@ import { parseCustomRoutes, routeToken } from './course-routes';
 import { teamComparisonHtml } from './team-comparison';
 import { canRefine, refinementHtml } from './plan-refinement';
 import { resultsCsv } from './class-results';
+import { elevationSummary } from './elevation-profile';
 import { printSheets } from './print';
 import { fetchAccount, openSignIn, renderAccountChip, signInGate } from './account';
 import { setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
@@ -118,6 +119,8 @@ phoneLayout.addEventListener('change', () => setMobilePanel(false));
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && phoneLayout.matches) setMobilePanel(false); });
 setMobilePanel(false);
 $('objective').insertAdjacentHTML('beforeend', '<option value="min_distance">全班总距离最短</option>');
+$('objective').insertAdjacentHTML('afterend', '<div class="elevation-option"><label class="check-label"><input id="use-elevation" type="checkbox" checked>考虑上下坡</label><a class="text-link" href="/elevation" target="_blank" rel="noreferrer">共享地形 ↗</a><small>使用共享轨迹高程；无覆盖的路段暂不计坡度。</small></div>');
+if (!courseId && !groupCode) document.querySelector('.header-context')?.insertAdjacentHTML('beforeend', '<a class="text-link" href="/elevation">共享地形 ↗</a>');
 $('group-preview').insertAdjacentHTML('afterend', '<details class="auto-team-settings"><summary>按分队收益自动选择队数</summary><div class="form-grid"><label>每队至少几人<input id="auto-min-people" type="number" min="1" max="500" value="2"></label><label>最多比较几队<input id="auto-max-teams" type="number" min="1" max="30" value="30"></label><label>保留最佳改善收益 <span>%</span><input id="auto-gain" type="number" min="50" max="100" step="5" value="90"></label></div><p class="muted compact">比较允许的全部队数，选择达到收益目标的最少队数。沿用总人数、速度、出发间隔与当前优化目标。</p><button id="recommend-teams" class="soft-button wide">比较收益并自动分队</button><p id="auto-team-hint" class="muted compact"></p></details>');
 for (const id of ['auto-min-people', 'auto-max-teams', 'auto-gain']) $(id).oninput = () => { resetPlan(); persistRules(); };
 $('map-summary').insertAdjacentHTML('afterend', '<details class="job-history"><summary>处理记录与恢复</summary><p class="muted compact">刷新页面或服务重启后，可在这里接续原任务。</p><button id="refresh-jobs" class="text-button">刷新记录</button><div id="job-history-list"></div></details>');
@@ -301,10 +304,10 @@ $('cancel-job').onclick = async () => {
 async function renderJobs() {
   if (courseId) return;
   const jobs = await api<Job[]>('/api/jobs');
-  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线', site_reference: '下载场地参照' };
+  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线', site_reference: '下载场地参照', elevation_rebuild: '合并轨迹高程' };
   const states: Record<string, string> = { queued: '排队中', running: '处理中', succeeded: '已完成', failed: '未完成' };
   const status = (job: Job) => job.cancelled ? '已取消' : job.cancelRequested ? '正在取消' : job.resultPruned ? '结果已清理' : states[job.state];
-  $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(catalog?.maps.find(map => map.id === job.assetId)?.name ?? catalog?.sites?.find(site => site.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(status(job))} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
+  $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(job.kind === 'elevation_rebuild' ? '共享地形' : catalog?.maps.find(map => map.id === job.assetId)?.name ?? catalog?.sites?.find(site => site.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(status(job))} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
 }
 function restorePlanFields(request: PlanRequest) {
   if (!state) return;
@@ -313,6 +316,7 @@ function restorePlanFields(request: PlanRequest) {
   state.controls.forEach(control => { control.required = positions.has(control.id); });
   $<HTMLSelectElement>('course-mode').value = request.mode;
   $<HTMLSelectElement>('objective').value = request.objective;
+  $<HTMLInputElement>('use-elevation').checked = request.useElevation !== false;
   mandatory = new Set(request.mandatoryControlIds ?? []); missingPresetLabels = [];
   $<HTMLInputElement>('mandatory-order').checked = request.mandatoryOrder ?? false;
   $<HTMLInputElement>('people').value = String(request.teams.reduce((total, team) => total + team.people, 0));
@@ -335,6 +339,7 @@ async function resumeJob(pending: PendingJob) {
   catch (error) { if (error instanceof ApiError && error.status === 404) rememberJob(null); throw error; }
   rememberJob({ id: job.id });
   const result = await watchJob(job);
+  if (job.kind === 'elevation_rebuild') { notify('共享地形已合并最新轨迹，可在“共享地形”页查看'); return; }
   catalog = await api('/api/catalog');
   if (job.kind === 'site_reference') { await selectSite(job.assetId); notify('已载入场地参照'); return; }
   const owner = catalog.maps.find(map => map.id === job.assetId);
@@ -385,19 +390,21 @@ function restoreAutoTeamFields(settings: Pick<AutoTeamRequest, 'minPeoplePerTeam
   if (Number.isFinite(settings.targetGainFraction) && settings.targetGainFraction >= .5 && settings.targetGainFraction <= 1) $<HTMLInputElement>('auto-gain').value = String(settings.targetGainFraction * 100);
 }
 function persistRules() {
-  try { localStorage.setItem(rulesKey(), JSON.stringify({ mode: value('course-mode'), objective: value('objective'), mandatory: [...mandatory], order: $<HTMLInputElement>('mandatory-order').checked, selected: state?.controls.filter(c => c.required).map(c => c.id), customDrafts, teamInputs: courseTeams(), autoTeams: { minPeoplePerTeam: number('auto-min-people'), maxTeams: number('auto-max-teams'), targetGainFraction: number('auto-gain') / 100 } })); }
+  try { localStorage.setItem(rulesKey(), JSON.stringify({ mode: value('course-mode'), objective: value('objective'), useElevation: $<HTMLInputElement>('use-elevation').checked, mandatory: [...mandatory], order: $<HTMLInputElement>('mandatory-order').checked, selected: state?.controls.filter(c => c.required).map(c => c.id), customDrafts, teamInputs: courseTeams(), autoTeams: { minPeoplePerTeam: number('auto-min-people'), maxTeams: number('auto-max-teams'), targetGainFraction: number('auto-gain') / 100 } })); }
   catch { /* Planning still works if private mode prevents local preferences. */ }
 }
 function initializeRules() {
   mandatory = new Set(); missingPresetLabels = [];
   customDrafts = {}; restoredTeams = null; customMapTeam = null;
   $<HTMLInputElement>('mandatory-order').checked = false;
+  $<HTMLInputElement>('use-elevation').checked = true;
   restoreAutoTeamFields({ minPeoplePerTeam: 2, maxTeams: 30, targetGainFraction: .9 });
   const allowed = ['all_visit', 'split_coverage', 'fixed_order', 'mixed_coverage', 'custom'];
   try {
     const saved = JSON.parse(localStorage.getItem(rulesKey()) ?? 'null');
     if (saved && allowed.includes(saved.mode) && Array.isArray(saved.mandatory) && saved.mandatory.every((id: unknown) => typeof id === 'string')) {
       if (saved.autoTeams) restoreAutoTeamFields(saved.autoTeams);
+      $<HTMLInputElement>('use-elevation').checked = saved.useElevation !== false;
       if (['min_max_finish_then_sum', 'min_total_time', 'min_distance'].includes(saved.objective)) $<HTMLSelectElement>('objective').value = saved.objective;
       $<HTMLSelectElement>('course-mode').value = saved.mode;
       mandatory = new Set(saved.mandatory.filter((id: string) => state?.controls.some(c => c.id === id && (c.role ?? 'control') === 'control')));
@@ -688,6 +695,10 @@ function showPlan(result: Plan) {
     document.querySelectorAll<HTMLButtonElement>('[data-approach-review]').forEach(button => { button.onclick = () => openEditor('inspect', button.dataset.approachReview!); });
   }
   $('export-route').onclick = () => download('dirmap-routes.geojson', { type: 'FeatureCollection', features: result.routes.map(r => ({ type: 'Feature', properties: { team: r.teamId, distanceM: r.distanceM, durationSec: r.durationSec, graphHash: result.graphHash }, geometry: { type: 'LineString', coordinates: r.geometry } })) });
+  for (const card of Array.from($('route-results').querySelectorAll<HTMLElement>('.route-card'))) {
+    const route = result.routes.find(r => r.teamId === card.dataset.team);
+    if (route) card.insertAdjacentHTML('beforeend', elevationSummary(route));
+  }
   $('route-results').insertAdjacentHTML('beforeend', '<button id="customize-plan" class="soft-button wide">以这些路线为基础，自定义各队点序</button>');
   $('customize-plan').onclick = () => {
     if (result.request) restorePlanFields(result.request);
@@ -719,6 +730,7 @@ $<HTMLInputElement>('upload-input').onchange = event => task(async () => { const
 document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => button.onclick = () => { document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b === button)); document.querySelectorAll('.tab-content').forEach(tab => tab.classList.toggle('hidden', tab.id !== `tab-${button.dataset.tab}`)); campusMap.setFieldChecks(registrationTabOpen() ? fieldCheckPoints : []); });
 for (const id of ['people', 'teams', 'stagger', 'speed']) $<HTMLInputElement>(id).oninput = () => { restoredTeams = null; groupPreview(); renderCustomRoutes(); resetPlan(); persistRules(); };
 $<HTMLSelectElement>('objective').onchange = () => { resetPlan(); persistRules(); };
+$<HTMLInputElement>('use-elevation').onchange = () => { resetPlan(); persistRules(); };
 $<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = []; customMapTeam = null; mapPicker.cancel(); $('map-action-hint').classList.add('hidden'); resetPlan(); persistRules(); renderState(); };
 for (const id of ['pick-start', 'pick-finish']) $(id).onclick = async () => {
   if (!state?.registration || state.registrationStale) { notify('请先完成配准'); return; }
@@ -824,7 +836,7 @@ function planInputs(): Omit<PlanRequest, 'teams' | 'customRoutes'> {
   if (value('course-mode') === 'mixed_coverage' && (missingPresetLabels.length || !rules.mandatoryControlIds.length)) throw new Error('请明确选择所有每队必到点后再规划');
   return { assetId: activeId, version: state.version, controlIds, startPixel, finishPixel: finish, startSurfaceId,
     finishSurfaceId: $<HTMLInputElement>('return-start').checked ? startSurfaceId : finishSurfaceId,
-    mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget') };
+    mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget'), useElevation: $<HTMLInputElement>('use-elevation').checked };
 }
 $('plan-button').onclick = () => task(async () => {
   const input = planInputs();
@@ -1076,6 +1088,7 @@ function renderStudent() {
   $('team-sync').innerHTML = ahead.length || (teamArrived && !viewing()) ? `<div class="notice-card team-sync"><strong>队友的手机已${ahead.length ? `打点：${ahead.map(id => e(studentControls.find(c => c.id === id)?.label ?? id)).join('、')}` : '记录到达终点'}</strong><button id="adopt-team-progress" class="soft-button wide">同步到本机</button></div>` : '';
   $('student-overview').innerHTML = `<div class="quality-values"><div><strong>${distance(route.distanceM)}</strong><span>全程距离</span></div><div><strong>${Math.round(route.durationSec / 60)}<small> 分钟</small></strong><span>预计用时（含打点与等待）</span></div></div><p>${route.people} 人同行${route.departureSec ? ` · 开课后 ${minutes(route.departureSec)}出发` : plan?.routes.some(r => r.departureSec > 0) ? ' · 开课即出发，其他队错峰' : ' · 统一出发'}</p>`;
   const surfaceNames = Object.fromEntries((plan?.surfaces ?? []).map(s => [s.id, s.label]));
+  $('student-overview').insertAdjacentHTML('beforeend', elevationSummary(route, true, false));
   if (route.transitions?.length) $('student-overview').insertAdjacentHTML('beforeend', `<div id="student-transitions" class="notice-card"><strong>按标记换层</strong>${route.transitions.map(t => `<p>${e(t.label)}：${e(surfaceNames[t.fromSurface])} → ${e(surfaceNames[t.toSurface])}</p>`).join('')}<p class="muted compact">道路在屏幕上重合不代表互通。换层后请确认当前位置层级。</p></div>`);
   const requiredByAll = new Set(plan?.coverage?.mandatoryControlIds ?? []);
   if (plan?.coverage?.mandatoryControlIds.length) {

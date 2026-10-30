@@ -526,12 +526,16 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
     factors = []
     for endpoint in endpoints:
         factors.append(graph.cost_at(endpoint.get('approachPixel') or endpoint['pixel'], endpoint['surfaceId']))
-    connector_costs = connectors if metric == 'distance' else connectors*np.array(factors)
-    matrix = distances[:, nodes] + connector_costs[:, None] + connector_costs[None, :]
+    from .elevation_routing import connector_weights
+    outward, inward = connector_weights(graph, np.asarray(points), nodes,
+        [endpoint['surfaceId'] for endpoint in endpoints], connectors, connectors*np.asarray(factors))
+    costs_out, costs_in = (connectors, connectors) if metric == 'distance' else (outward, inward)
+    matrix = distances[:, nodes] + costs_out[:, None] + costs_in[None, :]
     np.fill_diagonal(matrix, 0.)
     return {'matrix': matrix, 'parents': parents, 'nodes': nodes, 'endpoints': endpoints,
             'world': np.asarray(points), 'connectors': connectors,
-            'connectorWeights': connectors*np.asarray(factors), 'unresolved': [], 'approaches': approaches}
+            'connectorWeights': connectors*np.asarray(factors), 'connectorOutWeights': outward,
+            'connectorInWeights': inward, 'unresolved': [], 'approaches': approaches}
 
 
 def expand_route(graph, bundle, order, frame=None):
@@ -561,7 +565,8 @@ def expand_route(graph, bundle, order, frame=None):
                     'lnglat': frame.to_lnglat(portal['local']).tolist(), 'lengthM': portal['lengthM'],
                     'travelWeightM': portal['travelWeightM']})
         distance += float(bundle['connectors'][a]+bundle['connectors'][b])
-        travel_weight += float(bundle['connectorWeights'][a]+bundle['connectorWeights'][b])
+        travel_weight += float(bundle.get('connectorOutWeights', bundle['connectorWeights'])[a]+
+                               bundle.get('connectorInWeights', bundle['connectorWeights'])[b])
         legs.append({'fromId': bundle['endpoints'][a]['id'], 'toId': bundle['endpoints'][b]['id'],
                      'startIndex': start_index, 'endIndex': len(positions)-1,
                      'distanceM': distance-before_distance, 'travelWeightM': travel_weight-before_weight})
@@ -573,6 +578,9 @@ def expand_route(graph, bundle, order, frame=None):
             data = graph.surface_info(surface)
             sections.append({'surfaceId': surface, 'label': data['label'], 'level': data['level'],
                              'startIndex': index, 'endIndex': index})
+    from .elevation_routing import profile
+    heights = profile(graph, positions, position_surfaces)
     return {'geometry': frame.to_lnglat(positions).tolist(), 'localGeometry': positions,
             'distanceM': distance, 'travelWeightM': travel_weight, 'nodeIds': node_ids, 'edgeIds': edge_ids,
-            'legs': legs, 'surfaceSections': sections, 'transitions': transitions}
+            'legs': legs, 'surfaceSections': sections, 'transitions': transitions,
+            **({'elevation': heights} if heights is not None else {})}

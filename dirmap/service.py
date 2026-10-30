@@ -23,7 +23,7 @@ from .schedule import apply_schedule
 from .team_planning import recommend_teams
 from .ocr import label_controls
 from .registration import auto_register, extend_transfer_boundary, manual_register, recover_boundary_buildings, register_to_map, warp_overlay
-from . import store, graph_cache, comparisons, layers, sites
+from . import store, graph_cache, comparisons, layers, sites, elevation, elevation_routing
 from .protocol import ROUTING_SCHEMA
 from .images import read_map_image
 from .recognition import reconcile_controls
@@ -52,6 +52,9 @@ def implementation_signature():
 
 def job_inputs(kind, asset_id, payload=None):
     """Freeze the inputs which must not change while a job waits/restarts."""
+    if kind == 'elevation_rebuild':
+        return {'version': elevation.catalogue()['version'], 'schema': elevation.SCHEMA,
+                'implementation': implementation_signature()}
     if kind == 'site_reference':
         site = sites.get(asset_id)
         return {'site': site['id'], 'bbox': site['bbox']}
@@ -101,6 +104,20 @@ def job_inputs(kind, asset_id, payload=None):
 
 def execute_job(job, progress):
     with store.using(job.get('workspace', store.LEGACY)):
+        if job['kind'] == 'elevation_rebuild':
+            if job['inputs']['implementation'] != implementation_signature() or job['inputs']['schema'] != elevation.SCHEMA:
+                raise ValueError('重建程序已更新，请重建最新数据')
+            # A community reconstruction is a request for the latest shared
+            # observations. Coalesce intervening contributions instead of
+            # rejecting every earlier contributor's queued job.
+            for attempt in range(3):
+                version = elevation.catalogue()['version']
+                try:
+                    return elevation.rebuild(version, progress, operation_id=job['id'])
+                except elevation.Conflict:
+                    if attempt == 2:
+                        raise
+                    progress(10, '又有新的轨迹，继续合并最新一批')
         if job['kind'] == 'site_reference':
             if job['inputs'] != job_inputs(job['kind'], job['assetId'], job['payload']):
                 raise ValueError('等待期间场地范围已改变，请重新下载参照')
@@ -368,7 +385,7 @@ def project_controls(state):
         control['calibrated'] = bool(valid)
 
 
-def get_graph(state):
+def get_graph(state, use_elevation=True, elevation_snapshot=None):
     # Same lock order as publication; keep terrain and state from the same
     # atomic processing commit while constructing a new cached graph.
     with store.LOCK, GRAPH_LOCK:
@@ -379,35 +396,45 @@ def get_graph(state):
         current = store.get_state(state['assetId'])
         if current and current['version'] != state['version']:
             raise ValueError('地图已更新，请刷新后重试')
-        return _get_graph(state)
+        return _get_graph(state, use_elevation, elevation_snapshot)
 
 
-def _get_graph(state):
+def _get_graph(state, use_elevation=True, elevation_snapshot=None):
     asset_id = state['assetId']
+    frozen = elevation_snapshot if elevation_snapshot is not None else elevation_routing.snapshot(state, use_elevation)
+    tag = frozen['revision'], frozen.get('gradeSchema')
     cached = GRAPH_CACHE.get(graph_key(asset_id))
-    if cached and cached[0] == state['version']:
-        return cached[1]
-    if not state.get('registration'):
-        raise ValueError('请先完成地图配准')
-    terrain_path = store.artifact_path(state, 'terrain.npz')
-    cache_key = graph_cache.key(state, terrain_path)
-    with np.load(terrain_path) as artifact:
-        costs = artifact['costs']
-        semantics = {kind: artifact[kind] for kind in ('building', 'water', 'point_ink', 'vegetation', 'restricted', 'lower_level') if kind in artifact}
-    reg = Registration.from_dict(state['registration'])
-    graph = graph_cache.read(cache_key)
-    if graph is None:
-        graph = layers.build(costs, reg, state['sourceHash'], state['edits'], state.get('surfaces', []),
-                             state.get('portals', []), semantics.get('restricted'), step=4, lower_level=semantics.get('lower_level'))
-        try:
-            graph_cache.write(cache_key, graph)
-        except OSError:
-            pass  # a full/unwritable scratch volume must not lose a valid route
-    graph.access_resolver = AccessResolver(graph, reg, semantics) if semantics else None
-    # At most one native-pixel graph cached: bounded memory for three maps.
-    GRAPH_CACHE.clear()
-    GRAPH_CACHE[graph_key(asset_id)] = (state['version'], graph)
-    return graph
+    if not cached or cached['version'] != state['version']:
+        if not state.get('registration'):
+            raise ValueError('请先完成地图配准')
+        terrain_path = store.artifact_path(state, 'terrain.npz')
+        cache_key = graph_cache.key(state, terrain_path)
+        with np.load(terrain_path) as artifact:
+            costs = artifact['costs']
+            semantics = {kind: artifact[kind] for kind in ('building', 'water', 'point_ink', 'vegetation', 'restricted', 'lower_level') if kind in artifact}
+        reg = Registration.from_dict(state['registration'])
+        graph = graph_cache.read(cache_key)
+        if graph is None:
+            graph = layers.build(costs, reg, state['sourceHash'], state['edits'], state.get('surfaces', []),
+                                 state.get('portals', []), semantics.get('restricted'), step=4, lower_level=semantics.get('lower_level'))
+            try:
+                graph_cache.write(cache_key, graph)
+            except OSError:
+                pass  # a full/unwritable scratch volume must not lose a valid route
+        # At most one native-pixel graph cached: bounded memory for three maps.
+        GRAPH_CACHE.clear()
+        cached = GRAPH_CACHE[graph_key(asset_id)] = {'version': state['version'], 'base': graph, 'registration': reg,
+                                                      'semantics': semantics, 'variants': {}}
+    variants = cached['variants']
+    if tag not in variants:
+        # A course's frozen heights and the current shared terrain may both be
+        # in use; each variant only adds its own edge costs to the flat graph.
+        graph = elevation_routing.attach(cached['base'], state, frozen)
+        graph.access_resolver = AccessResolver(graph, cached['registration'], cached['semantics']) if cached['semantics'] else None
+        variants[tag] = graph
+        while len(variants) > 2:
+            variants.pop(next(iter(variants)))
+    return variants[tag]
 
 
 def navigate_course(release, request):
@@ -435,7 +462,8 @@ def navigate_course(release, request):
         state = store.get_state(release['assetId'])
         if not state or state['version'] != release['version'] or not state['reviewed']:
             raise ValueError('课程已更新，请使用教师提供的新课程链接')
-        graph = get_graph(state)
+        # Courses published before shared heights keep their flat costs.
+        graph = get_graph(state, elevation_snapshot=published.get('elevationSnapshot') or elevation_routing.snapshot(state, False))
         if graph.content_hash != published['graphHash']:
             raise ValueError('通行图已更新，请使用教师提供的新课程链接')
         reg = Registration.from_dict(state['registration'])
@@ -520,7 +548,7 @@ def choose_team_count(payload, progress=lambda p, m: None, operation_id=None):
         raise ValueError('这次比较所用地图已更新，请重新比较')
     original = content['recommendation']['sourceRequest']
     request = {key: original[key] for key in ('assetId', 'controlIds', 'startPixel', 'finishPixel', 'startSurfaceId', 'finishSurfaceId',
-               'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder') if key in original}
+               'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder', 'useElevation') if key in original}
     request.update(version=payload['version'], teams=copy.deepcopy(candidate['teams']))
     return plan_course(request, progress, operation_id, selection={'saved': saved, 'payload': payload, 'candidate': candidate})
 
@@ -555,7 +583,11 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         if not state['reviewed'] or required != set(ids) or any(c['state'] != 'accepted' or not c.get('calibrated') for c in controls):
             raise ValueError('请先核验所选课程目标，再恢复要发布的方案')
     progress(10, '建立保留细墙的通行图')
-    graph = get_graph(state)
+    # Restoring or continuing a saved calculation reuses its height snapshot;
+    # a shared-terrain update since then does not change that calculation.
+    origin = selection['saved'] if selection else continuing['saved'] if continuing else None
+    graph = get_graph(state, use_elevation=request.get('useElevation', True),
+                      elevation_snapshot=(origin or {}).get('content', {}).get('elevationSnapshot'))
     reg = Registration.from_dict(state['registration'])
     progress(40, '计算必到点之间的合法最短路')
     frame = Frame.of(state)
@@ -610,7 +642,7 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
                             lengths = float(graph.lengths[path[:-1], path[1:]].sum())
                             weights = float(graph.weights[path[:-1], path[1:]].sum())
                         metrics[a, b] = {'distanceM': lengths+float(bundle['connectors'][a]+bundle['connectors'][b]),
-                                         'travelWeightM': weights+float(bundle['connectorWeights'][a]+bundle['connectorWeights'][b]),
+                                         'travelWeightM': weights+float(bundle['connectorOutWeights'][a]+bundle['connectorInWeights'][b]),
                                          'pathHash': comparisons.path_fingerprint(path)}
                     legs.append(metrics[a, b])
                 route['legs'] = legs
@@ -623,10 +655,10 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
                     'totalWaitSec': sum(r['waitSec'] for r in candidate['routes'])}
         result, chosen_teams = recommend_teams(bundle['matrix'], controls, request, solver_budget, measure, progress)
         comparison_to_save = comparisons.create(state, request, result, bundle, metrics, plan_id,
-                                                 graph.content_hash, implementation_signature())
+                                                 graph.content_hash, implementation_signature(), graph.elevation_snapshot)
         result['teamRecommendation'] = comparisons.public(comparison_to_save, len(chosen_teams), 'automatic')
         request = {key: request[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel', 'startSurfaceId', 'finishSurfaceId',
-                   'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder') if key in request}
+                   'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder', 'useElevation') if key in request}
         request['teams'] = chosen_teams
     elif selection:
         saved, candidate = selection['saved'], selection['candidate']
@@ -705,10 +737,11 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         paths = comparisons.used_paths(graph, bundle, [r['order'] for r in result['routes']])
         metrics = {tuple(map(int, key.split(':'))): {'pathHash': value} for key, value in paths.items()}
         comparison_to_save = comparisons.create(state, request, result, bundle, metrics, plan_id,
-                                                 graph.content_hash, implementation_signature())
+                                                 graph.content_hash, implementation_signature(), graph.elevation_snapshot)
     context = comparison_to_save or (selection['saved'] if selection else None)
     result['continuation'] = comparisons.reference(context)
     result.update(id=plan_id, assetId=state['assetId'], version=state['version'], graphHash=graph.content_hash,
+                  baseGraphHash=graph.base_content_hash, elevationSnapshot=graph.elevation_snapshot,
                   routingSchema=ROUTING_SCHEMA,
                   request=request, draft=not state['reviewed'] or any(c['state'] != 'accepted' or not c.get('calibrated') for c in controls), createdAt=time.time(),
                   approaches=bundle.get('approaches', []),
@@ -744,6 +777,7 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
         if (confirm_choice or confirm_saved) and not current['reviewed']:
             raise ValueError('课程核验状态已改变，请重新核验')
         current['graphHash'] = graph.content_hash
+        current['baseGraphHash'] = graph.base_content_hash
         if comparison_to_save:
             store.atomic_json(comparisons.path(state['assetId'], comparison_to_save['content']['id']), comparison_to_save)
         store.atomic_json(store.asset_dir(state['assetId'])/f'plan-{plan_id}.json', result)

@@ -114,5 +114,6 @@ export function signInGate(state: AccountState) {
     <p>每位老师和同学都有自己的工作台：导入地图照片、自动识别配准、生成路线并发布课程，互不影响，也不需要教师口令。</p>
     <div class="login-actions"><button class="primary-button" data-sign-in="login">登录</button><button class="soft-button" data-sign-in="register">注册新账户</button></div>
     <div class="quality-card"><strong>参加课程或小组？</strong><p class="muted compact">课程链接和组队码都不需要账户。输入同伴给你的 6 位组队码即可共享位置。</p><a class="text-link" href="/?group=">输入组队码 →</a></div>
+    <p><a class="text-link" href="/elevation">查看共享地形（无需登录）↗</a></p>
     ${claimable(state) ? '<p class="muted compact">服务器上还有原工作台的数据。原教师注册时可以认领它。</p>' : ''}</section>`;
 }

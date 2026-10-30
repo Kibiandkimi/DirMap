@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import accounts, groups, photos, service, store, layers, memory, printing, progress, field_checks, sites
+from . import accounts, groups, photos, service, store, layers, memory, printing, progress, field_checks, sites, elevation
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -98,6 +98,7 @@ class PlanRequest(Model):
     objective: Literal['min_max_finish_then_sum', 'min_total_time', 'min_distance'] = 'min_max_finish_then_sum'
     teams: list[Team] = Field(min_length=1, max_length=30)
     timeLimitSec: FiniteFloat = Field(default=5, ge=.1, le=30)
+    useElevation: bool = True
 
     @model_validator(mode='after')
     def unique(self):
@@ -131,6 +132,7 @@ class AutoTeamRequest(Model):
     mandatoryControlIds: list[str] = Field(default_factory=list, max_length=60)
     mandatoryOrder: bool = False
     objective: Literal['min_max_finish_then_sum', 'min_total_time', 'min_distance'] = 'min_max_finish_then_sum'
+    useElevation: bool = True
     totalPeople: int = Field(ge=1, le=500, strict=True)
     minPeoplePerTeam: int = Field(default=2, ge=1, le=500, strict=True)
     maxTeams: int = Field(default=30, ge=1, le=30, strict=True)
@@ -361,6 +363,16 @@ class NavigationRequest(Model):
     surfaceId: str | None = Field(default=None, min_length=1, max_length=50)
 
 
+class ElevationEdit(Model):
+    version: int = Field(ge=0)
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    enabled: bool | None = None
+
+
+class ElevationDelete(Model):
+    version: int = Field(ge=0)
+
+
 @app.exception_handler(ValueError)
 async def value_error(request, exc):
     return JSONResponse(status_code=422, content={'detail': str(exc)})
@@ -392,6 +404,16 @@ async def workspace_changed(request, exc):
     return JSONResponse(status_code=409, content={'detail': str(exc), 'accountChanged': True})
 
 
+@app.exception_handler(elevation.Conflict)
+async def elevation_conflict(request, exc):
+    return JSONResponse(status_code=409, content={'detail': str(exc)})
+
+
+@app.exception_handler(elevation.NotOwner)
+async def elevation_not_owner(request, exc):
+    return JSONResponse(status_code=403, content={'detail': str(exc)})
+
+
 WRITES = ('POST', 'PUT', 'PATCH', 'DELETE')
 OPEN_PATHS = re.compile(r'/api/(?:health|auth/[a-z-]+|groups(?:/.*)?)')
 STUDENT_READS = re.compile(r'/api/releases/[0-9a-f]{32}(?:/(?:status|progress|overlay\.png|route-map|qr\.png|reference))?')
@@ -401,6 +423,8 @@ OWNER_PATHS = re.compile(r'/api/releases/[0-9a-f]{32}/(?:session|groups)')
 
 def access_scope(method, path):
     """Who may call: anyone, the course's owner, or the workbench's owner."""
+    if path == '/api/elevation' or path.startswith('/api/elevation/'):
+        return 'open' if method in ('GET', 'HEAD') else 'contributor'
     if not path.startswith(('/api/', '/assets/maps/')) or OPEN_PATHS.fullmatch(path):
         return 'open'
     if (method in ('GET', 'HEAD') and STUDENT_READS.fullmatch(path)) or (method == 'POST' and STUDENT_WRITES.fullmatch(path)):
@@ -435,6 +459,8 @@ async def origin_guard(request: Request, call_next):
                 or (user and request.method in WRITES and request.headers.get('origin') and expected is None)):
             return JSONResponse(status_code=409, content={'detail': '登录账号或工作台已变化，请刷新页面后再操作', 'accountChanged': True})
     if scope != 'open' and current_user(request) is None:
+        if scope == 'contributor':
+            return JSONResponse(status_code=401, content={'detail': '请登录后贡献或管理自己的轨迹', 'login': True})
         if not await anyio.to_thread.run_sync(original_open):
             return JSONResponse(status_code=401, content={'detail': '请先登录', 'login': True})
         # Students hold the course link, so its groups' positions and the
@@ -554,6 +580,69 @@ def health(lng: FiniteFloat | None = None, lat: FiniteFloat | None = None):
             'revision': deployment.get('revision'),
             'adminTokenRequired': bool(os.environ.get('DIRMAP_ADMIN_TOKEN')),
             'magneticDeclinationDeg': declination, 'magneticModel': 'WMM-2025', 'modelDate': today.isoformat()}
+
+
+def submit_elevation_rebuild(request):
+    with store.LOCK:
+        if not elevation.public_status()['needsRebuild']:
+            return None
+        payload = {}
+        return request.app.state.jobs.submit('elevation_rebuild', 'shared-elevation', payload,
+            service.job_inputs('elevation_rebuild', 'shared-elevation', payload), workspace=store.current_workspace())
+
+
+@app.get('/api/elevation')
+def shared_elevation():
+    return JSONResponse(elevation.public_status(), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/elevation/regions/{region_id}')
+def elevation_region(region_id: str):
+    return JSONResponse(elevation.model_grid(region_id), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/elevation/regions/{region_id}/height.tif')
+def elevation_geotiff(region_id: str):
+    data = elevation.geotiff(region_id)
+    return Response(data, media_type='image/tiff', headers={'Cache-Control': 'no-store',
+        'Content-Disposition': f'attachment; filename="DirMap-height-{region_id}.tif"'})
+
+
+@app.post('/api/elevation/tracks')
+async def contribute_elevation(request: Request, files: list[UploadFile] = File(...)):
+    if not 1 <= len(files) <= 32:
+        raise ValueError('每批请选择 1–32 份 KML')
+    sources, total = [], 0
+    try:
+        for upload in files:
+            content = await upload.read(elevation.MAX_FILE_BYTES+1)
+            total += len(content)
+            if len(content) > elevation.MAX_FILE_BYTES or total > elevation.MAX_BATCH_BYTES:
+                raise ValueError('每份 KML 不超过 20 MiB，每批不超过 64 MiB')
+            sources.append((upload.filename or 'track.kml', content))
+        receipt = await anyio.to_thread.run_sync(elevation.add_tracks, sources, current_user(request))
+        job = await anyio.to_thread.run_sync(submit_elevation_rebuild, request)
+        return {**receipt, 'job': job}
+    finally:
+        for upload in files:
+            await upload.close()
+
+
+@app.patch('/api/elevation/tracks/{track_id}')
+def edit_elevation_track(track_id: str, body: ElevationEdit, request: Request):
+    receipt = elevation.change_track(track_id, current_user(request), body.version, name=body.name, enabled=body.enabled)
+    return {**receipt, 'job': submit_elevation_rebuild(request)}
+
+
+@app.delete('/api/elevation/tracks/{track_id}')
+def delete_elevation_track(track_id: str, body: ElevationDelete, request: Request):
+    receipt = elevation.change_track(track_id, current_user(request), body.version, delete=True)
+    return {**receipt, 'job': submit_elevation_rebuild(request)}
+
+
+@app.post('/api/elevation/rebuild')
+def rebuild_elevation(request: Request):
+    return {'job': submit_elevation_rebuild(request)}
 
 
 @app.get('/api/catalog')
@@ -907,10 +996,14 @@ def release(request: ReleaseRequest):
             raise ValueError('所选路线仍有目标未核验，不能发布')
         if any(a.get('automatic') for a in plan.get('approaches', [])):
             raise ValueError('请先核对并保存建议的到访位置，再生成发布路线')
-        if state['version'] != plan['version'] or state['graphHash'] != plan['graphHash']:
+        if state['version'] != plan['version']:
             raise ValueError('地图或通行状态已变化，请重新生成路线')
-        if service.get_graph(state).content_hash != plan['graphHash']:
-            raise ValueError('通行算法或数据已更新，请重新生成并核验路线')
+        # The course keeps the heights it was planned with; rerouting needs them.
+        frozen = plan.get('elevationSnapshot') or service.elevation_routing.snapshot(state, False)
+        if not service.elevation_routing.available(frozen):
+            raise ValueError('这份路线所用的共享地形快照已清理，请重新生成路线')
+        if service.get_graph(state, elevation_snapshot=frozen).content_hash != plan['graphHash']:
+            raise ValueError('通行算法已更新，请重新生成并核验路线')
         release_id = uuid.uuid4().hex
         site = sites.get(store.site_of(store.get_asset(request.assetId)))
         result = {'id': release_id, 'title': request.title, 'assetId': request.assetId, 'createdAt': time.time(),
@@ -972,7 +1065,8 @@ def load_release(release_id):
     with store.using(value['workspace']):
         state = store.get_state(value['assetId']) if store.valid_project(value['assetId']) else None
         value['superseded'] = (not state or state['version'] != value['version']
-                               or state['graphHash'] != value['plan']['graphHash']
+                               or state.get('baseGraphHash', state.get('graphHash')) != value['plan'].get('baseGraphHash', value['plan']['graphHash'])
+                               or ((value['plan'].get('elevationSnapshot') or {}).get('gradeSchema', service.elevation_routing.GRADE_SCHEMA) != service.elevation_routing.GRADE_SCHEMA)
                                or state.get('terrainSchema') != service.TERRAIN_SCHEMA
                                or value.get('routingSchema') != ROUTING_SCHEMA
                                or service.registration_stale(state))
@@ -1161,6 +1255,11 @@ def export(asset_id: str):
 
 DIST = store.ROOT/'web'/'dist'
 if DIST.exists():
+    @app.get('/elevation')
+    @app.get('/elevation/')
+    def elevation_page():
+        return FileResponse(DIST/'elevation.html', headers={'Cache-Control': 'no-cache'})
+
     app.mount('/', StaticFiles(directory=DIST, html=True), name='web')
 else:
     @app.get('/')

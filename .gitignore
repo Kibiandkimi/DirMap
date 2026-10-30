@@ -19,6 +19,7 @@ data/group-photos/
 data/sites/
 data/sites.json
 data/shared-samples/
+data/elevation/
 /dirmap/public-samples.json
 /dirmap/public-samples.tmp
 evidence/checkpoints/

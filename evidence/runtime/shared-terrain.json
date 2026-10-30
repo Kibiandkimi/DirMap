@@ -1,0 +1,561 @@
+{
+ "checkedAt": "2026-10-30T01:00:14Z",
+ "baseRevision": "5957b4feb7c543e7fb0c33aa06b14859081baaed",
+ "sourceSha256": {
+  "dirmap/elevation.py": "9d09bd3137683674f843987fd0dcdac75dd12a9232ee6fe1191db43848843663",
+  "dirmap/elevation_model.py": "b4e0c34119a9db3190f40302af60cdc95bc091f43281f86d6a7a062470b8ee2b",
+  "dirmap/elevation_routing.py": "a2d19e13581dd11586729dcdff6b245789bd93eb7342726d66a52854b4f5b705",
+  "dirmap/service.py": "4162a72038138dacc86f265bd90deca538aa0cb3a8b2facc7fa6ceb494a9ec30",
+  "dirmap/app.py": "e3c96d03d8da030ce2bb495890f0af421666fbce26f1aac01e5b17b7505b1807",
+  "dirmap/comparisons.py": "c9a71b0d74023b15d4abf7e12de42f780ffbeff7b1cbdc5670a80793ac5b37b9",
+  "dirmap/graph.py": "a35e8d217e3156ab528c1aba0c6a70d130bb74bbaf474343e2c3eaeb7f2eed06",
+  "web/src/elevation-page.ts": "29a0a780053ff03e54010eab8e8bb39887357f8a385611e9c1166b5c22b04877",
+  "web/src/elevation-view.ts": "15ee5ec683bb7175a91e0ccd005a370c2f46437835ad44f93135bcea3aaf5516",
+  "web/src/elevation-profile.ts": "03410b2031d557b6ba6ad81656e9d362c530557e07061a1d58e5ab786bfe9209",
+  "web/src/main.ts": "c367d553bf90ed6cf0f442b11bf62a3a50914c93fda8cb3aba8df0a2a2722c66",
+  "web/vite.config.ts": "3c0106f830ce38417d113213e275db60d153e580445bd570597bd867c3edd779",
+  "tools/verify_elevation.py": "f069c8e5b26cb48bdbf5f539ba065c82426a11ec5f84a9810e3a088e8f5922e6",
+  "tools/import_elevation.py": "5a43534ebedd4014d709a75800987975c419c968065fac18004603892f50acc3"
+ },
+ "request": "用 2026-10 下载的 KML 重建对应地区地形，新增绘制地形的页面，在路线规划等处考虑上下坡，并能持续加入新的轨迹；轨迹归 kibi，所有人共同构建和查看，但不能修改他人的轨迹。",
+ "inputs": {
+  "source": "两步路 (2bulu V1.3.9, nova 16) 导出的 gx:Track，每秒一点，海拔取整到 1 m",
+  "files": [
+   {
+    "fileName": "20261029_183448.kml",
+    "sha256": "65509f35e7b37ea10e09dbd802d580806ffc92a0be1f679b5edd141af3a4dbe4",
+    "recording": "2026-10-28 19:37:42",
+    "points": 2968,
+    "heightRangeM": [
+     12.0,
+     42.0
+    ],
+    "bbox": [
+     113.954108,
+     22.557367,
+     113.958195,
+     22.56255
+    ]
+   },
+   {
+    "fileName": "20261029_183932.kml",
+    "sha256": "8b810bbbe1190086929d7271d62ab9ff31189d69a340e3757ae8795d1eaf4342",
+    "recording": "2026-10-09 18:26:42",
+    "points": 6344,
+    "heightRangeM": [
+     8.0,
+     24.0
+    ],
+    "bbox": [
+     113.925577,
+     22.53072,
+     113.934506,
+     22.541919
+    ]
+   },
+   {
+    "fileName": "20261029_183953.kml",
+    "sha256": "c659656def49a7e162cb0b15cb0d036da25da04e8376543566120749fa385b9b",
+    "recording": "2026-10-10 09:00:03",
+    "points": 2014,
+    "heightRangeM": [
+     11.0,
+     34.0
+    ],
+    "bbox": [
+     113.927476,
+     22.531618,
+     113.934973,
+     22.539778
+    ]
+   },
+   {
+    "fileName": "20261029_184005.kml",
+    "sha256": "d6d051abf79abe63a0105b0d0b8a91cb6de9be92a2ed790fbb578cb49bfd02ae",
+    "recording": "2026-10-14 08:57:40",
+    "points": 2247,
+    "heightRangeM": [
+     10.0,
+     30.0
+    ],
+    "bbox": [
+     113.925551,
+     22.530726,
+     113.93559,
+     22.539449
+    ]
+   },
+   {
+    "fileName": "20261029_184032.kml",
+    "sha256": "aef39f191972d03d3c3f3cf660d22b9fae11eed8513c52a151d47d9af4ce3701",
+    "recording": "2026-10-27 18:51:32",
+    "points": 718,
+    "heightRangeM": [
+     20.0,
+     32.0
+    ],
+    "bbox": [
+     113.929708,
+     22.539375,
+     113.936695,
+     22.541227
+    ]
+   },
+   {
+    "fileName": "20261029_184047.kml",
+    "sha256": "9dcbc3e18e00936f6742f1cc3b6f2431feb11a4ff82b2089c661293456f1032c",
+    "recording": "2026-10-27 19:22:40",
+    "points": 633,
+    "heightRangeM": [
+     16.0,
+     42.0
+    ],
+    "bbox": [
+     113.927369,
+     22.530723,
+     113.933915,
+     22.540356
+    ]
+   },
+   {
+    "fileName": "20261029_184104.kml",
+    "sha256": "3856b0e901f5463b3c0197f8556e220d6474b5f5cb8534e1862ab39fd9bbea8c",
+    "recording": "2026-10-28 09:15:46",
+    "points": 524,
+    "heightRangeM": [
+     17.0,
+     29.0
+    ],
+    "bbox": [
+     113.930056,
+     22.536726,
+     113.933901,
+     22.540613
+    ]
+   },
+   {
+    "fileName": "20261029_184122.kml",
+    "sha256": "11d624365e17e7afd05c9e8c1ecc71638378fa4f2d867fa42621c17e2c58f837",
+    "recording": "2026-10-28 12:27:29",
+    "points": 849,
+    "heightRangeM": [
+     2.0,
+     12.0
+    ],
+    "bbox": [
+     113.92914,
+     22.5309,
+     113.934602,
+     22.533178
+    ]
+   },
+   {
+    "fileName": "20261029_184138.kml",
+    "sha256": "f95e6316b352e56a4aeefeaa0d6a9492c3a9ad933f1d86c5f998259fba323efa",
+    "recording": "2026-10-29 06:58:53",
+    "points": 226,
+    "heightRangeM": [
+     21.0,
+     33.0
+    ],
+    "bbox": [
+     113.930255,
+     22.53608,
+     113.933762,
+     22.539891
+    ]
+   },
+   {
+    "fileName": "20261029_184151.kml",
+    "sha256": "1d02f6a1fa9bca396505402ee9854be502991c138f7db642967dd5ffd18ba980",
+    "recording": "2026-10-29 09:57:52",
+    "points": 429,
+    "heightRangeM": [
+     1.0,
+     25.0
+    ],
+    "bbox": [
+     113.930092,
+     22.530946,
+     113.935004,
+     22.539671
+    ]
+   },
+   {
+    "fileName": "20261029_184206.kml",
+    "sha256": "c715beace03d27b2d4bb7bfddfae3432755664801c187d9df45bc7358a500129",
+    "recording": "2026-10-29 13:51:22",
+    "points": 218,
+    "heightRangeM": [
+     21.0,
+     34.0
+    ],
+    "bbox": [
+     113.930077,
+     22.536109,
+     113.933516,
+     22.539714
+    ]
+   }
+  ],
+  "coordinateCheck": {
+   "method": "轨迹点到内置 OpenStreetMap 道路的距离；与按 GCJ-02 反算的位置对比",
+   "medianToRoadM": {
+    "asRecorded": [
+     2.4,
+     3.8
+    ],
+    "ifGcj02": [
+     5.9,
+     20.7
+    ]
+   },
+   "conclusion": "WGS-84，无需坐标转换"
+  }
+ },
+ "method": {
+  "schema": "shared-track-height-v2",
+  "summary": "每条记录每 5 m 一个观测（停留处最多计 3 个）；10 m 网格地面（薄板曲率先验）与每条记录每 5 分钟一个节点的分段线性漂移在同一稳健最小二乘（Huber，4 次重加权）中求解；记录之间通过共享的 12 m 格子（交叉或重叠）关联，无关联的记录各自成区并在相接处留空；高度只给在观测之间（三角形边 ≤160 m 且距观测 ≤70 m）或路径两侧 25 m 内；所有记录的平均作为高度基准。",
+  "previous": "上一会话的 v1：每条记录一个常数偏差（需 ≥16 个重叠格），三角插值后 10 m 高斯平滑。"
+ },
+ "reconstruction": {
+  "schema": "shared-track-height-v2",
+  "files": 11,
+  "points": 17170,
+  "regions": [
+   {
+    "tracks": 1,
+    "centre": [
+     113.9561515,
+     22.5599585
+    ],
+    "spacingM": 10.0,
+    "supportedHectares": 16.4,
+    "heightRangeM": [
+     8.1,
+     39.8
+    ],
+    "alignment": {
+     "alignedComponents": 1,
+     "overlapPairs": 0,
+     "overlapResidualM": null,
+     "residualM": 0.62
+    },
+    "driftRangeM": [
+     2.44
+    ],
+    "rebuildSec": 0.09
+   },
+   {
+    "tracks": 10,
+    "centre": [
+     113.931123,
+     22.536319499999998
+    ],
+    "spacingM": 10.0,
+    "supportedHectares": 82.1,
+    "heightRangeM": [
+     2.2,
+     33.9
+    ],
+    "alignment": {
+     "alignedComponents": 1,
+     "overlapPairs": 28,
+     "overlapResidualM": 0.41,
+     "residualM": 0.52
+    },
+    "driftRangeM": [
+     0.27,
+     0.29,
+     1.25,
+     1.36,
+     1.69,
+     1.72,
+     1.79,
+     1.98,
+     5.77,
+     17.91
+    ],
+    "rebuildSec": 1.06,
+    "withheld": {
+     "residualMadM": 2.48,
+     "residualP90M": 5.23,
+     "grades": {
+      "30m": {
+       "pairs": 8378,
+       "correlation": 0.589,
+       "medianModelGrade": 0.0227,
+       "medianWalkGrade": 0.0318,
+       "differenceMad": 0.0271
+      },
+      "60m": {
+       "pairs": 7052,
+       "correlation": 0.743,
+       "medianModelGrade": 0.0217,
+       "medianWalkGrade": 0.0165,
+       "differenceMad": 0.0179
+      },
+      "100m": {
+       "pairs": 5975,
+       "correlation": 0.809,
+       "medianModelGrade": 0.0209,
+       "medianWalkGrade": 0.0199,
+       "differenceMad": 0.0149
+      }
+     }
+    },
+    "perRecording": [
+     {
+      "id": "40585af03ca9ad93a74268db8850212dbd92760b77d4ff0ae376ee7324108b2d",
+      "fileName": "20261029_183932.kml",
+      "predictedFraction": 0.608,
+      "offsetM": -3.57,
+      "residualMadM": 5.63
+     },
+     {
+      "id": "6be4fc30013f4a324c005d58c446f3799140306d2233059df064f9d6133173a8",
+      "fileName": "20261029_183953.kml",
+      "predictedFraction": 0.865,
+      "offsetM": 0.95,
+      "residualMadM": 1.2
+     },
+     {
+      "id": "193986605aa7433cbebe170a67c38959dfec8b1e535d41a8b6ff6180604d2e5a",
+      "fileName": "20261029_184005.kml",
+      "predictedFraction": 0.792,
+      "offsetM": 1.23,
+      "residualMadM": 1.67
+     },
+     {
+      "id": "2d63b1abb695f0fe679be08b99b17868e4fcb5e3be8fd66a9f48c46fe428a447",
+      "fileName": "20261029_184032.kml",
+      "predictedFraction": 0.256,
+      "offsetM": 3.42,
+      "residualMadM": 0.7
+     },
+     {
+      "id": "fa388b4fd682e4913dae27dab8fcb8e94b29975d7edb716a3f5fd1fae7e1c3ad",
+      "fileName": "20261029_184047.kml",
+      "predictedFraction": 0.818,
+      "offsetM": 8.24,
+      "residualMadM": 0.84
+     },
+     {
+      "id": "0993487e2a82932cb39c35bd6c03cc1215e5070a75a76be572d55b4ed29a9cf3",
+      "fileName": "20261029_184104.kml",
+      "predictedFraction": 1.0,
+      "offsetM": -0.73,
+      "residualMadM": 1.31
+     },
+     {
+      "id": "606aed949ed5cbc57d8cb78d5739219e9620534f00130a766aaeaae9b4cb2963",
+      "fileName": "20261029_184122.kml",
+      "predictedFraction": 0.963,
+      "offsetM": -3.07,
+      "residualMadM": 4.49
+     },
+     {
+      "id": "858e9377c46a4e9bc7874a92c6f69ab53614bb5cb06c2b11a9019327ec9fe0fd",
+      "fileName": "20261029_184138.kml",
+      "predictedFraction": 1.0,
+      "offsetM": 3.82,
+      "residualMadM": 1.09
+     },
+     {
+      "id": "d0ae0fdd750e7ba782b4fa509341e98258807efc645e3a23d3c424378e1decf0",
+      "fileName": "20261029_184151.kml",
+      "predictedFraction": 0.923,
+      "offsetM": -5.11,
+      "residualMadM": 3.1
+     },
+     {
+      "id": "5a23c14d1a0f882a3db025af32ea9de6dbd967fce89efa362ea3b3235db63119",
+      "fileName": "20261029_184206.kml",
+      "predictedFraction": 1.0,
+      "offsetM": 4.16,
+      "residualMadM": 1.17
+     }
+    ]
+   }
+  ]
+ },
+ "comparison": {
+  "withheldRecordings": {
+   "scope": "校园 10 条记录逐条留出；留出记录只扣除其常数偏差，自身漂移仍计入误差",
+   "v1": {
+    "residualMadM": 3.37,
+    "residualP90M": 7.6,
+    "gradeCorrelation": {
+     "30m": 0.36,
+     "60m": 0.42,
+     "100m": 0.56
+    }
+   },
+   "v2": {
+    "residualMadM": 2.48,
+    "residualP90M": 5.23,
+    "gradeCorrelation": {
+     "30m": 0.59,
+     "60m": 0.74,
+     "100m": 0.81
+    }
+   }
+  },
+  "externalDem": {
+   "source": "OpenTopoData 公共接口 SRTM 30 m 与 ASTER 30 m，在已重建范围内随机取 400 个网格点；二者都是含建筑和树冠的表面模型，只作大尺度参照",
+   "campus": {
+    "v1": {
+     "srtmCorrelation": 0.7,
+     "asterCorrelation": 0.74,
+     "gradeCorrelation60to150m": {
+      "srtm": 0.3,
+      "aster": 0.48
+     }
+    },
+    "v2": {
+     "srtmCorrelation": 0.79,
+     "asterCorrelation": 0.79,
+     "gradeCorrelation60to150m": {
+      "srtm": 0.47,
+      "aster": 0.48
+     }
+    }
+   },
+   "park": {
+    "v1": {
+     "srtmCorrelation": 0.67,
+     "asterCorrelation": 0.86,
+     "gradeCorrelation60to150m": {
+      "srtm": 0.57,
+      "aster": 0.88
+     }
+    },
+    "v2": {
+     "srtmCorrelation": 0.69,
+     "asterCorrelation": 0.87,
+     "gradeCorrelation60to150m": {
+      "srtm": 0.6,
+      "aster": 0.88
+     }
+    }
+   },
+   "trackVsDem": "11 条原始记录中 9 条与 SRTM/ASTER 的相关系数 0.47–0.92；两条 4 分钟的短记录起伏小，无相关性"
+  }
+ },
+ "routing": {
+  "map": "新账户工作台的公共样例深大定向图 1（10 个目标，回到起终点），每队 1.3 m/s，5 秒预算，均为模型内最优",
+  "oneTeam": {
+   "flat": {
+    "order": [
+     "38",
+     "37",
+     "40",
+     "36",
+     "35",
+     "39",
+     "34",
+     "33",
+     "32",
+     "31"
+    ],
+    "distanceM": 3191,
+    "travelMin": 41.2
+   },
+   "slopes": {
+    "order": [
+     "31",
+     "32",
+     "33",
+     "34",
+     "39",
+     "35",
+     "36",
+     "40",
+     "37",
+     "38"
+    ],
+    "distanceM": 3205,
+    "travelMin": 41.3,
+    "ascentM": 36.6,
+    "descentM": 46.4,
+    "coverage": 0.931
+   }
+  },
+  "threeTeams": {
+   "flat": [
+    [
+     2129,
+     27.4
+    ],
+    [
+     2191,
+     28.3
+    ],
+    [
+     2276,
+     29.3
+    ]
+   ],
+   "slopes": [
+    [
+     2133,
+     27.3
+    ],
+    [
+     2197,
+     28.6
+    ],
+    [
+     2276,
+     29.6
+    ]
+   ],
+   "note": "只有第 1 队的走向反转"
+  },
+  "scope": "同一张图和点序约束下，坡度只改变绕圈方向等细节；校园起伏约 30 m，对总用时影响很小。这不是现场用时验证。"
+ },
+ "performance": {
+  "campus10Recordings": {
+   "rebuildSec": 1.06
+  },
+  "stress": [
+   {
+    "case": "1.5 km 见方、30 条十字交叉记录、3.5 万点",
+    "sec": 1.7,
+    "peakRssMiB": 162
+   },
+   {
+    "case": "3.5 km 见方、60 条记录、16 万点（网格放宽到 22 m）",
+    "sec": 4.8,
+    "peakRssMiB": 240
+   },
+   {
+    "case": "3 km 见方、150 条记录、35 万点（网格 17 m）",
+    "sec": 9.7,
+    "peakRssMiB": 371
+   }
+  ],
+  "before": "修改前同一 1.5 km 场景需 160 秒：只交叉一次的记录不被关联，每条单独求解且包含整个区域网格"
+ },
+ "fixesDuringReview": [
+  "首页改为动态加载主程序后，构建产物在外部字体请求失败时无法启动（Vite CSS 预加载报错）；改为两个独立页面入口，首页加载方式与原来一致。",
+  "拆分入口后 OpenLayers 默认样式排到应用样式之后，地图缩放控件被拉伸并挡住点击（组队集合点选点失败）；恢复样式顺序。",
+  "撤回不必要的路由版本升级：已有课程链接不会因此失效；发布前没有高程快照的课程继续按平地偏航重算。",
+  "从队数比较采用方案时丢失“考虑上下坡”设置；保存的比较与继续优化沿用原计算的高程快照。",
+  "草稿保留规划时的高程快照即可发布，快照文件已清理时明确拒绝；模型文件按内容命名，重建不会改写已发布课程引用的高度。",
+  "GPS 时间戳参与漂移估计；同一文件中重复的 LineString 不再重复计权；上传 64 MiB 时不再在 60 秒处中断。",
+  "工作台处理记录中显示“共享地形 · 合并轨迹高程”；学生页和纸质路线单在没有高程覆盖时不显示空提示。"
+ ],
+ "tests": {
+  "backend": "368 passed",
+  "frontend": "26 passed",
+  "build": "passed",
+  "browser": "54 passed（含新增 2 个共享地形场景；在 /tmp 教学副本中先用 prepare_maps.py --refresh-recognition 升级识别）"
+ },
+ "limits": [
+  "高度是手机记录的相对高程，没有测量级基准；校园留出残差中位绝对偏差约 2.5 m，地形细节约以 30–100 m 尺度可信。",
+  "大沙河公园只有 1 条记录，无法互相校核；与 ASTER 的大尺度坡度相关 0.88，但细节依赖这一条轨迹。",
+  "坡度耗时用 Tobler 步行函数，未按学生实测速度标定；楼梯、桥面等非地面层级不计坡度。",
+  "未在真实手机上做现场试走验证。"
+ ]
+}

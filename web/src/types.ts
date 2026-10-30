@@ -33,6 +33,9 @@ export interface Route {
   legs?: { fromId: string; toId: string; startIndex: number; endIndex: number; distanceM: number }[];
   surfaceSections?: { surfaceId: string; label: string; level: number; startIndex: number; endIndex: number }[];
   transitions?: { portalId: string; label: string; fromSurface: string; toSurface: string; index: number; lnglat: Pixel; lengthM: number; travelWeightM: number }[];
+  elevation?: { modelRevision: string; coverageFraction: number; knownDistanceM: number; unknownDistanceM: number;
+    ascentM: number | null; descentM: number | null; estimated: boolean;
+    profile: { distanceM: number; heightM: number | null }[] };
 }
 export interface TeamProgress {
   teamId: string; completed: string[]; checkIns: Record<string, number>; departed: string[]; finished: boolean; reportedAt: number | null;
@@ -61,6 +64,7 @@ export interface PlanRequest {
   customRoutes?: { teamId: string; controlIds: string[] }[];
   teams: { id: string; people: number; speedMps: number; departureSec?: number }[];
   timeLimitSec: number;
+  useElevation?: boolean;
 }
 export interface AutoTeamRequest extends Omit<PlanRequest, 'teams' | 'customRoutes'> {
   totalPeople: number; minPeoplePerTeam: number; maxTeams: number; speedMps: number;
