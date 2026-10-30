@@ -4,8 +4,8 @@ import 'ol/ol.css';
 import './style.css';
 import './elevation.css';
 import { fetchAccount, openSignIn, renderAccountChip } from './account';
-import { setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
-import { escapeHtml as e, type AccountState } from './types';
+import { mapAssetUrl, setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
+import { escapeHtml as e, type AccountState, type MapState } from './types';
 import type { HeightGrid, HeightRegion, HeightStatus, HeightTrack } from './elevation-types';
 import { ElevationView } from './elevation-view';
 
@@ -23,7 +23,7 @@ document.querySelector('#app')!.innerHTML = `
     <div class="height-viewport"><canvas id="height-canvas" tabindex="0" aria-label="三维地形；方向键旋转，加减键缩放"></canvas><canvas id="height-map-canvas" hidden aria-label="北向上的高程图；点击可查看高程"></canvas>
       <div id="height-empty" class="height-empty">正在读取共享地形…</div><div id="height-gesture" class="height-gesture">拖动旋转 · 双指或滚轮缩放</div>
       <div class="height-legend"><span id="height-low">—</span><i></i><span id="height-high">—</span><small>轨迹参考高程 · 米</small></div></div>
-    <div class="height-display-tools"><label>垂直夸张 <input id="height-exaggeration" type="range" min="1" max="8" value="4" step=".5"><span id="height-factor">4×</span><small>仅影响三维显示</small></label><label class="check-label"><input id="height-observations" type="checkbox">显示采样位置</label></div>
+    <div class="height-display-tools"><label>垂直夸张 <input id="height-exaggeration" type="range" min="1" max="8" value="4" step=".5"><span id="height-factor">4×</span><small>仅影响三维显示</small></label><label class="check-label"><input id="height-observations" type="checkbox">显示采样位置</label><label id="height-overlay-field" class="height-overlay hidden">叠加定向图 <select id="height-overlay-map" aria-label="叠加的定向图"><option value="">不叠加</option></select></label><label id="height-overlay-opacity-field" class="hidden">定向图 <input id="height-overlay-opacity" type="range" min="0" max="100" value="60" aria-label="定向图透明度"><span id="height-overlay-value">60%</span></label></div>
     <div id="height-statistics" class="height-statistics"></div><div id="height-inspect" class="height-inspect">切换“高程图”，点击或移动指针查看某处高程。</div><div id="height-context-credit" class="height-context-credit hidden">位置参照 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> · 未着色区域暂无高程支持</div>
     <div class="height-explanation"><strong>从轨迹重建的参考地形</strong><p>手机记录的高度会随时间漂移，不同日子的记录也有整体偏差。重建时利用交叉和重叠路段，同时估计地面高度和每条记录的漂移，再在有观测支持的区域平滑插值。留白处没有足够的数据；三维夸张不影响路线中的爬升与耗时计算。</p><p>高程来自记录设备，未建立测量级海拔基准。新贡献会更新后续规划使用的地形，已发布课程保留发布时的高程快照。</p><p id="height-alignment"></p></div>
   </section><aside class="height-sidebar"><div class="height-contribute"><h2>贡献轨迹</h2><p>大家共同构建、共同查看。你可以管理自己上传的轨迹。</p><button id="height-upload" class="primary-button wide">＋ 添加 KML 轨迹</button><input id="height-files" type="file" accept=".kml,application/vnd.google-earth.kml+xml" multiple hidden><small>可多选；相同轨迹不会重复计入。</small>
@@ -113,7 +113,7 @@ async function loadRegion() {
   try {
     const grid: HeightGrid = await api('/api/elevation/regions/' + region.id);
     if (revision !== loading || selected !== grid.id) return;
-    viewer.setGrid(grid); loadedFingerprint = grid.fingerprint; renderRegion(grid);
+    viewer.setGrid(grid); loadedFingerprint = grid.fingerprint; renderRegion(grid); renderOverlayChoices();
     $('height-context-credit').classList.toggle('hidden', !grid.context?.features.length);
     $('height-empty').classList.toggle('hidden', !!grid.supportedCells);
     if (!grid.supportedCells) { $('height-empty').textContent = '目前的观测尚不足以形成地形面；继续补充交叉轨迹后可重建。'; viewer.setPoints(true); }
@@ -189,10 +189,63 @@ $('height-tracks').addEventListener('click', event => {
   box.showModal();
 });
 
+// The signed-in workbench's registered maps that cover this terrain.
+let workbenchMaps: { id: string; name: string; extent: number[] }[] = [];
+let overlayRequest = 0;
+const EARTH = 6378137;
+const degrees = (x: number, y: number) => [x / EARTH * 180 / Math.PI, (2 * Math.atan(Math.exp(y / EARTH)) - Math.PI / 2) * 180 / Math.PI];
+function remembered(name: string) { try { return localStorage.getItem(workbenchKey(name)); } catch { return null; } }
+function remember(name: string, value: string) { try { localStorage.setItem(workbenchKey(name), value); } catch { /* this page keeps it */ } }
+async function loadWorkbenchMaps() {
+  try {
+    const catalog: { maps: { id: string; name: string; processed: boolean; extent?: number[] | null }[] } = await api('/api/catalog');
+    workbenchMaps = catalog.maps.filter(m => m.processed && m.extent?.length === 4).map(m => ({ id: m.id, name: m.name, extent: m.extent! }));
+  } catch { workbenchMaps = []; }  // a visitor without a workbench sees only the terrain
+  renderOverlayChoices();
+}
+function renderOverlayChoices() {
+  const region = status?.regions.find(r => r.id === selected), select = $<HTMLSelectElement>('height-overlay-map');
+  const candidates = region ? workbenchMaps.filter(m => {
+    const [west, south] = degrees(m.extent[0], m.extent[1]), [east, north] = degrees(m.extent[2], m.extent[3]);
+    return west <= region.bbox[2] && east >= region.bbox[0] && south <= region.bbox[3] && north >= region.bbox[1];
+  }) : [];
+  const chosen = select.value || remembered('height-overlay') || '';
+  select.innerHTML = '<option value="">不叠加</option>' + candidates.map(m => `<option value="${e(m.id)}">${e(m.name)}</option>`).join('');
+  select.value = candidates.some(m => m.id === chosen) ? chosen : '';
+  $('height-overlay-field').classList.toggle('hidden', !candidates.length);
+  void applyOverlay();
+}
+async function applyOverlay() {
+  const id = $<HTMLSelectElement>('height-overlay-map').value, request = ++overlayRequest;
+  $('height-overlay-opacity-field').classList.toggle('hidden', !id);
+  if (!id) { viewer.setOverlay(null); return; }
+  try {
+    const state: MapState = await api('/api/maps/' + encodeURIComponent(id));
+    if (!state.extent || state.registrationStale) throw new Error('这张图的配准已过期，请先在课程工作台重新配准');
+    const image = new Image(); image.src = mapAssetUrl(state, 'overlay.png'); await image.decode();
+    if (request === overlayRequest) viewer.setOverlay({ image, extent: state.extent });
+  } catch (error) {
+    if (request !== overlayRequest) return;
+    viewer.setOverlay(null); $('height-overlay-opacity-field').classList.add('hidden');
+    notify(error instanceof Error && error.message ? error.message : '暂时无法叠加这张定向图', true);
+  }
+}
+$('height-overlay-map').onchange = () => { remember('height-overlay', $<HTMLSelectElement>('height-overlay-map').value); void applyOverlay(); };
+$('height-overlay-opacity').oninput = event => {
+  const value = Number((event.target as HTMLInputElement).value);
+  $('height-overlay-value').textContent = `${value}%`; viewer.setOverlayOpacity(value / 100); remember('height-overlay-opacity', String(value));
+};
 async function start() {
   account = await fetchAccount(); if (account) setWorkbench(account);
   renderAccountChip($('height-account'), account, notify); watchAccountChanges(() => location.reload());
   if (!viewer.supports3D) { $<HTMLButtonElement>('height-3d').disabled = true; switchMode('map'); }
+  if (account) {
+    const opacity = Number(remembered('height-overlay-opacity'));
+    if (opacity >= 0 && opacity <= 100 && remembered('height-overlay-opacity') !== null) {
+      $<HTMLInputElement>('height-overlay-opacity').value = String(opacity); $('height-overlay-value').textContent = `${opacity}%`; viewer.setOverlayOpacity(opacity / 100);
+    }
+    void loadWorkbenchMaps();
+  }
   try { await refresh(); }
   catch (error) { $('height-empty').textContent = '暂时无法读取共享地形，请联网后刷新。'; notify((error as Error).message, true); }
   if (account?.user) { try { const id = localStorage.getItem(jobKey()); if (id) void watchJob({ id }); } catch { /* storage unavailable */ } }

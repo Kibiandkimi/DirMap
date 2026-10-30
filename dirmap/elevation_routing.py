@@ -10,7 +10,8 @@ from .elevation_model import SCHEMA, fingerprint, slope_factors
 from .geometry import Frame
 
 GRADE_SCHEMA = 'tobler-relative-flat-speed-v1'
-MODEL_KEYS = ('id', 'name', 'fingerprint', 'artifact', 'frame', 'origin', 'spacingM', 'columns', 'rows', 'bbox', 'supportedCells')
+MODEL_KEYS = ('id', 'name', 'fingerprint', 'artifact', 'frame', 'origin', 'spacingM', 'columns', 'rows', 'bbox', 'supportedCells',
+              'minHeightM', 'maxHeightM')
 
 
 def snapshot(state, enabled=True):

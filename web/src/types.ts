@@ -53,6 +53,7 @@ export interface Plan {
   teamRecommendation?: TeamRecommendation;
   surfaces?: Surface[]; targetSurfaces?: Record<string, string>;
   continuation?: { id: string; token: string; version: number };
+  elevationSnapshot?: { enabled: boolean; revision: string; models: { artifact: string; frame: { origin: Pixel }; origin: Pixel; spacingM: number; columns: number; rows: number; bbox?: number[]; minHeightM?: number | null; maxHeightM?: number | null }[] };
   refinement?: { sourcePlanId: string; budgetSec: number; before: PlanMetrics; after: PlanMetrics;
     improved: boolean; attempted: boolean; round: number };
 }

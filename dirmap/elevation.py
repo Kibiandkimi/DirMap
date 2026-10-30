@@ -122,20 +122,27 @@ def parse_kml(content, filename):
     points = np.asarray(rows)
     if np.all(points[:, 2] == 0) and 'absolute' not in modes:
         raise ValueError('轨迹高程全部为 0，可能未记录海拔；请导出包含实际高程的数据')
+    name = next(((e.text or '').strip() for e in document.iter() if tag(e) == 'name' and (e.text or '').strip()), Path(filename).name)
+    summary, arrays = track_record(points, breaks, times, name, filename, hashlib.sha256(content).hexdigest(), sorted(modes))
+    summary['rejectedPoints'] = rejected
+    return summary, arrays
+
+
+def track_record(points, breaks, times, name, file_name, source_sha256, modes):
+    """A shared-track summary and arrays for normalized height observations."""
+    points = np.array(points, float)
     # Export timestamps, filenames and whitespace do not create duplicate surveys.
     points[:, :2] = np.round(points[:, :2], 6)
     points[:, 2] = np.round(points[:, 2], 1)
     breaks = np.asarray(sorted(set([0, *[i for i in breaks if i < len(points)]])), np.int32)
     digest = hashlib.sha256(points.astype('<f8').tobytes()+breaks.astype('<i4').tobytes()).hexdigest()
-    name = next(((e.text or '').strip() for e in document.iter() if tag(e) == 'name' and (e.text or '').strip()), Path(filename).name)
     times = np.asarray(times, float)
-    summary = {'id': digest, 'name': name[:120], 'fileName': Path(filename).name[:180],
-               'pointCount': len(points), 'rejectedPoints': rejected,
+    summary = {'id': digest, 'name': name[:120], 'fileName': Path(file_name).name[:180],
+               'pointCount': len(points), 'rejectedPoints': 0,
                'recordedAt': float(np.nanmin(times)) if np.isfinite(times).any() else None,
                'bbox': [*points[:, :2].min(axis=0).tolist(), *points[:, :2].max(axis=0).tolist()],
                'minHeightM': float(points[:, 2].min()), 'maxHeightM': float(points[:, 2].max()),
-               'sourceSha256': hashlib.sha256(content).hexdigest(), 'altitudeModes': sorted(modes),
-               'enabled': True}
+               'sourceSha256': source_sha256, 'altitudeModes': list(modes), 'enabled': True}
     return summary, {'points': points, 'breaks': breaks, 'times': times}
 
 
@@ -166,6 +173,14 @@ def add_tracks(files, owner):
             errors.append({'fileName': Path(name).name, 'message': str(exc)})
     if not parsed:
         raise ValueError('；'.join(item['fileName']+'：'+item['message'] for item in errors))
+    return store_tracks(parsed, owner, errors)
+
+
+def store_tracks(parsed, owner, errors=()):
+    """Add parsed recordings under `owner`; identical observations are kept once."""
+    if not owner or not owner.get('id'):
+        raise NotOwner('请登录后贡献轨迹')
+    errors = list(errors)
     with store.LOCK:
         source = catalogue()
         existing = {t['id']: t for t in source['tracks']}

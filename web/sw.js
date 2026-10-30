@@ -8,6 +8,21 @@ const COURSES = 'dirmap-courses-v1';
 const RELEASE = /^\/api\/releases\/([0-9a-f]{32})$/;
 const OVERLAY = /^\/api\/releases\/[0-9a-f]{32}\/overlay\.png$/;
 const REFERENCE = /^\/api\/releases\/[0-9a-f]{32}\/reference$/;
+// Height reliefs are named by content: kept once, a few at a time.
+const RELIEFS = 'dirmap-reliefs-v1';
+const RELIEF = /^\/api\/elevation\/artifacts\/[0-9a-f]{40}\/relief\.png$/;
+
+async function cachedRelief(request) {
+  const cache = await caches.open(RELIEFS), saved = await cache.match(request);
+  if (saved) return saved;
+  const response = await fetch(request);
+  if (response.ok) {
+    await cache.put(request, response.clone());
+    const keys = await cache.keys();
+    for (const old of keys.slice(0, Math.max(0, keys.length - 8))) await cache.delete(old);
+  }
+  return response;
+}
 
 self.addEventListener('install', event => event.waitUntil((async () => {
   const response = await fetch('/', { cache: 'reload' });
@@ -86,6 +101,8 @@ self.addEventListener('fetch', event => {
     event.respondWith(limitedFetch(request).catch(async () => (await caches.open(SHELL)).match('/index.html')));
   } else if (RELEASE.test(url.pathname) || REFERENCE.test(url.pathname) || ['/api/health', '/api/reference'].includes(url.pathname)) {
     event.respondWith(freshJSON(request));
+  } else if (RELIEF.test(url.pathname)) {
+    event.respondWith(cachedRelief(request));
   } else if (OVERLAY.test(url.pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(COURSES), cached = await cache.match(request);
@@ -112,8 +129,13 @@ self.addEventListener('message', event => {
       const overlay = await limitedFetch(url + '/overlay.png', 60000);
       if (!overlay.ok) throw new Error('原图尚未下载完整');
       await cache.put(url + '/overlay.png', overlay);
-      const origin = (await course.clone().json()).frame?.origin;
+      const saved = await course.clone().json(), origin = saved.frame?.origin;
       await saveJSON(cache, url, course);
+      // The heights the course was planned with, for the relief layer offline.
+      for (const model of saved.plan?.elevationSnapshot?.models ?? []) {
+        const name = String(model.artifact ?? '').replace(/^models\//, '').replace(/\.npz$/, '');
+        if (/^[0-9a-f]{40}$/.test(name)) { try { await cachedRelief(new Request(`/api/elevation/artifacts/${name}/relief.png`)); } catch { /* optional layer */ } }
+      }
       // The course's own place: its reference and magnetic declination.
       for (const path of [url + '/reference', origin ? `/api/health?lng=${origin[0]}&lat=${origin[1]}` : '/api/health']) {
         try { const response = await limitedFetch(path); if (response.ok) await saveJSON(cache, path, response); } catch { /* course overlay and routes are already complete */ }

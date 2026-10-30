@@ -12,6 +12,8 @@ import { teamComparisonHtml } from './team-comparison';
 import { canRefine, refinementHtml } from './plan-refinement';
 import { resultsCsv } from './class-results';
 import { elevationSummary } from './elevation-profile';
+import { legend as elevationLegend, modelExtent, overlapping, sharedReliefUrl, type HeightModelRef } from './elevation-layer';
+import { HeightSampler } from './live-sampler';
 import { printSheets } from './print';
 import { fetchAccount, openSignIn, renderAccountChip, signInGate } from './account';
 import { setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
@@ -65,6 +67,13 @@ let surfaceSelectionPending = false;
 let stateLoad = 0, overlayUpdate = 0;
 let resumeSensors = false;
 const offRoute = new OffRouteMonitor();
+type LiveTerrain = { enabled: boolean; samples: number; devices: number; builtAt: number | null; lastSampleAt: number | null; expiresAt: number | null;
+  adoptedAt: number | null; adoptedCurrent: boolean; models: (HeightModelRef & { livePhones: number; liveSamples: number })[] };
+let sharedTerrain: { regions: (HeightModelRef & { supportedCells: number })[] } | null = null;
+let liveTerrain: LiveTerrain | null = null, liveTerrainAt = 0, elevationRender = 0;
+let heightSampler: HeightSampler | null = null;
+// The teacher's view-only links: no check-ins, group membership or samples.
+const viewerHash = ['#progress', '#groups', '#elevation'].includes(location.hash);
 
 document.querySelector('#app')!.innerHTML = `
 <header class="app-header"><a href="/" class="brand" aria-label="DirMap 首页"><span class="brand-mark"><svg viewBox="0 0 30 32" aria-hidden="true"><path d="M15 2 28 26 15 20 2 26Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M15 9v11" stroke="currentColor" stroke-width="2"/></svg></span><span>DirMap<small>定向越野课</small></span></a><div class="header-context"><span class="context-dot"></span><span id="site-name">深圳大学 · 粤海校区</span><span class="header-divider"></span><span id="header-mode">课程工作台</span></div><div class="header-actions"><span id="release-badge" class="status-tag">备课草稿</span><span id="account-slot"></span><button id="open-help" class="text-button">使用说明</button></div></header>
@@ -90,11 +99,61 @@ document.querySelector('.workspace')!.insertAdjacentHTML('afterend', `<nav class
 for (const id of ['teacher-panel', 'student-panel']) $(id).insertAdjacentHTML('afterbegin', '<button class="mobile-panel-close soft-button group-keep" aria-label="收起面板，查看地图">收起 · 查看地图 ↓</button>');
 document.querySelector('.map-topbar')!.insertAdjacentHTML('beforeend', '<button id="mobile-layers" class="soft-button" aria-expanded="false" aria-controls="map-layers">图层</button>');
 document.querySelector('.layer-tools')!.id = 'map-layers';
-document.querySelector('.layer-tools')!.insertAdjacentHTML('beforeend', '<label class="check-label"><input id="route-arrows" type="checkbox" checked>路线箭头</label><label class="check-label"><input id="location-direction" type="checkbox" checked>我的方向</label><p class="muted compact layer-legend">蓝色光束：手机朝向；蓝色箭头：行进方向</p>');
+document.querySelector('.layer-tools')!.insertAdjacentHTML('beforeend', '<span class="elevation-layer-tools"><label class="check-label"><input id="elevation-layer" type="checkbox">高程图</label><label class="opacity-control">高程 <input id="elevation-opacity" type="range" min="10" max="100" value="55" aria-label="高程图透明度"></label><select id="elevation-source" class="elevation-source hidden" aria-label="高程图来源"><option value="course">发布时地形</option><option value="live">本课实时</option></select><span id="elevation-legend" class="elevation-legend hidden"></span></span><label class="check-label"><input id="route-arrows" type="checkbox" checked>路线箭头</label><label class="check-label"><input id="location-direction" type="checkbox" checked>我的方向</label><p class="muted compact layer-legend">蓝色光束：手机朝向；蓝色箭头：行进方向</p>');
 for (const [id, apply] of [['route-arrows', (on: boolean) => campusMap.setRouteArrows(on)], ['location-direction', (on: boolean) => campusMap.setDirectionVisible(on)]] as const) {
   const checkbox = $<HTMLInputElement>(id);
   checkbox.checked = stored(`dirmap-${id}`) !== 'false'; apply(checkbox.checked);
   checkbox.onchange = () => { apply(checkbox.checked); try { localStorage.setItem(`dirmap-${id}`, String(checkbox.checked)); } catch { /* keep this session's preference */ } };
+}
+{
+  // The relief and its opacity are this device's choice, like the arrows.
+  $<HTMLInputElement>('elevation-layer').checked = stored('dirmap-elevation-layer') === 'true';
+  const opacity = Number(stored('dirmap-elevation-opacity'));
+  if (opacity >= 10 && opacity <= 100) $<HTMLInputElement>('elevation-opacity').value = String(opacity);
+  if (stored('dirmap-elevation-source') === 'live') $<HTMLSelectElement>('elevation-source').value = 'live';
+  const remember = (key: string, value: string) => { try { localStorage.setItem(key, value); } catch { /* this page keeps the choice */ } };
+  $<HTMLInputElement>('elevation-layer').onchange = () => { remember('dirmap-elevation-layer', String($<HTMLInputElement>('elevation-layer').checked)); void renderElevationLayer(); };
+  $<HTMLInputElement>('elevation-opacity').oninput = () => { remember('dirmap-elevation-opacity', value('elevation-opacity')); campusMap.setElevationOpacity(number('elevation-opacity') / 100); };
+  $<HTMLSelectElement>('elevation-source').onchange = () => { remember('dirmap-elevation-source', value('elevation-source')); void renderElevationLayer(); };
+}
+async function refreshLiveTerrain(force = false) {
+  if (!courseId || (!force && Date.now() - liveTerrainAt < 30000)) return liveTerrain;
+  try { liveTerrain = await api<LiveTerrain>(`/api/releases/${courseId}/live-elevation`, { signal: AbortSignal.timeout(20000) }); liveTerrainAt = Date.now(); }
+  catch { /* offline: keep the last surface */ }
+  return liveTerrain;
+}
+/** Relief above the course map: the shared terrain on a workbench; on a
+ * course, the heights it was planned with or this class's live samples. */
+async function renderElevationLayer() {
+  const render = ++elevationRender, on = $<HTMLInputElement>('elevation-layer').checked, opacity = number('elevation-opacity') / 100;
+  const source = $<HTMLSelectElement>('elevation-source'), live = !!courseId && !!(liveTerrain?.enabled || liveTerrain?.models.length);
+  source.classList.toggle('hidden', !live || !on);
+  $<HTMLInputElement>('elevation-opacity').disabled = !on;
+  if (!on) { campusMap.setElevation([], opacity); $('elevation-legend').classList.add('hidden'); return; }
+  let models: HeightModelRef[] = [], images: { url: string; extent: number[] }[] = [], note = '';
+  if (courseId && live && source.value === 'live') {
+    const current = await refreshLiveTerrain();
+    if (render !== elevationRender) return;
+    const ready = current?.models ?? [];
+    models = ready; images = ready.map(m => ({ url: `/api/releases/${courseId}/live-elevation/${m.artifact}.png`, extent: modelExtent(m) }));
+    note = ready.length ? `实时：${current!.devices} 部手机 · ${current!.samples} 个样本` : '实时样本还不够成图';
+  } else if (courseId) {
+    const snapshot = plan?.elevationSnapshot;
+    models = snapshot?.enabled ? snapshot.models : [];
+    images = models.map(m => ({ url: sharedReliefUrl(m), extent: modelExtent(m) }));
+    note = models.length ? '' : '本课发布时没有高程覆盖';
+  } else {
+    sharedTerrain ??= await api<{ regions: (HeightModelRef & { supportedCells: number })[] }>('/api/elevation').catch(() => null);
+    if (render !== elevationRender) return;
+    const site = catalog?.sites.find(s => s.id === activeSite);
+    models = (sharedTerrain?.regions ?? []).filter(m => m.supportedCells > 0);
+    if (site) models = overlapping(models, site.bbox);
+    images = models.map(m => ({ url: sharedReliefUrl(m), extent: modelExtent(m) }));
+    note = models.length ? '' : '这个场地还没有共享地形';
+  }
+  campusMap.setElevation(images, opacity);
+  const text = [elevationLegend(models), note].filter(Boolean).join(' · ');
+  $('elevation-legend').textContent = text; $('elevation-legend').classList.toggle('hidden', !text);
 }
 function setMobilePanel(open: boolean) {
   open = phoneLayout.matches && open;
@@ -128,6 +187,18 @@ $('refresh-jobs').onclick = () => task(renderJobs);
 $('map-summary').insertAdjacentHTML('afterend', '<details id="release-history" class="release-history"><summary>已发布课程</summary><p class="muted compact">本图最近发布的学生链接与全班进度。地图或通行修改后旧课程会失效。</p><div id="release-list"></div></details>');
 $('release-history').addEventListener('toggle', () => { if ($<HTMLDetailsElement>('release-history').open) void renderReleases(); });
 $('release-list').addEventListener('click', event => {
+  const heights = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-live]');
+  if (heights) {
+    const action = heights.dataset.live!;
+    if (action === 'clear' && !confirm('清除后本课的实时高度样本和临时地形将删除，已保存到共享地形的轨迹不受影响。确定吗？')) return;
+    if (action === 'adopt' && !confirm('每部手机的样本将以你的名义加入共享地形：所有人都能查看重建结果与覆盖范围，你可以在“共享地形”页停用或删除。确定保存吗？')) return;
+    void task(async () => {
+      const result = await api<{ adopted?: { added: string[]; duplicates: unknown[] } }>(`/api/releases/${heights.dataset.releaseId}/live-elevation`, { method: 'POST', body: JSON.stringify({ action }) });
+      sharedTerrain = null; await renderReleases(); void renderElevationLayer();
+      notify(action === 'adopt' ? `已保存 ${result.adopted?.added.length ?? 0} 条实时轨迹，共享地形正在合并` : action === 'clear' ? '已清除本课实时高度样本' : action === 'enable' ? '已开启：定位中的学生手机将匿名上传高度' : '已停止实时高程采样');
+    });
+    return;
+  }
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-session]');
   if (!button) return;
   if (button.dataset.session === 'reset' && !confirm('重置后各队手机的开课时间和出发倒计时将清除，确定吗？')) return;
@@ -136,7 +207,8 @@ $('release-list').addEventListener('click', event => {
     await renderReleases(); notify(button.dataset.session === 'start' ? '已开始计时，各队手机将显示出发倒计时' : '已重置计时');
   });
 });
-type ReleaseSummary = { id: string; title: string; createdAt: number; superseded: boolean; url: string; teams: number; startedTeams: number; finishedTeams: number; lastReportAt: number | null; startedAt: number | null };
+type ReleaseSummary = { id: string; title: string; createdAt: number; superseded: boolean; url: string; teams: number; startedTeams: number; finishedTeams: number; lastReportAt: number | null; startedAt: number | null;
+  liveElevation?: Omit<LiveTerrain, 'models'> };
 let releaseRender = 0;
 async function renderReleases() {
   if (courseId || !$<HTMLDetailsElement>('release-history').open) return;
@@ -150,7 +222,11 @@ async function renderReleases() {
     const link = new URL(r.url, location.href).href;
     const progress = r.startedTeams ? `${r.startedTeams}/${r.teams} 队已打点 · ${r.finishedTeams} 队完成${r.lastReportAt ? ` · 最近上报 ${clock(r.lastReportAt)}` : ''}` : `${r.teams} 队 · 尚无打点`;
     const session = r.startedAt ? `<button class="text-button" data-session="reset" data-release-id="${e(r.id)}">重置计时</button>` : r.superseded ? '' : `<button class="soft-button" data-session="start" data-release-id="${e(r.id)}">开始计时</button>`;
-    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}${r.startedAt ? ` · ${clock(r.startedAt)} 开课` : ''}</small><small>${progress}</small>${session}</span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a><a href="${e(link)}#groups" target="_blank" rel="noreferrer" class="text-link">小组位置 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印 ↗</a><button class="text-button" data-course-qr="${e(r.id)}" data-course-title="${e(r.title)}">二维码</button></div>`;
+    const live = r.liveElevation, heights = live?.enabled || live?.samples
+      ? `<small>实时高程：${live.enabled ? '采样中' : '已停止'} · ${live.devices} 部手机 · ${live.samples} 个样本${live.adoptedAt ? live.adoptedCurrent ? ' · 已保存到共享地形' : ' · 有新样本未保存' : ''}${live.expiresAt ? ` · ${clock(live.expiresAt)} 自动清除` : ''}</small>`
+      : '<small>实时高程：未开启</small>';
+    const heightActions = `${live?.enabled ? `<button class="text-button" data-live="disable" data-release-id="${e(r.id)}">停止采样</button>` : r.superseded ? '' : `<button class="text-button" data-live="enable" data-release-id="${e(r.id)}">开启实时高程采样</button>`}${live?.samples ? `<a href="${e(link)}#elevation" target="_blank" rel="noreferrer" class="text-link">实时地形 ↗</a><button class="text-button" data-live="adopt" data-release-id="${e(r.id)}">保存到共享地形</button><button class="text-button danger" data-live="clear" data-release-id="${e(r.id)}">清除样本</button>` : ''}`;
+    return `<div class="release-row" data-release="${e(r.id)}"><span>${e(r.title)}<small>${clock(r.createdAt)} 发布 · ${r.superseded ? '已失效' : '当前有效'}${r.startedAt ? ` · ${clock(r.startedAt)} 开课` : ''}</small><small>${progress}</small>${heights}${session}<span class="release-height-actions">${heightActions}</span></span><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">学生页 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">全班进度 ↗</a><a href="${e(link)}#groups" target="_blank" rel="noreferrer" class="text-link">小组位置 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印 ↗</a><button class="text-button" data-course-qr="${e(r.id)}" data-course-title="${e(r.title)}">二维码</button></div>`;
   }).join('') : '<p class="muted compact">本图尚未发布课程。</p>';
 }
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="mixed_coverage">全员必到 + 其余点全班分担</option>');
@@ -230,7 +306,7 @@ if (import.meta.env.PROD) {
   $('save-offline').onclick = () => { void cacheStudentCourse(); };
 }
 // Expose only in development for deterministic camera/sensor browser checks.
-if (import.meta.env.DEV) (window as Window & { dirmap?: unknown }).dirmap = { campusMap, sensors };
+if (import.meta.env.DEV) (window as Window & { dirmap?: unknown }).dirmap = { campusMap, sensors, get heightSampler() { return heightSampler; } };
 
 function notify(message: string, error = false) { $('toast').textContent = message; $('toast').classList.remove('hidden'); $('toast').classList.toggle('error', error); setTimeout(() => $('toast').classList.add('hidden'), 7000); }
 class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
@@ -495,6 +571,7 @@ async function selectSite(id: string, mapId?: string) {
   // A place chosen while this one was loading keeps the view.
   const current = await loadState(target ?? '');
   if (current && site && activeSite === id && !state?.extent) campusMap.fitBounds(site.bbox);
+  void renderElevationLayer();
 }
 $('site-select').onchange = () => task(() => selectSite(value('site-select')));
 $('add-site').onclick = () => {
@@ -881,7 +958,7 @@ sensors.onHeading = (sample: HeadingSample | null) => {
 sensors.onPosition = position => {
   lastPosition = position; campusMap.setLocation(position, follow); groupPanel?.draw();
   $('location-status').textContent = `定位精度 ±${Math.round(position.coords.accuracy)} m`;
-  if (courseId) { renderStudent(); void updateNavigation(position); }
+  if (courseId) { renderStudent(); void updateNavigation(position); heightSampler?.add(position.coords); }
 };
 sensors.onStatus = message => { $('sensor-status').textContent = message; notify(message); };
 sensors.onLocationStatus = message => { $('location-status').textContent = message; };
@@ -944,7 +1021,7 @@ function openLocationDiagnostics() {
 $('review-button').onclick = () => {
   if (!state || !plan?.routes.length) return;
   const suggested = plan.approaches?.filter(a => a.automatic) ?? [];
-  const dialog = simpleDialog('发布前核验', `<p class="muted">请结合标准地图、原图和现场情况核验本次课程。配准或通行修改后需要重新规划。</p><label class="check-label"><input id="review-registration" type="checkbox">配准位置与实际地物一致</label><label class="check-label"><input id="review-controls" type="checkbox">本次目标编号、圈心与到访位置已核对</label><label class="check-label"><input id="review-passages" type="checkbox">路线不穿越禁区、围墙及不可通行的层级</label><label class="field-label">核验备注<textarea id="review-notes" rows="3" placeholder="现场核验日期、临时封闭路段等"></textarea></label><p id="review-error" class="danger" role="status"></p><button id="publish-confirm" class="primary-button wide">生成学生课程链接</button>`);
+  const dialog = simpleDialog('发布前核验', `<p class="muted">请结合标准地图、原图和现场情况核验本次课程。配准或通行修改后需要重新规划。</p><label class="check-label"><input id="review-registration" type="checkbox">配准位置与实际地物一致</label><label class="check-label"><input id="review-controls" type="checkbox">本次目标编号、圈心与到访位置已核对</label><label class="check-label"><input id="review-passages" type="checkbox">路线不穿越禁区、围墙及不可通行的层级</label><label class="field-label">核验备注<textarea id="review-notes" rows="3" placeholder="现场核验日期、临时封闭路段等"></textarea></label><label class="check-label"><input id="review-collect-heights" type="checkbox" checked>课程中收集匿名高度样本，生成本课临时地形</label><p class="muted compact">学生开启定位后，手机每隔几秒上传一次位置高度，不含队伍和姓名，可在本机关闭；临时地形不影响路线，最后一次上传两天后自动清除，可在“已发布课程”中保存到共享地形。</p><p id="review-error" class="danger" role="status"></p><button id="publish-confirm" class="primary-button wide">生成学生课程链接</button>`);
   if (suggested.length) dialog.querySelector('#review-error')!.insertAdjacentHTML('beforebegin', `<label class="check-label"><input id="review-approaches" type="checkbox">已核对并采用 ${suggested.length} 处橙色标记的建议到访位置</label>`);
   dialog.querySelector<HTMLButtonElement>('#publish-confirm')!.onclick = async () => {
     const button = dialog.querySelector<HTMLButtonElement>('#publish-confirm')!; button.disabled = true;
@@ -976,7 +1053,7 @@ $('review-button').onclick = () => {
       if (result.request?.teams?.length) restorePlanFields(result.request);
       showPlan(result); if (!result.routes.length) throw new Error('核验后有点位不可达，请重新检查');
       const title = `${currentSite()?.shortName ?? currentSite()?.name ?? '校园'}定向越野课`;
-      const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title }) });
+      const release = await api<{ url: string }>('/api/releases', { method: 'POST', body: JSON.stringify({ assetId: activeId, planId: result.id, title, collectHeights: $<HTMLInputElement>('review-collect-heights').checked }) });
       const link = new URL(release.url, location.href).href; $('share-result').innerHTML = `<label class="field-label">学生课程链接<input readonly value="${e(link)}" aria-label="学生课程链接"></label><a href="${e(link)}" target="_blank" rel="noreferrer" class="text-link">打开学生页面 ↗</a><a href="${e(link)}#progress" target="_blank" rel="noreferrer" class="text-link">查看全班进度 ↗</a><a href="${e(link)}#groups" target="_blank" rel="noreferrer" class="text-link">各小组实时位置 ↗</a><a href="${e(link)}&print=all" target="_blank" rel="noreferrer" class="text-link">打印各队路线 ↗</a><button class="text-button" data-course-qr="${e(new URL(link).searchParams.get('course') ?? '')}" data-course-title="${e(title)}">课程二维码</button>`;
       dialog.close(); dialog.remove(); renderState(); void renderReleases(); notify('已生成学生课程链接');
     } catch (error) { $('review-error').textContent = error instanceof Error ? error.message : String(error); button.disabled = false; }
@@ -984,6 +1061,21 @@ $('review-button').onclick = () => {
 };
 
 function studentRoute(): Route | undefined { return plan?.routes.find(r => r.teamId === value('student-team')); }
+/** What this phone contributes to the class's live terrain, and its opt-out. */
+function renderLiveSampling() {
+  const card = document.getElementById('live-height-card');
+  if (!card || !heightSampler) return;
+  card.classList.toggle('hidden', !heightSampler.enabled);
+  if (!heightSampler.enabled) return;
+  card.innerHTML = heightSampler.optedOut
+    ? '<p class="muted compact">本机未参与实时高程采样。</p><button class="text-button" data-live-heights="on">参与采样</button>'
+    : `<strong>实时高程采样</strong><p class="muted compact">开启定位时，本机每隔几秒匿名上传一次位置高度（不含队伍和姓名），用于本课的临时地形，不影响路线。已上传 ${heightSampler.sent} 个${heightSampler.waiting ? `，待上传 ${heightSampler.waiting} 个` : ''}${locationFresh ? '' : '；开启定位后开始采样'}。</p><button class="text-button" data-live-heights="off">本机不参与</button>`;
+}
+document.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLElement>('[data-live-heights]');
+  if (!button || !heightSampler) return;
+  heightSampler.optedOut = button.dataset.liveHeights === 'off';
+});
 let classStart: { startedAt: number | null; offset: number } | null = null;
 function rememberClassStart(startedAt: number | null, serverTime: number) {
   // Phone clocks drift; count from the server's start using its own time.
@@ -1214,7 +1306,7 @@ async function boot() {
       courseSuperseded = true; $('release-badge').textContent = '课程已更新'; $('sensor-status').textContent = '旧路线已失效，请使用教师提供的新链接';
       $<HTMLButtonElement>('check-in').disabled = true; $<HTMLButtonElement>('undo-check-in').disabled = true; $<HTMLButtonElement>('meeting-departure').disabled = true;
       // A changed route must not strand the group's already captured photos.
-      if (!['#progress', '#groups'].includes(location.hash)) {
+      if (!viewerHash) {
         startGroupPanel(); $<HTMLDetailsElement>('group-section').open = true; setMobilePanel(true);
       }
       throw new Error('这份课程的地图或通行状态已更新，请向教师获取新链接');
@@ -1226,6 +1318,18 @@ async function boot() {
     $('release-badge').textContent = course.offline ? '离线 · 状态未更新' : '课堂导航';
     $('student-team').innerHTML = plan.routes.map(r => `<option value="${e(r.teamId)}">${e(r.teamId)} · ${r.people} 人</option>`).join('');
     campusMap.setReleaseOverlay(courseId, course.extent, .65); campusMap.setControls(course.controls, plan.surfaces); campusMap.setApproaches(plan.approaches ?? []); $<HTMLSelectElement>('student-team').dispatchEvent(new Event('change'));
+    $('student-overview').insertAdjacentHTML('afterend', '<div id="live-height-card" class="notice-card live-height hidden" role="status"></div>');
+    if (!viewerHash) {
+      const id = courseId;
+      let storage: Storage | null = null;
+      try { storage = localStorage; } catch { /* samples then wait in memory only */ }
+      heightSampler = new HeightSampler(id, (deviceId, samples) => api(`/api/releases/${id}/elevation-samples`,
+        { method: 'POST', body: JSON.stringify({ deviceId, samples }), signal: AbortSignal.timeout(20000) }), storage);
+      heightSampler.onChange = renderLiveSampling;
+      setInterval(() => { if (!document.hidden && navigator.onLine && heightSampler?.waiting) void heightSampler.flush(); }, 20000);
+    }
+    if (location.hash === '#elevation') { $<HTMLInputElement>('elevation-layer').checked = true; $<HTMLSelectElement>('elevation-source').value = 'live'; }
+    void refreshLiveTerrain(true).then(renderElevationLayer);
     if (import.meta.env.PROD) {
       if (course.offline) $('offline-status').textContent = '正在使用已保存课程；联网后检查教师更新。';
       else void cacheStudentCourse();
@@ -1234,8 +1338,16 @@ async function boot() {
       if (document.hidden || courseSuperseded) return;
       try {
         // A few bytes per check instead of the whole course package.
-        const current = await api<{ superseded: boolean; routingSchema?: string; offline?: boolean; startedAt?: number | null; serverTime?: number }>(`/api/releases/${courseId}/status`);
+        const current = await api<{ superseded: boolean; routingSchema?: string; offline?: boolean; startedAt?: number | null; serverTime?: number; liveElevation?: boolean }>(`/api/releases/${courseId}/status`);
         if (typeof current.serverTime === 'number') rememberClassStart(current.startedAt ?? null, current.serverTime);
+        if (heightSampler && typeof current.liveElevation === 'boolean' && !current.offline) {
+          heightSampler.enabled = current.liveElevation && !courseSuperseded; renderLiveSampling();
+          if (heightSampler.collecting && heightSampler.waiting) void heightSampler.flush();
+        }
+        // The class's live surface keeps up while the teacher watches it, and
+        // a teacher turning sampling on mid-class offers it without a reload.
+        if (!current.offline && typeof current.liveElevation === 'boolean' && current.liveElevation !== !!liveTerrain?.enabled) await refreshLiveTerrain(true);
+        if ($<HTMLInputElement>('elevation-layer').checked && !current.offline) await renderElevationLayer();
         if (current.superseded || current.routingSchema !== __DIRMAP_ROUTING_SCHEMA__) {
           courseSuperseded = true; navigationRevision++; follow = false; sensors.stop(); campusMap.setRoutes([]);
           $('release-badge').textContent = '课程已更新'; $('sensor-status').textContent = '旧路线已失效，请使用教师提供的新链接';
@@ -1249,7 +1361,7 @@ async function boot() {
     releasePoll = setInterval(checkStatus, 15000);
     loadClassStart(); setInterval(renderClassClock, 1000);
     if (!course.offline) void checkStatus();
-    if (['#progress', '#groups'].includes(location.hash)) {
+    if (viewerHash) {
       // The teacher's progress link only views the class; a stray tap must
       // not report a check-in for whichever team happens to be selected.
       $('student-panel').classList.add('viewer'); $<HTMLDetailsElement>('class-board').open = location.hash === '#progress';

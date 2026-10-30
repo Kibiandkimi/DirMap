@@ -402,7 +402,7 @@ def reconstruct(tracks):
     }
     observed_lnglat = frame.to_lnglat(observed[:, :2])
     arrays = {'height': height.astype(np.float32), 'support': support.astype(np.float32), 'scatter': scatter.astype(np.float32),
-              'observations': np.column_stack((observed_lnglat, observed[:, 2])).astype(np.float64)}
+              'observations': np.column_stack((observed_lnglat, observed[:, 2])).astype(np.float64), 'spacing': np.float64(spacing)}
     return metadata, arrays
 
 

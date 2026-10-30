@@ -130,3 +130,117 @@ test('route planning can weigh uphill and downhill walking from the shared terra
     await removeOwnTracks(page, user.id, scope);
   }
 });
+
+const reliefLayers = (page: Page) => page.evaluate(() => ((window as any).dirmap.campusMap.elevation as any[])
+  .map(layer => ({ url: layer.getSource().getUrl() as string, opacity: layer.getOpacity() as number })));
+
+test('the course map overlays the shared relief, with its own remembered opacity', async ({ page }) => {
+  test.setTimeout(120000);
+  const name = `relief-${Date.now() % 1000000}`;
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const user = await register(page, name), scope = `${user.id}:personal`;
+  try {
+    const upload = await page.request.post('/api/elevation/tracks', { headers: { 'X-DirMap-Workbench': scope }, multipart: {
+      files: { name: 'campus-walks.kml', mimeType: 'application/vnd.google-earth.kml+xml', buffer: walks('校园交叉路线', 113.926, 22.530, 113.936, 22.541) } } });
+    await finished(page, (await upload.json()).job);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.control-row').first()).toBeVisible();
+    await expect(page.locator('#elevation-layer')).not.toBeChecked();
+    expect(await reliefLayers(page)).toEqual([]);
+    await page.locator('#elevation-layer').check();
+    await expect.poll(() => reliefLayers(page)).toHaveLength(1);
+    const [layer] = await reliefLayers(page);
+    expect(layer.url).toMatch(/^\/api\/elevation\/artifacts\/[0-9a-f]{40}\/relief\.png$/);
+    expect(layer.opacity).toBeCloseTo(.55, 5);
+    expect((await page.request.get(layer.url)).headers()['content-type']).toBe('image/png');
+    await expect(page.locator('#elevation-legend')).toContainText(/\d+–\d+ m · 等高线 \d+ m/);
+    // The orienteering map keeps its own opacity; the relief blends above it.
+    await page.locator('#elevation-opacity').fill('80');
+    await expect.poll(async () => (await reliefLayers(page))[0].opacity).toBeCloseTo(.8, 5);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#elevation-layer')).toBeChecked();
+    await expect.poll(async () => (await reliefLayers(page))[0]?.opacity).toBeCloseTo(.8, 5);
+    await page.locator('#elevation-layer').uncheck();
+    await expect.poll(() => reliefLayers(page)).toEqual([]);
+  } finally {
+    await removeOwnTracks(page, user.id, scope);
+  }
+});
+
+test('phones sample heights during a course into a temporary terrain that the teacher can watch and save', async ({ page, browser }) => {
+  test.setTimeout(180000);
+  const name = `live-${Date.now() % 1000000}`;
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const user = await register(page, name), scope = `${user.id}:personal`;
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.control-row').first()).toBeVisible();
+    await page.locator('#teams').fill('2');
+    await page.locator('#plan-button').click();
+    await expect(page.locator('.route-card')).toHaveCount(2, { timeout: 60000 });
+    await page.locator('#review-button').click();
+    for (const item of ['registration', 'controls', 'passages']) await page.locator('#review-'+item).check();
+    if (await page.locator('#review-approaches').count()) await page.locator('#review-approaches').check();
+    await expect(page.locator('#review-collect-heights')).toBeChecked();
+    await page.locator('#publish-confirm').click();
+    const link = page.getByLabel('学生课程链接');
+    await expect(link).toBeVisible({ timeout: 60000 });
+    const course = new URL(await link.inputValue()).searchParams.get('course')!;
+
+    // A student's phone: location with heights, as Android and iOS report them.
+    const phoneContext = await localOnly(await browser.newContext({ viewport: { width: 390, height: 844 } }));
+    const phone = await phoneContext.newPage();
+    await phone.addInitScript(() => {
+      const geo = { watches: [] as any[] };
+      (window as any).geo = geo;
+      Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
+        watchPosition: (success: Function) => { geo.watches.push(success); return geo.watches.length; },
+        getCurrentPosition: (success: Function) => geo.watches.push(success), clearWatch: () => {} } });
+    });
+    // A walk takes minutes; the phone's clock starts in the past so that
+    // the fast-forwarded samples are not ahead of the server's time.
+    await phone.clock.install({ time: new Date(Date.now() - 10 * 60000) });
+    await phone.goto(`/?course=${course}`, { waitUntil: 'domcontentloaded' });
+    await expect(phone.locator('#live-height-card')).toContainText('实时高程采样', { timeout: 30000 });
+    await phone.evaluate(() => document.getElementById('follow-button')!.click());
+    await expect.poll(() => phone.evaluate(() => (window as any).geo.watches.length)).toBeGreaterThan(0);
+    for (let i = 0; i < 70; i++) {
+      await phone.evaluate(i => {
+        // Two crossing walks over a small rise, a fix every 6 m.
+        const along = i < 35 ? i : i - 35, lng = i < 35 ? 113.9304 + along * .00006 : 113.9314, lat = i < 35 ? 22.5350 : 22.5340 + along * .00006;
+        const height = 12 + 9 * Math.exp(-(((lng - 113.9314) * 103000) ** 2 + ((lat - 22.5350) * 111000) ** 2) / (2 * 150 ** 2));
+        (window as any).geo.watches.at(-1)({ timestamp: Date.now(), coords: { longitude: lng, latitude: lat, accuracy: 5, altitude: height, altitudeAccuracy: 6, heading: null, speed: 1.2 } });
+      }, i);
+      await phone.clock.runFor(3500);
+    }
+    await phone.evaluate(() => (window as any).dirmap.heightSampler.flush());
+    await expect(phone.locator('#live-height-card')).toContainText(/已上传 (6\d|70) 个/);
+    // Opting out stops this phone at once.
+    await phone.locator('#mobile-panel').click();
+    await phone.locator('[data-live-heights="off"]').click();
+    await expect(phone.locator('#live-height-card')).toContainText('本机未参与');
+    expect(await phone.evaluate(() => (window as any).dirmap.heightSampler.collecting)).toBe(false);
+    await phoneContext.close();
+
+    // The teacher watches the class's live relief, then keeps it.
+    await page.locator('#release-history summary').click();
+    const row = page.locator('.release-row').first();
+    await expect(row).toContainText(/实时高程：采样中 · 1 部手机 · (6\d|70) 个样本/);
+    const watch = await page.context().newPage();
+    await watch.goto(`/?course=${course}#elevation`, { waitUntil: 'domcontentloaded' });
+    await expect(watch.locator('#elevation-layer')).toBeChecked();
+    await expect(watch.locator('#elevation-source')).toHaveValue('live');
+    await expect(watch.locator('#elevation-legend')).toContainText('实时：1 部手机', { timeout: 30000 });
+    const [live] = await reliefLayers(watch);
+    expect(live.url).toMatch(new RegExp(`^/api/releases/${course}/live-elevation/[0-9a-f]{40}\\.png$`));
+    await expect(watch.locator('#live-height-card')).toBeHidden();
+    await watch.close();
+    page.once('dialog', dialog => dialog.accept());
+    await row.locator('[data-live="adopt"]').click();
+    await expect(page.locator('#toast')).toContainText('已保存 1 条实时轨迹');
+    const shared = await (await page.request.get('/api/elevation')).json();
+    expect(shared.tracks.filter((t: { ownerId: string }) => t.ownerId === user.id)).toHaveLength(1);
+  } finally {
+    await removeOwnTracks(page, user.id, scope);
+  }
+});

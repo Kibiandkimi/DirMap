@@ -656,7 +656,8 @@ def test_phones_poll_a_small_status_and_course_json_is_compressed(client):
     plan = wait_job(client, client.post('/api/plans', json=request()).json()['id'])['result']
     release_id = client.post('/api/releases', json={'assetId': 'szu-1', 'planId': plan['id']}).json()['id']
     status = client.get(f'/api/releases/{release_id}/status')
-    assert {k: v for k, v in status.json().items() if k != 'serverTime'} == {'id': release_id, 'superseded': False, 'routingSchema': ROUTING_SCHEMA, 'startedAt': None}
+    assert {k: v for k, v in status.json().items() if k != 'serverTime'} == {'id': release_id, 'superseded': False, 'routingSchema': ROUTING_SCHEMA,
+                                                                           'startedAt': None, 'liveElevation': False}
     assert len(status.content) < 200
     full = client.get(f'/api/releases/{release_id}', headers={'Accept-Encoding': 'gzip'})
     assert full.headers['content-encoding'] == 'gzip' and full.json()['id'] == release_id

@@ -14,6 +14,12 @@ function multiply(a: Float32Array, b: Float32Array) {
 function normalized(v: number[]) { const length = Math.hypot(...v) || 1; return v.map(x => x / length); }
 const cross = (a: number[], b: number[]) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const dot = (a: number[], b: number[]) => a.reduce((sum, x, i) => sum + x * b[i], 0);
+const EARTH = 6378137;
+const toMercator = (lng: number, lat: number) => [lng * Math.PI / 180 * EARTH, Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)) * EARTH];
+const fromMercator = (x: number, y: number) => [x / EARTH * 180 / Math.PI, (2 * Math.atan(Math.exp(y / EARTH)) - Math.PI / 2) * 180 / Math.PI];
+/** A registered course map image and its Web Mercator extent. */
+export interface MapOverlay { image: HTMLImageElement; extent: number[] }
+const FLOATS = 11;
 
 /** Small native WebGL mesh; no globe SDK, tile download or bitmap terrain package. */
 export class ElevationView {
@@ -35,12 +41,15 @@ export class ElevationView {
   private observer: ResizeObserver;
   private touches = new Map<number, [number, number]>();
   private imageBounds = [0, 0, 1, 1];
+  private overlay: MapOverlay | null = null;
+  private overlayOpacity = .6;
+  private texture: WebGLTexture | null = null;
   onInspect: (value: { lng: number; lat: number; height: number | null; support: number | null } | null) => void = () => {};
 
   constructor(private canvas: HTMLCanvasElement, private flat: HTMLCanvasElement) {
     this.gl = canvas.getContext('webgl', { alpha: false, antialias: true, preserveDrawingBuffer: true });
     if (this.gl) {
-      try { this.program = this.initialize(this.gl); }
+      try { this.program = this.initialize(this.gl); this.uploadTexture(); }
       catch { this.gl = null; }
     }
     if (!this.gl) this.mode = 'map';
@@ -79,6 +88,20 @@ export class ElevationView {
   setMode(mode: '3d' | 'map') { this.mode = mode === '3d' && this.gl ? '3d' : 'map'; this.canvas.hidden = this.mode !== '3d'; this.flat.hidden = this.mode !== 'map'; this.draw(); }
   setExaggeration(value: number) { this.exaggeration = value; this.buildMesh(); this.draw(); }
   setPoints(show: boolean) { this.showPoints = show; this.draw(); }
+  /** Lay a course map over the terrain, in the height map and on the 3D surface. */
+  setOverlay(overlay: MapOverlay | null) { this.overlay = overlay; this.uploadTexture(); this.buildMesh(); this.draw(); }
+  private uploadTexture() {
+    const gl = this.gl, overlay = this.overlay;
+    if (gl) {
+      if (this.texture) gl.deleteTexture(this.texture);
+      this.texture = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      if (overlay) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, overlay.image);
+      else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+      // Any image size: no mipmaps, edges clamped.
+      for (const [name, value] of [[gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE], [gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR]]) gl.texParameteri(gl.TEXTURE_2D, name, value);
+    }
+  }
+  setOverlayOpacity(value: number) { this.overlayOpacity = value; this.draw(); }
   reset() { this.yaw = -.6; this.pitch = .6; this.distance = 1.5; this.draw(); }
   setGrid(grid: HeightGrid | null) { this.grid = grid; this.raster = null; this.indexCount = 0; this.onInspect(null); if (grid) { this.buildRaster(); this.buildMesh(); } this.draw(); }
   private initialize(gl: WebGLRenderingContext) {
@@ -86,11 +109,16 @@ export class ElevationView {
       const value = gl.createShader(type)!; gl.shaderSource(value, source); gl.compileShader(value);
       if (!gl.getShaderParameter(value, gl.COMPILE_STATUS)) throw new Error('地形绘制初始化失败'); return value;
     };
-    const vertex = shader(gl.VERTEX_SHADER, `attribute vec3 a_position; attribute vec3 a_normal; attribute vec3 a_color;
-      uniform mat4 u_camera; uniform float u_point_size; varying vec3 v_color; varying vec3 v_normal;
-      void main(){gl_Position=u_camera*vec4(a_position,1.0);gl_PointSize=u_point_size;v_color=a_color;v_normal=a_normal;}`);
-    const fragment = shader(gl.FRAGMENT_SHADER, `precision mediump float; varying vec3 v_color; varying vec3 v_normal;
-      void main(){float light=0.5+0.5*max(0.0,dot(normalize(v_normal),normalize(vec3(-0.6,1.0,-0.4))));gl_FragColor=vec4(v_color*light,1.0);}`);
+    const vertex = shader(gl.VERTEX_SHADER, `attribute vec3 a_position; attribute vec3 a_normal; attribute vec3 a_color; attribute vec2 a_uv;
+      uniform mat4 u_camera; uniform float u_point_size; varying vec3 v_color; varying vec3 v_normal; varying vec2 v_uv;
+      void main(){gl_Position=u_camera*vec4(a_position,1.0);gl_PointSize=u_point_size;v_color=a_color;v_normal=a_normal;v_uv=a_uv;}`);
+    // The course map is shaded with the same light, so its relief stays readable.
+    const fragment = shader(gl.FRAGMENT_SHADER, `precision mediump float; varying vec3 v_color; varying vec3 v_normal; varying vec2 v_uv;
+      uniform sampler2D u_map; uniform float u_map_opacity;
+      void main(){float light=0.5+0.5*max(0.0,dot(normalize(v_normal),normalize(vec3(-0.6,1.0,-0.4))));
+        float inside=step(0.0,v_uv.x)*step(v_uv.x,1.0)*step(0.0,v_uv.y)*step(v_uv.y,1.0);
+        vec4 map=texture2D(u_map,clamp(v_uv,0.0,1.0));
+        gl_FragColor=vec4(mix(v_color*light,map.rgb*(0.7+0.3*light),u_map_opacity*map.a*inside),1.0);}`);
     const program = gl.createProgram()!; gl.attachShader(program, vertex); gl.attachShader(program, fragment); gl.linkProgram(program);
     gl.deleteShader(vertex); gl.deleteShader(fragment);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error('地形绘制初始化失败');
@@ -107,6 +135,12 @@ export class ElevationView {
     const middle = ((grid.minHeightM ?? 0) + (grid.maxHeightM ?? 0)) / 2;
     const range = Math.max(1, (grid.maxHeightM ?? 0) - (grid.minHeightM ?? 0));
     const vertices: number[] = [], triangles: number[] = [];
+    const scales = localScales(grid.frame.origin), overlay = this.overlay?.extent;
+    const uv = (localX: number, localY: number) => {
+      if (!overlay) return [-1, -1];
+      const [mx, my] = toMercator(grid.frame.origin[0] + localX / scales[0], grid.frame.origin[1] + localY / scales[1]);
+      return [(mx - overlay[0]) / (overlay[2] - overlay[0]), (overlay[3] - my) / (overlay[3] - overlay[1])];
+    };
     const height = (x: number, y: number) => grid.height[Math.max(0, Math.min(grid.rows - 1, y)) * grid.columns + Math.max(0, Math.min(grid.columns - 1, x))];
     for (const y of ys) for (const x of xs) {
       const h = height(x, y) ?? middle;
@@ -114,7 +148,8 @@ export class ElevationView {
       const dy = ((height(x, y + 1) ?? h) - (height(x, y - 1) ?? h)) / (2 * grid.spacingM);
       vertices.push((x - (grid.columns - 1) / 2) * grid.spacingM / size, (h - middle) * this.exaggeration / size,
         -(y - (grid.rows - 1) / 2) * grid.spacingM / size,
-        ...normalized([-dx * this.exaggeration, 1, dy * this.exaggeration]), ...colour((h - (grid.minHeightM ?? 0)) / range));
+        ...normalized([-dx * this.exaggeration, 1, dy * this.exaggeration]), ...colour((h - (grid.minHeightM ?? 0)) / range),
+        ...uv(grid.origin[0] + x * grid.spacingM, grid.origin[1] + y * grid.spacingM));
     }
     for (let y = 0; y < ys.length - 1; y++) for (let x = 0; x < xs.length - 1; x++) {
       let valid = true;
@@ -124,14 +159,14 @@ export class ElevationView {
     this.mesh = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.mesh); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     this.indexes = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexes); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangles), gl.STATIC_DRAW);
     this.indexCount = triangles.length;
-    const scales = localScales(grid.frame.origin), pointVertices: number[] = [];
+    const pointVertices: number[] = [];
     for (const [lng, lat, h] of grid.observations) {
       const x = (lng - grid.frame.origin[0]) * scales[0] - grid.origin[0], y = (lat - grid.frame.origin[1]) * scales[1] - grid.origin[1];
       pointVertices.push((x - (grid.columns - 1) * grid.spacingM / 2) / size, (h - middle) * this.exaggeration / size + .002,
-        -(y - (grid.rows - 1) * grid.spacingM / 2) / size, 0, 1, 0, .14, .32, .28);
+        -(y - (grid.rows - 1) * grid.spacingM / 2) / size, 0, 1, 0, .14, .32, .28, -1, -1);
     }
     this.points = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.points); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pointVertices), gl.STATIC_DRAW);
-    this.pointCount = pointVertices.length / 9;
+    this.pointCount = pointVertices.length / FLOATS;
   }
   private buildRaster() {
     const grid = this.grid!;
@@ -212,7 +247,16 @@ export class ElevationView {
       this.geographicContext(ctx, left, top, scale);
       // Raster pixels are centred on the same grid nodes as contours and picks.
       ctx.globalAlpha = this.grid.context?.features.length ? .84 : 1;
-      ctx.drawImage(this.raster, left - scale / 2, top - scale / 2, grid.columns * scale, grid.rows * scale); ctx.globalAlpha = 1; this.contours(ctx, left, top, scale);
+      ctx.drawImage(this.raster, left - scale / 2, top - scale / 2, grid.columns * scale, grid.rows * scale); ctx.globalAlpha = 1;
+      if (this.overlay && this.overlayOpacity > 0) {
+        const scales = localScales(grid.frame.origin), [x0, y0, x1, y1] = this.overlay.extent;
+        const corner = (x: number, y: number) => { const [lng, lat] = fromMercator(x, y);
+          return [left + ((lng - grid.frame.origin[0]) * scales[0] - grid.origin[0]) / grid.spacingM * scale,
+            top + (grid.rows - 1 - ((lat - grid.frame.origin[1]) * scales[1] - grid.origin[1]) / grid.spacingM) * scale]; };
+        const [west, north] = corner(x0, y1), [east, south] = corner(x1, y0);
+        ctx.globalAlpha = this.overlayOpacity; ctx.drawImage(this.overlay.image, west, north, east - west, south - north); ctx.globalAlpha = 1;
+      }
+      this.contours(ctx, left, top, scale);
       if (this.showPoints) { const scales = localScales(grid.frame.origin); ctx.fillStyle = '#163f37b3';
         for (const [lng, lat] of grid.observations) { const x = ((lng - grid.frame.origin[0]) * scales[0] - grid.origin[0]) / grid.spacingM;
           const y = ((lat - grid.frame.origin[1]) * scales[1] - grid.origin[1]) / grid.spacingM;
@@ -233,7 +277,10 @@ export class ElevationView {
     const projection = new Float32Array([f / (width / height), 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) / (near - far), -1, 0, 0, 2 * far * near / (near - far), 0]);
     gl.uniformMatrix4fv(gl.getUniformLocation(program, 'u_camera'), false, multiply(projection, view));
     const attributes = (buffer: WebGLBuffer | null) => { gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      for (const [i, name] of ['a_position', 'a_normal', 'a_color'].entries()) { const location = gl.getAttribLocation(program, name); gl.enableVertexAttribArray(location); gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 36, i * 12); } };
+      for (const [i, name] of ['a_position', 'a_normal', 'a_color', 'a_uv'].entries()) { const location = gl.getAttribLocation(program, name); gl.enableVertexAttribArray(location); gl.vertexAttribPointer(location, i === 3 ? 2 : 3, gl.FLOAT, false, FLOATS * 4, i * 12); } };
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    gl.uniform1i(gl.getUniformLocation(program, 'u_map'), 0);
+    gl.uniform1f(gl.getUniformLocation(program, 'u_map_opacity'), this.overlay ? this.overlayOpacity : 0);
     attributes(this.mesh); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexes); gl.uniform1f(gl.getUniformLocation(program, 'u_point_size'), 1); gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
     if (this.showPoints && this.points) { attributes(this.points); gl.uniform1f(gl.getUniformLocation(program, 'u_point_size'), 3 * ratio); gl.drawArrays(gl.POINTS, 0, this.pointCount); }
   }

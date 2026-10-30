@@ -63,6 +63,8 @@ export class CampusMap {
   private walking = false;
   private overlays: ImageLayer<ImageStatic>[] = [];
   private terrain: ImageLayer<ImageStatic> | null = null;
+  private elevation: ImageLayer<ImageStatic>[] = [];
+  private elevationKey = '';
   map: Map;
   onClick: (lnglat: Pixel, controlId: string | null) => void = () => {};
   onDrag: () => void = () => {};
@@ -128,6 +130,16 @@ export class CampusMap {
     this.overlays.push(layer); this.map.addLayer(layer); this.fit(extent);
   }
   setOpacity(opacity: number) { for (const layer of this.overlays) layer.setOpacity(opacity); }
+  /** Coloured relief above the course map; its own opacity blends the two. */
+  setElevation(images: { url: string; extent: number[] }[], opacity: number) {
+    const key = JSON.stringify(images);
+    if (key === this.elevationKey) { this.setElevationOpacity(opacity); return; }
+    for (const layer of this.elevation) this.map.removeLayer(layer);
+    this.elevationKey = key;
+    this.elevation = images.map(image => new ImageLayer({ source: new ImageStatic({ url: image.url, imageExtent: image.extent, projection: 'EPSG:3857' }), opacity, zIndex: 15 }));
+    for (const layer of this.elevation) this.map.addLayer(layer);
+  }
+  setElevationOpacity(opacity: number) { for (const layer of this.elevation) layer.setOpacity(opacity); }
   setTerrain(state: MapState | null, visible: boolean) {
     if (this.terrain) this.map.removeLayer(this.terrain);
     this.terrain = null;

@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import accounts, groups, photos, service, store, layers, memory, printing, progress, field_checks, sites, elevation
+from . import accounts, groups, photos, service, store, layers, memory, printing, progress, field_checks, sites, elevation, elevation_render, live_elevation
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -45,6 +45,7 @@ async def lifespan(app):
             await asyncio.sleep(60)
             try:
                 await anyio.to_thread.run_sync(groups.prune)
+                await anyio.to_thread.run_sync(live_elevation.prune)
             except Exception:
                 logging.getLogger(__name__).exception('Group retention will retry in one minute')
     retention = asyncio.create_task(retain_groups())
@@ -266,6 +267,25 @@ class ReleaseRequest(Model):
     assetId: str
     planId: str
     title: str = Field(default='深大定向越野课', min_length=1, max_length=100)
+    collectHeights: bool = False
+
+
+class HeightSample(Model):
+    t: FiniteFloat
+    lng: FiniteFloat
+    lat: FiniteFloat
+    h: FiniteFloat
+    hacc: FiniteFloat = Field(ge=0)
+    vacc: FiniteFloat | None = Field(default=None, ge=0)
+
+
+class HeightSamples(Model):
+    deviceId: str = Field(min_length=16, max_length=64, pattern=r'^[A-Za-z0-9_-]+$')
+    samples: list[HeightSample] = Field(max_length=live_elevation.MAX_BATCH)
+
+
+class LiveElevationAction(Model):
+    action: Literal['enable', 'disable', 'clear', 'adopt']
 
 
 class Credentials(Model):
@@ -416,9 +436,9 @@ async def elevation_not_owner(request, exc):
 
 WRITES = ('POST', 'PUT', 'PATCH', 'DELETE')
 OPEN_PATHS = re.compile(r'/api/(?:health|auth/[a-z-]+|groups(?:/.*)?)')
-STUDENT_READS = re.compile(r'/api/releases/[0-9a-f]{32}(?:/(?:status|progress|overlay\.png|route-map|qr\.png|reference))?')
-STUDENT_WRITES = re.compile(r'/api/releases/[0-9a-f]{32}/(?:navigate|progress)')
-OWNER_PATHS = re.compile(r'/api/releases/[0-9a-f]{32}/(?:session|groups)')
+STUDENT_READS = re.compile(r'/api/releases/[0-9a-f]{32}(?:/(?:status|progress|overlay\.png|route-map|qr\.png|reference|live-elevation(?:/[0-9a-f]{40}\.png)?))?')
+STUDENT_WRITES = re.compile(r'/api/releases/[0-9a-f]{32}/(?:navigate|progress|elevation-samples)')
+OWNER_PATHS = re.compile(r'/api/releases/[0-9a-f]{32}/(?:session|groups|live-elevation)')
 
 
 def access_scope(method, path):
@@ -601,6 +621,20 @@ def elevation_region(region_id: str):
     return JSONResponse(elevation.model_grid(region_id), headers={'Cache-Control': 'no-store'})
 
 
+@app.get('/api/elevation/artifacts/{name}/relief.png')
+def elevation_relief(name: str):
+    # Named by content: an image never changes and is cached for good.
+    if not re.fullmatch('[0-9a-f]{40}', name):
+        raise HTTPException(404)
+    path = elevation.root()/'models'/(name+'.npz')
+    if not path.is_file():
+        raise HTTPException(404, '这一版共享地形已清理，请刷新')
+    built = elevation.models()
+    record = next((r for r in [*built['regions'], *built.get('history', [])] if r['artifact'] == f'models/{name}.npz'), None)
+    image = elevation_render.relief_png(str(path), path.stat().st_mtime_ns, float(record['spacingM']) if record else 10.)
+    return Response(image, media_type='image/png', headers={'Cache-Control': 'public, max-age=31536000, immutable'})
+
+
 @app.get('/api/elevation/regions/{region_id}/height.tif')
 def elevation_geotiff(region_id: str):
     data = elevation.geotiff(region_id)
@@ -653,6 +687,7 @@ def catalog():
         maps.append({k: v for k, v in asset.items() if k != 'path'} | {'processed': bool(state),
                      'version': state['version'] if state else None,
                      'controls': len(state['controls']) if state else None,
+                     'extent': state.get('extent') if state and state.get('registration') else None,
                      'courseDefaults': store.course_defaults(asset['sha256'])})
     legends = [{'name': p.name, 'url': f'/assets/legend/{index}'} for index, p in enumerate(legend_paths())]
     return {'maps': maps, 'legends': legends, 'sites': [sites.public(site) for site in sites.available()],
@@ -1023,6 +1058,8 @@ def release(request: ReleaseRequest):
         store.atomic_json(path/'release.json', result)
         # Listing a workbench's courses reads this instead of every package.
         store.atomic_json(path/'meta.json', {key: result[key] for key in ('id', 'workspace', 'assetId', 'title', 'createdAt', 'siteId')})
+        if request.collectHeights:
+            live_elevation.set_enabled(release_id, True)
         return {'id': release_id, 'url': '/?course='+release_id}
 
 
@@ -1050,7 +1087,8 @@ def list_releases(request: Request, assetId: str | None = None, limit: int = 20)
                        'startedAt': progress.started_at(release['id']),
                        'teams': len(teams), 'startedTeams': sum(bool(team['completed']) for team in teams),
                        'finishedTeams': sum(team['finished'] for team in teams),
-                       'lastReportAt': max((team['reportedAt'] for team in teams if team['reportedAt']), default=None)})
+                       'lastReportAt': max((team['reportedAt'] for team in teams if team['reportedAt']), default=None),
+                       'liveElevation': live_elevation.summary(release['id'])})
     return result
 
 
@@ -1090,7 +1128,8 @@ def release_status(release_id: str):
     # Phones poll this; the full course is downloaded once when opened.
     release = load_release(release_id)
     return {'id': release['id'], 'superseded': release['superseded'], 'routingSchema': release.get('routingSchema'),
-            'startedAt': progress.started_at(release_id), 'serverTime': time.time()}
+            'startedAt': progress.started_at(release_id), 'serverTime': time.time(),
+            'liveElevation': live_elevation.enabled(release_id)}
 
 
 @app.post('/api/releases/{release_id}/session')
@@ -1131,6 +1170,42 @@ def report_progress(release_id: str, report: ProgressReport):
     if release['superseded']:
         raise HTTPException(409, '课程已更新，请使用教师提供的新链接')
     return progress.record(release, report.model_dump())
+
+
+@app.post('/api/releases/{release_id}/elevation-samples')
+def contribute_course_heights(release_id: str, body: HeightSamples):
+    release = load_release(release_id)
+    if release['superseded']:
+        raise HTTPException(409, '课程已更新，请使用教师提供的新链接')
+    return live_elevation.record(release, body.deviceId, [sample.model_dump() for sample in body.samples])
+
+
+@app.get('/api/releases/{release_id}/live-elevation')
+def course_live_terrain(release_id: str):
+    return JSONResponse(live_elevation.current(load_release(release_id)), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/releases/{release_id}/live-elevation/{name}.png')
+def course_live_relief(release_id: str, name: str):
+    load_release(release_id)
+    path = live_elevation.artifact_path(release_id, name)
+    if not path.is_file():
+        raise HTTPException(404, '临时地形已更新，请刷新')
+    return Response(elevation_render.relief_png(str(path), path.stat().st_mtime_ns), media_type='image/png',
+                    headers={'Cache-Control': 'public, max-age=31536000, immutable'})
+
+
+@app.post('/api/releases/{release_id}/live-elevation')
+def manage_course_live_terrain(release_id: str, body: LiveElevationAction, request: Request):
+    release = owned_release(release_id)
+    if body.action == 'adopt':
+        receipt = live_elevation.adopt(release, current_user(request))
+        return {**live_elevation.summary(release_id), 'adopted': receipt, 'job': submit_elevation_rebuild(request)}
+    if body.action == 'clear':
+        live_elevation.clear(release_id)
+    else:
+        live_elevation.set_enabled(release_id, body.action == 'enable')
+    return live_elevation.summary(release_id)
 
 
 @app.post('/api/releases/{release_id}/navigate')
