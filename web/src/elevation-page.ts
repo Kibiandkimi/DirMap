@@ -6,12 +6,18 @@ import './elevation.css';
 import { fetchAccount, openSignIn, renderAccountChip } from './account';
 import { mapAssetUrl, setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
 import { escapeHtml as e, type AccountState, type MapState } from './types';
-import type { HeightGrid, HeightRegion, HeightStatus, HeightTrack } from './elevation-types';
+import type { HeightGrid, HeightRegion, HeightStatus, HeightTrack, TrackDetail, TravelDiagnostics } from './elevation-types';
 import { ElevationView } from './elevation-view';
+import { contourStep } from './elevation-layer';
+import { minutes, trackCharts, travelCharts } from './learning-charts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-const activities = { auto: '自动判断', walk: '步行 / 散步', run: '跑步', bicycle: '骑行', exclude: '不用于速度学习' };
+const activities: Record<string, string> = { auto: '自动判断', foot: '徒步（步行 / 跑步 / 交替）', bicycle: '骑行', exclude: '不用于耗时学习' };
+const activityMode = (value: string) => value === 'walk' || value === 'run' ? 'foot' : value;
 let account: AccountState | null = null, status: HeightStatus | null = null, selected = '', loadedFingerprint = '';
+let selectedTrack = new URLSearchParams(location.search).get('track') ?? '', activeGrid: HeightGrid | null = null;
+let detailRequest = 0, detailKey = '', travelRequest = 0, travelKey = '', learningMode = 'foot';
+let trackDetail: TrackDetail | null = null, travelDetails: TravelDiagnostics | null = null;
 let loading = 0, pendingFingerprint = '', jobWatching = '', mode: '3d' | 'map' = '3d';
 document.body.classList.add('elevation-page'); document.documentElement.classList.add('elevation-document');
 document.querySelector('#app')!.innerHTML = `
@@ -21,12 +27,14 @@ document.querySelector('#app')!.innerHTML = `
     <div class="height-toolbar"><label class="height-region-label">地区<select id="height-region" aria-label="选择地形地区"><option>载入中…</option></select></label>
       <div class="height-view-modes" role="group" aria-label="绘制方式"><button id="height-3d" class="active" aria-pressed="true">三维</button><button id="height-map" aria-pressed="false">高程图</button></div>
       <button id="height-reset" class="soft-button">复位</button><a id="height-download" class="soft-button" aria-disabled="true">下载 GeoTIFF</a></div>
+    <label class="height-select-field">查看贡献<select id="height-track-select" aria-label="选择要查看的贡献"><option value="">整个地区 · 所有贡献</option></select></label><div id="height-selection" class="height-selection" hidden><strong id="height-selected-name"></strong><button id="height-show-all" class="text-button">返回全部贡献</button></div>
     <div class="height-viewport"><canvas id="height-canvas" tabindex="0" aria-label="三维地形；方向键旋转，加减键缩放"></canvas><canvas id="height-map-canvas" hidden aria-label="北向上的高程图；点击可查看高程"></canvas>
       <div id="height-empty" class="height-empty">正在读取共享地形…</div><div id="height-gesture" class="height-gesture">拖动旋转 · 双指或滚轮缩放</div>
       <div class="height-legend"><span id="height-low">—</span><i></i><span id="height-high">—</span><small>共享参考高程 · 米</small></div></div>
-    <div class="height-display-tools"><label>垂直夸张 <input id="height-exaggeration" type="range" min="1" max="8" value="4" step=".5"><span id="height-factor">4×</span><small>仅影响三维显示</small></label><label class="check-label"><input id="height-observations" type="checkbox">显示采样位置</label><label id="height-overlay-field" class="height-overlay hidden">叠加定向图 <select id="height-overlay-map" aria-label="叠加的定向图"><option value="">不叠加</option></select></label><label id="height-overlay-opacity-field" class="hidden">定向图 <input id="height-overlay-opacity" type="range" min="0" max="100" value="60" aria-label="定向图透明度"><span id="height-overlay-value">60%</span></label></div>
+    <div class="height-display-tools"><label>垂直夸张 <input id="height-exaggeration" type="range" min="1" max="8" value="4" step=".5"><span id="height-factor">4×</span><small>仅影响三维显示</small></label><label class="check-label"><input id="height-contours" type="checkbox" checked>等高线 <span id="height-contour-step"></span></label><label class="check-label"><input id="height-observations" type="checkbox">显示采样位置</label><label id="height-overlay-field" class="height-overlay hidden">叠加定向图 <select id="height-overlay-map" aria-label="叠加的定向图"><option value="">不叠加</option></select></label><label id="height-overlay-opacity-field" class="hidden">定向图 <input id="height-overlay-opacity" type="range" min="0" max="100" value="60" aria-label="定向图透明度"><span id="height-overlay-value">60%</span></label></div>
     <div id="height-statistics" class="height-statistics"></div><div id="height-inspect" class="height-inspect">切换“高程图”，点击或移动指针查看某处高程。</div><div id="height-context-credit" class="height-context-credit hidden">位置参照 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> · 未着色区域暂无高程支持</div>
-    <div class="height-explanation"><strong>轨迹与等高线共同构建的参考地形</strong><p>手机记录的高度会随时间漂移，不同日子的记录也有整体偏差。重建时利用交叉和重叠路段，同时估计地面高度和每条记录的漂移，再在有观测支持的区域平滑插值。留白处没有足够的数据；三维夸张不影响路线中的爬升与耗时计算。</p><p>高程来自记录设备及核对后的等高线，未建立测量级海拔基准。相对标高只约束高差，整体高度随轨迹对齐。新贡献更新后续规划的地形，已发布课程保留原高程快照。</p><p id="height-alignment"></p></div>
+    <section id="height-track-detail" class="height-explanation track-detail" aria-label="所选轨迹贡献详情" hidden></section>
+    <div class="height-explanation"><strong>轨迹与等高线共同构建的参考地形</strong><p>手机记录的高度会随时间漂移，不同日子的记录也有整体偏差。重建时利用交叉和重叠路段，同时估计地面高度和每条记录的漂移，再在有观测支持的区域平滑插值。留白处没有足够的数据；三维夸张不影响路线中的爬升与耗时计算。</p><p>识别出的等高线自动约束沿线同高，每条线的高度由重叠轨迹推断；无参考处等待数据。已知标高和相对高差也可补充，未建立测量级海拔基准。新贡献更新后续规划的地形，已发布课程保留原高程快照。</p><p id="height-alignment"></p></div>
   </section><aside class="height-sidebar"><div class="height-contribute"><h2>贡献轨迹</h2><p>大家共同构建、共同查看。你可以管理自己上传的轨迹。</p><button id="height-upload" class="primary-button wide">＋ 添加 KML 轨迹</button><input id="height-files" type="file" accept=".kml,application/vnd.google-earth.kml+xml" multiple hidden><small>可多选；相同轨迹不会重复计入。</small>
     <div id="height-job" class="height-job hidden" role="status"><progress id="height-job-progress" max="100"></progress><p id="height-job-message"></p></div>
     <div id="height-import-errors" class="height-import-errors"></div><button id="height-rebuild" class="soft-button wide hidden">合并最新轨迹</button></div>
@@ -34,6 +42,7 @@ document.querySelector('#app')!.innerHTML = `
   </aside></div></main><div id="height-toast" class="toast hidden" role="status"></div>`;
 
 const viewer = new ElevationView($<HTMLCanvasElement>('height-canvas'), $<HTMLCanvasElement>('height-map-canvas'));
+$('height-contours').onchange = () => viewer.setContours($<HTMLInputElement>('height-contours').checked);
 $('height-statistics').insertAdjacentHTML('afterend', '<section id="height-travel" class="height-explanation travel-learning" aria-label="路线耗时学习"></section>');
 function notify(message: string, error = false) {
   $('height-toast').textContent = message; $('height-toast').classList.remove('hidden'); $('height-toast').classList.toggle('error', error);
@@ -83,55 +92,131 @@ function renderTracks() {
   const onlyMine = $<HTMLInputElement>('height-mine').checked;
   const tracks = [...(status?.tracks ?? [])].filter(t => !onlyMine || t.ownerId === account?.user?.id).sort((a, b) => b.createdAt - a.createdAt);
   $('height-track-count').textContent = `${status?.tracks.length ?? 0}`;
+  $<HTMLSelectElement>('height-track-select').innerHTML = '<option value="">整个地区 · 所有贡献</option>' + tracks.map(t => `<option value="${e(t.id)}" ${selectedTrack === t.id ? 'selected' : ''}>${e(t.name)}${t.enabled ? '' : '（已停用）'}</option>`).join('');
   $('height-tracks').innerHTML = tracks.map(track => {
     const mine = track.ownerId === account?.user?.id;
     const region = status?.regions.find(r => r.trackIds.includes(track.id));
     const aligned = region?.alignment.tracks.find(t => t.id === track.id), correction = aligned?.correctionM, drift = aligned?.driftRangeM ?? 0;
+    const shape = track.kind === 'contours' && track.heightReference === 'shape';
     const relative = track.kind === 'contours' && track.heightReference === 'relative';
     const recorded = track.recordedAt ? new Date(track.recordedAt * 1000).toLocaleString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-    return `<article class="height-track ${track.enabled ? '' : 'disabled'}" data-track="${e(track.id)}"><div class="height-track-heading"><strong>${e(track.name)}</strong><span>${mine ? '我的' : e(track.ownerName)}</span></div><p>${e(region?.name ?? '等待合并')} · ${track.kind === 'contours' ? `${track.contourCount ?? ''} 条${relative ? '相对标高' : '已知标高'}等高线 · ` : ''}${track.pointCount.toLocaleString()} 点${recorded ? ` · 记录于 ${e(recorded)}` : ''}</p><p>${relative ? '标注高差' : '记录高程'} ${track.minHeightM.toFixed(1)}–${track.maxHeightM.toFixed(1)} m${aligned?.anchored === false ? ' · 等待重叠轨迹或已知标高' : ''}${typeof correction === 'number' && Math.abs(correction) >= .1 ? ` · ${relative ? '整体对齐' : '平均校正'} ${correction > 0 ? '+' : ''}${correction.toFixed(1)} m` : ''}${drift >= 1 ? ` · 期间漂移约 ${drift.toFixed(1)} m` : ''}</p>${mine ? `<div class="height-track-actions"><label class="check-label"><input type="checkbox" data-track-enable="${e(track.id)}" ${track.enabled ? 'checked' : ''}>参与重建</label><button data-track-name="${e(track.id)}" class="text-button">改名</button><button data-track-delete="${e(track.id)}" class="text-button danger">删除</button></div>` : `<span class="height-readonly">${track.enabled ? '已分享，参与共同重建' : '贡献者已停用'}</span>`}</article>`;
+    return `<article class="height-track ${track.enabled ? '' : 'disabled'} ${track.id === selectedTrack ? 'selected' : ''}" data-track="${e(track.id)}"><div class="height-track-heading"><strong>${e(track.name)}</strong><span>${mine ? '我的' : e(track.ownerName)}</span></div><p>${e(region?.name ?? '等待合并')} · ${track.kind === 'contours' ? `${track.contourCount ?? ''} 条${shape ? '自动识别' : relative ? '相对标高' : '已知标高'}等高线 · ` : ''}${track.pointCount.toLocaleString()} 点${recorded ? ` · 记录于 ${e(recorded)}` : ''}</p><p>${shape ? '自动约束沿线同高，无需逐条标高' : `${relative ? '标注高差' : '记录高程'} ${track.minHeightM.toFixed(1)}–${track.maxHeightM.toFixed(1)} m`}${aligned?.anchored === false ? ' · 等待重叠轨迹或已知标高' : ''}${typeof correction === 'number' && Math.abs(correction) >= .1 ? ` · ${relative ? '整体对齐' : '平均校正'} ${correction > 0 ? '+' : ''}${correction.toFixed(1)} m` : ''}${drift >= 1 ? ` · 期间漂移约 ${drift.toFixed(1)} m` : ''}</p>${mine ? `<div class="height-track-actions"><label class="check-label"><input type="checkbox" data-track-enable="${e(track.id)}" ${track.enabled ? 'checked' : ''}>参与重建</label><button data-track-name="${e(track.id)}" class="text-button">改名</button><button data-track-delete="${e(track.id)}" class="text-button danger">删除</button></div>` : `<span class="height-readonly">${track.enabled ? '已分享，参与共同重建' : '贡献者已停用'}</span>`}<button class="soft-button height-track-select" data-track-select="${e(track.id)}" aria-pressed="${track.id === selectedTrack}">${track.id === selectedTrack ? '正在查看此贡献' : '单独查看贡献'}</button></article>`;
   }).join('') || `<p class="muted">${onlyMine ? '你还没有贡献轨迹。' : '还没有高程轨迹。添加带海拔的 KML 即可开始。'}</p>`;
   for (const track of tracks) {
     if (track.kind === 'contours') continue;
     const card = $('height-tracks').querySelector<HTMLElement>(`[data-track="${CSS.escape(track.id)}"]`)!;
-    const speed = track.speedLearning, activity = track.activity ?? 'auto';
-    const inferred = speed?.inferredActivity;
-    const label = activity !== 'auto' ? activities[activity] : inferred === 'walk' ? '推测为步行（待确认）' : speed?.reason === 'running_or_cycling_ambiguous' ? '跑步 / 骑行待确认' : speed ? '暂无有效移动时间' : '等待分析';
+    const speed = track.speedLearning, activity = activityMode(track.activity ?? 'auto');
+    const inferred = activityMode(speed?.inferredActivity ?? 'unknown');
+    const label = activity !== 'auto' ? activities[activity] : inferred === 'foot' ? '推测为徒步（跑走不区分）' : ['running_or_cycling_ambiguous', 'foot_or_bicycle_ambiguous'].includes(speed?.reason ?? '') ? '徒步 / 骑行待确认' : speed ? '暂无有效移动时间' : '等待分析';
     card.insertAdjacentHTML('beforeend', `<p class="track-speed">${e(label)}${speed?.medianSpeedMps != null ? ` · 移动速度中位 ${speed.medianSpeedMps.toFixed(2)} m/s` : ''}${speed?.observations ? `<br>可用移动片段 ${speed.observations} 个 · 已剔除约 ${Math.round(speed.stoppedSec)} 秒停留` : '<br>暂无带有效时间的移动片段'}</p>${track.ownerId === account?.user?.id ? `<label class="height-activity">活动类型<select data-track-activity="${e(track.id)}" aria-label="${e(track.name)}的活动类型">${Object.entries(activities).map(([value, name]) => `<option value="${value}" ${activity === value ? 'selected' : ''}>${name}</option>`).join('')}</select></label>` : ''}`);
   }
 }
-function renderTravel(regionId: string) {
+function drawTravel() {
+  const model = travelDetails, host = $('height-travel');
+  if (!model) return;
+  if (selectedTrack && status?.tracks.find(t => t.id === selectedTrack)?.kind === 'contours') {
+    host.innerHTML = '<strong>路线耗时学习</strong><p>这组等高线只贡献地形约束，没有时间戳，不参与速度或耗时学习。</p>'; return;
+  }
+  const modes = Object.keys(model.profiles);
+  const legacy = !modes.includes('foot') && modes.some(m => m === 'walk' || m === 'run');
+  const modeName = (mode: string) => mode === 'walk' ? '历史步行模型' : mode === 'run' ? '历史跑步模型' : activities[mode] ?? mode;
+  if (!modes.includes(learningMode)) learningMode = modes.includes('foot') ? 'foot' : modes[0];
+  const profile = model.profiles[learningMode];
+  if (!profile) { host.innerHTML = '<strong>路线耗时学习</strong><p>合并带时间的轨迹后显示学习结果。</p>'; return; }
+  const records = model.tracks.filter(t => legacy ? t.inferredActivity === learningMode : activityMode(t.inferredActivity) === activityMode(learningMode));
+  const hasScope = !selectedTrack || records.length > 0;
+  const observations = records.reduce((sum, t) => sum + t.regionObservations, 0);
+  const paces = profile.episodes.map(t => t.paceMps);
+  host.innerHTML = `<strong>路线耗时学习 · 相对通行效率</strong><div class="learning-mode"><label>学习对象 <select id="height-learning-mode" aria-label="查看通行效率模型">${modes.map(m => `<option value="${e(m)}" ${m === learningMode ? 'selected' : ''}>${e(modeName(m))}</option>`).join('')}</select></label></div>
+    <p>${selectedTrack ? '当前仅显示所选轨迹贡献的样本与路段。' + (hasScope ? '坡度曲线来自它参与的共同模型。' : '这条轨迹未参与此类耗时学习。') : legacy ? '这里是尚未更新的历史模型；合并最新轨迹后，步行和跑步会统一学习。' : '步行、跑步及跑走交替共同学习；个人快慢和持续配速变化单独估计。'} 路段效率 1.20 倍表示相同基础配速下，耗时约为 1 ÷ 1.20。</p>
+    <div class="learning-metrics"><span><b>${records.length}</b>可用记录</span><span><b>${observations}</b>本区移动片段</span><span><b>${profile.corridorCount}</b>已学习路段</span><span><b>${minutes(records.reduce((sum, t) => sum + t.movingSec, 0))}</b>记录有效移动</span></div>
+    <p>${!hasScope ? '有效时间与过滤信息见下方贡献详情。' : profile.gradeLearned ? `已学习坡度 ${Math.round(profile.gradeRange[0] * 100)}% 至 ${Math.round(profile.gradeRange[1] * 100)}%；范围外延续基础坡度估计。` : '坡度变化的独立记录不足，坡度仍用基础估计。'} 每个局部路段至少需要 3 条独立记录，同一记录反复经过不增加独立票数。</p>
+    ${paces.length ? `<p>估计了 ${paces.length} 个配速阶段，基准速度 ${Math.min(...paces).toFixed(2)}–${Math.max(...paces).toFixed(2)} m/s。${profile.residualLogMad !== null ? `拟合后相对离散约 ${(Math.expm1(profile.residualLogMad) * 100).toFixed(0)}%（训练数据，非预测精度）。` : ''}</p>` : ''}
+    ${hasScope ? travelCharts(model, learningMode) : ''}
+    ${records.length ? `<details class="efficiency-records"><summary>查看参与学习的记录及过滤数据</summary><table><thead><tr><th>记录</th><th>片段</th><th>停留剔除</th><th>无效时间 / 跳点</th></tr></thead><tbody>${records.map(t => `<tr><td><button class="text-button" data-inspect-track="${e(t.id)}">${e(status?.tracks.find(track => track.id === t.id)?.name ?? '轨迹')}</button></td><td>${t.regionObservations}</td><td>${minutes(t.stoppedSec)}</td><td>${t.rejectedPairs} 对</td></tr>`).join('')}</tbody></table></details>` : '<p>当前没有可用于这个模型的记录；没有时间或活动待确认的轨迹不会编造速度。</p>'}
+    ${profile.corridors.length ? `<details class="efficiency-records"><summary>路段效率及支持记录数（${profile.corridorCount} 段）</summary><table><thead><tr><th>路段</th><th>相对效率</th><th>独立记录</th><th>移动片段</th></tr></thead><tbody>${profile.corridors.map((c, i) => `<tr><td>${i + 1}</td><td>${c.efficiency.toFixed(2)} 倍</td><td>${c.tracks}</td><td>${c.observations}</td></tr>`).join('')}</tbody></table></details>` : ''}`;
+  $('height-learning-mode').onchange = event => { learningMode = (event.target as HTMLSelectElement).value; drawTravel(); };
+  host.querySelectorAll<HTMLButtonElement>('[data-inspect-track]').forEach(button => button.onclick = () => void selectTrack(button.dataset.inspectTrack!));
+}
+async function renderTravel(regionId: string) {
   const model = status?.travelModels?.find(r => r.regionId === regionId);
-  if (!model) { $('height-travel').innerHTML = '<strong>路线耗时学习</strong><p>合并带时间的轨迹后，可学习活动配速、坡度和重复路段的影响。</p>'; return; }
-  $('height-travel').innerHTML = `<strong>路线耗时学习</strong><p>每次活动的基础配速单独估计。停留和定位跳点剔除后，使用同类活动的重复经过学习路段与上下坡影响。</p><table><thead><tr><th>活动</th><th>可用记录</th><th>学习路段</th><th>坡度</th></tr></thead><tbody>${(['walk', 'run', 'bicycle'] as const).map(mode => { const p = model.profiles[mode]; return `<tr><td>${activities[mode]}</td><td>${p.tracks}</td><td>${p.corridorCount}</td><td>${p.gradeLearned ? '已学习' : '数据不足'}</td></tr>`; }).join('')}</tbody></table><p>局部路段至少需要 3 条独立记录支持。尚无支持处使用基础估计。课程可选择步行或跑步；骑行单独分析。自动判断不能可靠区分跑步与骑行，请在自己的轨迹中确认类型。</p>`;
+  if (!regionId || !model) { ++travelRequest; travelKey = ''; travelDetails = null; $('height-travel').innerHTML = '<strong>路线耗时学习</strong><p>合并带时间的轨迹后，可学习相对通行效率、坡度和重复路段的影响。</p>'; return; }
+  const key = JSON.stringify([regionId, model, selectedTrack]);
+  if (travelKey === key) { if (travelDetails) drawTravel(); return; }
+  const revision = ++travelRequest; travelKey = key; travelDetails = null;
+  $('height-travel').innerHTML = '<strong>路线耗时学习</strong><p>正在读取学习结果…</p>';
+  try {
+    const response: TravelDiagnostics = await api(`/api/elevation/regions/${regionId}/travel${selectedTrack ? '?track=' + selectedTrack : ''}`);
+    if (revision !== travelRequest) return;
+    travelDetails = response; drawTravel();
+  } catch (error) { if (revision === travelRequest) { travelKey = ''; $('height-travel').textContent = (error as Error).message; } }
+}
+async function loadTrackDetail() {
+  $('height-selection').hidden = !selectedTrack; $('height-track-detail').hidden = !selectedTrack;
+  $('height-selected-name').textContent = selectedTrack ? '仅查看：' + (status?.tracks.find(t => t.id === selectedTrack)?.name ?? '所选贡献') : '';
+  if (!selectedTrack) { ++detailRequest; detailKey = ''; trackDetail = null; viewer.setTrack(null); return; }
+  const key = `${selectedTrack}:${status?.version}:${status?.modelVersion}:${status?.regions.filter(r => r.trackIds.includes(selectedTrack)).map(r => r.fingerprint).join(',')}`;
+  if (detailKey === key) return;
+  detailKey = key; const revision = ++detailRequest;
+  viewer.setTrack(null); trackDetail = null;
+  $('height-track-detail').innerHTML = '<p>正在读取此轨迹的观测与统计…</p>';
+  try {
+    const detail: TrackDetail = await api('/api/elevation/tracks/' + selectedTrack);
+    if (revision !== detailRequest) return;
+    trackDetail = detail; viewer.setTrack(detail.samples);
+    const speed = detail.speedLearning;
+    const shape = detail.track.heightReference === 'shape';
+    $('height-track-detail').innerHTML = `<h2>${e(detail.track.name)} · 贡献详情</h2><p>${detail.track.enabled ? '参与共同重建' : '已停用，不参与当前重建'}。地图仅显示此贡献的采样及其支持范围，范围内高程仍来自共同重建。</p>
+      <div class="learning-metrics"><span><b>${(detail.distanceM / 1000).toFixed(2)} km</b>${detail.track.kind === 'contours' ? '线段总长' : '记录距离'}</span><span><b>${detail.track.pointCount.toLocaleString()}</b>原始采样点</span><span><b>${speed.observations}</b>有效移动片段</span><span><b>${minutes(speed.stoppedSec)}</b>剔除停留</span></div>
+      ${detail.alignment.map(a => `<p>${e(detail.regions.find(r => r.id === a.regionId)?.name ?? '本区')}：${a.anchored === false ? '等待重叠高程参考' : shape ? '已与高程参考共同重建' : `平均高程校正 ${a.correctionM?.toFixed(2) ?? '—'} m · 记录期间漂移 ${a.driftRangeM?.toFixed(2) ?? '—'} m`}。</p>`).join('')}
+      <p>${speed.observations ? `有效移动 ${minutes(speed.movingSec)}，${speed.episodes} 个配速阶段；移动速度中位 ${speed.medianSpeedMps?.toFixed(2)} m/s，已剔除 ${speed.rejectedPairs} 对异常时间或定位。` : '没有可用于耗时学习的有效时间片段；高程贡献仍可参与地形。'}</p>${trackCharts(detail)}`;
+  } catch (error) { if (revision === detailRequest) { detailKey = ''; $('height-track-detail').textContent = (error as Error).message; } }
+}
+async function selectTrack(id: string) {
+  selectedTrack = id; loadedFingerprint = ''; travelKey = ''; detailKey = '';
+  ++travelRequest; travelDetails = null; $('height-travel').textContent = '正在读取贡献的学习数据…';
+  const region = status?.regions.find(r => r.trackIds.includes(id));
+  if (id && region) selected = region.id;
+  $<HTMLSelectElement>('height-region').value = selected;
+  const track = status?.tracks.find(t => t.id === id);
+  if (track?.speedLearning) learningMode = activityMode(track.speedLearning.inferredActivity);
+  const url = new URL(location.href); if (id) url.searchParams.set('track', id); else url.searchParams.delete('track'); history.replaceState({}, '', url);
+  renderTracks();
+  await Promise.all([loadTrackDetail(), loadRegion()]);
 }
 function renderRegion(region: HeightRegion) {
-  renderTravel(region.id);
+  void renderTravel(region.id);
+  $('height-contour-step').textContent = `${contourStep(region.minHeightM ?? 0, region.maxHeightM ?? 0)} m`;
+  if (mode === 'map') $('height-gesture').textContent = '北向上 · 点击查看高程';
   $('height-low').textContent = region.minHeightM === null ? '—' : region.minHeightM.toFixed(1);
   $('height-high').textContent = region.maxHeightM === null ? '—' : region.maxHeightM.toFixed(1);
-  $('height-statistics').innerHTML = `<div><strong>${region.spacingM}<small> m</small></strong><span>网格间距</span></div><div><strong>${(region.supportedCells * region.spacingM ** 2 / 10000).toFixed(1)}<small> 公顷</small></strong><span>有观测支持的范围</span></div><div><strong>${region.trackIds.length}<small> 条</small></strong><span>参与本区的记录</span></div><div><strong>${region.pointCount.toLocaleString()}</strong><span>高程采样点</span></div>`;
+  $('height-statistics').innerHTML = `<div><strong>${region.spacingM}<small> m</small></strong><span>网格间距</span></div><div><strong>${(region.supportedCells * region.spacingM ** 2 / 10000).toFixed(1)}<small> 公顷</small></strong><span>${selectedTrack ? '本轨迹支持的范围' : '有观测支持的范围'}</span></div><div><strong>${region.trackIds.length}<small> 条</small></strong><span>${selectedTrack ? '当前选中贡献' : '参与本区的记录'}</span></div><div><strong>${region.pointCount.toLocaleString()}</strong><span>高程采样点</span></div>`;
   const agreement = region.alignment.overlapResidualM !== null ? `，校正后交叉处高度差中位 ${region.alignment.overlapResidualM.toFixed(1)} m` : '';
-  $('height-alignment').textContent = region.alignment.unanchoredComponents ? '有相对等高线尚无重叠轨迹或已知标高，暂不生成这些区域的高度；补充参考后会自动对齐。' : region.alignment.alignedComponents > 1 ? '部分轨迹缺少足够重叠，暂时保留不同高程参考之间的空白；后续交叉经过这些位置的轨迹有助于补全。' : region.alignment.overlapPairs ? `已利用 ${region.alignment.overlapPairs} 对重叠记录校正高程${agreement}。` : '本区目前只有一条记录，无法与其他记录互相校核；更多重复和交叉轨迹能让地形更可靠。';
+  $('height-alignment').textContent = selectedTrack ? '橙色为所选贡献的轨迹，采样点和高程覆盖仅显示此贡献支持的位置。' : region.alignment.unanchoredComponents ? '有相对等高线尚无重叠轨迹或已知标高，暂不生成这些区域的高度；补充参考后会自动对齐。' : region.alignment.alignedComponents > 1 ? '部分轨迹缺少足够重叠，暂时保留不同高程参考之间的空白；后续交叉经过这些位置的轨迹有助于补全。' : region.alignment.overlapPairs ? `已利用 ${region.alignment.overlapPairs} 对重叠记录校正高程${agreement}。` : '本区目前只有一条记录，无法与其他记录互相校核；更多重复和交叉轨迹能让地形更可靠。';
   const download = $<HTMLAnchorElement>('height-download');
-  if (region.supportedCells) { download.href = `/api/elevation/regions/${region.id}/height.tif`; download.setAttribute('aria-disabled', 'false'); }
+  if (region.supportedCells && !selectedTrack) { download.href = `/api/elevation/regions/${region.id}/height.tif`; download.setAttribute('aria-disabled', 'false'); }
   else { download.removeAttribute('href'); download.setAttribute('aria-disabled', 'true'); }
 }
 async function loadRegion() {
-  const region = status?.regions.find(r => r.id === selected);
+  const region = status?.regions.find(r => r.id === selected && (!selectedTrack || r.trackIds.includes(selectedTrack)));
   if (!region) {
-    renderTravel('');
+    void renderTravel('');
     ++loading; pendingFingerprint = '';
-    viewer.setGrid(null); loadedFingerprint = ''; $('height-empty').textContent = '还没有重建地形。登录后添加带高程的 KML 轨迹，即可共同构建。'; $('height-empty').classList.remove('hidden');
-    $('height-statistics').innerHTML = ''; $<HTMLAnchorElement>('height-download').removeAttribute('href'); return;
+    viewer.setGrid(null); activeGrid = null; loadedFingerprint = ''; $('height-empty').textContent = selectedTrack ? '此贡献未参与当前地区的地形；下方可查看它的原始数据和统计。' : '还没有重建地形。登录后添加带高程的 KML 轨迹，即可共同构建。'; $('height-empty').classList.remove('hidden');
+    $('height-statistics').innerHTML = ''; $('height-low').textContent = $('height-high').textContent = '—';
+    $('height-alignment').textContent = ''; $('height-context-credit').classList.add('hidden');
+    $<HTMLAnchorElement>('height-download').removeAttribute('href'); $<HTMLAnchorElement>('height-download').setAttribute('aria-disabled', 'true'); return;
   }
-  if (loadedFingerprint === region.fingerprint) { renderRegion(region); return; }
-  if (pendingFingerprint === region.fingerprint) return;
-  const revision = ++loading; pendingFingerprint = region.fingerprint;
+  const key = region.fingerprint + ':' + selectedTrack;
+  if (loadedFingerprint === key) { renderRegion(activeGrid ?? region); return; }
+  if (pendingFingerprint === key) return;
+  const revision = ++loading; pendingFingerprint = key;
+  $('height-statistics').innerHTML = '';
   viewer.setGrid(null); $('height-empty').textContent = `正在读取${region.name}…`; $('height-empty').classList.remove('hidden');
   try {
-    const grid: HeightGrid = await api('/api/elevation/regions/' + region.id);
+    const grid: HeightGrid = await api('/api/elevation/regions/' + region.id + (selectedTrack ? '?track=' + selectedTrack : ''));
     if (revision !== loading || selected !== grid.id) return;
-    viewer.setGrid(grid); loadedFingerprint = grid.fingerprint; renderRegion(grid); renderOverlayChoices();
+    viewer.setGrid(grid); activeGrid = grid; loadedFingerprint = key; renderRegion(grid); renderOverlayChoices();
     $('height-context-credit').classList.toggle('hidden', !grid.context?.features.length);
     $('height-empty').classList.toggle('hidden', !!grid.supportedCells);
     if (!grid.supportedCells) { $('height-empty').textContent = grid.alignment.unanchoredComponents ? '相对等高线已保存，等待覆盖这些线的轨迹或已知标高后重建。' : '目前的观测尚不足以形成地形面；继续补充交叉轨迹后可重建。'; viewer.setPoints(true); }
@@ -143,6 +228,8 @@ async function refresh() {
   const next: HeightStatus = await api('/api/elevation');
   if (status && next.version < status.version) return;
   status = next;
+  if (selectedTrack && !status.tracks.some(t => t.id === selectedTrack)) { selectedTrack = ''; detailKey = ''; }
+  if (selectedTrack && !status.regions.some(r => r.id === selected && r.trackIds.includes(selectedTrack))) selected = status.regions.find(r => r.trackIds.includes(selectedTrack))?.id ?? selected;
   const known = status.regions.some(r => r.id === selected);
   if (!known) {
     const requested = new URLSearchParams(location.search).get('region');
@@ -152,19 +239,21 @@ async function refresh() {
   $('height-status').textContent = status.needsRebuild ? '地形有更新待合并' : status.builtAt ? `最近重建 ${new Date(status.builtAt * 1000).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : '等待第一份贡献';
   $('height-status').classList.toggle('pending', status.needsRebuild);
   $('height-rebuild').classList.toggle('hidden', !status.needsRebuild || !account?.user);
-  renderTracks(); await loadRegion();
+  renderTracks(); await Promise.all([loadRegion(), loadTrackDetail()]);
 }
 function switchMode(next: '3d' | 'map') {
   mode = next === '3d' && !viewer.supports3D ? 'map' : next; viewer.setMode(mode);
   for (const value of ['3d', 'map']) { $('height-' + value).classList.toggle('active', mode === value); $('height-' + value).setAttribute('aria-pressed', String(mode === value)); }
   $<HTMLInputElement>('height-exaggeration').disabled = mode !== '3d';
-  $('height-gesture').textContent = mode === '3d' ? '拖动旋转 · 双指或滚轮缩放' : '北向上 · 点击查看高程 · 等高线间隔 2 m（大起伏区域 10 m）';
+  $('height-gesture').textContent = mode === '3d' ? '拖动旋转 · 双指或滚轮缩放' : '北向上 · 点击查看高程';
 }
 viewer.onInspect = value => { $('height-inspect').textContent = value ? `${value.lng.toFixed(6)}, ${value.lat.toFixed(6)} · ${value.height === null ? '此处没有足够的观测支持' : `网格参考高程 ${value.height.toFixed(1)} m${value.support !== null ? ` · 距最近观测约 ${Math.round(value.support)} m` : ''}`}` : '切换“高程图”，点击或移动指针查看某处高程。'; };
 $('height-3d').onclick = () => switchMode('3d'); $('height-map').onclick = () => switchMode('map'); $('height-reset').onclick = () => viewer.reset();
 $('height-exaggeration').oninput = event => { const value = Number((event.target as HTMLInputElement).value); $('height-factor').textContent = `${value}×`; viewer.setExaggeration(value); };
 $('height-observations').onchange = event => viewer.setPoints((event.target as HTMLInputElement).checked);
-$('height-region').onchange = event => { selected = (event.target as HTMLSelectElement).value; void loadRegion(); };
+$('height-region').onchange = event => { selected = (event.target as HTMLSelectElement).value; void selectTrack(''); };
+$('height-track-select').onchange = event => void selectTrack((event.target as HTMLSelectElement).value);
+$('height-show-all').onclick = () => void selectTrack('');
 $('height-mine').onchange = renderTracks;
 $('height-upload').onclick = () => { if (requireAccount()) $<HTMLInputElement>('height-files').click(); };
 $<HTMLInputElement>('height-files').onchange = async event => {
@@ -192,6 +281,8 @@ $('height-tracks').addEventListener('change', async event => {
   catch (error) { notify((error as Error).message, true); await refresh().catch(() => {}); }
 });
 $('height-tracks').addEventListener('click', event => {
+  const selection = (event.target as HTMLElement).closest<HTMLElement>('[data-track-select]');
+  if (selection) { void selectTrack(selection.dataset.trackSelect!); $('height-selection').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   const target = (event.target as HTMLElement).closest<HTMLElement>('[data-track-name],[data-track-delete]');
   const track = status?.tracks.find(t => t.id === (target?.dataset.trackName ?? target?.dataset.trackDelete));
   if (!track || !requireAccount()) return;

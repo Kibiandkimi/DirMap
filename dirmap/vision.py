@@ -46,10 +46,10 @@ def colour_masks(image):
     # Olive green is the ISSprOM settlement/out-of-bounds fill, unlike yellow
     # open land or light green vegetation. Bright red custom course ink is
     # unknown, never treated as a new road.
-    # Saturated green vegetation can lean towards yellow on a park print.
-    # Keep the muted olive settlement fill (including its overlap with the
-    # broad green mask); hue alone cannot distinguish these two inks.
-    olive = ((h >= 22) & (h <= 39) & (s > 62) & (v < 216) & (v > 90) & ~saturated_green).astype(np.uint8)*255
+    # The park's olive out-of-bounds ink is *more* saturated than the campus
+    # print (RGB about 164, 180, 25). Saturation must not exempt it from this
+    # rule. Bright vegetation is greener (H about 55) or brighter (V >= 216).
+    olive = ((h >= 22) & (h <= 39) & (s > 62) & (v < 216) & (v > 90)).astype(np.uint8)*255
     ink_threshold = max(45., float(np.percentile(s[purple > 0], 90))*.55) if np.any(purple) else 100.
     course_ink = purple & ((s >= ink_threshold).astype(np.uint8)*255)
     return dict(purple=purple, water=water, building=building, green=green,
@@ -497,6 +497,16 @@ def analyze(image, labeler=None):
     boundaries[continued_barriers > 0] = 0
     for kind in ('dark_green', 'black', 'olive'):
         terrain_masks[kind][boundaries > 0] = 0
+    # Brown elevation strokes do not cut traversable paths through a private
+    # green fill. Restore the olive underneath narrow brown interruptions;
+    # white/yellow roads and their light edges remain observed free ground.
+    contour_h, contour_s, contour_v = cv2.split(cv2.cvtColor(recovered, cv2.COLOR_BGR2HSV))
+    brown_stroke = (contour_h >= 4) & (contour_h <= 25) & (contour_s >= 75) & (contour_v >= 75) & (contour_v < 216)
+    radius = float(np.median([c['radiusPx'] for c in controls])) if controls else 15.
+    stroke_width = max(5, min(9, int(round(radius*.15)) | 1))
+    filled_olive = cv2.morphologyEx(terrain_masks['olive'], cv2.MORPH_CLOSE, np.ones((stroke_width, stroke_width), np.uint8))
+    olive_support = cv2.blur((terrain_masks['olive'] > 0).astype(np.float32), (2*stroke_width+1,)*2)
+    terrain_masks['olive'][brown_stroke & (filled_olive > 0) & (olive_support >= .6)] = 255
     # Do not fill an entire external contour: it may contain a courtyard,
     # portico, garden, or an opening through a U-shaped building. Roof fill
     # and its black outline remain hard; real white openings remain visible.
@@ -556,6 +566,9 @@ def analyze(image, labeler=None):
     costs[terrain_masks['green'] > 0] = 1.5
     costs[stairs > 0] = 1.7
     costs[hard > 0] = 0
+    surface_h, surface_s, surface_v = cv2.split(cv2.cvtColor(recovered, cv2.COLOR_BGR2HSV))
+    paving = (surface_h <= 30) & (surface_s >= 12) & (surface_s <= 110) & (surface_v >= 205) & (costs > 0)
+    open_ground = (surface_v >= 205) & ((surface_h < 32) | (surface_s < 55)) & (costs > 0)
     contours = extract_contours(image, controls)
     return {'width': width, 'height': height, 'controls': controls, 'features': features, 'sheetPhotos': photos,
             'contours': contours,
@@ -564,6 +577,8 @@ def analyze(image, labeler=None):
             'semantics': {'building': buildings > 0, 'water': water_regions > 0,
                           'point_ink': terrain_masks['black'] > 0, 'vegetation': terrain_masks['dark_green'] > 0,
                           'restricted': (restrictions > 0) | (terrain_masks['olive'] > 0) | photo_mask,
+                          'olive': terrain_masks['olive'] > 0, 'paved': paving, 'open_ground': open_ground,
+                          'prohibited': (restrictions > 0) | (unknown_ink > 0) | photo_mask,
                           'stairs': stairs > 0,
                           'lower_level': lower_area > 0,
                           'canopy_openings': canopy_edges > 0,

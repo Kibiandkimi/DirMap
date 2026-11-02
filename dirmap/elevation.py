@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 from . import store, travel
-from .elevation_model import HeightModel, SCHEMA, fingerprint, reconstruct, spatial_groups
+from .elevation_model import HeightModel, SCHEMA, fingerprint, reconstruct, spatial_groups, supported_nodes
 from .geometry import Frame, affine_points
 
 MAX_FILE_BYTES = 20*1024**2
@@ -410,19 +410,87 @@ def region(identifier):
     return record
 
 
-def model_grid(identifier):
+def model_grid(identifier, track_id=None):
     record = region(identifier)
+    if track_id is not None and track_id not in record['trackIds']:
+        raise ValueError('这条轨迹未参与该地区的当前地形')
     with np.load(root()/record['artifact'], allow_pickle=False) as arrays:
         result = {**record}
-        for name in ('height', 'support', 'scatter'):
-            result[name] = [round(float(v), 2) if np.isfinite(v) else None for v in arrays[name].ravel()]
         points = arrays['observations']
+        chosen = None
+        if track_id is not None:
+            if 'observation_track' not in arrays.files:
+                raise ValueError('这份旧地形尚无逐轨迹信息，请先合并最新轨迹')
+            points = points[arrays['observation_track'] == record['trackIds'].index(track_id)]
+            rows, columns = record['rows'], record['columns']
+            yy, xx = np.mgrid[:rows, :columns]
+            query = np.column_stack((record['origin'][0]+xx.ravel()*record['spacingM'],
+                                     record['origin'][1]+yy.ravel()*record['spacingM']))
+            chosen = supported_nodes(Frame.of(record).to_local(points[:, :2]), query, (rows, columns))[0] if len(points) else np.zeros((rows, columns), bool)
+            chosen &= np.isfinite(arrays['height'])
+            alignment = [t for t in record['alignment']['tracks'] if t['id'] == track_id]
+            result.update(selectedTrackId=track_id, trackIds=[track_id], pointCount=len(points), observationCells=len(points),
+                          supportedCells=int(chosen.sum()), coverageFraction=float(chosen.mean()),
+                          alignment={**record['alignment'], 'tracks': alignment})
+        for name in ('height', 'support', 'scatter'):
+            values = arrays[name] if chosen is None else np.where(chosen, arrays[name], np.nan)
+            result[name] = [round(float(v), 2) if np.isfinite(v) else None for v in values.ravel()]
+        if chosen is not None:
+            values = arrays['height'][chosen]
+            result.update(minHeightM=round(float(values.min()), 1) if len(values) else None,
+                          maxHeightM=round(float(values.max()), 1) if len(values) else None)
         stride = max(1, int(np.ceil(len(points)/5000)))
         shown = points[::stride].copy()
         shown[:, :2] = np.round(shown[:, :2], 6); shown[:, 2] = np.round(shown[:, 2], 2)
         result['observations'] = shown.tolist()
     result['context'] = geographic_context(record)
     return result
+
+
+def track_detail(identifier):
+    """The contributed observations and clock-derived diagnostics, read only."""
+    with store.LOCK:
+        record = next((t for t in catalogue()['tracks'] if t['id'] == identifier), None)
+        if record is None:
+            raise ValueError('这条轨迹不存在或已删除')
+        with np.load(root()/'tracks'/(identifier+'.npz'), allow_pickle=False) as data:
+            points = data['points'].copy()
+            times = data['times'].copy() if 'times' in data.files else np.full(len(points), np.nan)
+            breaks = data['breaks'].copy() if 'breaks' in data.files else np.array([0])
+        regions = [r for r in models()['regions'] if identifier in r['trackIds']]
+    frame = Frame(*np.mean(points[:, :2], axis=0))
+    xy = frame.to_local(points[:, :2])
+    distances = np.linalg.norm(np.diff(xy, axis=0), axis=1)
+    split = np.zeros(len(points), bool); split[breaks] = True
+    dt = np.diff(times)
+    invalid = (distances > 300) | (np.isfinite(dt) & ((dt <= 0) | (dt > travel.travel_model.MAX_GAP_SEC)))
+    split[1:] |= invalid
+    along = np.r_[0., np.cumsum(np.where(split[1:], 0., distances))]
+    sampler = Sampler(regions)
+    # Keep each geometry part separate while limiting browser payload size.
+    stride = max(1, int(np.ceil(len(points)/4000)))
+    starts = np.flatnonzero(split)
+    samples = []
+    for a, b in zip(starts, np.r_[starts[1:], len(points)]):
+        indexes = np.unique(np.r_[np.arange(a, b, stride), b-1])
+        heights = sampler.sample(points[indexes, :2])
+        for k, i in enumerate(indexes):
+            samples.append({'lng': float(points[i, 0]), 'lat': float(points[i, 1]),
+                'heightM': float(points[i, 2]) if record.get('heightReference') != 'shape' else None,
+                'surfaceHeightM': round(float(heights[k]), 2) if np.isfinite(heights[k]) else None,
+                'distanceM': round(float(along[i]), 1), 'breakBefore': k == 0})
+    rows, summary = travel.travel_model.observations({**record, 'points': points, 'times': times, 'breaks': breaks}, frame, sampler)
+    first_time = float(np.nanmin(times)) if np.isfinite(times).any() else 0.
+    windows = []
+    # Min/max/median statistics above always use every observation. The
+    # line chart uses at most 1200 evenly spaced windows, not invented times.
+    for row in rows[::max(1, int(np.ceil(len(rows)/1200)))]:
+        windows.append({'elapsedSec': round(row['time']-first_time, 1), 'durationSec': round(row['seconds'], 1),
+                        'speedMps': round(row['distance']/row['seconds'], 3), 'grade': row['grade'],
+                        'episode': row['episode']})
+    return {'track': record, 'regions': [{k: r[k] for k in ('id', 'name', 'fingerprint')} for r in regions],
+            'alignment': [{'regionId': r['id'], **a} for r in regions for a in r['alignment']['tracks'] if a['id'] == identifier],
+            'distanceM': round(float(along[-1]), 1), 'samples': samples, 'speedLearning': summary, 'speedWindows': windows}
 
 
 def geographic_context(record):

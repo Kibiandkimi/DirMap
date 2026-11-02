@@ -165,6 +165,18 @@ def restore(image, purple, annotations, restrictions, black, controls):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     nearby = cv2.dilate(annotations, np.ones((5, 5), np.uint8)) > 0
     fringe = nearby & (hsv[:, :, 0] >= 111) & (hsv[:, :, 0] <= 170) & (hsv[:, :, 1] >= 30)
+    # Magenta and bright green are complementary: their printed/JPEG edge
+    # can be neutral grey, outside every purple hue test. Require open green
+    # on opposite sides of that narrow edge, so a real roof beside grass is
+    # not painted away. Dark walls cannot enter this light-grey fringe.
+    green = (hsv[:, :, 0] >= 40) & (hsv[:, :, 0] <= 90) & (hsv[:, :, 1] >= 70) & (hsv[:, :, 2] >= 195)
+    opposed = np.zeros(green.shape, bool)
+    height, width = green.shape
+    for distance in (4, 5, 6):
+        for dx, dy in ((distance, 0), (0, distance), (distance, distance), (distance, -distance)):
+            x0, x1, y0, y1 = abs(dx), width-abs(dx), abs(dy), height-abs(dy)
+            opposed[y0:y1, x0:x1] |= green[y0+dy:y1+dy, x0+dx:x1+dx] & green[y0-dy:y1-dy, x0-dx:x1-dx]
+    fringe |= nearby & opposed & (hsv[:, :, 1] < 65) & (hsv[:, :, 2] > 108)
     unknown = ((annotations > 0) | fringe) & (restrictions == 0)
     unknown = unknown.astype(np.uint8)*255
     if not unknown.any():

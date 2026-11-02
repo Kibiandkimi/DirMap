@@ -16,8 +16,8 @@ export async function finished(page: Page, job: { id: string } | null) {
   return last.result;
 }
 
-export async function teachingSheet(page: Page, obstacle = true, photographs = true) {
-  const buffer = Buffer.from(await page.evaluate(({ obstacle, photographs }) => {
+export async function teachingSheet(page: Page, obstacle = true, photographs = true, roadside = false) {
+  const buffer = Buffer.from(await page.evaluate(({ obstacle, photographs, roadside }) => {
     const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 700;
     const ctx = canvas.getContext('2d')!;
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 1000, 700);
@@ -30,6 +30,10 @@ export async function teachingSheet(page: Page, obstacle = true, photographs = t
       ctx.fillStyle = '#777'; ctx.fillRect(382, 302, 36, 36);
       ctx.strokeStyle = '#111'; ctx.lineWidth = 3; ctx.strokeRect(382, 302, 36, 36);
       ctx.fillStyle = '#ddd'; ctx.fillRect(395, 315, 10, 10);
+    }
+    if (roadside) {
+      ctx.fillStyle = '#a4b419'; ctx.fillRect(175, 110, 85, 160);
+      ctx.fillStyle = '#f5decf'; ctx.fillRect(155, 80, 14, 230);
     }
     const purple = '#bd31ca'; ctx.strokeStyle = purple; ctx.fillStyle = purple; ctx.lineWidth = 3; ctx.font = 'bold 24px sans-serif';
     for (const [i, [x, y]] of [[180, 180], [400, 320], [250, 520]].entries()) {
@@ -46,7 +50,7 @@ export async function teachingSheet(page: Page, obstacle = true, photographs = t
       ctx.putImageData(picture, x, y); ctx.fillStyle = purple; ctx.font = 'bold 26px sans-serif'; ctx.fillText(String(31+i), x+w-42, y+h-10);
     }
     return canvas.toDataURL('image/png').split(',')[1];
-  }, { obstacle, photographs }), 'base64');
+  }, { obstacle, photographs, roadside }), 'base64');
   const uploaded = await page.request.post('/api/maps/upload', { multipart: { file: { name: '教学核对.png', mimeType: 'image/png', buffer } } });
   expect(uploaded.ok()).toBe(true); const asset = await uploaded.json();
   const processed = await finished(page, await (await page.request.post(`/api/maps/${asset.id}/process`)).json());

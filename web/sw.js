@@ -20,7 +20,8 @@ async function cachedRelief(request) {
   if (response.ok) {
     await cache.put(request, response.clone());
     const keys = await cache.keys();
-    for (const old of keys.slice(0, Math.max(0, keys.length - 8))) await cache.delete(old);
+    // Two display styles for up to eight recently used height models.
+    for (const old of keys.slice(0, Math.max(0, keys.length - 16))) await cache.delete(old);
   }
   return response;
 }
@@ -145,7 +146,9 @@ self.addEventListener('message', event => {
       // The heights the course was planned with, for the relief layer offline.
       for (const model of saved.plan?.elevationSnapshot?.models ?? []) {
         const name = String(model.artifact ?? '').replace(/^models\//, '').replace(/\.npz$/, '');
-        if (/^[0-9a-f]{40}$/.test(name)) { try { await cachedRelief(new Request(`/api/elevation/artifacts/${name}/relief.png`)); } catch { /* optional layer */ } }
+        if (/^[0-9a-f]{40}$/.test(name)) for (const suffix of ['', '?style=contours']) {
+          try { await cachedRelief(new Request(`/api/elevation/artifacts/${name}/relief.png${suffix}`)); } catch { /* optional layer */ }
+        }
       }
       // The course's own place: its reference and magnetic declination.
       for (const path of [url + '/reference', origin ? `/api/health?lng=${origin[0]}&lat=${origin[1]}` : '/api/health']) {

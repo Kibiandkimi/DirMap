@@ -11,8 +11,8 @@ from dirmap.vision import analyze
 CENTRES = [(140, 180), (305, 260), (500, 150)]
 
 
-def printed_points(protection=None, quality=82):
-    image = np.full((440, 640, 3), (22, 177, 155), np.uint8)
+def printed_points(protection=None, quality=82, ground=(112, 237, 134)):
+    image = np.full((440, 640, 3), ground, np.uint8)
     cv2.rectangle(image, (280, 0), (298, 439), (207, 222, 245), -1)
     if protection == 'area':
         cv2.rectangle(image, (110, 150), (170, 210), (110, 160, 150), -1)
@@ -68,4 +68,21 @@ def test_point_ink_recovery_does_not_license_forbidden_areas_or_attached_walls(p
     assert bundle['unresolved'], protection
     assert 'matrix' not in bundle
     if protection in ('area', 'small_area'):
-        assert result['semantics']['restricted'][175, 135]
+        # The middle of the printed top edge retains olive evidence; JPEG
+        # chroma at the tiny square's corner mixes with the bright grass.
+        assert result['semantics']['restricted'][175, 140]
+
+
+@pytest.mark.parametrize('quality', [75, 92])
+def test_nearby_road_can_be_an_arrival_but_distant_olive_points_cannot_be_moved_arbitrarily(quality):
+    result, reg, graph = prepared(printed_points(quality=quality, ground=(22, 177, 155)))
+    bundle = plan_matrix(graph, result['controls'], [289, 60], [289, 60], reg)
+    close = min(result['controls'], key=lambda c: np.linalg.norm(np.asarray(c['pixel'])-[305, 260]))
+    assert {c['id'] for c in result['controls'] if c['id'] != close['id']} == {c['id'] for c in bundle['unresolved']}
+    ready = plan_matrix(graph, [close], [289, 60], [289, 60], reg)
+    assert not ready['unresolved']
+    assert ready['approaches'][0]['method'] == 'nearby_road'
+    route = expand_route(graph, ready, [0, 1, 2])
+    assert all(graph.edge_valid(a, b) for a, b in route['edgeIds'])
+    assert result['semantics']['restricted'][50, 50]
+    assert graph.costs[50, 50] == 0

@@ -1,8 +1,4 @@
-"""Printed brown contour candidates and explicit height constraints.
-
-Line colour/shape can be recognized without knowing elevation. Unlabelled
-curves do not become heights until the teacher supplies and confirms them.
-"""
+"""Printed contours supply equal-height constraints, with optional known levels."""
 import hashlib
 import math
 
@@ -11,6 +7,8 @@ import numpy as np
 
 from .geometry import Frame, Registration
 from .network_registration import thin, sample_line, map_footprint
+
+AUTO_SCHEMA = 'printed-equal-height-v1'
 
 
 def trace_lines(skeleton, minimum_length=0.):
@@ -118,12 +116,15 @@ def geographic_curve(curve, state, reg=None):
 def report(state):
     from . import elevation, service
     curves = []
+    automatic = state.get('automaticContours')
+    record = next((t for t in elevation.catalogue()['tracks'] if automatic and t['id'] == automatic.get('trackId')), None)
+    applied = set((record or {}).get('contourIds', [])) if (record or {}).get('enabled') else set()
     reg = Registration.from_dict(state['registration']) if state.get('registration') else None
     sampler = elevation.Sampler(elevation.relevant(state)) if state.get('registration') else None
     for curve in state.get('contours', []):
         item = dict(curve, heightM=state.get('contourHeights', {}).get(curve['id']),
                     calibrated=False, suggestedHeightM=None, suggestionSpreadM=None,
-                    referenceCoverage=0., referenceSamples=0)
+                    referenceCoverage=0., referenceSamples=0, automaticallyUsed=curve['id'] in applied)
         if state.get('registration'):
             points, valid = geographic_curve(curve, state, reg)
             item['calibrated'] = bool(valid.all())
@@ -139,7 +140,92 @@ def report(state):
             'contours': curves, 'intervalM': state.get('contourIntervalM'),
             'heightReference': state.get('contourHeightReference', 'reference' if state.get('contourHeights') else 'relative'),
             'contributionStale': bool(state.get('contourRegistrationStamp') and state['contourRegistrationStamp'] != service.registration_stamp(state)),
-            'heightSource': 'teacher-confirmed-contours'}
+            'automatic': {**automatic, 'enabled': bool((record or {}).get('enabled'))} if automatic else None,
+            'heightSource': 'automatic-equal-height-with-optional-levels'}
+
+
+def sync_automatic(state, owner):
+    """Idempotently replace this sheet's automatic constraints after recognition.
+
+    Only the registered portions participate. No guessed altitude, interval,
+    or uphill direction is stored. The solver estimates a separate level for
+    every continuous line, and waits for overlap if no height datum exists.
+    """
+    from . import elevation, service, store
+    if not state.get('registration') or service.registration_stale(state):
+        return None
+    reg = Registration.from_dict(state['registration'])
+    points, breaks, used = [], [], []
+    marked = state.get('contourHeights', {})
+    for curve in sorted(state.get('contours', []), key=lambda c: c['id']):
+        if curve['id'] in marked:
+            continue
+        coordinates, valid = geographic_curve(curve, state, reg)
+        edges = np.flatnonzero(np.diff(np.r_[False, valid, False]))
+        pieces = [coordinates[a:b] for a, b in zip(edges[::2], edges[1::2]) if b-a >= 3]
+        if pieces:
+            used.append(curve['id'])
+        for piece in pieces:
+            breaks.append(len(points))
+            points.extend(np.column_stack((piece, np.zeros(len(piece)))).tolist())
+    source_key = f'{store.current_workspace()}:{state["assetId"]}'
+    with store.LOCK:
+        receipt, identifier = {'version': elevation.catalogue()['version'], 'added': [], 'duplicates': []}, None
+        if points:
+            summary, arrays = elevation.track_record(np.asarray(points), breaks, np.full(len(points), np.nan),
+                state['name']+' · 自动等高线', 'map-contours', state['sourceHash'], ['equal-height'])
+            summary.update(id=hashlib.sha256(('auto-contours-v1:'+summary['id']).encode()).hexdigest(),
+                           kind='contours', heightReference='shape', contourCount=len(used),
+                           automatic=True, sourceKey=source_key, sourceKeys=[source_key], contourIds=used)
+            identifier = summary['id']
+            receipt = elevation.store_tracks([(summary, arrays)], owner)
+        source = elevation.catalogue()
+        changed, obsolete = False, []
+        for record in source['tracks']:
+            if not record.get('automatic'):
+                continue
+            keys = set(record.get('sourceKeys', [record.get('sourceKey')])) - {None}
+            updated = keys | {source_key} if record['id'] == identifier else keys - {source_key}
+            if updated != keys:
+                record['sourceKeys'] = sorted(updated); changed = True
+            if not updated:
+                obsolete.append(record['id']); changed = True
+        if changed:
+            source['tracks'] = [t for t in source['tracks'] if t['id'] not in obsolete]
+            source['version'] += 1
+            store.atomic_json(elevation.root()/'tracks.json', source)
+            for old_id in obsolete:
+                (elevation.root()/'tracks'/(old_id+'.npz')).unlink(missing_ok=True)
+            receipt['version'] = source['version']
+        state['automaticContours'] = {'schema': AUTO_SCHEMA, 'trackId': identifier, 'used': len(used),
+            'pending': max(0, len(state.get('contours', []))-len(used)-len(marked)),
+            'registrationStamp': service.registration_stamp(state)}
+    return receipt
+
+
+def remove_automatic_source(asset_id):
+    """Deleting a map removes only its automatic, source-derived contribution."""
+    from . import elevation, store
+    key = f'{store.current_workspace()}:{asset_id}'
+    with store.LOCK:
+        source = elevation.catalogue(); removed, changed = [], False
+        for record in source['tracks']:
+            if not record.get('automatic'):
+                continue
+            keys = set(record.get('sourceKeys', [record.get('sourceKey')])) - {None}
+            if key not in keys and keys:
+                continue
+            keys.discard(key); changed = True
+            record['sourceKeys'] = sorted(keys)
+            if not keys:
+                removed.append(record['id'])
+        if changed:
+            source['tracks'] = [t for t in source['tracks'] if t['id'] not in removed]
+            source['version'] += 1
+            store.atomic_json(elevation.root()/'tracks.json', source)
+            for identifier in removed:
+                (elevation.root()/'tracks'/(identifier+'.npz')).unlink(missing_ok=True)
+    return changed
 
 
 def contribute(state, selected, owner, height_reference='reference'):
@@ -188,7 +274,7 @@ def contribute(state, selected, owner, height_reference='reference'):
         for record in source['tracks']:
             if record['id'] == summary['id'] and not record['enabled'] and record['ownerId'] == owner['id']:
                 record['enabled'] = True; changed = True
-            if (record['id'] != summary['id'] and record.get('kind') == 'contours' and record['enabled']
+            if (record['id'] != summary['id'] and record.get('kind') == 'contours' and not record.get('automatic') and record['enabled']
                     and record['ownerId'] == owner['id'] and record['sourceSha256'] == state['sourceHash']):
                 record['enabled'] = False; changed = True
         if changed:

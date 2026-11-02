@@ -24,6 +24,7 @@ test('continuous relative contour levels undo, survive reload and align to an ex
       await openSheet(page, asset.id, true);
       await page.locator('[data-tab="terrain"]').click(); await page.locator('#contour-review').click();
       await expect(page.locator('.contour-dialog')).toBeVisible();
+    if (await page.locator('.contour-manual').evaluate((el: HTMLDetailsElement) => !el.open)) await page.locator('.contour-manual > summary').click();
     }
     async function tap(index: number) {
       const [x, y] = curves[index].pixels[0];
@@ -69,7 +70,7 @@ test('continuous relative contour levels undo, survive reload and align to an ex
     const saved = await (await page.request.get(`/api/maps/${asset.id}`)).json();
     expect(saved.version).toBe(state.version); expect(saved.contourRevision).toBe(1);
     const status = await (await page.request.get('/api/elevation')).json();
-    const contour = status.tracks.find((track: any) => track.ownerId === owner.id && track.kind === 'contours');
+    const contour = status.tracks.find((track: any) => track.ownerId === owner.id && track.kind === 'contours' && track.enabled);
     expect(contour.heightReference).toBe('relative');
     const region = status.regions.find((region: any) => region.trackIds.includes(contour.id));
     const alignment = region.alignment.tracks.find((track: any) => track.id === contour.id);
@@ -93,6 +94,7 @@ test('relative contours without loaded height references remain visibly pending'
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   try {
     await openSheet(page, asset.id); await page.locator('[data-tab="terrain"]').click(); await page.locator('#contour-review').click();
+    if (await page.locator('.contour-manual').evaluate((el: HTMLDetailsElement) => !el.open)) await page.locator('.contour-manual > summary').click();
     await expect(page.locator('[data-height-reference]')).toHaveValue('relative');
     await page.locator('[data-interval]').fill('2');
     const rows = page.locator('.contour-row');

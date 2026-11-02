@@ -17,10 +17,16 @@ test('dictionary list, number picking and manual sequence survive reload indepen
     const ids = Object.fromEntries(controls.map((c: any) => [c.label, c.id]));
     const first = page.locator('[data-team-index="0"]');
     for (const label of ['2', '10', '1']) await first.locator(`[data-route-add="${ids[label]}"]`).click();
-    await first.getByRole('button', { name: '前移目标 1', exact: true }).click();
+    await first.getByRole('button', { name: '上移目标 1', exact: true }).click();
     await first.locator(`[data-route-add="${ids['10']}"]`).click();
     await first.locator(`[data-route-add="${ids['10']}"]`).click();
     await expect(page.locator('#custom-team-0')).toHaveValue('2 → 1 → 10');
+    await expect(first.locator('.route-stop')).toHaveText(['第 1 站', '第 2 站', '第 3 站']);
+    await expect(first.locator('.route-target')).toHaveText(['目标 2', '目标 1', '目标 10']);
+    const rows = await first.locator('.route-sequence li').evaluateAll(items => items.map(item => ({ x: item.getBoundingClientRect().x, y: item.getBoundingClientRect().y })));
+    expect(rows[0].x).toBe(rows[1].x); expect(rows[1].x).toBe(rows[2].x);
+    expect(rows[0].y).toBeLessThan(rows[1].y); expect(rows[1].y).toBeLessThan(rows[2].y);
+    await first.screenshot({ path: '/tmp/dirmap-explicit-route-order.png' });
     const second = page.locator('[data-team-index="1"]'); await second.locator('summary').click();
     for (const label of ['1', '10']) await second.locator(`[data-route-add="${ids[label]}"]`).click();
     await page.reload({ waitUntil: 'domcontentloaded' });

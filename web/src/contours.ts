@@ -18,10 +18,11 @@ export function showContours(state: MapState, report: ContourReport,
   } catch { /* annotation still works without browser storage */ }
   const hints = report.contours.filter(c => c.calibrated && c.suggestedHeightM !== null).length;
   dialog.innerHTML = `<div class="dialog-heading"><h2>等高线辅助地形</h2><button class="icon-button" data-close aria-label="关闭等高线">×</button></div>
-    <p class="muted compact">核对原图中的线条，再选择要贡献的等高线。<span data-draft-status>草稿保存在本浏览器。</span>已发布课程保留原高程快照。</p>
+    <p class="muted compact">识别出的等高线自动参与地形重建，无需逐条核对或填高度。每条线约束沿线同高，高度由重叠轨迹推断。</p>
     ${report.contributionStale ? '<p class="notice-card">这张图的配准已改变。核对后重新贡献，会更新你此前的等高线位置。</p>' : ''}
     <div class="contour-layout"><div class="contour-map"><div class="sheet-photo-actions"><button class="soft-button" data-zoom="1.5">放大</button><button class="soft-button" data-zoom="0.667">缩小</button><button class="text-button" data-fit>全图</button></div><div class="editor-viewport" tabindex="0" aria-label="等高线原图，可拖动或双指缩放"><canvas aria-label="识别到的等高线"></canvas></div><div class="contour-sequence-indicator" hidden><strong data-sequence-label></strong><button class="text-button" data-map-undo>撤销</button><button class="text-button" data-stop-sequence>结束标高</button></div></div>
-    <div class="contour-settings"><label>标高方式 <select data-height-reference aria-label="等高线标高方式"><option value="relative">按轨迹对齐相对标高</option><option value="reference">使用已知参考高程</option></select></label><p class="muted compact" data-reference-help></p>
+    <div class="contour-settings"><div class="contour-auto-summary"><strong>${report.automatic?.enabled ? `已自动加入 ${report.automatic.used} 条等高线` : report.automatic?.trackId ? '自动等高线贡献已停用' : '自动等高线已处理'}</strong><p>绿色线条已自动采用；无高程参考的区域等待轨迹覆盖，不会设为零海拔。</p>${report.automatic?.pending ? `<p>${report.automatic.pending} 条暂缺有效配准范围，补充配准后自动加入。</p>` : ''}<a class="soft-button" href="/elevation${report.automatic?.trackId ? '?track='+e(report.automatic.trackId) : ''}" target="_blank" rel="noreferrer">查看地形与本图贡献 ↗</a></div>
+    <details class="contour-manual" ${report.contours.some(c => c.heightM !== null || draft?.values[c.id]?.use) ? 'open' : ''}><summary>手动补充标高（可选）</summary><p class="muted compact">已知等高距或可靠标高时可补充，提高约束强度。<span data-draft-status>草稿保存在本浏览器。</span></p><label>标高方式 <select data-height-reference aria-label="等高线标高方式"><option value="relative">按轨迹对齐相对标高</option><option value="reference">使用已知参考高程</option></select></label><p class="muted compact" data-reference-help></p>
     <label>图上等高距 / m <input data-interval type="number" min="0.1" max="100" step="any" placeholder="如 2" value="${e(draft?.interval ?? String(report.intervalM ?? ''))}"></label>
     <details class="contour-sequence-tools"><summary>连续标高</summary><p class="muted compact">在原图依次点线，自动填写高度并选中；同一条线不会重复递增。</p>
       <div class="contour-sequence-fields"><label>下一条 / m <input data-sequence-next type="number" min="-500" max="9000" step="any" value="${e(draft?.next ?? '')}" aria-label="下一条等高线高度"></label><label>标完以后 <select data-sequence-direction aria-label="连续标高方向"><option value="1">加一个等高距</option><option value="-1">减一个等高距</option><option value="0">保持同高</option></select></label></div>
@@ -31,7 +32,7 @@ export function showContours(state: MapState, report: ContourReport,
     <div class="contour-list">${report.contours.map((c, i) => {
       const stored = draft?.values[c.id], height = stored?.height ?? String(c.heightM ?? '');
       return `<div class="contour-row" data-contour="${e(c.id)}"><label><input type="checkbox" data-use ${(stored?.use ?? c.heightM !== null) && c.calibrated ? 'checked' : ''} ${c.calibrated ? '' : 'disabled'} aria-label="采用等高线 C${i+1}"><button class="text-button" data-focus-line="${e(c.id)}">C${i+1}</button></label><label><input type="number" data-height step="any" min="-500" max="9000" value="${e(height)}" placeholder="标高" aria-label="等高线 C${i+1} 高度"> m</label><small>${!c.calibrated ? '需补配准' : c.suggestedHeightM !== null ? `参考约 ${c.suggestedHeightM} m · 波动 ${c.suggestionSpreadM} m · 覆盖 ${Math.round(c.referenceCoverage*100)}%` : '请核对后标高'}</small></div>`;
-    }).join('')}</div><p role="status" class="contour-status"></p><button class="primary-button wide" data-save>贡献已选等高线并重建</button></div></div>`;
+    }).join('')}</div><p role="status" class="contour-status"></p><button class="primary-button wide" data-save>保存补充标高并重建</button></details></div></div>`;
   document.body.append(dialog); dialog.showModal();
   const field = <T extends HTMLElement>(selector: string) => dialog.querySelector<T>(selector)!;
   const rows = new Map(Array.from(dialog.querySelectorAll<HTMLElement>('[data-contour]')).map(row => [row.dataset.contour!, row]));
@@ -72,7 +73,7 @@ export function showContours(state: MapState, report: ContourReport,
     context.clearRect(0, 0, canvas.width, canvas.height);
     if (image.complete && image.naturalWidth) context.drawImage(image, 0, 0, canvas.width, canvas.height);
     for (const curve of report.contours) {
-      context.strokeStyle = curve.id === selected ? '#f34d12' : useInput(curve.id).checked ? '#168456' : curve.calibrated ? '#0876c9' : '#8a8e86';
+      context.strokeStyle = curve.id === selected ? '#f34d12' : useInput(curve.id).checked || curve.automaticallyUsed ? '#168456' : curve.calibrated ? '#0876c9' : '#8a8e86';
       context.lineWidth = (curve.id === selected ? 4 : 1.2)/scale;
       context.setLineDash(curve.calibrated ? [] : [5/scale, 4/scale]);
       context.beginPath(); curve.pixels.forEach(([x, y], i) => i ? context.lineTo(x, y) : context.moveTo(x, y)); context.stroke();
@@ -81,7 +82,7 @@ export function showContours(state: MapState, report: ContourReport,
   }
   function update() {
     const chosen = report.contours.filter(c => useInput(c.id).checked).length;
-    field('[data-selection-count]').textContent = `已选 ${chosen} / ${report.contours.length} 段 · 绿色为已选线条`;
+    field('[data-selection-count]').textContent = `补充标高 ${chosen} / ${report.contours.length} 段 · 未填写的线仍自动提供同高约束`;
     field('[data-reference-help]').textContent = reference.value === 'relative'
       ? '只约束线与线之间的高差，整体高度随已有轨迹对齐；没有重叠参考时会等待，不生成零海拔地形。'
       : '这些数值直接约束高程。仅在已核对可靠标高时使用，不能把相对的零点当作海拔。';

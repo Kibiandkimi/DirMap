@@ -114,6 +114,11 @@ def legacy_owner():
         return public(db.execute('SELECT * FROM users WHERE workspace=?', (store.LEGACY,)).fetchone())
 
 
+def workspace_owner(workspace):
+    with database() as db:
+        return public(db.execute('SELECT * FROM users WHERE workspace=?', (workspace,)).fetchone())
+
+
 def workbench_scope(user):
     return (user['id'] + (':original' if user['workspace'] == store.LEGACY else ':personal')) if user else 'original-anonymous'
 

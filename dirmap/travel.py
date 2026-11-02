@@ -28,7 +28,7 @@ def rebuild(tracks, regions, previous, progress=lambda *args: None):
         old = next((r for r in previous if r.get('inputSignature') == signature), None)
         if old and (elevation.root()/old['artifact']).is_file():
             refs.append(old); continue
-        progress(86+int(10*index/max(1, len(regions))), f'区分活动配速，学习区域 {index+1} 的路段耗时')
+        progress(86+int(10*index/max(1, len(regions))), f'校正个人配速，学习区域 {index+1} 的相对通行效率')
         model = travel_model.build(group, Frame.of(region), elevation.Sampler([region]), region['bbox'])
         digest = fingerprint(model)
         artifact = 'travel-models/'+digest+'.json'
@@ -41,8 +41,9 @@ def rebuild(tracks, regions, previous, progress=lambda *args: None):
     return refs
 
 
-def snapshot(state, enabled=True, mode='walk'):
+def snapshot(state, enabled=True, mode='foot'):
     from . import elevation
+    mode = travel_model.learning_mode(mode)
     ids = {r['id'] for r in elevation.relevant(state)} if enabled else set()
     refs = [{k: r[k] for k in ('artifact', 'fingerprint', 'bbox', 'profiles')}
             for r in elevation.models().get('travelModels', []) if r['regionId'] in ids and r.get('schema') == SCHEMA]
@@ -55,6 +56,36 @@ def available(frozen):
     return all((elevation.root()/r['artifact']).is_file() for r in (frozen or {}).get('models', []))
 
 
+def diagnostics(region_id, track_id=None):
+    """Chart data from the actual fitted artifact, optionally scoped to a source."""
+    from . import elevation
+    region = elevation.region(region_id)
+    record = next((r for r in elevation.models().get('travelModels', []) if r['regionId'] == region_id), None)
+    if record is None:
+        return {'regionId': region_id, 'profiles': {}, 'tracks': []}
+    if track_id is not None and track_id not in region['trackIds']:
+        raise ValueError('这条轨迹未参与该地区的当前地形')
+    model = store.read_json(elevation.root()/record['artifact'])
+    profiles = {}
+    for mode, profile in model['profiles'].items():
+        prediction = travel_model.Predictor(model, mode)
+        grades = np.linspace(-.2, .2, 41)
+        factors = np.exp(prediction.grade_cost(grades))
+        fallback = np.exp(travel_model.grade_log_cost(grades, profile.get('priorCoefficients', travel_model.PRIOR)))
+        low, high = profile['gradeRange']
+        corridors = [c for c in profile['corridors'] if track_id is None or track_id in c.get('trackIds', [])]
+        episodes = [{'id': k, 'trackId': k.rsplit(':', 1)[0], 'paceMps': v} for k, v in profile.get('paceMps', {}).items()
+                    if track_id is None or k.rsplit(':', 1)[0] == track_id]
+        profiles[mode] = {k: v for k, v in profile.items() if k not in ('paceMps', 'corridors')}
+        profiles[mode].update(corridorCount=len(corridors), episodes=episodes,
+            gradeCurve=[{'grade': round(float(g), 3), 'timeFactor': round(float(f), 4), 'baselineFactor': round(float(b), 4),
+                         'learned': bool(profile['gradeLearned'] and low <= g <= high)} for g, f, b in zip(grades, factors, fallback)],
+            corridors=[{**c, 'coordinates': prediction.frame.to_lnglat([c['start'], c['end']]).tolist(),
+                        'efficiency': round(float(np.exp(-c['logFactor'])), 4)} for c in corridors])
+    return {'regionId': region_id, 'fingerprint': record['fingerprint'], 'selectedTrackId': track_id,
+            'profiles': profiles, 'tracks': [t for t in model['tracks'] if track_id is None or t['id'] == track_id]}
+
+
 def load(record, mode):
     from . import elevation
     path = elevation.root()/record['artifact']
@@ -65,7 +96,7 @@ def load(record, mode):
             raise ValueError('这份路线所用的速度学习快照已不可用，请重新生成路线')
         if key not in _models:
             model = store.read_json(path)
-            if not model or model.get('schema') != SCHEMA or fingerprint(model) != record['fingerprint']:
+            if not model or model.get('schema') not in (SCHEMA, travel_model.LEGACY_SCHEMA) or fingerprint(model) != record['fingerprint']:
                 raise ValueError('速度学习快照不完整，请重新生成路线')
             _models[key] = travel_model.Predictor(model, mode)
         _models.move_to_end(key)
@@ -119,13 +150,13 @@ def attach(graph, base, frozen):
     graph.travel_predictors = []
     if not frozen or not frozen.get('enabled') or not frozen.get('models'):
         return graph
-    if frozen.get('schema') != SCHEMA:
+    if frozen.get('schema') not in (SCHEMA, travel_model.LEGACY_SCHEMA):
         raise ValueError('速度学习方法已更新，请重新生成路线')
     graph.travel_predictors = [load(r, frozen['mode']) for r in frozen['models']]
     if not any(p.profile.get('gradeLearned') or p.tree is not None or
                not np.array_equal(p.profile.get('priorCoefficients', travel_model.PRIOR), travel_model.PRIOR)
                for p in graph.travel_predictors):
-        graph.content_hash = hashlib.sha256((graph.content_hash+frozen['revision']+SCHEMA).encode()).hexdigest()
+        graph.content_hash = hashlib.sha256((graph.content_hash+frozen['revision']+frozen['schema']).encode()).hexdigest()
         return graph
     starts = np.repeat(np.arange(len(graph.local)), np.diff(base.weights.indptr))
     ends = base.weights.indices
@@ -146,7 +177,7 @@ def attach(graph, base, frozen):
                                  base.weights.data[idx]/np.maximum(length, .01))
         values[idx] = np.where(length > .01, length*factors, values[idx])
     graph.weights = csr_matrix((values, base.weights.indices, base.weights.indptr), shape=base.weights.shape)
-    graph.content_hash = hashlib.sha256((graph.content_hash+frozen['revision']+SCHEMA).encode()).hexdigest()
+    graph.content_hash = hashlib.sha256((graph.content_hash+frozen['revision']+frozen['schema']).encode()).hexdigest()
     return graph
 
 

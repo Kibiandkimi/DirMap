@@ -101,7 +101,7 @@ class PlanRequest(Model):
     timeLimitSec: FiniteFloat = Field(default=5, ge=.1, le=30)
     useElevation: bool = True
     useLearnedSpeed: bool = True
-    travelMode: Literal['walk', 'run'] = 'walk'
+    travelMode: Literal['foot', 'walk', 'run'] = 'foot'
 
     @model_validator(mode='after')
     def unique(self):
@@ -137,7 +137,7 @@ class AutoTeamRequest(Model):
     objective: Literal['min_max_finish_then_sum', 'min_total_time', 'min_distance'] = 'min_max_finish_then_sum'
     useElevation: bool = True
     useLearnedSpeed: bool = True
-    travelMode: Literal['walk', 'run'] = 'walk'
+    travelMode: Literal['foot', 'walk', 'run'] = 'foot'
     totalPeople: int = Field(ge=1, le=500, strict=True)
     minPeoplePerTeam: int = Field(default=2, ge=1, le=500, strict=True)
     maxTeams: int = Field(default=30, ge=1, le=30, strict=True)
@@ -418,7 +418,7 @@ class ElevationEdit(Model):
     version: int = Field(ge=0)
     name: str | None = Field(default=None, min_length=1, max_length=120)
     enabled: bool | None = None
-    activity: Literal['auto', 'walk', 'run', 'bicycle', 'exclude'] | None = None
+    activity: Literal['auto', 'foot', 'walk', 'run', 'bicycle', 'exclude'] | None = None
 
 
 class ElevationDelete(Model):
@@ -649,12 +649,23 @@ def shared_elevation():
 
 
 @app.get('/api/elevation/regions/{region_id}')
-def elevation_region(region_id: str):
-    return JSONResponse(elevation.model_grid(region_id), headers={'Cache-Control': 'no-store'})
+def elevation_region(region_id: str, track: str | None = None):
+    return JSONResponse(elevation.model_grid(region_id, track), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/elevation/tracks/{track_id}')
+def elevation_track_detail(track_id: str):
+    return JSONResponse(elevation.track_detail(track_id), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/elevation/regions/{region_id}/travel')
+def elevation_travel_details(region_id: str, track: str | None = None):
+    from . import travel
+    return JSONResponse(travel.diagnostics(region_id, track), headers={'Cache-Control': 'no-store'})
 
 
 @app.get('/api/elevation/artifacts/{name}/relief.png')
-def elevation_relief(name: str):
+def elevation_relief(name: str, style: Literal['relief', 'contours'] = 'relief'):
     # Named by content: an image never changes and is cached for good.
     if not re.fullmatch('[0-9a-f]{40}', name):
         raise HTTPException(404)
@@ -663,7 +674,7 @@ def elevation_relief(name: str):
         raise HTTPException(404, '这一版共享地形已清理，请刷新')
     built = elevation.models()
     record = next((r for r in [*built['regions'], *built.get('history', [])] if r['artifact'] == f'models/{name}.npz'), None)
-    image = elevation_render.relief_png(str(path), path.stat().st_mtime_ns, float(record['spacingM']) if record else 10.)
+    image = elevation_render.relief_png(str(path), path.stat().st_mtime_ns, float(record['spacingM']) if record else 10., style)
     return Response(image, media_type='image/png', headers={'Cache-Control': 'public, max-age=31536000, immutable'})
 
 
@@ -939,17 +950,18 @@ async def upload(file: UploadFile = File(...), siteId: str = store.DEFAULT_SITE)
 
 
 @app.delete('/api/maps/{asset_id}')
-def delete_map(asset_id: str):
+def delete_map(asset_id: str, request: Request):
     # Published courses keep their own copy of routes and the overlay; they
     # report themselves as replaced once their map is gone.
     with store.LOCK:
         if store.get_asset(asset_id).get('builtin'):
             raise ValueError('内置示例地图不能删除')
+        changed = contours.remove_automatic_source(asset_id)
         uploads = store.read_json(store.uploads_path(), [])
         store.atomic_json(store.uploads_path(), [asset for asset in uploads if asset['id'] != asset_id])
         shutil.rmtree(store.asset_dir(asset_id), ignore_errors=True)
         service.forget_graph(asset_id)
-    return {'deleted': asset_id}
+    return {'deleted': asset_id, **({'job': submit_elevation_rebuild(request)} if changed else {})}
 
 
 @app.patch('/api/maps/{asset_id}')
@@ -1054,6 +1066,21 @@ def contribute_map_contours(asset_id: str, body: ContourContribution, request: R
         state.update(contourIntervalM=body.intervalM, contourRevision=body.revision+1,
                      contourHeightReference=body.heightReference,
                      contourRegistrationStamp=service.registration_stamp(state), updatedAt=time.time())
+        contours.sync_automatic(state, current_user(request))
+        store.save_state(asset_id, state)
+    return {**receipt, 'state': state, 'job': submit_elevation_rebuild(request)}
+
+
+@app.post('/api/maps/{asset_id}/contours/automatic')
+def automatic_map_contours(asset_id: str, body: ElevationDelete, request: Request):
+    with store.LOCK:
+        state = store.get_state(asset_id)
+        if not state or state['version'] != body.version:
+            raise HTTPException(409, '地图已更新，请刷新后重试')
+        owner = current_user(request) or {'id': 'original-workbench', 'username': '原工作台'}
+        receipt = contours.sync_automatic(state, owner)
+        if receipt is None:
+            raise ValueError('请先完成地图配准')
         store.save_state(asset_id, state)
     return {**receipt, 'state': state, 'job': submit_elevation_rebuild(request)}
 
@@ -1287,12 +1314,12 @@ def course_live_terrain(release_id: str):
 
 
 @app.get('/api/releases/{release_id}/live-elevation/{name}.png')
-def course_live_relief(release_id: str, name: str):
+def course_live_relief(release_id: str, name: str, style: Literal['relief', 'contours'] = 'relief'):
     load_release(release_id)
     path = live_elevation.artifact_path(release_id, name)
     if not path.is_file():
         raise HTTPException(404, '临时地形已更新，请刷新')
-    return Response(elevation_render.relief_png(str(path), path.stat().st_mtime_ns), media_type='image/png',
+    return Response(elevation_render.relief_png(str(path), path.stat().st_mtime_ns, style=style), media_type='image/png',
                     headers={'Cache-Control': 'public, max-age=31536000, immutable'})
 
 

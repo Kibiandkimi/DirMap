@@ -45,7 +45,13 @@ def recover_point_ink(image, masks, controls):
         stable = cv2.erode(masks['olive'][box], np.ones((3, 3), np.uint8)) > 0
         stable &= variance.max(axis=2) < 12**2
         stable = cv2.dilate(stable.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0
-        if (stable & halo).any() or ((masks['building'][box] | masks['water'][box]) & halo).any():
+        # Even a tiny forbidden patch may have no stable 3x3 interior after
+        # JPEG subsampling. Its medium-bright olive pixels are still area
+        # evidence; only near-black chroma can be a point-symbol fringe.
+        coloured_olive = (masks['olive'][box] > 0) & (v[box] > 120)
+        area_near = cv2.dilate(core, np.ones((2*padding+5,)*2, np.uint8)) > 0
+        if ((stable & halo).any() or (coloured_olive & area_near).any()
+                or ((masks['building'][box] | masks['water'][box]) & halo).any()):
             continue
         old_ink = (masks['black'][box] | masks['dark_green'][box] | masks['olive'][box]) > 0
         owned = (core > 0) | (old_ink & halo)

@@ -107,7 +107,7 @@ document.querySelector('.workspace')!.insertAdjacentHTML('afterend', `<nav class
 for (const id of ['teacher-panel', 'student-panel']) $(id).insertAdjacentHTML('afterbegin', '<button class="mobile-panel-close soft-button group-keep" aria-label="收起面板，查看地图">收起 · 查看地图 ↓</button>');
 document.querySelector('.map-topbar')!.insertAdjacentHTML('beforeend', '<button id="mobile-layers" class="soft-button" aria-expanded="false" aria-controls="map-layers">图层</button>');
 document.querySelector('.layer-tools')!.id = 'map-layers';
-document.querySelector('.layer-tools')!.insertAdjacentHTML('beforeend', '<span class="elevation-layer-tools"><label class="check-label"><input id="elevation-layer" type="checkbox">高程图</label><label class="opacity-control">高程 <input id="elevation-opacity" type="range" min="10" max="100" value="55" aria-label="高程图透明度"></label><select id="elevation-source" class="elevation-source hidden" aria-label="高程图来源"><option value="course">发布时地形</option><option value="live">本课实时</option></select><span id="elevation-legend" class="elevation-legend hidden"></span></span><label class="check-label"><input id="route-arrows" type="checkbox" checked>路线箭头</label><label class="check-label"><input id="location-direction" type="checkbox" checked>我的方向</label><p class="muted compact layer-legend">蓝色光束：手机朝向；蓝色箭头：行进方向</p>');
+document.querySelector('.layer-tools')!.insertAdjacentHTML('beforeend', '<span class="elevation-layer-tools"><label class="check-label"><input id="elevation-layer" type="checkbox">高程图</label><select id="elevation-style" class="elevation-source" aria-label="高程覆盖方式"><option value="relief">高程色彩与等高线</option><option value="contours">仅等高线</option></select><label class="opacity-control">高程 <input id="elevation-opacity" type="range" min="10" max="100" value="55" aria-label="高程图透明度"></label><select id="elevation-source" class="elevation-source hidden" aria-label="高程图来源"><option value="course">发布时地形</option><option value="live">本课实时</option></select><span id="elevation-legend" class="elevation-legend hidden"></span></span><label class="check-label"><input id="route-arrows" type="checkbox" checked>路线箭头</label><label class="check-label"><input id="location-direction" type="checkbox" checked>我的方向</label><p class="muted compact layer-legend">蓝色光束：手机朝向；蓝色箭头：行进方向</p>');
 for (const [id, apply] of [['route-arrows', (on: boolean) => campusMap.setRouteArrows(on)], ['location-direction', (on: boolean) => campusMap.setDirectionVisible(on)]] as const) {
   const checkbox = $<HTMLInputElement>(id);
   checkbox.checked = stored(`dirmap-${id}`) !== 'false'; apply(checkbox.checked);
@@ -120,6 +120,8 @@ for (const [id, apply] of [['route-arrows', (on: boolean) => campusMap.setRouteA
   if (opacity >= 10 && opacity <= 100) $<HTMLInputElement>('elevation-opacity').value = String(opacity);
   if (stored('dirmap-elevation-source') === 'live') $<HTMLSelectElement>('elevation-source').value = 'live';
   const remember = (key: string, value: string) => { try { localStorage.setItem(key, value); } catch { /* this page keeps the choice */ } };
+  $<HTMLSelectElement>('elevation-style').value = stored('dirmap-elevation-style') === 'contours' ? 'contours' : 'relief';
+  $<HTMLSelectElement>('elevation-style').onchange = () => { remember('dirmap-elevation-style', value('elevation-style')); void renderElevationLayer(); };
   $<HTMLInputElement>('elevation-layer').onchange = () => { remember('dirmap-elevation-layer', String($<HTMLInputElement>('elevation-layer').checked)); void renderElevationLayer(); };
   $<HTMLInputElement>('elevation-opacity').oninput = () => { remember('dirmap-elevation-opacity', value('elevation-opacity')); campusMap.setElevationOpacity(number('elevation-opacity') / 100); };
   $<HTMLSelectElement>('elevation-source').onchange = () => { remember('dirmap-elevation-source', value('elevation-source')); void renderElevationLayer(); };
@@ -134,6 +136,8 @@ async function refreshLiveTerrain(force = false) {
  * course, the heights it was planned with or this class's live samples. */
 async function renderElevationLayer() {
   const render = ++elevationRender, on = $<HTMLInputElement>('elevation-layer').checked, opacity = number('elevation-opacity') / 100;
+  const style = value('elevation-style') as 'relief' | 'contours';
+  $<HTMLSelectElement>('elevation-style').disabled = !on;
   const source = $<HTMLSelectElement>('elevation-source'), live = !!courseId && !!(liveTerrain?.enabled || liveTerrain?.models.length);
   source.classList.toggle('hidden', !live || !on);
   $<HTMLInputElement>('elevation-opacity').disabled = !on;
@@ -143,20 +147,20 @@ async function renderElevationLayer() {
     const current = await refreshLiveTerrain();
     if (render !== elevationRender) return;
     const ready = current?.models ?? [];
-    models = ready; images = ready.map(m => ({ url: `/api/releases/${courseId}/live-elevation/${m.artifact}.png`, extent: modelExtent(m) }));
+    models = ready; images = ready.map(m => ({ url: `/api/releases/${courseId}/live-elevation/${m.artifact}.png${style === 'contours' ? '?style=contours' : ''}`, extent: modelExtent(m) }));
     note = ready.length ? `实时：${current!.devices} 部手机 · ${current!.samples} 个样本` : '实时样本还不够成图';
   } else if (courseId) {
     const snapshot = plan?.elevationSnapshot;
     models = snapshot?.enabled ? snapshot.models : [];
-    images = models.map(m => ({ url: sharedReliefUrl(m), extent: modelExtent(m) }));
+    images = models.map(m => ({ url: sharedReliefUrl(m, style), extent: modelExtent(m) }));
     note = models.length ? '' : '本课发布时没有高程覆盖';
   } else {
-    sharedTerrain ??= await api<{ regions: (HeightModelRef & { supportedCells: number })[] }>('/api/elevation').catch(() => null);
+    sharedTerrain = await api<{ regions: (HeightModelRef & { supportedCells: number })[] }>('/api/elevation').catch(() => sharedTerrain);
     if (render !== elevationRender) return;
     const site = catalog?.sites.find(s => s.id === activeSite);
     models = (sharedTerrain?.regions ?? []).filter(m => m.supportedCells > 0);
     if (site) models = overlapping(models, site.bbox);
-    images = models.map(m => ({ url: sharedReliefUrl(m), extent: modelExtent(m) }));
+    images = models.map(m => ({ url: sharedReliefUrl(m, style), extent: modelExtent(m) }));
     note = models.length ? '' : '这个场地还没有共享地形';
   }
   campusMap.setElevation(images, opacity);
@@ -187,7 +191,7 @@ document.addEventListener('keydown', event => { if (event.key === 'Escape' && ph
 setMobilePanel(false);
 $('objective').insertAdjacentHTML('beforeend', '<option value="min_distance">全班总距离最短</option>');
 $('objective').insertAdjacentHTML('afterend', '<div class="elevation-option"><label class="check-label"><input id="use-elevation" type="checkbox" checked>考虑上下坡</label><a class="text-link" href="/elevation" target="_blank" rel="noreferrer">共享地形 ↗</a><small>使用共享轨迹高程；无覆盖的路段暂不计坡度。</small></div>');
-$('group-preview').insertAdjacentHTML('beforebegin', '<div class="travel-option"><label>活动方式<select id="travel-mode" aria-label="课程活动方式"><option value="walk">步行（含散步）</option><option value="run">跑步</option></select></label><label class="check-label"><input id="use-learned-speed" type="checkbox" checked>从轨迹学习耗时</label><small>使用同类活动的路段与坡度影响；上方速度填写本队平地移动速度。</small></div>');
+$('group-preview').insertAdjacentHTML('beforebegin', '<div class="travel-option"><input id="travel-mode" type="hidden" value="foot"><strong>徒步通行效率 · 跑走均可</strong><label class="check-label"><input id="use-learned-speed" type="checkbox" checked>从轨迹学习耗时</label><small>合并步行、跑步和跑走交替的记录，学习相对通行效率；上方速度填写本队平地移动速度。</small></div>');
 if (!courseId && !groupCode) document.querySelector('.header-context')?.insertAdjacentHTML('beforeend', '<a class="text-link" href="/elevation">共享地形 ↗</a>');
 $('group-preview').insertAdjacentHTML('afterend', '<details class="auto-team-settings"><summary>按分队收益自动选择队数</summary><div class="form-grid"><label>每队至少几人<input id="auto-min-people" type="number" min="1" max="500" value="2"></label><label>最多比较几队<input id="auto-max-teams" type="number" min="1" max="30" value="30"></label><label>保留最佳改善收益 <span>%</span><input id="auto-gain" type="number" min="50" max="100" step="5" value="90"></label></div><p class="muted compact">比较允许的全部队数，选择达到收益目标的最少队数。沿用总人数、速度、出发间隔与当前优化目标。</p><button id="recommend-teams" class="soft-button wide">比较收益并自动分队</button><p id="auto-team-hint" class="muted compact"></p></details>');
 for (const id of ['auto-min-people', 'auto-max-teams', 'auto-gain']) $(id).oninput = () => { resetPlan(); persistRules(); };
@@ -280,6 +284,12 @@ $('custom-team-routes').onclick = event => {
       const selected = new Set([...mandatory, ...Object.values(customDrafts).flatMap(draft => draftControlIds(draft, state!.controls))]);
       for (const control of state.controls) control.required = (control.role ?? 'control') === 'control' && selected.has(control.id);
       resetPlan(); persistRules(); renderState();
+      if (action.dataset.routeMove !== undefined) {
+        const index = Math.max(0, Math.min(ids.length - 1, Number(action.dataset.routeMove) + Number(action.dataset.direction)));
+        const row = document.querySelector<HTMLElement>(`[data-picker-team="${CSS.escape(team)}"] .route-sequence li:nth-child(${index + 1})`);
+        row?.scrollIntoView({ block: 'nearest' });
+        row?.querySelector<HTMLButtonElement>('button[data-route-move]:not(:disabled)')?.focus({ preventScroll: true });
+      }
     } catch (error) { $('custom-route-error').textContent = (error as Error).message; }
     return;
   }
@@ -398,7 +408,13 @@ async function watchJob<T>(initial: Job<T>): Promise<T> {
       $('job-message').textContent = job.message ?? '排队处理中'; $('job-percent').textContent = `${job.progress}%`; $<HTMLProgressElement>('job-progress').value = job.progress;
       $('cancel-job').classList.toggle('hidden', !['queued', 'running'].includes(job.state) || !!job.cancelRequested);
       if (job.state === 'succeeded' && job.resultPruned) { rememberJob(null); throw new Error('这条记录的计算结果已按保留期限清理，请重新生成'); }
-      if (job.state === 'succeeded') { rememberJob(null); $('job-status').classList.add('hidden'); return job.result as T; }
+      if (job.state === 'succeeded') {
+        rememberJob(null); $('job-status').classList.add('hidden');
+        if (['process', 'terrain', 'anchors', 'elevation_rebuild'].includes(job.kind)) {
+          sharedTerrain = null; void renderElevationLayer();
+        }
+        return job.result as T;
+      }
       if (job.state === 'failed') { rememberJob(null); throw new Error(job.cancelled ? '任务已取消，原有数据保持不变' : job.message ?? '处理失败'); }
       await new Promise(resolve => setTimeout(resolve, 700));
       // A connection loss doesn't mean the server job failed or should restart.
@@ -433,7 +449,7 @@ function restorePlanFields(request: PlanRequest) {
   $<HTMLSelectElement>('objective').value = request.objective;
   $<HTMLInputElement>('use-elevation').checked = request.useElevation !== false;
   $<HTMLInputElement>('use-learned-speed').checked = request.useLearnedSpeed !== false;
-  $<HTMLSelectElement>('travel-mode').value = request.travelMode ?? 'walk';
+  $<HTMLInputElement>('travel-mode').value = 'foot';
   mandatory = new Set(request.mandatoryControlIds ?? []); missingPresetLabels = [];
   $<HTMLInputElement>('mandatory-order').checked = request.mandatoryOrder ?? false;
   $<HTMLInputElement>('people').value = String(request.teams.reduce((total, team) => total + team.people, 0));
@@ -517,7 +533,7 @@ function initializeRules() {
   $<HTMLInputElement>('mandatory-order').checked = false;
   $<HTMLInputElement>('use-elevation').checked = true;
   $<HTMLInputElement>('use-learned-speed').checked = true;
-  $<HTMLSelectElement>('travel-mode').value = 'walk';
+  $<HTMLInputElement>('travel-mode').value = 'foot';
   restoreAutoTeamFields({ minPeoplePerTeam: 2, maxTeams: 30, targetGainFraction: .9 });
   const allowed = ['all_visit', 'split_coverage', 'fixed_order', 'mixed_coverage', 'custom'];
   try {
@@ -526,7 +542,7 @@ function initializeRules() {
       if (saved.autoTeams) restoreAutoTeamFields(saved.autoTeams);
       $<HTMLInputElement>('use-elevation').checked = saved.useElevation !== false;
       $<HTMLInputElement>('use-learned-speed').checked = saved.useLearnedSpeed !== false;
-      $<HTMLSelectElement>('travel-mode').value = saved.travelMode === 'run' ? 'run' : 'walk';
+      $<HTMLInputElement>('travel-mode').value = 'foot';
       if (['min_max_finish_then_sum', 'min_total_time', 'min_distance'].includes(saved.objective)) $<HTMLSelectElement>('objective').value = saved.objective;
       $<HTMLSelectElement>('course-mode').value = saved.mode;
       if (saved.mode === 'fixed_order' && Array.isArray(saved.controlOrder) && state) {
@@ -723,7 +739,7 @@ function renderState() {
   $('sheet-photo-album').classList.toggle('hidden', !state.sheetPhotos?.length);
   $('sheet-photo-album').textContent = `原图参考照片 · ${state.sheetPhotos?.length ?? 0} 张`;
   $('contour-review').classList.toggle('hidden', !state.contours?.length);
-  $('contour-review').textContent = `核对等高线 · ${state.contours?.length ?? 0} 条候选`;
+  $('contour-review').textContent = `等高线与地形 · ${state.contours?.length ?? 0} 条`;
   const numbered = state.controls.filter(c => (c.role ?? 'control') === 'control').map(c => c.label);
   $('control-list').innerHTML = (value('course-mode') === 'fixed_order' ? state.controls : sortedControls(state.controls)).map((c, index) => `<div class="control-row" data-id="${e(c.id)}"><label class="control-toggle"><input type="checkbox" data-required="${e(c.id)}" ${c.role && c.role !== 'control' ? 'disabled' : ''} ${c.required ? 'checked' : ''}><span class="control-number ${c.calibrated ? '' : 'uncalibrated'}">${e(c.label)}</span></label>${['mixed_coverage', 'custom'].includes(value('course-mode')) && (c.role ?? 'control') === 'control' ? `<label class="every-team-toggle"><input type="checkbox" data-mandatory="${e(c.id)}" aria-label="${e(c.label)} 每队必到" ${mandatory.has(c.id) ? 'checked' : ''}>每队必到</label>` : ''}<span class="control-state">${(c.role ?? 'control') === 'control' && numbered.filter(label => label === c.label).length > 1 ? '<b class="danger">编号重复</b> · ' : ''}${!c.calibrated ? '待补配准' : c.state === 'accepted' ? '已确认' : '待核对'}</span>${referencePhotoButton(state!.sheetPhotos ?? [], c.id)}<button class="text-button" data-control-edit="${e(c.id)}" aria-label="编辑目标 ${e(c.label)}">↗</button>${value('course-mode') === 'fixed_order' ? `<button class="text-button" data-up="${index}" aria-label="上移 ${e(c.label)}">↑</button><button class="text-button" data-down="${index}" aria-label="下移 ${e(c.label)}">↓</button>` : ''}</div>`).join('');
   const q = state.quality;
@@ -997,7 +1013,7 @@ function planInputs(): Omit<PlanRequest, 'teams' | 'customRoutes'> {
   return { assetId: activeId, version: state.version, controlIds, startPixel, finishPixel: finish, startSurfaceId,
     finishSurfaceId: $<HTMLInputElement>('return-start').checked ? startSurfaceId : finishSurfaceId,
     mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget'), useElevation: $<HTMLInputElement>('use-elevation').checked,
-    useLearnedSpeed: $<HTMLInputElement>('use-learned-speed').checked, travelMode: value('travel-mode') as 'walk' | 'run' };
+    useLearnedSpeed: $<HTMLInputElement>('use-learned-speed').checked, travelMode: value('travel-mode') as 'foot' };
 }
 $('plan-button').onclick = () => task(async () => {
   const input = planInputs();
@@ -1511,8 +1527,16 @@ function openReferencePhotos(controlId?: string) {
 $('contour-review').onclick = () => { void task(async () => {
   if (!state) return;
   const assetId = state.assetId;
-  const report = await api<ContourReport>(`/api/maps/${assetId}/contours`);
+  let report = await api<ContourReport>(`/api/maps/${assetId}/contours`);
   if (state?.assetId !== assetId || state.version !== report.version) return;
+  if (!report.automatic) {
+    const receipt = await api<{ state: MapState; job?: Job<unknown> }>(`/api/maps/${assetId}/contours/automatic`, {
+      method: 'POST', body: JSON.stringify({ version: report.version }) });
+    if (receipt.job) { rememberJob({ id: receipt.job.id }); await watchJob(receipt.job); }
+    if (state?.assetId !== assetId) return;
+    state = receipt.state; sharedTerrain = null; renderState();
+    report = await api<ContourReport>(`/api/maps/${assetId}/contours`);
+  }
   showContours(state, report, async (contours, intervalM, heightReference) => {
     const receipt = await api<{ state: MapState; job?: Job<unknown> }>(`/api/maps/${assetId}/contours`, {
       method: 'POST', body: JSON.stringify({ version: report.version, revision: report.revision, contours, intervalM, heightReference }) });
@@ -1520,7 +1544,7 @@ $('contour-review').onclick = () => { void task(async () => {
     report.revision = receipt.state.contourRevision ?? 0;
     if (state?.assetId === assetId && state.version <= receipt.state.version) { state = receipt.state; resetPlan(); renderState(); }
     if (receipt.job) { rememberJob({ id: receipt.job.id }); await watchJob(receipt.job); }
-    await renderElevationLayer();
+    sharedTerrain = null; await renderElevationLayer();
     notify('等高线已保存，可在共享地形页查看重建结果与对齐状态');
   });
 }); };

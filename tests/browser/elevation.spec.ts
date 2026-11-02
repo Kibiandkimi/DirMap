@@ -118,16 +118,16 @@ test('route planning can weigh uphill and downhill walking from the shared terra
     await expect(page.locator('.control-row').first()).toBeVisible();
     await expect(page.locator('#use-elevation')).toBeChecked();
     await expect(page.locator('#use-learned-speed')).toBeChecked();
-    await page.locator('#travel-mode').selectOption('run');
+    await expect(page.locator('.travel-option')).toContainText('跑走均可');
     await page.locator('#teams').fill('2');
     const submitted = page.waitForRequest(request => request.method() === 'POST' && request.url().endsWith('/api/plans'));
     await page.locator('#plan-button').click();
-    expect((await submitted).postDataJSON()).toMatchObject({ travelMode: 'run', useLearnedSpeed: true });
+    expect((await submitted).postDataJSON()).toMatchObject({ travelMode: 'foot', useLearnedSpeed: true });
     await expect(page.locator('.route-card')).toHaveCount(2, { timeout: 60000 });
     const summary = page.locator('.route-card .route-elevation').first();
     await expect(summary).toContainText('预计爬升');
     await expect(summary.locator('svg.route-height-profile polyline').first()).toBeVisible();
-    await expect(page.locator('.route-card .route-speed').first()).toContainText('跑步轨迹不足');
+    await expect(page.locator('.route-card .route-speed').first()).toContainText('徒步轨迹不足');
     // Flat costs on request; the choice is remembered with the course rules.
     await page.locator('#use-elevation').uncheck();
     await page.locator('#use-learned-speed').uncheck();
@@ -139,7 +139,7 @@ test('route planning can weigh uphill and downhill walking from the shared terra
     await expect(page.locator('.control-row').first()).toBeVisible();
     await expect(page.locator('#use-elevation')).not.toBeChecked();
     await expect(page.locator('#use-learned-speed')).not.toBeChecked();
-    await expect(page.locator('#travel-mode')).toHaveValue('run');
+    await expect(page.locator('#travel-mode')).toHaveValue('foot');
   } finally {
     // Shared terrain reaches every workbench; leave none for later scenarios.
     await removeOwnTracks(page, user.id, scope);
@@ -172,8 +172,20 @@ test('the course map overlays the shared relief, with its own remembered opacity
     // The orienteering map keeps its own opacity; the relief blends above it.
     await page.locator('#elevation-opacity').fill('80');
     await expect.poll(async () => (await reliefLayers(page))[0].opacity).toBeCloseTo(.8, 5);
+    // A reconstruction made while this map stays open must replace the
+    // old overlay too, instead of retaining the first catalogue response.
+    const later = await page.request.post('/api/elevation/tracks', { headers: { 'X-DirMap-Workbench': scope }, multipart: {
+      files: { name: 'later-campus.kml', mimeType: 'application/vnd.google-earth.kml+xml', buffer: walks('后续交叉路线', 113.9264, 22.5304, 113.9364, 22.5414) } } });
+    expect(later.ok()).toBe(true); await finished(page, (await later.json()).job);
+    const latest = await (await page.request.get('/api/elevation')).json();
+    const latestName = latest.regions[0].artifact.replace(/^models\//, '').replace(/\.npz$/, '');
+    await page.locator('#elevation-style').selectOption('contours');
+    await expect.poll(async () => (await reliefLayers(page))[0].url).toMatch(/relief\.png\?style=contours$/);
+    await expect.poll(async () => (await reliefLayers(page))[0].url).toContain(latestName);
+    expect((await reliefLayers(page))[0].url.split('?')[0]).not.toBe(layer.url);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('#elevation-layer')).toBeChecked();
+    await expect(page.locator('#elevation-style')).toHaveValue('contours');
     await expect.poll(async () => (await reliefLayers(page))[0]?.opacity).toBeCloseTo(.8, 5);
     await page.locator('#elevation-layer').uncheck();
     await expect.poll(() => reliefLayers(page)).toEqual([]);
@@ -248,6 +260,8 @@ test('phones sample heights during a course into a temporary terrain that the te
     await expect(watch.locator('#elevation-legend')).toContainText('实时：1 部手机', { timeout: 30000 });
     const [live] = await reliefLayers(watch);
     expect(live.url).toMatch(new RegExp(`^/api/releases/${course}/live-elevation/[0-9a-f]{40}\\.png$`));
+    await watch.locator('#elevation-style').selectOption('contours');
+    await expect.poll(async () => (await reliefLayers(watch))[0].url).toMatch(/\.png\?style=contours$/);
     await expect(watch.locator('#live-height-card')).toBeHidden();
     await watch.close();
     page.once('dialog', dialog => dialog.accept());

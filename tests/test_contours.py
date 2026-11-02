@@ -133,3 +133,34 @@ def test_relative_levels_deduplicate_independent_of_the_chosen_zero(tmp_path, mo
     assert record['heightReference'] == 'relative' and record['minHeightM'] == 0 and record['maxHeightM'] == 2
     absolute = contribute(state, chosen(20), owner, 'reference')
     assert absolute['added'][0] != first['added'][0]
+
+
+def test_unlabelled_contours_learn_independent_levels_from_crossing_tracks():
+    contour = contour_observations()
+    contour.update(heightReference='shape', breaks=np.arange(0, len(contour['points']), 33))
+    contour['points'][:, 2] = 0
+    xy = np.array([[x, y] for x in [10, 70, 140] for y in np.arange(0, 121, 5.)])
+    walk = {'id': 'phone', 'points': np.column_stack((Frame().to_lnglat(xy), 50+xy[:, 1]*.1))}
+    alone, raw = reconstruct([contour])
+    assert alone['supportedCells'] == 0 and np.isnan(raw['height']).all()
+    metadata, arrays = reconstruct([contour, walk])
+    query = np.array([[30, 30], [70, 50], [110, 100]])
+    heights = HeightModel(metadata, arrays).sample(Frame().to_lnglat(query))
+    np.testing.assert_allclose(heights, 50+query[:, 1]*.1, atol=.2)
+    assert metadata['alignment']['tracks'][0]['anchoredContours'] == 4
+    assert set(arrays['observation_track']) == {0, 1}
+    assert len(arrays['observation_track']) == len(arrays['observations'])
+
+
+def test_an_unrelated_unlabelled_line_on_the_same_sheet_keeps_waiting():
+    contour = contour_observations()
+    count = len(contour['points'])
+    contour.update(heightReference='shape', breaks=np.r_[np.arange(0, count, 33), count])
+    far = np.column_stack((Frame().to_lnglat([[1000+x, 40] for x in range(0, 121, 5)]), np.zeros(25)))
+    contour['points'] = np.vstack((contour['points'], far)); contour['points'][:, 2] = 0
+    xy = np.array([[10, y] for y in np.arange(0, 121, 5.)])
+    walk = {'id': 'phone', 'points': np.column_stack((Frame().to_lnglat(xy), 50+xy[:, 1]*.1))}
+    metadata, arrays = reconstruct([contour, walk])
+    assert metadata['alignment']['tracks'][0]['anchoredContours'] == 4
+    assert metadata['alignment']['tracks'][0]['pendingContours'] == 1
+    assert np.isnan(HeightModel(metadata, arrays).sample(Frame().to_lnglat([[1060, 40]]))).all()

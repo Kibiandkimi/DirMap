@@ -56,7 +56,7 @@ def finish_job(client, response):
     return job['result']
 
 
-def verify_course(client, state, bundle, graph):
+def verify_course(client, state, bundle, graph, excluded_labels=()):
     """Exercise teacher confirmation and student release only in the test workspace."""
     from dirmap.app import Control
     approaches = {a['controlId']: a['pixel'] for a in bundle['approaches'] if a.get('automatic')}
@@ -64,14 +64,16 @@ def verify_course(client, state, bundle, graph):
     for control in state['controls']:
         item = {key: value for key, value in control.items() if key in Control.model_fields}
         item['state'] = 'accepted'
+        if item['label'] in excluded_labels:
+            item['required'] = False
         if control['id'] in approaches:
             item['approachPixel'] = approaches[control['id']]
         controls.append(item)
     response = client.patch(f'/api/maps/{state["assetId"]}', json={'version': state['version'], 'controls': controls})
     response.raise_for_status(); state = response.json()
-    lookup = {c['label']: c['id'] for c in controls if c.get('role', 'control') == 'control'}
+    lookup = {c['label']: c['id'] for c in controls if c.get('role', 'control') == 'control' and c['label'] not in excluded_labels}
     required = [lookup[str(i)] for i in range(31, 41)]
-    expected = Counter({lookup[str(i)]: 3 if i <= 40 else 1 for i in range(31, 63)})
+    expected = Counter({identifier: 3 if int(label) <= 40 else 1 for label, identifier in lookup.items()})
     response = client.post(f'/api/maps/{state["assetId"]}/review', json={
         'version': state['version'], 'registrationChecked': True, 'controlsChecked': True, 'passagesChecked': True})
     response.raise_for_status()
@@ -108,14 +110,15 @@ def verify_course(client, state, bundle, graph):
     return {
         'scope': '仅在隔离测试工作台模拟教师确认自动到访建议和核验；不代表现场通行已确认。',
         'mode': 'mixed_coverage', 'teams': 3, 'mandatoryLabels': [str(i) for i in range(31, 41)],
-        'sharedLabels': [str(i) for i in range(41, 63)], 'coverageVerified': True,
+        'sharedLabels': sorted(label for label in lookup if int(label) > 40), 'coverageVerified': True,
+        'excludedRestrictedLabels': sorted(excluded_labels), 'targetCount': len(lookup),
         'planStatus': plan['status'], 'uniqueLegalEdgesChecked': len(checked),
         'referencePhotosPublished': len(course['sheetPhotos']), 'releaseId': released,
         'automaticApproachesConfirmed': len(approaches),
     }
 
 
-def verify(source, directory):
+def verify(source, directory, reuse_asset=None):
     from fastapi.testclient import TestClient
     from dirmap import store, service, sites
     from dirmap.app import app
@@ -129,11 +132,16 @@ def verify(source, directory):
               'scope': '真实大沙河原图；上传、识别、自动道路配准、照片裁切、目标连通性与隔离工作台中的混合课程发布。道路留出误差不是现场 GPS 误差。',
               'independentFieldValidation': False}
     with TestClient(app) as client:
-        uploaded = client.post('/api/maps/upload', params={'siteId': 'dashahe-park'},
+        if reuse_asset:
+            asset = store.get_asset(reuse_asset)
+            existing = store.get_state(reuse_asset)
+            assert existing['sourceHash'] == report['sourceSha256'] and existing['terrainSchema'] == service.TERRAIN_SCHEMA
+        else:
+            uploaded = client.post('/api/maps/upload', params={'siteId': 'dashahe-park'},
                                files={'file': (source.name, source.read_bytes(), 'image/jpeg')})
-        uploaded.raise_for_status()
-        asset = uploaded.json()
-        finish_job(client, client.post(f'/api/maps/{asset["id"]}/process'))
+            uploaded.raise_for_status()
+            asset = uploaded.json()
+            finish_job(client, client.post(f'/api/maps/{asset["id"]}/process'))
         state = client.get(f'/api/maps/{asset["id"]}').json()
         report.update(assetId=asset['id'], workingSize=[state['width'], state['height']],
                       processingSec=state['processingElapsedSec'], statistics=state['statistics'])
@@ -177,6 +185,13 @@ def verify(source, directory):
         assert not unresolved_labels, bundle['unresolved']
         assert np.isfinite(bundle['matrix']).all()
         report['navigation']['unresolvedLabels'] = unresolved_labels
+        roadside = [a for a in bundle['approaches'] if a['method'] in ('nearby_road', 'nearby_open_ground')]
+        assert {by_id[a['controlId']] for a in roadside} == {'41', '42', '43', '44', '46', '47', '49', '56'}
+        report['navigation']['roadsideArrivals'] = [{'label': by_id[a['controlId']], **a} for a in roadside]
+        for arrival in roadside:
+            assert arrival['offsetM'] <= 15
+            x, y = np.rint(arrival['pixel']).astype(int)
+            assert graph.costs[y, x] > 0
         report['navigation']['automaticApproachLabels'] = sorted(by_id[a['controlId']] for a in bundle['approaches'] if a['automatic'])
         for endpoint, node in zip(bundle['endpoints'], bundle['nodes']):
             assert graph.clear_segment(endpoint.get('approachPixel') or endpoint['pixel'], graph.pixels[node])
@@ -186,12 +201,14 @@ def verify(source, directory):
         centre = np.array(covered['pixel']); delta = np.array([0, covered['radiusPx']*.5])
         assert graph.clear_segment(centre-delta, centre+delta)
         report['navigation']['coveredPassage52'] = {'keepsCircleCentre': True, 'northAndSouthConnected': True}
-        print('Navigation: all 32 targets connected;', len(report['navigation']['automaticApproachLabels']),
+        print('Navigation: all 32 targets connected, private green stays closed;', len(report['navigation']['automaticApproachLabels']),
               'automatic approach suggestions; target 52 accessible through both ends.', flush=True)
         report['overlayScope'] = state.get('overlayScope')
         assert report['overlayScope'] == 'full-sheet'
         (directory/'state.json').write_text(json.dumps(state, ensure_ascii=False), encoding='utf-8')
         report['courseWorkflow'] = verify_course(client, state, bundle, graph)
+        report['automaticContours'] = state.get('automaticContours')
+        assert report['automaticContours']['used'] >= 100
         report.update(implementationSignature=service.implementation_signature(), allChecksPassed=True)
     return report
 
@@ -201,10 +218,11 @@ def main():
     parser.add_argument('--image', type=Path, default=Path('/home/kibi/下载/微信图片_20261031002551_91_548.jpg'))
     parser.add_argument('--output', type=Path, default=ROOT/'evidence/runtime/dashahe-real.json')
     parser.add_argument('--workdir', type=Path)
+    parser.add_argument('--reuse-asset', help='Validate an already processed map in the explicitly supplied workdir')
     args = parser.parse_args()
     if args.workdir:
         args.workdir.mkdir(parents=True, exist_ok=True)
-        report = verify(args.image, args.workdir)
+        report = verify(args.image, args.workdir, args.reuse_asset)
     else:
         with tempfile.TemporaryDirectory(prefix='dirmap-dashahe-real-') as directory:
             report = verify(args.image, Path(directory))

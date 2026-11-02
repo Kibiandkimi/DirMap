@@ -89,6 +89,7 @@ test('teacher reviews printed contours and contributes them to shared terrain', 
     await page.locator('[data-tab="terrain"]').click();
     await page.locator('#contour-review').click();
     await expect(page.locator('.contour-dialog')).toBeVisible();
+    if (await page.locator('.contour-manual').evaluate((el: HTMLDetailsElement) => !el.open)) await page.locator('.contour-manual > summary').click();
     const rows = page.locator('.contour-row:has([data-use]:enabled)');
     expect(await rows.count()).toBeGreaterThanOrEqual(3);
     await page.locator('[data-height-reference]').selectOption('reference');
@@ -99,7 +100,7 @@ test('teacher reviews printed contours and contributes them to shared terrain', 
     await page.locator('.contour-dialog [data-save]').click();
     await expect(page.locator('.contour-dialog')).toBeHidden({ timeout: 30000 });
     const status = await (await page.request.get('/api/elevation')).json();
-    const track = status.tracks.find((t: any) => t.ownerId === owner.id);
+    const track = status.tracks.find((t: any) => t.ownerId === owner.id && t.enabled);
     expect(track.kind).toBe('contours'); expect(track.contourCount).toBe(3);
     expect(status.regions.some((r: any) => r.trackIds.includes(track.id) && r.supportedCells > 0)).toBe(true);
     await page.goto('/elevation', { waitUntil: 'domcontentloaded' });

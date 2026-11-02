@@ -20,8 +20,8 @@ export function modelExtent(model: HeightModelRef): number[] {
   return [low[0], low[1], high[0], high[1]];
 }
 
-export function sharedReliefUrl(model: HeightModelRef) {
-  return `/api/elevation/artifacts/${model.artifact.replace(/^models\//, '').replace(/\.npz$/, '')}/relief.png`;
+export function sharedReliefUrl(model: HeightModelRef, style: 'relief' | 'contours' = 'relief') {
+  return `/api/elevation/artifacts/${model.artifact.replace(/^models\//, '').replace(/\.npz$/, '')}/relief.png${style === 'contours' ? '?style=contours' : ''}`;
 }
 
 export function overlapping<T extends HeightModelRef>(models: T[], bbox: number[]) {

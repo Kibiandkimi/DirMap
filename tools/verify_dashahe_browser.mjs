@@ -49,6 +49,8 @@ try {
   await page.locator('[data-tab="terrain"]').click();
   await page.locator('#contour-review').click();
   await expect(page.locator('.contour-row')).toHaveCount(state.contours.length);
+  await expect(page.locator('.contour-auto-summary')).toContainText('已自动加入');
+  if (await page.locator('.contour-manual').evaluate(el => !el.open)) await page.locator('.contour-manual > summary').click();
   await page.locator('[data-focus-line]').first().click();
   await screenshot('printed-contours');
   await page.getByRole('button', { name: '关闭等高线', exact: true }).click();

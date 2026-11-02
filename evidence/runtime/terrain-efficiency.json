@@ -1,0 +1,2313 @@
+{
+  "checkedAt": "2026-11-02T23:15:15Z",
+  "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "terrainSchema": "print-scale-boundaries-v13-roadside-arrivals",
+  "scope": "真实大沙河原图和既有 KML 规范化观测；全部计算在新的隔离副本，未修改原贡献或生产工作台。",
+  "colourChecks": {
+    "olivePixels": 898554,
+    "oliveBlockedFraction": 0.9999977742016618,
+    "brightGreenPixels": 260579,
+    "brightGreenPassableFraction": 1.0
+  },
+  "automaticContours": {
+    "schema": "printed-equal-height-v1",
+    "trackId": "d5bb53f3c8d394855bbcbc1c3656e22b844a65e6407ea2bbcc06052c48120a80",
+    "used": 131,
+    "pending": 2,
+    "registrationStamp": "8f2f0dabf5f930866d797a9ba7398563e72aaa41468da8cfe3aa5cde93b294c7",
+    "alignment": {
+      "id": "d5bb53f3c8d394855bbcbc1c3656e22b844a65e6407ea2bbcc06052c48120a80",
+      "correctionM": null,
+      "driftRangeM": null,
+      "component": 0,
+      "observationCells": 4040,
+      "anchored": true,
+      "anchoredContours": 119,
+      "pendingContours": 13
+    },
+    "comparisonCurves": 98,
+    "medianBeforeSpreadM": 1.327970810568437,
+    "medianAfterSpreadM": 0.21460361175002696,
+    "lines": [
+      {
+        "id": "contour-acc7c4422985",
+        "beforeSpreadM": 2.6052361165558082,
+        "afterSpreadM": 0.2714018988772082,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-e5dbdeb108ff",
+        "beforeSpreadM": 2.6895742924587758,
+        "afterSpreadM": 0.35502705243878907,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-1ce75c5b19d3",
+        "beforeSpreadM": 2.2815351635082592,
+        "afterSpreadM": 0.3236357306804436,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-8e96ea9a3706",
+        "beforeSpreadM": 3.161224414291997,
+        "afterSpreadM": 0.34477001841035815,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-ea7d87048ac0",
+        "beforeSpreadM": 1.926692679076666,
+        "afterSpreadM": 0.24525114084988786,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-fc36f286c067",
+        "beforeSpreadM": 4.027009868400754,
+        "afterSpreadM": 0.2390643487346935,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-537fde6148d3",
+        "beforeSpreadM": 3.39689297925144,
+        "afterSpreadM": 0.3775933103993552,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-137f343f955f",
+        "beforeSpreadM": 3.820131369410735,
+        "afterSpreadM": 0.2608853528836512,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-9bd819d430b7",
+        "beforeSpreadM": 7.163421212496782,
+        "afterSpreadM": 0.34670957630675403,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-0240995f1722",
+        "beforeSpreadM": 1.398733131674998,
+        "afterSpreadM": 0.17423578508620352,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-7cbc8ef67211",
+        "beforeSpreadM": 4.000559170708016,
+        "afterSpreadM": 0.19495548136990593,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-09dce5d80ede",
+        "beforeSpreadM": 1.1155362926306651,
+        "afterSpreadM": 0.1776958041074863,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-90aa57b6751b",
+        "beforeSpreadM": 3.4460309842078267,
+        "afterSpreadM": 0.31286075887136633,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-e40f27a5d439",
+        "beforeSpreadM": 3.785551184845911,
+        "afterSpreadM": 0.2201139580222815,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-863196f64b15",
+        "beforeSpreadM": 1.308895148347208,
+        "afterSpreadM": 0.2745085970055392,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-731475f1c3a0",
+        "beforeSpreadM": 0.6218063899451352,
+        "afterSpreadM": 0.19325146962583872,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-6cc7242b84e6",
+        "beforeSpreadM": 0.7118912514550466,
+        "afterSpreadM": 0.16130964857283558,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-d17f5678efa4",
+        "beforeSpreadM": 0.6606849703705926,
+        "afterSpreadM": 0.09226953903085544,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-9c2665a82435",
+        "beforeSpreadM": 0.5915704676139164,
+        "afterSpreadM": 0.1234308095142751,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-6175ebb87435",
+        "beforeSpreadM": 0.5839984972053998,
+        "afterSpreadM": 0.5590861884027447,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-1da2918addb6",
+        "beforeSpreadM": 0.8322520546869931,
+        "afterSpreadM": 0.43227622277216327,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-ab744f4ca4db",
+        "beforeSpreadM": 1.693122359827143,
+        "afterSpreadM": 0.10123952818326387,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-1e40a8a0ed46",
+        "beforeSpreadM": 2.0705193407092644,
+        "afterSpreadM": 0.386753051727851,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-2b9692b596b2",
+        "beforeSpreadM": 3.9405965237701963,
+        "afterSpreadM": 0.6342799137492321,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-cd2bbad0fa0c",
+        "beforeSpreadM": 8.606958907431864,
+        "afterSpreadM": 0.2672829851137557,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-292929829233",
+        "beforeSpreadM": 2.8183503943198573,
+        "afterSpreadM": 0.29266135202564314,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-612c15319908",
+        "beforeSpreadM": 2.315137661419275,
+        "afterSpreadM": 0.3859945415180768,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-08cb5a723b55",
+        "beforeSpreadM": 1.968500598036556,
+        "afterSpreadM": 0.22329126252541442,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-d7eb13f34981",
+        "beforeSpreadM": 1.2354407174994435,
+        "afterSpreadM": 0.29894069082393315,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-3d25a0f76101",
+        "beforeSpreadM": 0.677976256592892,
+        "afterSpreadM": 0.13596686385093903,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-f4975de101eb",
+        "beforeSpreadM": 0.8421541934287848,
+        "afterSpreadM": 0.12266508567767787,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-ba62fe43d4b9",
+        "beforeSpreadM": 2.5149347921997354,
+        "afterSpreadM": 0.3103061045427111,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-85423e2304e3",
+        "beforeSpreadM": 1.3198225517598203,
+        "afterSpreadM": 0.25504982785786723,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-2beced202362",
+        "beforeSpreadM": 9.600341871186792,
+        "afterSpreadM": 0.18089840907382992,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-f807c38d96c5",
+        "beforeSpreadM": 0.8517222008817811,
+        "afterSpreadM": 0.14220929284460126,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-9c94fbce407c",
+        "beforeSpreadM": 1.5920001549713412,
+        "afterSpreadM": 0.2235200119812184,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-2e04d7570283",
+        "beforeSpreadM": 1.392657471224755,
+        "afterSpreadM": 0.16709896272951497,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-34da0aa8ee2b",
+        "beforeSpreadM": 0.45851174209105316,
+        "afterSpreadM": 0.1141769529043728,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-676b12ba2d91",
+        "beforeSpreadM": 0.4350348310318566,
+        "afterSpreadM": 0.19169204127762995,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-e9788deb7d83",
+        "beforeSpreadM": 0.12234050886024761,
+        "afterSpreadM": 0.04170964000993749,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-a4c106327c93",
+        "beforeSpreadM": 2.86709760903522,
+        "afterSpreadM": 0.4037573365114291,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-26e5784bb0f1",
+        "beforeSpreadM": 0.2536213816716142,
+        "afterSpreadM": 0.12311349536204474,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-12c7e0d341de",
+        "beforeSpreadM": 1.4460517143237137,
+        "afterSpreadM": 0.3822233070347778,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-7f577c31420f",
+        "beforeSpreadM": 1.186898832531778,
+        "afterSpreadM": 0.21325582494380413,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-25303aaf82d7",
+        "beforeSpreadM": 0.5135532279451809,
+        "afterSpreadM": 0.1785244419912928,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-7bd43be7c022",
+        "beforeSpreadM": 2.2042216844720492,
+        "afterSpreadM": 0.16554467737426037,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-b2d0d24f75c2",
+        "beforeSpreadM": 5.102801383963563,
+        "afterSpreadM": 0.17543675187608443,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-6632d55fbf10",
+        "beforeSpreadM": 1.755180653981487,
+        "afterSpreadM": 1.8636109713100097,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-121f65644911",
+        "beforeSpreadM": 2.0466086528413143,
+        "afterSpreadM": 0.13877950244947712,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-f841cec17de4",
+        "beforeSpreadM": 1.2546523107067529,
+        "afterSpreadM": 0.8354389260182877,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-3f1f2f8131f3",
+        "beforeSpreadM": 2.584862129727693,
+        "afterSpreadM": 0.27103258734820557,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-25552521628c",
+        "beforeSpreadM": 4.102677448931036,
+        "afterSpreadM": 0.619903444846166,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-1e1066151cc9",
+        "beforeSpreadM": 0.6150441493785301,
+        "afterSpreadM": 0.15909450022233784,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-2af75f92d528",
+        "beforeSpreadM": 1.3646744189993179,
+        "afterSpreadM": 1.2882762115398183,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-967d27b8b65e",
+        "beforeSpreadM": 1.4622709343238327,
+        "afterSpreadM": 0.2299358429430285,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-3c5c0e5e9b7a",
+        "beforeSpreadM": 0.6544576829082125,
+        "afterSpreadM": 0.30218009781298605,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-ff6614e30174",
+        "beforeSpreadM": 5.349596559840201,
+        "afterSpreadM": 0.2538076811163279,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-2ef658e5ac4d",
+        "beforeSpreadM": 2.444979408915245,
+        "afterSpreadM": 0.08093350508382713,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-2350b964a983",
+        "beforeSpreadM": 0.39953758576058007,
+        "afterSpreadM": 0.1368488610452765,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-d37bc4b672da",
+        "beforeSpreadM": 0.3950521554377886,
+        "afterSpreadM": 0.13642635354931443,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-4d900fa4e9b7",
+        "beforeSpreadM": 0.744799498157807,
+        "afterSpreadM": 0.13895250312698693,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-927f47a4e204",
+        "beforeSpreadM": 2.029672175181922,
+        "afterSpreadM": 0.05887400801379172,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-b7a8f257ce5e",
+        "beforeSpreadM": 2.243582557480533,
+        "afterSpreadM": 0.06032272896517199,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-4b045aacd913",
+        "beforeSpreadM": 0.7096584468327229,
+        "afterSpreadM": 0.3229749188993729,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-57adce7a61c4",
+        "beforeSpreadM": 1.5829701943824368,
+        "afterSpreadM": 0.3545989219895489,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-30c6fc6fef1b",
+        "beforeSpreadM": 0.3794066183596243,
+        "afterSpreadM": 0.040541773308440554,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-f03d5ff70119",
+        "beforeSpreadM": 2.0795017809154785,
+        "afterSpreadM": 0.21078017456183318,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-06ef097315c3",
+        "beforeSpreadM": 2.122205343343719,
+        "afterSpreadM": 0.27215471440222316,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-d0e5dd2400a5",
+        "beforeSpreadM": 0.5324034399461013,
+        "afterSpreadM": 0.15384984776099486,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-e20a3a361408",
+        "beforeSpreadM": 1.6115030772554633,
+        "afterSpreadM": 0.09906774035983545,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-a6116c43e091",
+        "beforeSpreadM": 0.4889939261278684,
+        "afterSpreadM": 0.21595139855624979,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-610aa38e26c6",
+        "beforeSpreadM": 4.318930584100276,
+        "afterSpreadM": 0.27278472470437976,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-de38b43f14e4",
+        "beforeSpreadM": 0.5691372778880748,
+        "afterSpreadM": 0.39295177286422955,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-c3c05c230406",
+        "beforeSpreadM": 2.597307683371831,
+        "afterSpreadM": 0.3104931195154279,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-0aa75e678fbd",
+        "beforeSpreadM": 0.5286096167419494,
+        "afterSpreadM": 0.23020578632924327,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-0fb0956bf0ec",
+        "beforeSpreadM": 0.7921581739239016,
+        "afterSpreadM": 0.05441774196051341,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-0437b5c10dc7",
+        "beforeSpreadM": 1.0947301298701646,
+        "afterSpreadM": 0.1918598097706834,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-f849f4eed216",
+        "beforeSpreadM": 0.23607239839839522,
+        "afterSpreadM": 0.137130021315798,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-33852b6f532b",
+        "beforeSpreadM": 1.8187262362598169,
+        "afterSpreadM": 0.21046807259378753,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-6963a925e35a",
+        "beforeSpreadM": 0.7451795568436737,
+        "afterSpreadM": 0.2356729389699943,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-01105bcc6674",
+        "beforeSpreadM": 1.183752701587295,
+        "afterSpreadM": 0.11381705942548592,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-5fa109e835c7",
+        "beforeSpreadM": 2.1332976379893154,
+        "afterSpreadM": 0.17990221892232938,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-e4f514b5d64e",
+        "beforeSpreadM": 0.26066388227224735,
+        "afterSpreadM": 0.19560358505582087,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-046284d7a128",
+        "beforeSpreadM": 0.1240051239922586,
+        "afterSpreadM": 0.043805523140687086,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-b97e82d7a9cc",
+        "beforeSpreadM": 1.9324346217376345,
+        "afterSpreadM": 0.4994106929847639,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-ac8a5d071bcf",
+        "beforeSpreadM": 1.3361190693770535,
+        "afterSpreadM": 0.6800687954623701,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-203692c20cf8",
+        "beforeSpreadM": 0.19666120161388534,
+        "afterSpreadM": 0.027998852273629637,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-5780f2645ad1",
+        "beforeSpreadM": 0.44760885443329457,
+        "afterSpreadM": 0.09609146035261773,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-dc67cfe4f294",
+        "beforeSpreadM": 0.6314290206064648,
+        "afterSpreadM": 0.23989444601672716,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-8a97c689ee1e",
+        "beforeSpreadM": 1.099793147282611,
+        "afterSpreadM": 0.4629568602437715,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-bf460ee2a357",
+        "beforeSpreadM": 0.323071962331305,
+        "afterSpreadM": 0.24328107666319454,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-58f35dc2a6d2",
+        "beforeSpreadM": 1.9309506521152144,
+        "afterSpreadM": 0.094877526366826,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-a6d49ee940d8",
+        "beforeSpreadM": 0.18740111401046633,
+        "afterSpreadM": 0.22547525271765423,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-275608fb6560",
+        "beforeSpreadM": 0.13137520860474083,
+        "afterSpreadM": 0.17386096514100302,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-36e1a6bcfb4f",
+        "beforeSpreadM": 0.07430956194781402,
+        "afterSpreadM": 0.07997269067120882,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-33618be4c58e",
+        "beforeSpreadM": 1.0365946127882566,
+        "afterSpreadM": 0.19184414509367542,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-a9cae634594a",
+        "beforeSpreadM": 1.3148640129242324,
+        "afterSpreadM": 0.18052854040123734,
+        "afterCoverage": 1.0
+      },
+      {
+        "id": "contour-96cf9b9361d2",
+        "beforeSpreadM": 0.5626495130497418,
+        "afterSpreadM": 0.05274738821175262,
+        "afterCoverage": 1.0
+      }
+    ],
+    "interpretation": "沿线一致性检查，不是独立海拔精度验证；未输入任何人工标高。"
+  },
+  "recordings": 16,
+  "rawPoints": 22388,
+  "explicitBicycleRecords": 5,
+  "learning": [
+    {
+      "regionId": "d484df3c581f46e9",
+      "name": "大沙河公园",
+      "profiles": {
+        "foot": {
+          "tracks": 2,
+          "observations": 182,
+          "gradeLearned": false,
+          "corridorCount": 0,
+          "gradeRange": [
+            0.0,
+            0.0
+          ],
+          "residualLogMad": null
+        },
+        "bicycle": {
+          "tracks": 0,
+          "observations": 0,
+          "gradeLearned": false,
+          "corridorCount": 0,
+          "gradeRange": [
+            0.0,
+            0.0
+          ],
+          "residualLogMad": null
+        }
+      }
+    },
+    {
+      "regionId": "fccee859dfee4d5a",
+      "name": "深圳大学粤海校区",
+      "profiles": {
+        "foot": {
+          "tracks": 7,
+          "observations": 443,
+          "gradeLearned": true,
+          "corridorCount": 4,
+          "gradeRange": [
+            -0.04832112911250149,
+            0.05004640443514954
+          ],
+          "residualLogMad": 0.1212
+        },
+        "bicycle": {
+          "tracks": 5,
+          "observations": 86,
+          "gradeLearned": true,
+          "corridorCount": 7,
+          "gradeRange": [
+            -0.046425193425612764,
+            0.03937328548856598
+          ],
+          "residualLogMad": 0.1486
+        }
+      }
+    }
+  ],
+  "everyContributionViewChecked": true,
+  "noManualContourHeights": true,
+  "implementationSignature": "589bd0e6b3d72f5905638d47a654ed7afe37c78c26258c16a45192b567a59dde",
+  "allChecksPassed": true,
+  "dashaheWorkflow": {
+    "checkedAt": "2026-11-02T23:17:59Z",
+    "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+    "scope": "真实大沙河原图；上传、识别、自动道路配准、照片裁切、目标连通性与隔离工作台中的混合课程发布。道路留出误差不是现场 GPS 误差。",
+    "independentFieldValidation": false,
+    "assetId": "upload-82f7941b2e84",
+    "workingSize": [
+      4096,
+      2789
+    ],
+    "processingSec": 85.759,
+    "statistics": {
+      "buildingCandidates": 22,
+      "waterCandidates": 23,
+      "controlCandidates": 32,
+      "courseSymbolCandidates": 33,
+      "sheetPhotoCandidates": 32,
+      "contourCandidates": 133,
+      "pointSymbolCandidates": 92,
+      "pointSymbolPixels": 918,
+      "recoveredDarkInkPixels": 49427,
+      "canopyCandidates": 16,
+      "canopyBoundaryPixels": 687,
+      "forbiddenPixelFraction": 0.5402,
+      "restoredCourseInkPixels": 87990,
+      "continuedBarrierPixels": 67,
+      "continuedRoofPixels": 11045,
+      "staircaseCandidates": 0,
+      "stairTreadPixels": 0,
+      "pavedBoundaryPixels": 1020,
+      "lowerLevelHatchingPixels": 0,
+      "ocr": {
+        "available": true,
+        "recognized": 32,
+        "preserved": 0,
+        "method": "tesseract_global_and_digit_crops"
+      }
+    },
+    "controls": {
+      "count": 32,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "calibrated": 32,
+      "maxErrorAt1400pxPreview": 1.53
+    },
+    "photos": {
+      "count": 32,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "linked": 32,
+      "printedLabelLocationsMatched": true,
+      "allCropsServed": true
+    },
+    "registration": {
+      "state": "needs_review",
+      "method": "park_outline_road_network",
+      "parkReferenceId": "15626540",
+      "fitCount": 394,
+      "fitObjectCount": 28,
+      "validationCount": 155,
+      "validationObjectCount": 7,
+      "validationOmittedWayIds": [
+        "913431722"
+      ],
+      "validationTotalWays": 8,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 7.48,
+          "p95NearestPathM": 10.74,
+          "maxNearestPathM": 11.06
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.3,
+          "p95NearestPathM": 10.78,
+          "maxNearestPathM": 12.13
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.74,
+          "p95NearestPathM": 4.69,
+          "maxNearestPathM": 4.79
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.6,
+          "p95NearestPathM": 5.08,
+          "maxNearestPathM": 6.78
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.1,
+          "p95NearestPathM": 47.52,
+          "maxNearestPathM": 48.41
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 0.86,
+          "p95NearestPathM": 5.46,
+          "maxNearestPathM": 6.67
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.32,
+          "p95NearestPathM": 6.55,
+          "maxNearestPathM": 11.44
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.66,
+          "p95NearestPathM": 2.94,
+          "maxNearestPathM": 3.3
+        }
+      ],
+      "validationInsideHull": 155,
+      "medianErrorM": 3.55,
+      "p95ErrorM": 10.52,
+      "maxErrorM": 12.13,
+      "foldedTriangles": 0,
+      "validationScope": "公园轮廓提出位置，再按道路形状对齐；内部留出 8 条道路，其中 7 条能对应。误差统计仅针对能对应的路段与原图道路中心线，仍需现场核对。",
+      "roadRefinement": {
+        "fitWays": 41,
+        "retainedWays": 27,
+        "excludedWayIds": [
+          "1460036367",
+          "1460037348",
+          "1545742000",
+          "246481986",
+          "251476471",
+          "385694347",
+          "479397891",
+          "913431716",
+          "913439821",
+          "913779741",
+          "913779743",
+          "913779744",
+          "913779745",
+          "914373861"
+        ],
+        "scope": "仅用拟合道路筛选并细化；未使用留出道路或目标位置。",
+        "retainedBoundaryPoints": 15
+      },
+      "boundaryPathSamples": 22,
+      "boundaryPixelTolerance": 0.5
+    },
+    "frameOrigin": [
+      113.9566,
+      22.5599
+    ],
+    "navigation": {
+      "unresolved": [],
+      "approaches": [
+        {
+          "controlId": "c1",
+          "targetPixel": [
+            1054.4594829013097,
+            395.06725835975976
+          ],
+          "pixel": [
+            1054.4594829013097,
+            395.06725835975976
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95416437711103,
+            22.562767641665083
+          ],
+          "targetLnglat": [
+            113.95416437711103,
+            22.562767641665083
+          ]
+        },
+        {
+          "controlId": "c2",
+          "targetPixel": [
+            1487.2552623466718,
+            416.02695698235874
+          ],
+          "pixel": [
+            1487.2552623466718,
+            416.02695698235874
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.9554151693403,
+            22.562752320252937
+          ],
+          "targetLnglat": [
+            113.9554151693403,
+            22.562752320252937
+          ]
+        },
+        {
+          "controlId": "c4",
+          "targetPixel": [
+            1349.838842251597,
+            750.4518101731825
+          ],
+          "pixel": [
+            1349.838842251597,
+            750.4518101731825
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95505268783755,
+            22.561843210637562
+          ],
+          "targetLnglat": [
+            113.95505268783755,
+            22.561843210637562
+          ]
+        },
+        {
+          "controlId": "c5",
+          "targetPixel": [
+            2746.734076863442,
+            876.003877596019
+          ],
+          "pixel": [
+            2746.734076863442,
+            876.003877596019
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95909563842761,
+            22.56163860103749
+          ],
+          "targetLnglat": [
+            113.95909563842761,
+            22.56163860103749
+          ]
+        },
+        {
+          "controlId": "c6",
+          "targetPixel": [
+            1841.3701404546446,
+            969.5359086205825
+          ],
+          "pixel": [
+            1841.3701404546446,
+            969.5359086205825
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95649306909931,
+            22.56130252810561
+          ],
+          "targetLnglat": [
+            113.95649306909931,
+            22.56130252810561
+          ]
+        },
+        {
+          "controlId": "c7",
+          "targetPixel": [
+            1697.2832980854976,
+            1065.884206209917
+          ],
+          "pixel": [
+            1697.2832980854976,
+            1065.884206209917
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95608715259709,
+            22.56103075082089
+          ],
+          "targetLnglat": [
+            113.95608715259709,
+            22.56103075082089
+          ]
+        },
+        {
+          "controlId": "c8",
+          "targetPixel": [
+            2125.2585924812674,
+            1101.069998408029
+          ],
+          "pixel": [
+            2125.2585924812674,
+            1101.069998408029
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95732548266881,
+            22.560976853545668
+          ],
+          "targetLnglat": [
+            113.95732548266881,
+            22.560976853545668
+          ]
+        },
+        {
+          "controlId": "c9",
+          "targetPixel": [
+            2443.1190188334554,
+            1127.1204144852106
+          ],
+          "pixel": [
+            2443.1190188334554,
+            1127.1204144852106
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95824519123485,
+            22.56093704426267
+          ],
+          "targetLnglat": [
+            113.95824519123485,
+            22.56093704426267
+          ]
+        },
+        {
+          "controlId": "c10",
+          "targetPixel": [
+            1531.0617492789793,
+            1160.255408318901
+          ],
+          "pixel": [
+            1531.0617492789793,
+            1160.255408318901
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95561717418946,
+            22.560762182592082
+          ],
+          "targetLnglat": [
+            113.95561717418946,
+            22.560762182592082
+          ]
+        },
+        {
+          "controlId": "c12",
+          "targetPixel": [
+            1658.61315165679,
+            1476.9166727530205
+          ],
+          "pixel": [
+            1662.5,
+            1478.5
+          ],
+          "method": "point_symbol_edge",
+          "automatic": true,
+          "offsetM": 1.2461745100582555,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.9560287234441,
+            22.55992180241784
+          ],
+          "targetLnglat": [
+            113.95601734859041,
+            22.55992567837595
+          ]
+        },
+        {
+          "controlId": "c13",
+          "targetPixel": [
+            1996.5354810788563,
+            1498.6042092333953
+          ],
+          "pixel": [
+            2001.5,
+            1497.5
+          ],
+          "method": "nearby_open_ground",
+          "automatic": true,
+          "offsetM": 1.5101005084598769,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95700870559669,
+            22.559902880738168
+          ],
+          "targetLnglat": [
+            113.95699449461793,
+            22.559899453338836
+          ]
+        },
+        {
+          "controlId": "c14",
+          "targetPixel": [
+            1480.9634835285428,
+            1510.494003925732
+          ],
+          "pixel": [
+            1482.5,
+            1508.5
+          ],
+          "method": "point_symbol_edge",
+          "automatic": true,
+          "offsetM": 0.7474516863624667,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95551245218749,
+            22.559824426193448
+          ],
+          "targetLnglat": [
+            113.95550822177508,
+            22.559818937958845
+          ]
+        },
+        {
+          "controlId": "c15",
+          "targetPixel": [
+            2472.3284373440792,
+            1512.05545378386
+          ],
+          "pixel": [
+            2473.0,
+            1514.0
+          ],
+          "method": "ink_stroke_edge",
+          "automatic": true,
+          "offsetM": 0.6108428584113778,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95837071055033,
+            22.559903162301637
+          ],
+          "targetLnglat": [
+            113.95836857544109,
+            22.55990830962891
+          ]
+        },
+        {
+          "controlId": "c16",
+          "targetPixel": [
+            2630.2449482949487,
+            1512.061830066411
+          ],
+          "pixel": [
+            2630.2449482949487,
+            1512.061830066411
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95882418228655,
+            22.559923195235086
+          ],
+          "targetLnglat": [
+            113.95882418228655,
+            22.559923195235086
+          ]
+        },
+        {
+          "controlId": "c17",
+          "targetPixel": [
+            2285.6264503378707,
+            1674.309954298354
+          ],
+          "pixel": [
+            2285.6264503378707,
+            1674.309954298354
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.9578464061363,
+            22.559455905171596
+          ],
+          "targetLnglat": [
+            113.9578464061363,
+            22.559455905171596
+          ]
+        },
+        {
+          "controlId": "c18",
+          "targetPixel": [
+            1480.920050771917,
+            1787.279305913142
+          ],
+          "pixel": [
+            1485.5,
+            1785.5
+          ],
+          "method": "point_symbol_edge",
+          "automatic": true,
+          "offsetM": 1.4589114066882987,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95554925249456,
+            22.559082446277795
+          ],
+          "targetLnglat": [
+            113.95553621963509,
+            22.55907724614781
+          ]
+        },
+        {
+          "controlId": "c19",
+          "targetPixel": [
+            1934.980340087168,
+            1828.710711660083
+          ],
+          "pixel": [
+            1934.980340087168,
+            1828.710711660083
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95685044233028,
+            22.55900907447409
+          ],
+          "targetLnglat": [
+            113.95685044233028,
+            22.55900907447409
+          ]
+        },
+        {
+          "controlId": "c20",
+          "targetPixel": [
+            2376.7120220637353,
+            1832.2763643416215
+          ],
+          "pixel": [
+            2375.0,
+            1833.0
+          ],
+          "method": "ink_stroke_edge",
+          "automatic": true,
+          "offsetM": 0.551882574876018,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95812038241428,
+            22.559039105648207
+          ],
+          "targetLnglat": [
+            113.95812524825689,
+            22.55904120630317
+          ]
+        },
+        {
+          "controlId": "c21",
+          "targetPixel": [
+            2549.679235843009,
+            1960.1700618843468
+          ],
+          "pixel": [
+            2549.679235843009,
+            1960.1700618843468
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95863727218129,
+            22.558714819004624
+          ],
+          "targetLnglat": [
+            113.95863727218129,
+            22.558714819004624
+          ]
+        },
+        {
+          "controlId": "c22",
+          "targetPixel": [
+            1737.6082087653435,
+            2005.5992357798903
+          ],
+          "pixel": [
+            1737.6082087653435,
+            2005.5992357798903
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95629897541717,
+            22.55851644900756
+          ],
+          "targetLnglat": [
+            113.95629897541717,
+            22.55851644900756
+          ]
+        },
+        {
+          "controlId": "c23",
+          "targetPixel": [
+            1212.3890915551553,
+            2106.2336350521405
+          ],
+          "pixel": [
+            1220.5,
+            2114.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 3.4386635239280254,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95481812737788,
+            22.558175833217526
+          ],
+          "targetLnglat": [
+            113.95479388661472,
+            22.558197218749548
+          ]
+        },
+        {
+          "controlId": "c24",
+          "targetPixel": [
+            2680.394050228227,
+            2121.277427149239
+          ],
+          "pixel": [
+            2683.0,
+            2121.0
+          ],
+          "method": "ink_tip_edge",
+          "automatic": true,
+          "offsetM": 0.7781382492860461,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95903825834861,
+            22.55829643264829
+          ],
+          "targetLnglat": [
+            113.95903076809033,
+            22.558295443315338
+          ]
+        },
+        {
+          "controlId": "c25",
+          "targetPixel": [
+            2108.3003222649304,
+            2129.600211991107
+          ],
+          "pixel": [
+            2108.3003222649304,
+            2129.600211991107
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95738106151667,
+            22.55821915227749
+          ],
+          "targetLnglat": [
+            113.95738106151667,
+            22.55821915227749
+          ]
+        },
+        {
+          "controlId": "c26",
+          "targetPixel": [
+            2390.2194672508062,
+            2135.482153925258
+          ],
+          "pixel": [
+            2390.0,
+            2127.0
+          ],
+          "method": "nearby_open_ground",
+          "automatic": true,
+          "offsetM": 2.5193876092518486,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95819353132742,
+            22.55825270413237
+          ],
+          "targetLnglat": [
+            113.9581950263556,
+            22.558229995640566
+          ]
+        },
+        {
+          "controlId": "c27",
+          "targetPixel": [
+            1507.7647067891821,
+            2203.3624308516755
+          ],
+          "pixel": [
+            1497.5,
+            2197.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 3.509877195195498,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95562573564305,
+            22.557979562959318
+          ],
+          "targetLnglat": [
+            113.955655946092,
+            22.557964822384566
+          ]
+        },
+        {
+          "controlId": "c28",
+          "targetPixel": [
+            1750.9495959394228,
+            2295.7519514747173
+          ],
+          "pixel": [
+            1749.5,
+            2293.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 0.7952107472025088,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95636253709056,
+            22.55774609798454
+          ],
+          "targetLnglat": [
+            113.95636694814424,
+            22.557740200342344
+          ]
+        },
+        {
+          "controlId": "c29",
+          "targetPixel": [
+            2683.9463698581753,
+            2327.7349765789563
+          ],
+          "pixel": [
+            2683.9463698581753,
+            2327.7349765789563
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95906199433219,
+            22.557742544594486
+          ],
+          "targetLnglat": [
+            113.95906199433219,
+            22.557742544594486
+          ]
+        },
+        {
+          "controlId": "c30",
+          "targetPixel": [
+            2133.581910113056,
+            2379.8427656910408
+          ],
+          "pixel": [
+            2133.581910113056,
+            2379.8427656910408
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95747942788354,
+            22.55755097567981
+          ],
+          "targetLnglat": [
+            113.95747942788354,
+            22.55755097567981
+          ]
+        },
+        {
+          "controlId": "c31",
+          "targetPixel": [
+            1245.9675044441556,
+            2385.4042019118906
+          ],
+          "pixel": [
+            1261.5,
+            2377.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 5.174767138220178,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.9549631393009,
+            22.557474954487517
+          ],
+          "targetLnglat": [
+            113.95491912949066,
+            22.55745230818095
+          ]
+        },
+        {
+          "controlId": "c32",
+          "targetPixel": [
+            1888.3925986022198,
+            2414.968386107449
+          ],
+          "pixel": [
+            1889.5,
+            2437.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 6.698224903968931,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95678108354497,
+            22.55737344029472
+          ],
+          "targetLnglat": [
+            113.95677559921528,
+            22.55743371262583
+          ]
+        },
+        {
+          "controlId": "c33",
+          "targetPixel": [
+            1406.3043671100982,
+            2451.727551777601
+          ],
+          "pixel": [
+            1405.5,
+            2433.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 5.417442555647751,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95538428482111,
+            22.55733848347345
+          ],
+          "targetLnglat": [
+            113.95538845754372,
+            22.557289715924483
+          ]
+        },
+        {
+          "controlId": "c34",
+          "targetPixel": [
+            2009.2193287830426,
+            2602.899323837383
+          ],
+          "pixel": [
+            2009.2193287830426,
+            2602.899323837383
+          ],
+          "method": "exact",
+          "automatic": false,
+          "offsetM": 0.0,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95714329238055,
+            22.556941526007268
+          ],
+          "targetLnglat": [
+            113.95714329238055,
+            22.556941526007268
+          ]
+        }
+      ],
+      "allPairsConnected": true,
+      "unresolvedLabels": [],
+      "roadsideArrivals": [
+        {
+          "label": "56",
+          "controlId": "c13",
+          "targetPixel": [
+            1996.5354810788563,
+            1498.6042092333953
+          ],
+          "pixel": [
+            2001.5,
+            1497.5
+          ],
+          "method": "nearby_open_ground",
+          "automatic": true,
+          "offsetM": 1.5101005084598769,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95700870559669,
+            22.559902880738168
+          ],
+          "targetLnglat": [
+            113.95699449461793,
+            22.559899453338836
+          ]
+        },
+        {
+          "label": "43",
+          "controlId": "c23",
+          "targetPixel": [
+            1212.3890915551553,
+            2106.2336350521405
+          ],
+          "pixel": [
+            1220.5,
+            2114.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 3.4386635239280254,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95481812737788,
+            22.558175833217526
+          ],
+          "targetLnglat": [
+            113.95479388661472,
+            22.558197218749548
+          ]
+        },
+        {
+          "label": "49",
+          "controlId": "c26",
+          "targetPixel": [
+            2390.2194672508062,
+            2135.482153925258
+          ],
+          "pixel": [
+            2390.0,
+            2127.0
+          ],
+          "method": "nearby_open_ground",
+          "automatic": true,
+          "offsetM": 2.5193876092518486,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95819353132742,
+            22.55825270413237
+          ],
+          "targetLnglat": [
+            113.9581950263556,
+            22.558229995640566
+          ]
+        },
+        {
+          "label": "44",
+          "controlId": "c27",
+          "targetPixel": [
+            1507.7647067891821,
+            2203.3624308516755
+          ],
+          "pixel": [
+            1497.5,
+            2197.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 3.509877195195498,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95562573564305,
+            22.557979562959318
+          ],
+          "targetLnglat": [
+            113.955655946092,
+            22.557964822384566
+          ]
+        },
+        {
+          "label": "42",
+          "controlId": "c28",
+          "targetPixel": [
+            1750.9495959394228,
+            2295.7519514747173
+          ],
+          "pixel": [
+            1749.5,
+            2293.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 0.7952107472025088,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95636253709056,
+            22.55774609798454
+          ],
+          "targetLnglat": [
+            113.95636694814424,
+            22.557740200342344
+          ]
+        },
+        {
+          "label": "41",
+          "controlId": "c31",
+          "targetPixel": [
+            1245.9675044441556,
+            2385.4042019118906
+          ],
+          "pixel": [
+            1261.5,
+            2377.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 5.174767138220178,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.9549631393009,
+            22.557474954487517
+          ],
+          "targetLnglat": [
+            113.95491912949066,
+            22.55745230818095
+          ]
+        },
+        {
+          "label": "46",
+          "controlId": "c32",
+          "targetPixel": [
+            1888.3925986022198,
+            2414.968386107449
+          ],
+          "pixel": [
+            1889.5,
+            2437.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 6.698224903968931,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95678108354497,
+            22.55737344029472
+          ],
+          "targetLnglat": [
+            113.95677559921528,
+            22.55743371262583
+          ]
+        },
+        {
+          "label": "47",
+          "controlId": "c33",
+          "targetPixel": [
+            1406.3043671100982,
+            2451.727551777601
+          ],
+          "pixel": [
+            1405.5,
+            2433.5
+          ],
+          "method": "nearby_road",
+          "automatic": true,
+          "offsetM": 5.417442555647751,
+          "surfaceId": "ground",
+          "lnglat": [
+            113.95538428482111,
+            22.55733848347345
+          ],
+          "targetLnglat": [
+            113.95538845754372,
+            22.557289715924483
+          ]
+        }
+      ],
+      "automaticApproachLabels": [
+        "33",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "49",
+        "51",
+        "53",
+        "56",
+        "60",
+        "61"
+      ],
+      "coveredPassage52": {
+        "keepsCircleCentre": true,
+        "northAndSouthConnected": true
+      }
+    },
+    "overlayScope": "full-sheet",
+    "courseWorkflow": {
+      "scope": "仅在隔离测试工作台模拟教师确认自动到访建议和核验；不代表现场通行已确认。",
+      "mode": "mixed_coverage",
+      "teams": 3,
+      "mandatoryLabels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ],
+      "sharedLabels": [
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "coverageVerified": true,
+      "excludedRestrictedLabels": [],
+      "targetCount": 32,
+      "planStatus": "FEASIBLE",
+      "uniqueLegalEdgesChecked": 5572,
+      "referencePhotosPublished": 32,
+      "releaseId": "fc0c5ed0f3f64b618addd34554f998ff",
+      "automaticApproachesConfirmed": 14
+    },
+    "automaticContours": {
+      "schema": "printed-equal-height-v1",
+      "trackId": "d5bb53f3c8d394855bbcbc1c3656e22b844a65e6407ea2bbcc06052c48120a80",
+      "used": 131,
+      "pending": 2,
+      "registrationStamp": "8f2f0dabf5f930866d797a9ba7398563e72aaa41468da8cfe3aa5cde93b294c7"
+    },
+    "implementationSignature": "589bd0e6b3d72f5905638d47a654ed7afe37c78c26258c16a45192b567a59dde",
+    "allChecksPassed": true
+  },
+  "serverSavedArrivals": {
+    "sourceHash": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+    "serverMapVersion": 21,
+    "targets": 32,
+    "manualArrivals": 15,
+    "unresolved": [],
+    "allPairsConnected": true,
+    "preservedAllSavedArrivals": true,
+    "legalEdgesChecked": 7859
+  },
+  "verification": {
+    "backend": {
+      "tests": 472,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frontend": {
+      "tests": 36,
+      "failures": 0
+    },
+    "browserFull": {
+      "tests": 64,
+      "failures": 0,
+      "log": "/tmp/dirmap-efficiency-browser-full.log",
+      "note": "64 full browser flows passed before the roadside follow-up; related workflows and real-sheet navigation rechecked for that follow-up."
+    },
+    "browserFinalRelated": {
+      "tests": 5,
+      "failures": 0,
+      "scope": "final display scoping and excluded-source checks after the full suite",
+      "log": "/tmp/dirmap-efficiency-browser-final.log"
+    },
+    "productionBuild": true,
+    "offlineRegression": {
+      "before": "alternate style absent after saving",
+      "after": "prefetched and decoded after network was disabled"
+    },
+    "backendReport": "/tmp/dirmap-road-arrival-python-final.xml",
+    "browserRelatedUniqueTests": 7,
+    "overlayRefresh": {
+      "tests": 4,
+      "failures": 0,
+      "log": "/tmp/dirmap-efficiency-layer-refresh.log",
+      "scope": "refresh displayed artifact after a new contribution while the map stays open"
+    },
+    "automaticOverlayAndRecovery": {
+      "tests": 3,
+      "failures": 0,
+      "log": "/tmp/dirmap-efficiency-auto-overlay.log",
+      "scope": "recognition completion updates the visible height overlay without a reload or layer toggle; task recovery remains intact"
+    },
+    "roadsideRegression": {
+      "targetedTests": 44,
+      "failures": 0,
+      "browsers": 9,
+      "newRoadsideFlow": "/tmp/dirmap-road-arrival-ui-final-code.log",
+      "relatedFlows": "/tmp/dirmap-road-arrival-browser-suite.log",
+      "note": "Eight related flows passed together; the new roadside arrival browser flow was fixed and separately passed. Final semantic map also reverified on the real sheet."
+    }
+  },
+  "browser": {
+    "checkedAt": "2026-11-02T13:03:41.401Z",
+    "source": "16 real KML recordings and automatically recognized Dashahe contours in a local copy",
+    "screenshots": [
+      "/tmp/dirmap-efficiency-visual/real-shared-3d.png",
+      "/tmp/dirmap-efficiency-visual/real-single-track.png",
+      "/tmp/dirmap-efficiency-visual/real-track-mobile.png",
+      "/tmp/dirmap-efficiency-visual/real-automatic-contours-mobile.png",
+      "/tmp/dirmap-efficiency-visual/real-course-contour-overlay.png",
+      "/tmp/dirmap-efficiency-visual/real-contours-offline.png"
+    ],
+    "desktopAndMobile": true,
+    "contourOnlyOverlay": true,
+    "frozenCourseOverlay": true,
+    "threeDimensionalContours": true,
+    "singleContributionOnly": true,
+    "sourceVersionUnchangedByViewing": true,
+    "travelComposition": true,
+    "contourStylePrefetchedAndDecodedOffline": true,
+    "errors": [],
+    "allChecksPassed": true
+  },
+  "deployment": "Ready for authorized main push and production deployment; production verification is recorded separately",
+  "requirementAudit": [
+    {
+      "item": 1,
+      "verified": true,
+      "evidence": "Unlabelled lines automatically stored and reconstructed after recognition/anchors; 131 real curves used without any manual heights; isolated lines await reference; repeat/recovery/source cleanup tests passed. Recognition completion refreshes the already visible map overlay without reloading."
+    },
+    {
+      "item": 2,
+      "verified": true,
+      "evidence": "Olive stays blocked, brown contour strokes in olive do not form routes, narrow paved paths remain open, all 32 targets get legal arrivals and connect; all 15 saved production arrivals preserved in the current map copy."
+    },
+    {
+      "item": 3,
+      "verified": true,
+      "evidence": "Vertical station/target labels, explicit up/down/remove and endpoints; order survives reload; actual desktop screenshot and phone custom-route regression."
+    },
+    {
+      "item": 4,
+      "verified": true,
+      "evidence": "Both raster styles served for shared/frozen/live models; 3D contour buffer verified and rendered pixels change on toggle; matching 2D/3D levels and gaps tested; first-use offline alternate style cached and decoded. Open maps load the newly reconstructed artifact instead of retaining the initial catalogue."
+    },
+    {
+      "item": 5,
+      "verified": true,
+      "evidence": "Every real contribution queried independently; only selected ownership indexes shown on surface; per-record height/speed/correction/filter statistics; view leaves catalogue version unchanged; excluded records do not display others learning plots."
+    },
+    {
+      "item": 6,
+      "verified": true,
+      "evidence": "Real source counts, per-region samples, fitted grade curve, corridor efficiency map and support tables, personal pace stages, route moving/service/waiting composition; insufficient data and training scatter labelled."
+    },
+    {
+      "item": 7,
+      "verified": true,
+      "evidence": "walk/run/foot labels pooled; mixed-speed windows retain one foot mode and independent pace stages; personal pace changes do not alter corridor effects; bicycles isolated; legacy frozen model costs/hash retained."
+    },
+    {
+      "item": "followup",
+      "verified": true,
+      "evidence": "Automatic nearby arrivals implemented; 32/32 target pairs connected; original circle centres and saved approach coordinates preserved; pushing and production validation are the remaining publishing steps."
+    }
+  ],
+  "completedAt": "2026-11-02T23:20:11Z",
+  "sourceCodeSha256": "6831f44ed9075aaf1c0cdc72a917e09e757962705c8f6b55f5964516be70b15f",
+  "roadsideBrowser": {
+    "checkedAt": "2026-11-02T23:20:25.593Z",
+    "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+    "implementationSignature": "589bd0e6b3d72f5905638d47a654ed7afe37c78c26258c16a45192b567a59dde",
+    "scope": "真实大沙河图的桌面核对、手机尺寸参考照片、32 张照片离线重载；浏览器模拟不代表真机或现场定位验收。",
+    "teacherControlLabels": [
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "51",
+      "52",
+      "53",
+      "54",
+      "55",
+      "56",
+      "57",
+      "58",
+      "59",
+      "60",
+      "61",
+      "62"
+    ],
+    "contourCandidates": 133,
+    "editorReference": {
+      "label": "33",
+      "visibleDuringPointPreview": true,
+      "photoViewerPreservedPendingPoint": true,
+      "smallScreens": [
+        {
+          "width": 375,
+          "height": 667,
+          "contentHeight": 681,
+          "visibleHeight": 645,
+          "overflow": "auto",
+          "saveReachableByScrolling": true
+        },
+        {
+          "width": 360,
+          "height": 640,
+          "contentHeight": 676,
+          "visibleHeight": 619,
+          "overflow": "auto",
+          "saveReachableByScrolling": true
+        }
+      ],
+      "landscape": {
+        "contentHeight": 609,
+        "visibleHeight": 376,
+        "overflow": "auto"
+      }
+    },
+    "target52Method": "exact",
+    "target52Pixel": [
+      2285.6264503378707,
+      1674.309954298354
+    ],
+    "photosLoadedOffline": [
+      {
+        "label": "41",
+        "width": 405,
+        "height": 299
+      },
+      {
+        "label": "42",
+        "width": 408,
+        "height": 299
+      },
+      {
+        "label": "43",
+        "width": 407,
+        "height": 299
+      },
+      {
+        "label": "32",
+        "width": 405,
+        "height": 305
+      },
+      {
+        "label": "31",
+        "width": 401,
+        "height": 305
+      },
+      {
+        "label": "44",
+        "width": 405,
+        "height": 307
+      },
+      {
+        "label": "45",
+        "width": 408,
+        "height": 307
+      },
+      {
+        "label": "46",
+        "width": 407,
+        "height": 307
+      },
+      {
+        "label": "33",
+        "width": 403,
+        "height": 303
+      },
+      {
+        "label": "34",
+        "width": 406,
+        "height": 306
+      },
+      {
+        "label": "48",
+        "width": 403,
+        "height": 307
+      },
+      {
+        "label": "49",
+        "width": 407,
+        "height": 307
+      },
+      {
+        "label": "47",
+        "width": 399,
+        "height": 303
+      },
+      {
+        "label": "35",
+        "width": 403,
+        "height": 305
+      },
+      {
+        "label": "36",
+        "width": 404,
+        "height": 305
+      },
+      {
+        "label": "51",
+        "width": 408,
+        "height": 309
+      },
+      {
+        "label": "52",
+        "width": 403,
+        "height": 309
+      },
+      {
+        "label": "50",
+        "width": 401,
+        "height": 303
+      },
+      {
+        "label": "38",
+        "width": 406,
+        "height": 305
+      },
+      {
+        "label": "37",
+        "width": 405,
+        "height": 298
+      },
+      {
+        "label": "54",
+        "width": 403,
+        "height": 314
+      },
+      {
+        "label": "55",
+        "width": 407,
+        "height": 314
+      },
+      {
+        "label": "53",
+        "width": 401,
+        "height": 303
+      },
+      {
+        "label": "39",
+        "width": 405,
+        "height": 271
+      },
+      {
+        "label": "40",
+        "width": 412,
+        "height": 298
+      },
+      {
+        "label": "57",
+        "width": 403,
+        "height": 314
+      },
+      {
+        "label": "58",
+        "width": 407,
+        "height": 314
+      },
+      {
+        "label": "56",
+        "width": 399,
+        "height": 303
+      },
+      {
+        "label": "59",
+        "width": 399,
+        "height": 305
+      },
+      {
+        "label": "60",
+        "width": 406,
+        "height": 305
+      },
+      {
+        "label": "61",
+        "width": 408,
+        "height": 305
+      },
+      {
+        "label": "62",
+        "width": 407,
+        "height": 305
+      }
+    ],
+    "screenshots": [
+      "/tmp/dirmap-road-arrival-current-browser/teacher-registration.png",
+      "/tmp/dirmap-road-arrival-current-browser/printed-contours.png",
+      "/tmp/dirmap-road-arrival-current-browser/teacher-reference-beside-map.png",
+      "/tmp/dirmap-road-arrival-current-browser/teacher-reference-375x667.png",
+      "/tmp/dirmap-road-arrival-current-browser/teacher-reference-360x640.png",
+      "/tmp/dirmap-road-arrival-current-browser/teacher-reference-during-point-preview.png",
+      "/tmp/dirmap-road-arrival-current-browser/teacher-reference-landscape.png",
+      "/tmp/dirmap-road-arrival-current-browser/student-reference-52.png",
+      "/tmp/dirmap-road-arrival-current-browser/student-reference-album.png",
+      "/tmp/dirmap-road-arrival-current-browser/student-reference-62.png",
+      "/tmp/dirmap-road-arrival-current-browser/student-reference-offline.png"
+    ],
+    "allChecksPassed": true
+  }
+}

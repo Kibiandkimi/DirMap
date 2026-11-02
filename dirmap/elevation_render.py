@@ -20,7 +20,7 @@ def contour_step(low, high):
     return 10. if span > 60 else 5. if span > 25 else 2.
 
 
-def relief(height, spacing, max_side=MAX_SIDE):
+def relief(height, spacing, max_side=MAX_SIDE, style='relief'):
     """RGBA image for a node grid whose row 0 is the southern edge."""
     grid = np.flipud(np.asarray(height, float))
     valid = np.isfinite(grid)
@@ -52,8 +52,8 @@ def relief(height, spacing, max_side=MAX_SIDE):
     step = contour_step(low, high)
     level = np.floor(surface/step)
     line = np.zeros(level.shape, bool)
-    line[:, 1:] |= level[:, 1:] != level[:, :-1]
-    line[1:] |= level[1:] != level[:-1]
+    line[:, 1:] |= (level[:, 1:] != level[:, :-1]) & support[:, 1:] & support[:, :-1]
+    line[1:] |= (level[1:] != level[:-1]) & support[1:] & support[:-1]
     index_line = np.zeros(level.shape, bool)
     major = np.floor(surface/(5*step))
     index_line[:, 1:] |= major[:, 1:] != major[:, :-1]
@@ -63,11 +63,14 @@ def relief(height, spacing, max_side=MAX_SIDE):
     result = np.zeros((size[1], size[0], 4), np.uint8)
     result[..., :3] = np.clip(colour, 0, 255).astype(np.uint8)
     result[..., 3] = np.where(support, 255, 0)
+    if style == 'contours':
+        result[..., :3] = [65, 57, 32]
+        result[..., 3] = np.where(support & line, np.where(index_line, 255, 220), 0)
     return result
 
 
 @lru_cache(maxsize=16)
-def relief_png(path, modified, fallback_spacing=10.):
+def relief_png(path, modified, fallback_spacing=10., style='relief'):
     """PNG bytes of a model file; `modified` keys the cache to the file.
 
     Models record their grid spacing; the earliest ones did not, and only
@@ -76,7 +79,7 @@ def relief_png(path, modified, fallback_spacing=10.):
     with np.load(path, allow_pickle=False) as data:
         height = data['height']
         spacing = float(data['spacing']) if 'spacing' in data.files else fallback_spacing
-    rgba = relief(height, spacing)
+    rgba = relief(height, spacing, style=style)
     ok, encoded = cv2.imencode('.png', cv2.cvtColor(rgba, cv2.COLOR_RGBA2BGRA))
     if not ok:
         raise ValueError('高程图生成失败')

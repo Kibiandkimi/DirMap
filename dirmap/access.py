@@ -321,7 +321,123 @@ class AccessResolver:
                 break
         return candidates
 
+    def _road_approach(self, control, required_component):
+        """Associate a printed target with nearby reachable ground.
+
+        The association is not a walk from the circle centre. Only the
+        returned road point connects to the graph. Private green therefore
+        stays closed, including between two automatically adjusted targets.
+        """
+        olive = self.semantics.get('olive')
+        if (olive is None or control.get('approachPixel') or control.get('role', 'control') != 'control'
+                or control['id'] in ('start', 'finish')):
+            return None
+        point = np.asarray(control['pixel'], float)
+        world, valid = self.registration.forward([point])
+        x, y = np.rint(point).astype(int)
+        height, width = self.graph.costs.shape
+        if not valid[0] or not (0 <= x < width and 0 <= y < height):
+            return None
+        closed = getattr(self.graph, 'closed_edits', None)
+        prohibited = self.semantics.get('prohibited')
+        for mask in (self.semantics.get('water'), prohibited, closed):
+            if mask is not None and mask[y, x]:
+                return None
+        # This fallback concerns circles on/near private green, not arbitrary
+        # relocations of ambiguous buildings, lakes or targets behind walls.
+        near = max(2, int(np.ceil(2/self.scale)))
+        if not olive[max(0, y-near):y+near+1, max(0, x-near):x+near+1].any():
+            return None
+        radius = float(control.get('radiusPx', 15))
+        limit = min(15., radius*self.scale*1.4)
+        reach = int(np.ceil(min(radius*1.4, limit/self.scale)))
+        x0, y0, x1, y1 = max(0, x-reach), max(0, y-reach), min(width, x+reach+1), min(height, y+reach+1)
+        # Paving is preferred. White/yellow open ground on the same legal
+        # network is also usable, e.g. the court side of a fenced boundary.
+        ground = (self.graph.costs[y0:y1, x0:x1] > 0) & (self.graph.costs[y0:y1, x0:x1] < 1.2)
+        if self.semantics.get('open_ground') is not None:
+            ground &= self.semantics['open_ground'][y0:y1, x0:x1]
+        # Require actual area support, not a single-pixel contour, a page
+        # annotation, or compression speckles connected to a road far away.
+        core = cv2.erode(ground.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0
+        area_support = cv2.dilate(core.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0
+        # A genuinely narrow printed path can be less than three pixels
+        # wide. Its pale paving ink is evidence even without an area core;
+        # brown contours have neither pale ground nor paving evidence.
+        if self.semantics.get('paved') is not None:
+            area_support |= self.semantics['paved'][y0:y1, x0:x1]
+        ground &= area_support
+        paving_core = (cv2.erode((self.semantics['paved'][y0:y1, x0:x1] > 0).astype(np.uint8),
+                               np.ones((3, 3), np.uint8)) > 0) if self.semantics.get('paved') is not None else np.zeros(ground.shape, bool)
+        _, labels, stats, _ = cv2.connectedComponentsWithStats(ground.astype(np.uint8), 8)
+        keep = np.zeros(len(stats), bool)
+        for i, (_, _, w, h, area) in enumerate(stats[1:], 1):
+            keep[i] = area >= max(6, .5/self.scale**2) and max(w, h)*self.scale >= min(4., limit*.5)
+        ground = keep[labels]
+        nodes = np.asarray(self.graph.tree.query_ball_point(point, reach), int)
+        if getattr(self.graph, 'node_surfaces', None) is not None:
+            nodes = nodes[self.graph.node_surfaces[nodes] == self.graph.surface_order.index('ground')]
+        if not len(nodes):
+            return None
+        pixels = np.rint(self.graph.pixels[nodes]).astype(int)
+        inside = (pixels[:, 0] >= x0) & (pixels[:, 0] < x1) & (pixels[:, 1] >= y0) & (pixels[:, 1] < y1)
+        nodes, pixels = nodes[inside], pixels[inside]
+        take = ground[pixels[:, 1]-y0, pixels[:, 0]-x0]
+        if required_component is not None:
+            take &= self.graph.components[nodes] == required_component
+        nodes, pixels = nodes[take], pixels[take]
+        if not len(nodes):
+            return None
+        distance = np.linalg.norm(self.graph.local[nodes]-world[0], axis=1)
+        on_paving = paving_core[pixels[:, 1]-y0, pixels[:, 0]-x0]
+        # A small preference for a drawn path must not move a target to a
+        # remote road instead of the open ground immediately beside it.
+        order = np.lexsort((nodes, distance, distance+np.where(on_paving, 0., 2.)))
+        own = next((f for kind in ('point_ink', 'vegetation', 'building')
+                    if (f := self._feature(kind, point, radius)) is not None), None)
+        if own is None:
+            own = self._ink_feature(point, radius)
+        for index in order:
+            if distance[index] > limit:
+                continue
+            node = int(nodes[index]); end = self.graph.pixels[node]
+            ray = segment_pixels(point, end)
+            rx, ry = ray.T
+            if any(mask is not None and mask[ry, rx].any() for mask in (self.semantics.get('water'), prohibited, closed)):
+                continue
+            owned = self._over_symbol(own, ray) if own is not None else np.zeros(len(ray), bool)
+            from_target = np.linalg.norm(ray-point, axis=1)*self.scale
+            if own is not None and own['kind'] == 'building':
+                owned &= from_target <= 3.
+            ink = self.semantics.get('point_ink')
+            roof = self.semantics.get('building')
+            # The circle can straddle its own thin printed rim. A separate
+            # wall farther along the association remains a barrier.
+            if ink is not None and np.any((ink[ry, rx] > 0) & ~owned & (from_target > .8)):
+                continue
+            if roof is not None and np.any((roof[ry, rx] > 0) & ~owned):
+                continue
+            try:
+                if self.graph.snap(end, max_distance_px=1, surface_id='ground') != node:
+                    continue
+            except ValueError:
+                continue
+            return {'node': node, 'pixel': end.astype(float).tolist(), 'local': self.graph.local[node].tolist(),
+                    'method': 'nearby_road' if on_paving[index] else 'nearby_open_ground', 'featureKind': 'restricted_boundary',
+                    'offsetM': float(distance[index]), 'automatic': True, 'reviewRequired': True,
+                    'targetPixel': list(control['pixel'])}
+        return None
+
     def resolve(self, control, required_component=None):
+        try:
+            return self._resolve_symbol(control, required_component)
+        except ValueError:
+            nearby = self._road_approach(control, required_component)
+            if nearby is not None:
+                return nearby
+            raise
+
+    def _resolve_symbol(self, control, required_component=None):
         point = np.asarray(control.get('approachPixel') or control['pixel'], dtype=float)
         world, valid = self.registration.forward([point])
         if not valid[0]:
@@ -352,6 +468,22 @@ class AccessResolver:
             feature = self._ink_feature(point, radius)
         if feature is None:
             raise ValueError('圈心处的地物或通行侧不明确，请核对实际到访位置')
+        if feature['method'] == 'point_symbol_edge' and self.semantics.get('restricted') is not None:
+            # A small olive patch can have JPEG holes around its black point
+            # symbol. Broad angular evidence enclosing the symbol is still
+            # a forbidden area; a one-pixel gap must not license an automatic
+            # approach. An area on only one side does not satisfy this check.
+            reach = max(4, min(14, round(max(feature['symbol'].shape)/2+3)))
+            x0, y0 = max(0, x-reach), max(0, y-reach)
+            x1, y1 = min(self.graph.costs.shape[1], x+reach+1), min(self.graph.costs.shape[0], y+reach+1)
+            yy, xx = np.mgrid[y0:y1, x0:x1]
+            dx, dy = xx-point[0], yy-point[1]
+            annulus = (dx*dx+dy*dy <= reach*reach) & (dx*dx+dy*dy >= 4)
+            area = (self.semantics['restricted'][y0:y1, x0:x1] > 0) & annulus
+            if area.sum() > .2*max(1, annulus.sum()):
+                sectors = np.floor((np.arctan2(dy[area], dx[area])+np.pi)*4/np.pi).astype(int) % 8
+                if len(np.unique(sectors)) >= 7:
+                    raise ValueError('目标地物被禁入区域包围，请核对点位；不能跨禁区自动接入道路')
         feature = self._complete_outline(feature, radius)
         nearby = self.graph.tree.query_ball_point(point, feature['limitM']/max(self.scale, .1)+2)
         if not feature.get('stroke'):

@@ -135,8 +135,10 @@ def test_card_numbers_recover_isolated_panels_but_not_printed_instructions():
     assert all(p['pixelBox'][1] > 160 for p in completed)
 
 
-def test_saturated_park_vegetation_does_not_open_muted_campus_out_of_bounds_fill():
-    image = np.array([[[24, 178, 161], [25, 175, 167], [78, 201, 187], [20, 100, 120]]], np.uint8)
+def test_park_and_campus_olive_are_restricted_but_bright_green_is_traversable():
+    # Sampled from the real park's olive areas and its three vegetation inks.
+    image = np.array([[[24, 178, 161], [25, 175, 167], [78, 201, 187], [20, 100, 120],
+                      [112, 232, 128], [24, 216, 48], [176, 240, 192]]], np.uint8)
     masks = colour_masks(image)
-    np.testing.assert_array_equal(masks['olive'][0] > 0, [False, False, True, True])
-    assert np.all(masks['green'][0, :2] > 0)
+    np.testing.assert_array_equal(masks['olive'][0] > 0, [True, True, True, True, False, False, False])
+    assert np.all(masks['green'][0, 4:] > 0)

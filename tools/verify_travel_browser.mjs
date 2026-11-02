@@ -23,7 +23,7 @@ try {
   assert.equal(status.needsRebuild, false);
   await page.goto(base + '/elevation', { waitUntil: 'domcontentloaded' });
   await page.locator('#height-empty').waitFor({ state: 'hidden' });
-  await page.locator('#height-travel table').waitFor();
+  await page.locator('#height-travel .learning-chart').first().waitFor();
   await page.locator('#height-map').click();
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   assert.equal(await page.locator('.height-track').count(), 16);
@@ -40,7 +40,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(base + '/', { waitUntil: 'domcontentloaded' });
   await page.locator('.control-row').first().waitFor();
-  await page.locator('#travel-mode').selectOption('walk');
+  assert.equal(await page.locator('#travel-mode').inputValue(), 'foot');
   await page.locator('#people').fill('2');
   await page.locator('#teams').fill('1');
   await page.locator('#speed').fill('1.2');

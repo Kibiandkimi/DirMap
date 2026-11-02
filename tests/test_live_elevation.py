@@ -58,6 +58,11 @@ def test_phones_build_a_temporary_terrain_that_routes_and_the_shared_terrain_do_
     assert image.status_code == 200 and image.headers['cache-control'].endswith('immutable')
     with Image.open(io.BytesIO(image.content)) as relief:
         assert relief.mode == 'RGBA' and np.asarray(relief)[..., 3].max() == 255
+        filled = np.count_nonzero(np.asarray(relief)[..., 3])
+    lines = client.get(f"/api/releases/{release_id}/live-elevation/{model['artifact']}.png?style=contours")
+    assert lines.status_code == 200
+    with Image.open(io.BytesIO(lines.content)) as contour_image:
+        assert 0 < np.count_nonzero(np.asarray(contour_image)[..., 3]) < filled
     path = live_elevation.artifact_path(release_id, model['artifact'])
     with np.load(path) as arrays:
         heights = elevation.HeightModel(model, {'height': arrays['height']}).sample(Frame().to_lnglat(np.mgrid[40:260:20, 40:260:20].reshape(2, -1).T))

@@ -58,7 +58,7 @@ def test_activity_edit_requires_ownership_and_rebuilds_travel_not_terrain(client
     identifier = receipt['added'][0]
     before = client.get('/api/elevation').json()
     height = before['regions'][0]['fingerprint']
-    assert before['tracks'][0]['speedLearning']['inferredActivity'] == 'walk'
+    assert before['tracks'][0]['speedLearning']['inferredActivity'] == 'foot'
     changed = client.patch('/api/elevation/tracks/'+identifier, json={'version': before['version'], 'activity': 'bicycle'})
     assert changed.status_code == 200, changed.text
     job = wait_job(client, changed.json()['job']['id']); assert job['state'] == 'succeeded', job

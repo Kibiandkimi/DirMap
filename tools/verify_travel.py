@@ -59,7 +59,7 @@ def evaluate_recording(track, others):
     rows, summary = travel_model.observations(track, frame, sampler)
     record = {'id': track['id'], 'fileName': track['fileName'], 'activity': summary['inferredActivity'],
               'trainingRecordings': len(others), 'observationCount': len(rows)}
-    if summary['inferredActivity'] not in ('walk', 'run', 'bicycle') or len(rows) < 12:
+    if summary['inferredActivity'] not in travel_model.MODES or len(rows) < 12:
         return {**record, 'excluded': summary['reason'] if len(rows) >= 12 else 'too_few_moving_windows'}, None
     split = max(3, int(np.ceil(len(rows)*.25)))
     duration = np.array([r['seconds'] for r in rows])
@@ -122,9 +122,9 @@ def main():
     tracks, inventory = read_tracks(args.inputs, labels)
     report = {'schema': travel_model.SCHEMA, 'inventory': inventory,
               'validation': 'leave-one-recording-out; terrain and travel model refitted on other recordings only; first 25% of held-out moving windows calibrate pace; score remaining 75%',
-              'limitations': ['GPS-only walking inference remains uncertain; fast unlabelled records excluded.',
+              'limitations': ['GPS-only foot/bicycle inference remains uncertain; ambiguous unlabelled records excluded.',
                               'Errors describe moving windows, not stops or a guarantee for a new person.',
-                              'Few independent recordings; running has no confirmed training records.'], 'regions': []}
+                              'Few independent recordings; walking and running are pooled, with per-episode pace calibration.'], 'regions': []}
     if args.server:
         with urllib.request.urlopen(args.server.rstrip('/')+'/api/elevation', timeout=30) as response:
             server = json.load(response)
@@ -150,7 +150,7 @@ def main():
             for index, track in enumerate(group):
                 # Unknown activities cannot be a ground-truth activity label.
                 diagnostic = next(t for t in model['tracks'] if t['id'] == track['id'])
-                if diagnostic['inferredActivity'] not in ('walk', 'run', 'bicycle'):
+                if diagnostic['inferredActivity'] not in travel_model.MODES:
                     region['heldOut'].append({'id': track['id'], 'fileName': track['fileName'], 'excluded': diagnostic['reason']})
                     continue
                 row, sample = evaluate_recording(track, [t for i, t in enumerate(group) if i != index])

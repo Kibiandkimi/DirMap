@@ -15,14 +15,19 @@ from scipy.spatial import cKDTree
 
 from .geometry import Frame
 
-SCHEMA = 'activity-pace-corridor-v1'
-ACTIVITIES = ('auto', 'walk', 'run', 'bicycle', 'exclude')
-MODES = ('walk', 'run', 'bicycle')
+SCHEMA = 'foot-efficiency-corridor-v2'
+LEGACY_SCHEMA = 'activity-pace-corridor-v1'
+ACTIVITIES = ('auto', 'foot', 'walk', 'run', 'bicycle', 'exclude')
+MODES = ('foot', 'bicycle')
 CELL_M = 50.
 MATCH_M = 10.
 MIN_TRACKS = 3
 MAX_GAP_SEC = 15.
 PRIOR = np.array([3.5, -3.5, 3.5])
+
+
+def learning_mode(mode):
+    return 'foot' if mode in ('walk', 'run', 'foot') else mode
 
 
 def prior_for(mode):
@@ -115,11 +120,13 @@ def observations(track, frame, sampler=None):
     speed = np.array([r['distance']/r['seconds'] for r in result])
     median, p90 = np.percentile(speed, [50, 90])
     activity = track.get('activity', 'auto')
-    # Low speed is only evidence compatible with walking, not a sensor label.
-    inferred = 'walk' if .55 <= median <= 1.85 and p90 <= 2.25 else 'unknown'
-    confidence = .65 if inferred == 'walk' else 0.
-    if activity in MODES:
-        inferred, confidence = activity, 1.
+    # Walking and running overlap, including within the same recording.
+    # These bounds only distinguish a plausible foot recording from one that
+    # still needs foot/bicycle confirmation; they never create walk/run bins.
+    inferred = 'foot' if .55 <= median <= 2.7 and p90 <= 3.8 else 'unknown'
+    confidence = .65 if inferred == 'foot' else 0.
+    if learning_mode(activity) in MODES:
+        inferred, confidence = learning_mode(activity), 1.
     elif activity == 'exclude':
         inferred, confidence = 'excluded', 0.
     if sampler is not None:
@@ -146,8 +153,10 @@ def observations(track, frame, sampler=None):
                    medianSpeedMps=round(float(median), 3), observations=len(result),
                    movingSec=round(sum(r['seconds'] for r in result), 1),
                    stoppedSec=round(summary['stoppedSec'], 1), episodes=block,
-                   reason='contributor_label' if activity in MODES else 'excluded_by_contributor' if activity == 'exclude'
-                   else 'walking_compatible' if inferred == 'walk' else 'running_or_cycling_ambiguous')
+                   distanceM=round(sum(r['distance'] for r in result), 1),
+                   speedP10Mps=round(float(np.percentile(speed, 10)), 3), speedP90Mps=round(float(p90), 3),
+                   reason='contributor_label' if learning_mode(activity) in MODES else 'excluded_by_contributor' if activity == 'exclude'
+                   else 'foot_compatible' if inferred == 'foot' else 'foot_or_bicycle_ambiguous')
     return result, summary
 
 
@@ -166,7 +175,8 @@ def fit_profile(rows, mode):
     Pace intercepts are not penalized: a slow person's entire trip cannot
     be explained away as a collection of slow roads.
     """
-    rows = [r for r in rows if r['mode'] == mode and r['confidence'] > 0]
+    mode = learning_mode(mode)
+    rows = [r for r in rows if learning_mode(r['mode']) == mode and r['confidence'] > 0]
     prior = prior_for(mode)
     profile = {'mode': mode, 'tracks': len({r['track'] for r in rows}), 'observations': len(rows),
                'coefficients': prior.tolist(), 'priorCoefficients': prior.tolist(), 'gradeLearned': False, 'gradeRange': [0., 0.],
@@ -250,6 +260,7 @@ def fit_profile(rows, mode):
         log_factor = float(np.clip(beta[p+3+index], math.log(.65), math.log(1.8)))
         profile['corridors'].append({'start': np.round(a, 3).tolist(), 'end': np.round(b, 3).tolist(),
                                     'logFactor': round(log_factor, 6), 'tracks': len(ids),
+                                    'trackIds': sorted(ids),
                                     'observations': len(which), 'scatterM': round(spread, 2)})
     return profile
 
@@ -265,6 +276,7 @@ def build(tracks, frame, sampler=None, bbox=None):
             lnglat = frame.to_lnglat(middle)
             keep = (lnglat[:, 0] >= bbox[0]) & (lnglat[:, 1] >= bbox[1]) & (lnglat[:, 0] <= bbox[2]) & (lnglat[:, 1] <= bbox[3])
             observed = [r for r, yes in zip(observed, keep) if yes]
+        summary['regionObservations'] = len(observed)
         rows.extend(observed); summaries.append(summary)
     profiles = {mode: fit_profile(rows, mode) for mode in MODES}
     return {'schema': SCHEMA, 'frame': frame.as_dict(), 'bbox': bbox, 'profiles': profiles, 'tracks': summaries,
@@ -273,9 +285,12 @@ def build(tracks, frame, sampler=None, bbox=None):
 
 class Predictor:
     """Match a *direction-compatible corridor*, not an entire nearby grid cell."""
-    def __init__(self, model, mode='walk'):
+    def __init__(self, model, mode='foot'):
         self.model, self.frame = model, Frame.of(model)
-        self.profile = model['profiles'].get(mode, {})
+        # Old published snapshots keep their separate models. New ones pool
+        # historical walk/run labels into the same foot profile.
+        key = learning_mode(mode) if 'foot' in model['profiles'] else ('walk' if mode == 'foot' else mode)
+        self.profile = model['profiles'].get(key, {})
         corridors = self.profile.get('corridors', [])
         self.a = np.array([c['start'] for c in corridors], float).reshape(-1, 2)
         self.b = np.array([c['end'] for c in corridors], float).reshape(-1, 2)

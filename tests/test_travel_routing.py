@@ -11,15 +11,16 @@ from dirmap.geometry import Frame, Registration
 from dirmap.graph import RasterGraph, expand_route, plan_matrix
 
 
-def setup_model(tmp_path, monkeypatch):
+def setup_model(tmp_path, monkeypatch, schema=travel.SCHEMA):
     monkeypatch.setattr(store, 'DATA', tmp_path)
     profile = {'corridors': [{'start': [0, 10], 'end': [120, 10], 'logFactor': math.log(1.8), 'tracks': 5}],
                'gradeLearned': True, 'coefficients': [5., -1., 5.], 'gradeRange': [-.15, .15]}
-    model = {'schema': travel.SCHEMA, 'frame': Frame().as_dict(), 'profiles': {'walk': profile}, 'bbox': None}
+    mode = 'walk' if schema == travel_model.LEGACY_SCHEMA else 'foot'
+    model = {'schema': schema, 'frame': Frame().as_dict(), 'profiles': {mode: profile}, 'bbox': None}
     digest = fingerprint(model)
     record = {'artifact': 'travel-models/'+digest+'.json', 'fingerprint': digest}
     store.atomic_json(elevation.root()/record['artifact'], model)
-    frozen = {'enabled': True, 'mode': 'walk', 'schema': travel.SCHEMA, 'revision': digest, 'models': [record]}
+    frozen = {'enabled': True, 'mode': mode, 'schema': schema, 'revision': digest, 'models': [record]}
     positions = np.array([[10, 10], [60, 10], [110, 10], [10, 30], [110, 30]], float)
     edges = [(0, 1, 50), (1, 2, 50), (0, 3, 20), (3, 4, 100), (4, 2, 20)]
     rows, cols, values = [], [], []
@@ -79,3 +80,13 @@ def test_non_ground_layers_keep_their_costs_and_frozen_artifacts_are_checked(tmp
     assert not travel.available(frozen)
     with pytest.raises(ValueError, match='快照'):
         travel.load(frozen['models'][0], 'walk')
+
+
+def test_old_activity_specific_snapshots_keep_their_costs_and_original_hash(tmp_path, monkeypatch):
+    import hashlib
+    base, graph, frozen = setup_model(tmp_path, monkeypatch, travel_model.LEGACY_SCHEMA)
+    assert graph.weights[0, 1] == pytest.approx(90)
+    assert graph.content_hash == hashlib.sha256((base.content_hash+frozen['revision']+travel_model.LEGACY_SCHEMA).encode()).hexdigest()
+    record = frozen['models'][0]
+    assert travel.load(record, 'walk').profile['corridors'][0]['logFactor'] == pytest.approx(math.log(1.8))
+    assert travel.load(record, 'run').profile == {}

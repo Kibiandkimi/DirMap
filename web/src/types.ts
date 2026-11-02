@@ -18,9 +18,10 @@ export interface SheetPhoto {
 }
 export interface MapContour { id: string; pixels: Pixel[]; closed: boolean; lengthPx: number; heightM: number | null }
 export type ContourHeightReference = 'reference' | 'relative';
+export interface AutomaticContours { schema: string; trackId: string | null; used: number; pending: number; registrationStamp: string; enabled?: boolean }
 export interface ContourReport { assetId: string; version: number; revision: number; intervalM?: number | null;
-  heightReference: ContourHeightReference; contributionStale?: boolean;
-  contours: (MapContour & { calibrated: boolean; suggestedHeightM: number | null; suggestionSpreadM: number | null;
+  heightReference: ContourHeightReference; automatic?: AutomaticContours; contributionStale?: boolean;
+  contours: (MapContour & { calibrated: boolean; automaticallyUsed?: boolean; suggestedHeightM: number | null; suggestionSpreadM: number | null;
     referenceCoverage: number; referenceSamples: number })[] }
 export interface MapState {
   assetId: string; processed?: boolean; name: string; width: number; height: number; version: number;
@@ -32,7 +33,7 @@ export interface MapState {
   controls: Control[]; edits: TerrainEdit[]; extent?: number[]; reviewed: boolean;
   sheetPhotos?: SheetPhoto[];
   overlayScope?: 'full-sheet';
-  contours?: MapContour[];
+  contours?: MapContour[]; automaticContours?: AutomaticContours;
   contourRevision?: number;
   surfaces?: Surface[]; portals?: Portal[];
   terrainFeatures?: { kind: 'stairs' | 'lower_level'; polygon: Pixel[]; visibleTreadCells?: number; traversableTreadLines?: number }[];
@@ -51,7 +52,7 @@ export interface Route {
   elevation?: { modelRevision: string; coverageFraction: number; knownDistanceM: number; unknownDistanceM: number;
     ascentM: number | null; descentM: number | null; estimated: boolean;
     profile: { distanceM: number; heightM: number | null }[] };
-  speedLearning?: { enabled: boolean; mode: 'walk' | 'run'; modelRevision: string; coverageFraction: number;
+  speedLearning?: { enabled: boolean; mode: 'foot' | 'walk' | 'run'; modelRevision: string; coverageFraction: number;
     learnedDistanceM: number; fallbackDistanceM: number; gradeLearned: boolean; movingTimeOnly: boolean;
     status: 'learned' | 'insufficient_data' };
 }
@@ -85,7 +86,7 @@ export interface PlanRequest {
   timeLimitSec: number;
   useElevation?: boolean;
   useLearnedSpeed?: boolean;
-  travelMode?: 'walk' | 'run';
+  travelMode?: 'foot' | 'walk' | 'run';
 }
 export interface AutoTeamRequest extends Omit<PlanRequest, 'teams' | 'customRoutes'> {
   totalPeople: number; minPeoplePerTeam: number; maxTeams: number; speedMps: number;

@@ -22,7 +22,7 @@ from scipy.spatial import Delaunay, QhullError, cKDTree
 
 from .geometry import Frame, mercator
 
-SCHEMA = 'shared-track-height-v4-relative-contours'
+SCHEMA = 'shared-track-height-v5-automatic-contours'
 CELL_M = 10.
 MAX_EDGE_M = 160.
 MAX_SUPPORT_M = 70.
@@ -111,7 +111,7 @@ def observations(track, frame, step=SAMPLE_STEP_M):
     xy = frame.to_local(track['points'][:, :2])
     heights = track['points'][:, 2]
     if track.get('kind') == 'contours':
-        relative = track.get('heightReference') == 'relative'
+        relative = track.get('heightReference') in ('relative', 'shape')
         # A checked relative level is a shape constraint. Its uncertain
         # absolute datum is handled by the free offset, rather than reducing
         # its influence until a printed 2 m height difference disappears.
@@ -361,10 +361,19 @@ def reconstruct(tracks):
     low, high = points[:, :2].min(axis=0), points[:, :2].max(axis=0)
     frame = Frame(*((low+high)/2))
     clouds = []
-    for track in tracks:
-        cloud = observations(track, frame)
-        if len(cloud['z']):
-            clouds.append({**cloud, 'id': track['id']})
+    for source_index, track in enumerate(tracks):
+        # Unlabelled printed contours each have their own unknown level.
+        # Splitting them here also prevents one distant line from borrowing a
+        # height datum just because another line on the same sheet has one.
+        parts = [track]
+        if track.get('heightReference') == 'shape':
+            breaks = sorted(set([0, *track.get('breaks', []) , len(track['points'])]))
+            parts = [{**track, 'points': track['points'][a:b]} for a, b in zip(breaks, breaks[1:]) if b-a >= 3]
+        for part_index, part in enumerate(parts):
+            cloud = observations(part, frame)
+            if len(cloud['z']):
+                clouds.append({**cloud, 'id': f'{track["id"]}:{part_index}', 'sourceId': track['id'],
+                               'sourceIndex': source_index, 'shapeOnly': track.get('heightReference') == 'shape'})
     if not clouds:
         raise ValueError('有效高程观测不足，无法重建地形')
     links, count, labels = overlap_links(clouds)
@@ -376,7 +385,7 @@ def reconstruct(tracks):
     support = np.full(shape, np.inf)
     scatter = np.full(shape, np.nan)
     datum = np.full(shape, -1, np.int32)
-    corrections, observed = {}, []
+    corrections, observed, observed_tracks = {}, [], []
     offsets = np.cumsum([0]+[len(c['z']) for c in clouds])
     residual = np.full(offsets[-1], np.nan)
     unanchored = 0
@@ -414,6 +423,7 @@ def reconstruct(tracks):
                                         'driftRangeM': round(float(np.ptp(drift)), 2), 'component': int(component),
                                         'observationCells': int(own.sum()), 'anchored': True}
         observed.append(np.column_stack((fitted['xy'], fitted['z']-fitted['drift'])))
+        observed_tracks.append(np.concatenate([np.full(len(c['z']), c['sourceIndex'], np.int32) for c in members]))
     # Unaligned recording datums must not meet as a made-up terrain step.
     for axis in (0, 1):
         before = [slice(None)]*2; after = [slice(None)]*2
@@ -435,6 +445,18 @@ def reconstruct(tracks):
     shared &= np.isfinite(residual)
     known_residual = residual[np.isfinite(residual)]
     values = height[valid]
+    alignment_tracks = []
+    for track in tracks:
+        own = [corrections[c['id']] for c in clouds if c['sourceId'] == track['id']]
+        anchored = [c for c in own if c['anchored']]
+        shape_only = track.get('heightReference') == 'shape'
+        alignment_tracks.append({'id': track['id'],
+            'correctionM': None if shape_only or not anchored else anchored[0]['correctionM'],
+            'driftRangeM': None if shape_only or not anchored else anchored[0]['driftRangeM'],
+            'component': own[0]['component'] if own else -1,
+            'observationCells': sum(c['observationCells'] for c in own),
+            'anchored': bool(anchored), 'anchoredContours': len(anchored) if shape_only else None,
+            'pendingContours': len(own)-len(anchored) if shape_only else None})
     metadata = {
         'schema': SCHEMA, 'frame': frame.as_dict(), 'origin': origin.tolist(), 'spacingM': spacing,
         'columns': int(columns), 'rows': int(rows), 'bbox': [*low.tolist(), *high.tolist()],
@@ -445,17 +467,20 @@ def reconstruct(tracks):
         'alignment': {'alignedComponents': int(count), 'unanchoredComponents': unanchored, 'overlapPairs': len(links),
                       'overlapResidualM': round(float(np.median(np.abs(residual[shared]))), 2) if shared.any() else None,
                       'residualM': round(float(1.4826*np.median(np.abs(known_residual))), 2) if len(known_residual) else None,
-                      'tracks': [corrections[c['id']] for c in clouds]},
+                      'tracks': alignment_tracks},
         'datum': 'awaiting-height-reference' if unanchored == count else 'confirmed-contour-height'
                  if any(c.get('fixed') for c in clouds) else 'relative-recorded-height',
         'contourSources': sum(t.get('kind') == 'contours' for t in tracks),
-        'relativeContourSources': sum(bool(c.get('relative')) for c in clouds),
-        'method': 'robust joint least squares: ground surface + per-recording drift + fixed/relative contour levels / thin-plate smoothing',
+        'relativeContourSources': sum(t.get('heightReference') == 'relative' for t in tracks),
+        'automaticContourSources': sum(t.get('heightReference') == 'shape' for t in tracks),
+        'method': 'robust joint least squares: ground surface + per-recording drift + fixed/relative/unknown contour levels / thin-plate smoothing',
         'maxTriangleEdgeM': MAX_EDGE_M, 'maxSupportDistanceM': MAX_SUPPORT_M, 'nearSupportDistanceM': NEAR_SUPPORT_M,
     }
     observed_lnglat = frame.to_lnglat(observed[:, :2])
     arrays = {'height': height.astype(np.float32), 'support': support.astype(np.float32), 'scatter': scatter.astype(np.float32),
-              'observations': np.column_stack((observed_lnglat, observed[:, 2])).astype(np.float64), 'spacing': np.float64(spacing)}
+              'observations': np.column_stack((observed_lnglat, observed[:, 2])).astype(np.float64),
+              'observation_track': np.concatenate(observed_tracks) if observed_tracks else np.empty(0, np.int32),
+              'spacing': np.float64(spacing)}
     return metadata, arrays
 
 

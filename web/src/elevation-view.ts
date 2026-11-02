@@ -1,5 +1,6 @@
 import { localScales } from './types';
-import type { HeightGrid } from './elevation-types';
+import type { HeightGrid, TrackDetail } from './elevation-types';
+import { terrainContours, type TerrainContour } from './terrain-contours';
 
 const palette = [[66, 127, 107], [136, 164, 111], [205, 191, 128], [171, 116, 79], [116, 77, 61]];
 function colour(t: number) {
@@ -28,6 +29,13 @@ export class ElevationView {
   private mesh: WebGLBuffer | null = null;
   private indexes: WebGLBuffer | null = null;
   private points: WebGLBuffer | null = null;
+  private contourBuffer: WebGLBuffer | null = null;
+  private contourCount = 0;
+  private contourLines: TerrainContour[] = [];
+  private showContours = true;
+  private selectedTrack: TrackDetail['samples'] | null = null;
+  private trackBuffer: WebGLBuffer | null = null;
+  private trackCount = 0;
   private indexCount = 0;
   private pointCount = 0;
   private grid: HeightGrid | null = null;
@@ -88,6 +96,8 @@ export class ElevationView {
   setMode(mode: '3d' | 'map') { this.mode = mode === '3d' && this.gl ? '3d' : 'map'; this.canvas.hidden = this.mode !== '3d'; this.flat.hidden = this.mode !== 'map'; this.draw(); }
   setExaggeration(value: number) { this.exaggeration = value; this.buildMesh(); this.draw(); }
   setPoints(show: boolean) { this.showPoints = show; this.draw(); }
+  setContours(show: boolean) { this.showContours = show; this.draw(); }
+  setTrack(samples: TrackDetail['samples'] | null) { this.selectedTrack = samples; this.buildMesh(); this.draw(); }
   /** Lay a course map over the terrain, in the height map and on the 3D surface. */
   setOverlay(overlay: MapOverlay | null) { this.overlay = overlay; this.uploadTexture(); this.buildMesh(); this.draw(); }
   private uploadTexture() {
@@ -103,7 +113,7 @@ export class ElevationView {
   }
   setOverlayOpacity(value: number) { this.overlayOpacity = value; this.draw(); }
   reset() { this.yaw = -.6; this.pitch = .6; this.distance = 1.5; this.draw(); }
-  setGrid(grid: HeightGrid | null) { this.grid = grid; this.raster = null; this.indexCount = 0; this.onInspect(null); if (grid) { this.buildRaster(); this.buildMesh(); } this.draw(); }
+  setGrid(grid: HeightGrid | null) { this.grid = grid; this.raster = null; this.indexCount = 0; this.contourLines = grid ? terrainContours(grid) : []; this.onInspect(null); if (grid) { this.buildRaster(); this.buildMesh(); } this.draw(); }
   private initialize(gl: WebGLRenderingContext) {
     const shader = (type: number, source: string) => {
       const value = gl.createShader(type)!; gl.shaderSource(value, source); gl.compileShader(value);
@@ -127,7 +137,7 @@ export class ElevationView {
   private buildMesh() {
     const gl = this.gl, grid = this.grid;
     if (!gl || !grid) return;
-    for (const buffer of [this.mesh, this.indexes, this.points]) if (buffer) gl.deleteBuffer(buffer);
+    for (const buffer of [this.mesh, this.indexes, this.points, this.contourBuffer, this.trackBuffer]) if (buffer) gl.deleteBuffer(buffer);
     const stride = Math.max(1, Math.ceil(Math.max(grid.rows, grid.columns) / 240));
     const xs = Array.from({ length: Math.floor((grid.columns - 1) / stride) + 1 }, (_, i) => i * stride);
     const ys = Array.from({ length: Math.floor((grid.rows - 1) / stride) + 1 }, (_, i) => i * stride);
@@ -167,6 +177,33 @@ export class ElevationView {
     }
     this.points = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.points); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pointVertices), gl.STATIC_DRAW);
     this.pointCount = pointVertices.length / FLOATS;
+    const contourVertices: number[] = [];
+    const lines = stride === 1 ? this.contourLines : terrainContours(grid, stride);
+    for (const line of lines) for (const [x, y] of [line.a, line.b]) {
+      contourVertices.push((x - (grid.columns - 1) / 2) * grid.spacingM / size,
+        (line.height - middle) * this.exaggeration / size,
+        -(y - (grid.rows - 1) / 2) * grid.spacingM / size, 0, 1, 0, .19, .23, .13, -1, -1);
+    }
+    this.contourBuffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.contourBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(contourVertices), gl.STATIC_DRAW);
+    this.contourCount = contourVertices.length / FLOATS;
+    this.canvas.dataset.contourSegments = String(this.contourCount / 2);
+    const trackVertices: number[] = [];
+    const track = this.selectedTrack ?? [];
+    for (let i = 1; i < track.length; i++) {
+      const a = track[i - 1], b = track[i];
+      if (b.breakBefore || [a, b].some(p => (p.surfaceHeightM ?? p.heightM) === null)) continue;
+      for (const p of [a, b]) {
+        const x = (p.lng - grid.frame.origin[0]) * scales[0] - grid.origin[0];
+        const y = (p.lat - grid.frame.origin[1]) * scales[1] - grid.origin[1];
+        const h = (p.surfaceHeightM ?? p.heightM)!;
+        trackVertices.push((x - (grid.columns - 1) * grid.spacingM / 2) / size,
+          (h - middle) * this.exaggeration / size + .002, -(y - (grid.rows - 1) * grid.spacingM / 2) / size,
+          0, 1, 0, .88, .33, .06, -1, -1);
+      }
+    }
+    this.trackBuffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.trackBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(trackVertices), gl.STATIC_DRAW); this.trackCount = trackVertices.length / FLOATS;
   }
   private buildRaster() {
     const grid = this.grid!;
@@ -184,23 +221,13 @@ export class ElevationView {
     ctx.putImageData(image, 0, 0); this.raster = raster;
   }
   private contours(ctx: CanvasRenderingContext2D, left: number, top: number, scale: number) {
-    const grid = this.grid!, step = ((grid.maxHeightM ?? 0) - (grid.minHeightM ?? 0)) > 60 ? 10 : 2;
-    ctx.strokeStyle = '#304a393d'; ctx.lineWidth = .65;
-    for (let level = Math.ceil((grid.minHeightM ?? 0) / step) * step; level <= (grid.maxHeightM ?? 0); level += step) {
-      ctx.beginPath();
-      for (let y = 0; y < grid.rows - 1; y++) for (let x = 0; x < grid.columns - 1; x++) {
-        const corners = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]], heights = corners.map(([xx, yy]) => grid.height[yy * grid.columns + xx]);
-        if (heights.some(h => h === null)) continue;
-        const intersections: number[][] = [];
-        for (let k = 0; k < 4; k++) { const next = (k + 1) % 4, a = heights[k]!, b = heights[next]!;
-          if ((a < level) !== (b < level)) { const t = (level - a) / (b - a); intersections.push([corners[k][0] + (corners[next][0] - corners[k][0]) * t, corners[k][1] + (corners[next][1] - corners[k][1]) * t]); } }
-        for (let k = 0; k + 1 < intersections.length; k += 2) {
-          ctx.moveTo(left + intersections[k][0] * scale, top + (grid.rows - 1 - intersections[k][1]) * scale);
-          ctx.lineTo(left + intersections[k + 1][0] * scale, top + (grid.rows - 1 - intersections[k + 1][1]) * scale);
-        }
-      }
-      ctx.stroke();
+    if (!this.showContours) return;
+    ctx.strokeStyle = '#304529a0'; ctx.lineWidth = .85; ctx.beginPath();
+    for (const { a, b } of this.contourLines) {
+      ctx.moveTo(left + a[0] * scale, top + (this.grid!.rows - 1 - a[1]) * scale);
+      ctx.lineTo(left + b[0] * scale, top + (this.grid!.rows - 1 - b[1]) * scale);
     }
+    ctx.stroke();
   }
   private geographicContext(ctx: CanvasRenderingContext2D, left: number, top: number, scale: number) {
     const grid = this.grid!, scales = localScales(grid.frame.origin);
@@ -257,10 +284,20 @@ export class ElevationView {
         ctx.globalAlpha = this.overlayOpacity; ctx.drawImage(this.overlay.image, west, north, east - west, south - north); ctx.globalAlpha = 1;
       }
       this.contours(ctx, left, top, scale);
-      if (this.showPoints) { const scales = localScales(grid.frame.origin); ctx.fillStyle = '#163f37b3';
+      if (this.showPoints || this.selectedTrack) { const scales = localScales(grid.frame.origin); ctx.fillStyle = '#163f37b3';
         for (const [lng, lat] of grid.observations) { const x = ((lng - grid.frame.origin[0]) * scales[0] - grid.origin[0]) / grid.spacingM;
           const y = ((lat - grid.frame.origin[1]) * scales[1] - grid.origin[1]) / grid.spacingM;
           ctx.beginPath(); ctx.arc(left + x * scale, top + (grid.rows - 1 - y) * scale, 1.5, 0, Math.PI * 2); ctx.fill(); } }
+      if (this.selectedTrack) {
+        const scales = localScales(grid.frame.origin);
+        ctx.save(); ctx.beginPath(); ctx.rect(left, top, w, h); ctx.clip();
+        ctx.beginPath(); ctx.lineWidth = 2.3; ctx.strokeStyle = '#d76a21';
+        this.selectedTrack.forEach((p, i) => {
+          const x = left + ((p.lng - grid.frame.origin[0]) * scales[0] - grid.origin[0]) / grid.spacingM * scale;
+          const y = top + (grid.rows - 1 - ((p.lat - grid.frame.origin[1]) * scales[1] - grid.origin[1]) / grid.spacingM) * scale;
+          if (i === 0 || p.breakBefore) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }); ctx.stroke(); ctx.restore();
+      }
       ctx.fillStyle = '#385649'; ctx.font = '600 12px sans-serif'; ctx.fillText('北 ↑', width - 42, 22);
       return;
     }
@@ -281,7 +318,11 @@ export class ElevationView {
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texture);
     gl.uniform1i(gl.getUniformLocation(program, 'u_map'), 0);
     gl.uniform1f(gl.getUniformLocation(program, 'u_map_opacity'), this.overlay ? this.overlayOpacity : 0);
+    gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(1, 1);
     attributes(this.mesh); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexes); gl.uniform1f(gl.getUniformLocation(program, 'u_point_size'), 1); gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
-    if (this.showPoints && this.points) { attributes(this.points); gl.uniform1f(gl.getUniformLocation(program, 'u_point_size'), 3 * ratio); gl.drawArrays(gl.POINTS, 0, this.pointCount); }
+    gl.disable(gl.POLYGON_OFFSET_FILL); gl.uniform1f(gl.getUniformLocation(program, 'u_map_opacity'), 0);
+    if (this.showContours && this.contourBuffer) { attributes(this.contourBuffer); gl.drawArrays(gl.LINES, 0, this.contourCount); }
+    if ((this.showPoints || this.selectedTrack) && this.points) { attributes(this.points); gl.uniform1f(gl.getUniformLocation(program, 'u_point_size'), 3 * ratio); gl.drawArrays(gl.POINTS, 0, this.pointCount); }
+    if (this.trackBuffer && this.selectedTrack) { attributes(this.trackBuffer); gl.drawArrays(gl.LINES, 0, this.trackCount); }
   }
 }

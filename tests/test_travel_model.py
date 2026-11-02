@@ -46,12 +46,41 @@ def test_fast_unlabelled_records_stay_ambiguous_and_explicit_labels_win():
     rows, summary = travel_model.observations(track, Frame())
     assert summary['inferredActivity'] == 'unknown'
     assert all(r['confidence'] == 0 for r in rows)
-    for mode in ('run', 'bicycle'):
+    for mode in ('walk', 'run', 'foot', 'bicycle'):
         rows, summary = travel_model.observations({**track, 'activity': mode}, Frame())
-        assert summary['inferredActivity'] == mode and summary['confidence'] == 1
-        assert all(r['mode'] == mode for r in rows)
+        assert summary['inferredActivity'] == travel_model.learning_mode(mode) and summary['confidence'] == 1
+        assert all(r['mode'] == travel_model.learning_mode(mode) for r in rows)
     rows, summary = travel_model.observations({**track, 'activity': 'exclude'}, Frame())
     assert summary['inferredActivity'] == 'excluded' and not any(r['confidence'] for r in rows)
+
+
+def test_mixed_running_and_walking_has_one_learning_class_and_separate_pace_episodes():
+    speed = np.r_[np.full(240, 1.2), np.full(240, 2.7), np.full(240, 1.2)]
+    xy = np.column_stack((np.cumsum(speed), np.zeros(len(speed))))
+    rows, summary = travel_model.observations(recording(xy, np.arange(len(speed)), activity='foot'), Frame())
+    assert {r['mode'] for r in rows} == {'foot'}
+    assert {r['track'] for r in rows} == {'walk'}
+    assert summary['episodes'] >= 3
+    assert summary['speedP10Mps'] == pytest.approx(1.2, abs=.02)
+    assert summary['speedP90Mps'] == pytest.approx(2.7, abs=.02)
+
+
+def test_historical_walk_run_and_mixed_labels_pool_their_independent_support():
+    rows = fit_rows(paces=(1.2, 2.8, 1.9))
+    for row in rows:
+        row['mode'] = {'t0': 'walk', 't1': 'run', 't2': 'foot'}[row['track']]
+    profile = travel_model.fit_profile(rows, 'foot')
+    assert profile['tracks'] == 3 and len(profile['corridors']) == 2
+    assert all(set(c['trackIds']) == {'t0', 't1', 't2'} for c in profile['corridors'])
+    for mode in ('walk', 'run'):
+        compatible = travel_model.fit_profile(rows, mode)
+        assert compatible == profile
+    changed = copy.deepcopy(rows)
+    for row in changed:
+        row['seconds'] *= {'t0': 2., 't1': .45, 't2': 1.7}[row['track']]
+    normalized = travel_model.fit_profile(changed, 'foot')
+    np.testing.assert_allclose([c['logFactor'] for c in profile['corridors']],
+                               [c['logFactor'] for c in normalized['corridors']], atol=1e-5)
 
 
 def fit_rows(paces=(.75, 1.1, 1.6, 1.9, .9, 1.4)):

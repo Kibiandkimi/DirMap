@@ -124,7 +124,30 @@ def execute_job(job, progress):
             if job['inputs'] != job_inputs(job['kind'], job['assetId'], job['payload']):
                 raise ValueError('等待期间场地范围已改变，请重新下载参照')
             return sites.fetch_reference(job['assetId'], progress)
-        return _execute_job(job, progress)
+        result = _execute_job(job, progress)
+        if job['kind'] in ('process', 'terrain', 'anchors'):
+            # This also runs when recovering an already committed map job.
+            # The derived contribution is content-addressed, so a restart
+            # cannot give the same printed contours another vote.
+            from . import contours, accounts
+            with store.LOCK:
+                state = store.get_state(job['assetId'])
+                owner = accounts.workspace_owner(store.current_workspace()) or {
+                    'id': 'original-workbench', 'username': '原工作台'}
+                receipt = contours.sync_automatic(state, owner) if state else None
+                if receipt is not None:
+                    store.save_state(job['assetId'], state, job['id'])
+                    result = state
+            if receipt is not None and elevation.public_status()['needsRebuild']:
+                for attempt in range(3):
+                    try:
+                        elevation.rebuild(elevation.catalogue()['version'],
+                            lambda p, m: progress(96+int(p*.03), '自动等高线 · '+m))
+                        break
+                    except elevation.Conflict:
+                        if attempt == 2:
+                            raise
+        return result
 
 
 def _execute_job(job, progress):
@@ -475,7 +498,7 @@ def _get_graph(state, use_elevation=True, elevation_snapshot=None, use_travel=Tr
         cache_key = graph_cache.key(state, terrain_path)
         with np.load(terrain_path) as artifact:
             costs = artifact['costs']
-            semantics = {kind: artifact[kind] for kind in ('building', 'water', 'point_ink', 'vegetation', 'restricted', 'lower_level') if kind in artifact}
+            semantics = {kind: artifact[kind] for kind in ('building', 'water', 'point_ink', 'vegetation', 'restricted', 'lower_level', 'olive', 'paved', 'open_ground', 'prohibited') if kind in artifact}
         reg = Registration.from_dict(state['registration'])
         graph = graph_cache.read(cache_key)
         if graph is None:

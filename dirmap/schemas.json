@@ -1,4 +1,4 @@
 {
   "routing": "native-quadtree-v8-explicit-surfaces",
-  "terrain": "print-scale-boundaries-v11-covered-passages"
+  "terrain": "print-scale-boundaries-v13-roadside-arrivals"
 }
