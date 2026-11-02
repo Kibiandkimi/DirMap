@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-11-01T23:59:05Z",
+  "scope": "Use an existing local Dashahe KML and the public server terrain to check contour assistance.\n\nOnly temporary models and the requested report are written. No observations\nare contributed to the running service. The two visually checked adjacent\ncontours around control 35 are split into four fragments by printed ink.\nTheir relative difference is 2 m; their absolute height comes from the track.\nThis checks the constraints and workflow, not independent survey accuracy.\n",
+  "mapSourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "implementationSignature": "69a2ec7127878d9d03fe8864b38fe3bf34793cc381d8ae62d86a9df346b12140",
+  "localTrack": {
+    "fileName": "20261029_183448.kml",
+    "sha256": "65509f35e7b37ea10e09dbd802d580806ffc92a0be1f679b5edd141af3a4dbe4",
+    "points": 2968
+  },
+  "contours": [
+    {
+      "id": "contour-d585bc4744c7",
+      "relativeHeightM": 0.0,
+      "before": {
+        "coverage": 0.39,
+        "medianM": 36.84,
+        "spreadM": 1.428
+      },
+      "after": {
+        "coverage": 1.0,
+        "medianM": 36.826,
+        "spreadM": 0.303
+      }
+    },
+    {
+      "id": "contour-acae13108aca",
+      "relativeHeightM": 0.0,
+      "before": {
+        "coverage": 0.526,
+        "medianM": 36.714,
+        "spreadM": 1.411
+      },
+      "after": {
+        "coverage": 1.0,
+        "medianM": 36.993,
+        "spreadM": 0.181
+      }
+    },
+    {
+      "id": "contour-84fcbb8990ce",
+      "relativeHeightM": 2.0,
+      "before": {
+        "coverage": 0.69,
+        "medianM": 39.283,
+        "spreadM": 0.934
+      },
+      "after": {
+        "coverage": 1.0,
+        "medianM": 38.684,
+        "spreadM": 0.323
+      }
+    },
+    {
+      "id": "contour-742814aa65b3",
+      "relativeHeightM": 2.0,
+      "before": {
+        "coverage": 0.636,
+        "medianM": 37.202,
+        "spreadM": 0.87
+      },
+      "after": {
+        "coverage": 1.0,
+        "medianM": 38.401,
+        "spreadM": 0.225
+      }
+    }
+  ],
+  "inferredOffsetM": 36.78,
+  "arbitraryZeroShiftDidNotChangeTerrain": true,
+  "supportedCellsBefore": 1641,
+  "supportedCellsAfter": 1734,
+  "preview": "/tmp/dirmap-final-contour/comparison.png",
+  "allChecksPassed": true,
+  "independentSurveyValidation": false
+}

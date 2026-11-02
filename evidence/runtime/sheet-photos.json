@@ -1,0 +1,1532 @@
+{
+  "checkedAt": "2026-11-01T23:52:00Z",
+  "scope": "Check the real Dashahe sheet and both campus collage encodings from pixels.\n\nPhoto positions below were read from the supplied sheets, independently of\nthe detector. This verifies crops, printed numbers and control links, not\ngeographic accuracy or arbitrary photographic page layouts.\n",
+  "implementationSignature": "69a2ec7127878d9d03fe8864b38fe3bf34793cc381d8ae62d86a9df346b12140",
+  "cases": [
+    {
+      "sheet": "dashahe",
+      "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+      "photoCount": 32,
+      "expectedPhotoCount": 32,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "allLinked": true,
+      "maxPhotoCentreErrorAtPreviewPx": 7.2,
+      "previewScale": 0.341796875,
+      "controlCount": 33,
+      "photoPixelBoxes": [
+        {
+          "pixelBox": [
+            2859,
+            518,
+            3264,
+            817
+          ],
+          "confidence": 0.943,
+          "layoutRecovered": false,
+          "id": "photo-1",
+          "label": "41",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3174,
+            736,
+            3241,
+            791
+          ],
+          "labelConfidence": 0.937,
+          "controlId": "c31"
+        },
+        {
+          "pixelBox": [
+            3268,
+            518,
+            3676,
+            817
+          ],
+          "confidence": 0.764,
+          "layoutRecovered": true,
+          "id": "photo-2",
+          "label": "42",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3578,
+            738,
+            3652,
+            791
+          ],
+          "labelConfidence": 0.957,
+          "controlId": "c28"
+        },
+        {
+          "pixelBox": [
+            3674,
+            518,
+            4081,
+            817
+          ],
+          "confidence": 0.871,
+          "layoutRecovered": true,
+          "id": "photo-3",
+          "label": "43",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3983,
+            740,
+            4058,
+            794
+          ],
+          "labelConfidence": 0.97,
+          "controlId": "c23"
+        },
+        {
+          "pixelBox": [
+            463,
+            521,
+            868,
+            826
+          ],
+          "confidence": 0.96,
+          "layoutRecovered": false,
+          "id": "photo-4",
+          "label": "32",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            789,
+            757,
+            864,
+            813
+          ],
+          "labelConfidence": 0.969,
+          "controlId": "c30"
+        },
+        {
+          "pixelBox": [
+            49,
+            523,
+            450,
+            828
+          ],
+          "confidence": 0.76,
+          "layoutRecovered": false,
+          "id": "photo-5",
+          "label": "31",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            371,
+            757,
+            435,
+            815
+          ],
+          "labelConfidence": 0.944,
+          "controlId": "c34"
+        },
+        {
+          "pixelBox": [
+            2859,
+            819,
+            3264,
+            1126
+          ],
+          "confidence": 0.776,
+          "layoutRecovered": false,
+          "id": "photo-6",
+          "label": "44",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.847,
+          "controlId": "c27"
+        },
+        {
+          "pixelBox": [
+            3268,
+            819,
+            3676,
+            1126
+          ],
+          "confidence": 0.899,
+          "layoutRecovered": true,
+          "id": "photo-7",
+          "label": "45",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.969,
+          "controlId": "c18"
+        },
+        {
+          "pixelBox": [
+            3674,
+            819,
+            4081,
+            1126
+          ],
+          "confidence": 0.776,
+          "layoutRecovered": true,
+          "id": "photo-8",
+          "label": "46",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3981,
+            1043,
+            4060,
+            1101
+          ],
+          "labelConfidence": 0.97,
+          "controlId": "c32"
+        },
+        {
+          "pixelBox": [
+            49,
+            855,
+            452,
+            1158
+          ],
+          "confidence": 0.761,
+          "layoutRecovered": false,
+          "id": "photo-9",
+          "label": "33",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            373,
+            1090,
+            446,
+            1146
+          ],
+          "labelConfidence": 0.964,
+          "controlId": "c12"
+        },
+        {
+          "pixelBox": [
+            467,
+            855,
+            873,
+            1161
+          ],
+          "confidence": 0.856,
+          "layoutRecovered": false,
+          "id": "photo-10",
+          "label": "34",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.969,
+          "controlId": "c7"
+        },
+        {
+          "pixelBox": [
+            3268,
+            1129,
+            3671,
+            1436
+          ],
+          "confidence": 0.859,
+          "layoutRecovered": false,
+          "id": "photo-11",
+          "label": "48",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3580,
+            1348,
+            3657,
+            1404
+          ],
+          "labelConfidence": 0.939,
+          "controlId": "c25"
+        },
+        {
+          "pixelBox": [
+            3674,
+            1129,
+            4081,
+            1436
+          ],
+          "confidence": 0.834,
+          "layoutRecovered": false,
+          "id": "photo-12",
+          "label": "49",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3989,
+            1353,
+            4064,
+            1408
+          ],
+          "labelConfidence": 0.948,
+          "controlId": "c26"
+        },
+        {
+          "pixelBox": [
+            2863,
+            1131,
+            3262,
+            1434
+          ],
+          "confidence": 0.904,
+          "layoutRecovered": false,
+          "id": "photo-13",
+          "label": "47",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3179,
+            1355,
+            3258,
+            1410
+          ],
+          "labelConfidence": 0.828,
+          "controlId": "c33"
+        },
+        {
+          "pixelBox": [
+            49,
+            1190,
+            452,
+            1495
+          ],
+          "confidence": 0.817,
+          "layoutRecovered": false,
+          "id": "photo-14",
+          "label": "35",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            371,
+            1427,
+            446,
+            1483
+          ],
+          "labelConfidence": 0.964,
+          "controlId": "c8"
+        },
+        {
+          "pixelBox": [
+            471,
+            1190,
+            875,
+            1495
+          ],
+          "confidence": 0.944,
+          "layoutRecovered": false,
+          "id": "photo-15",
+          "label": "36",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            796,
+            1425,
+            873,
+            1481
+          ],
+          "labelConfidence": 0.969,
+          "controlId": "c16"
+        },
+        {
+          "pixelBox": [
+            3268,
+            1438,
+            3676,
+            1747
+          ],
+          "confidence": 0.865,
+          "layoutRecovered": false,
+          "id": "photo-16",
+          "label": "51",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3578,
+            1666,
+            3644,
+            1722
+          ],
+          "labelConfidence": 0.968,
+          "controlId": "c20"
+        },
+        {
+          "pixelBox": [
+            3678,
+            1438,
+            4081,
+            1747
+          ],
+          "confidence": 0.961,
+          "layoutRecovered": false,
+          "id": "photo-17",
+          "label": "52",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3987,
+            1666,
+            4064,
+            1722
+          ],
+          "labelConfidence": 0.968,
+          "controlId": "c17"
+        },
+        {
+          "pixelBox": [
+            2861,
+            1440,
+            3262,
+            1743
+          ],
+          "confidence": 0.937,
+          "layoutRecovered": false,
+          "id": "photo-18",
+          "label": "50",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.97,
+          "controlId": "c6"
+        },
+        {
+          "pixelBox": [
+            469,
+            1525,
+            875,
+            1830
+          ],
+          "confidence": 0.924,
+          "layoutRecovered": false,
+          "id": "photo-19",
+          "label": "38",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            798,
+            1764,
+            870,
+            1820
+          ],
+          "labelConfidence": 0.966,
+          "controlId": "c22"
+        },
+        {
+          "pixelBox": [
+            49,
+            1530,
+            454,
+            1828
+          ],
+          "confidence": 0.944,
+          "layoutRecovered": false,
+          "id": "photo-20",
+          "label": "37",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            373,
+            1762,
+            450,
+            1820
+          ],
+          "labelConfidence": 0.965,
+          "controlId": "c4"
+        },
+        {
+          "pixelBox": [
+            3268,
+            1749,
+            3671,
+            2063
+          ],
+          "confidence": 0.76,
+          "layoutRecovered": false,
+          "id": "photo-21",
+          "label": "54",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.884,
+          "controlId": "c10"
+        },
+        {
+          "pixelBox": [
+            3674,
+            1749,
+            4081,
+            2063
+          ],
+          "confidence": 0.962,
+          "layoutRecovered": false,
+          "id": "photo-22",
+          "label": "55",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3989,
+            1988,
+            4064,
+            2044
+          ],
+          "labelConfidence": 0.969,
+          "controlId": "c9"
+        },
+        {
+          "pixelBox": [
+            2861,
+            1754,
+            3262,
+            2057
+          ],
+          "confidence": 0.809,
+          "layoutRecovered": false,
+          "id": "photo-23",
+          "label": "53",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3179,
+            1986,
+            3255,
+            2042
+          ],
+          "labelConfidence": 0.964,
+          "controlId": "c14"
+        },
+        {
+          "pixelBox": [
+            49,
+            1830,
+            454,
+            2101
+          ],
+          "confidence": 0.792,
+          "layoutRecovered": false,
+          "id": "photo-24",
+          "label": "39",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.969,
+          "controlId": "c1"
+        },
+        {
+          "pixelBox": [
+            463,
+            1835,
+            875,
+            2133
+          ],
+          "confidence": 0.816,
+          "layoutRecovered": false,
+          "id": "photo-25",
+          "label": "40",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            787,
+            2057,
+            864,
+            2114
+          ],
+          "labelConfidence": 0.969,
+          "controlId": "c5"
+        },
+        {
+          "pixelBox": [
+            3268,
+            2065,
+            3671,
+            2379
+          ],
+          "confidence": 0.76,
+          "layoutRecovered": false,
+          "id": "photo-26",
+          "label": "57",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3586,
+            2302,
+            3663,
+            2357
+          ],
+          "labelConfidence": 0.965,
+          "controlId": "c19"
+        },
+        {
+          "pixelBox": [
+            3674,
+            2065,
+            4081,
+            2379
+          ],
+          "confidence": 0.933,
+          "layoutRecovered": false,
+          "id": "photo-27",
+          "label": "58",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.968,
+          "controlId": "c21"
+        },
+        {
+          "pixelBox": [
+            2861,
+            2069,
+            3260,
+            2372
+          ],
+          "confidence": 0.862,
+          "layoutRecovered": false,
+          "id": "photo-28",
+          "label": "56",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3179,
+            2293,
+            3255,
+            2349
+          ],
+          "labelConfidence": 0.968,
+          "controlId": "c13"
+        },
+        {
+          "pixelBox": [
+            2451,
+            2404,
+            2850,
+            2709
+          ],
+          "confidence": 0.843,
+          "layoutRecovered": false,
+          "id": "photo-29",
+          "label": "59",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.969,
+          "controlId": "c2"
+        },
+        {
+          "pixelBox": [
+            2854,
+            2404,
+            3260,
+            2709
+          ],
+          "confidence": 0.76,
+          "layoutRecovered": false,
+          "id": "photo-30",
+          "label": "60",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.969,
+          "controlId": "c15"
+        },
+        {
+          "pixelBox": [
+            3268,
+            2404,
+            3676,
+            2709
+          ],
+          "confidence": 0.863,
+          "layoutRecovered": true,
+          "id": "photo-31",
+          "label": "61",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3580,
+            2641,
+            3644,
+            2697
+          ],
+          "labelConfidence": 0.955,
+          "controlId": "c24"
+        },
+        {
+          "pixelBox": [
+            3674,
+            2404,
+            4081,
+            2709
+          ],
+          "confidence": 0.76,
+          "layoutRecovered": true,
+          "id": "photo-32",
+          "label": "62",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3985,
+            2641,
+            4058,
+            2697
+          ],
+          "labelConfidence": 0.97,
+          "controlId": "c29"
+        }
+      ],
+      "image": {
+        "encodedSize": [
+          5187,
+          3532
+        ],
+        "orientedSourceSize": [
+          5187,
+          3532
+        ],
+        "workingSize": [
+          4096,
+          2789
+        ],
+        "exifOrientation": 1,
+        "decoderReduction": 1,
+        "resized": true,
+        "pixelFrame": "working_image_after_exif_orientation",
+        "workingToSource": [
+          [
+            1.266357421875,
+            0,
+            0.1331787109375
+          ],
+          [
+            0,
+            1.2664037289351022,
+            0.1332018644675511
+          ]
+        ]
+      },
+      "analysisElapsedSec": 68.176,
+      "preview": "/tmp/dirmap-final-sheet-photos/dashahe.jpg"
+    },
+    {
+      "sheet": "campus",
+      "sourceSha256": "67db55e8b7249ae947a8e253aded172e343207b931432f622d407ceb74402bd8",
+      "photoCount": 17,
+      "expectedPhotoCount": 17,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47"
+      ],
+      "allLinked": true,
+      "maxPhotoCentreErrorAtPreviewPx": 12.74,
+      "previewScale": 0.244140625,
+      "controlCount": 18,
+      "photoPixelBoxes": [
+        {
+          "pixelBox": [
+            1579,
+            98,
+            2078,
+            508
+          ],
+          "confidence": 0.957,
+          "layoutRecovered": false,
+          "id": "photo-1",
+          "label": "34",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            1943,
+            356,
+            2052,
+            437
+          ],
+          "labelConfidence": 0.966,
+          "controlId": "c5"
+        },
+        {
+          "pixelBox": [
+            2080,
+            98,
+            2577,
+            508
+          ],
+          "confidence": 0.941,
+          "layoutRecovered": false,
+          "id": "photo-2",
+          "label": "35",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            2430,
+            363,
+            2534,
+            444
+          ],
+          "labelConfidence": 0.916,
+          "controlId": "c17"
+        },
+        {
+          "pixelBox": [
+            2579,
+            98,
+            3070,
+            508
+          ],
+          "confidence": 0.916,
+          "layoutRecovered": false,
+          "id": "photo-3",
+          "label": "36",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            2940,
+            358,
+            3044,
+            439
+          ],
+          "labelConfidence": 0.959,
+          "controlId": "c15"
+        },
+        {
+          "pixelBox": [
+            3072,
+            98,
+            3607,
+            508
+          ],
+          "confidence": 0.76,
+          "layoutRecovered": false,
+          "id": "photo-4",
+          "label": "37",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3441,
+            358,
+            3543,
+            439
+          ],
+          "labelConfidence": 0.96,
+          "controlId": "c14"
+        },
+        {
+          "id": "photo-5",
+          "pixelBox": [
+            580,
+            100,
+            1086,
+            508
+          ],
+          "numberPixelBox": [
+            924,
+            361,
+            1028,
+            442
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "32",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.948,
+          "controlId": "c11"
+        },
+        {
+          "id": "photo-6",
+          "pixelBox": [
+            1086,
+            100,
+            1585,
+            518
+          ],
+          "numberPixelBox": [
+            1446,
+            361,
+            1551,
+            442
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "33",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.83,
+          "controlId": "c16"
+        },
+        {
+          "id": "photo-7",
+          "pixelBox": [
+            90,
+            107,
+            587,
+            516
+          ],
+          "numberPixelBox": [
+            457,
+            369,
+            557,
+            448
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "31",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.71,
+          "controlId": "c9"
+        },
+        {
+          "id": "photo-8",
+          "pixelBox": [
+            3074,
+            501,
+            3607,
+            919
+          ],
+          "numberPixelBox": [
+            3426,
+            762,
+            3533,
+            843
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "43",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.969,
+          "controlId": "c10"
+        },
+        {
+          "id": "photo-9",
+          "pixelBox": [
+            85,
+            516,
+            582,
+            911
+          ],
+          "numberPixelBox": [
+            444,
+            777,
+            548,
+            858
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "38",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.959,
+          "controlId": "c13"
+        },
+        {
+          "id": "photo-10",
+          "pixelBox": [
+            68,
+            909,
+            580,
+            1301
+          ],
+          "numberPixelBox": [
+            427,
+            1169,
+            531,
+            1250
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "39",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.948,
+          "controlId": "c12"
+        },
+        {
+          "id": "photo-11",
+          "pixelBox": [
+            3085,
+            919,
+            3586,
+            1289
+          ],
+          "numberPixelBox": [
+            3443,
+            1173,
+            3552,
+            1252
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "44",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.877,
+          "controlId": "c2"
+        },
+        {
+          "id": "photo-12",
+          "pixelBox": [
+            90,
+            1301,
+            589,
+            1692
+          ],
+          "numberPixelBox": [
+            448,
+            1557,
+            555,
+            1636
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "40",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.967,
+          "controlId": "c6"
+        },
+        {
+          "id": "photo-13",
+          "pixelBox": [
+            3085,
+            1289,
+            3588,
+            1705
+          ],
+          "numberPixelBox": [
+            3450,
+            1559,
+            3554,
+            1636
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "45",
+          "labelSource": "sheet_glyphs",
+          "labelConfidence": 0.898,
+          "controlId": "c1"
+        },
+        {
+          "id": "photo-14",
+          "pixelBox": [
+            90,
+            1692,
+            587,
+            2080
+          ],
+          "numberPixelBox": [
+            450,
+            1961,
+            553,
+            2039
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "41",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.96,
+          "controlId": "c7"
+        },
+        {
+          "id": "photo-15",
+          "pixelBox": [
+            85,
+            2080,
+            585,
+            2449
+          ],
+          "numberPixelBox": [
+            442,
+            2342,
+            548,
+            2423
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "42",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.927,
+          "controlId": "c8"
+        },
+        {
+          "id": "photo-16",
+          "pixelBox": [
+            3038,
+            2460,
+            3554,
+            2874
+          ],
+          "numberPixelBox": [
+            3413,
+            2724,
+            3520,
+            2805
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "47",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.776,
+          "controlId": "c18"
+        },
+        {
+          "id": "photo-17",
+          "pixelBox": [
+            2475,
+            2447,
+            3038,
+            2931
+          ],
+          "numberPixelBox": [
+            2848,
+            2735,
+            2957,
+            2814
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "46",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.893,
+          "controlId": "c4"
+        }
+      ],
+      "image": {
+        "encodedSize": [
+          7594,
+          8608
+        ],
+        "orientedSourceSize": [
+          7594,
+          8608
+        ],
+        "workingSize": [
+          3614,
+          4096
+        ],
+        "exifOrientation": 1,
+        "decoderReduction": 2,
+        "resized": true,
+        "pixelFrame": "working_image_after_exif_orientation",
+        "workingToSource": [
+          [
+            2.101272827891533,
+            0,
+            0.5506364139457665
+          ],
+          [
+            0,
+            2.1015625,
+            0.55078125
+          ]
+        ]
+      },
+      "analysisElapsedSec": 50.228,
+      "preview": "/tmp/dirmap-final-sheet-photos/campus.jpg"
+    },
+    {
+      "sheet": "campus-compressed",
+      "sourceSha256": "068f178d909ed25fe54e051b107dd785a58642053ebcdda5ebbc6c509b07673e",
+      "photoCount": 17,
+      "expectedPhotoCount": 17,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47"
+      ],
+      "allLinked": true,
+      "maxPhotoCentreErrorAtPreviewPx": 12.45,
+      "previewScale": 0.244140625,
+      "controlCount": 18,
+      "photoPixelBoxes": [
+        {
+          "pixelBox": [
+            1579,
+            96,
+            2078,
+            499
+          ],
+          "confidence": 0.975,
+          "layoutRecovered": false,
+          "id": "photo-1",
+          "label": "34",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            1943,
+            356,
+            2052,
+            439
+          ],
+          "labelConfidence": 0.91,
+          "controlId": "c5"
+        },
+        {
+          "pixelBox": [
+            2080,
+            96,
+            2577,
+            499
+          ],
+          "confidence": 0.97,
+          "layoutRecovered": false,
+          "id": "photo-2",
+          "label": "35",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            2430,
+            363,
+            2534,
+            444
+          ],
+          "labelConfidence": 0.964,
+          "controlId": "c17"
+        },
+        {
+          "pixelBox": [
+            2577,
+            96,
+            3070,
+            499
+          ],
+          "confidence": 0.941,
+          "layoutRecovered": false,
+          "id": "photo-3",
+          "label": "36",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            2938,
+            358,
+            3044,
+            442
+          ],
+          "labelConfidence": 0.966,
+          "controlId": "c15"
+        },
+        {
+          "pixelBox": [
+            3072,
+            96,
+            3605,
+            499
+          ],
+          "confidence": 0.776,
+          "layoutRecovered": false,
+          "id": "photo-4",
+          "label": "37",
+          "labelSource": "tesseract",
+          "numberPixelBox": [
+            3439,
+            358,
+            3546,
+            439
+          ],
+          "labelConfidence": 0.964,
+          "controlId": "c14"
+        },
+        {
+          "id": "photo-5",
+          "pixelBox": [
+            580,
+            98,
+            1086,
+            508
+          ],
+          "numberPixelBox": [
+            924,
+            356,
+            1028,
+            442
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "32",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.686,
+          "controlId": "c11"
+        },
+        {
+          "id": "photo-6",
+          "pixelBox": [
+            1086,
+            98,
+            1585,
+            521
+          ],
+          "numberPixelBox": [
+            1446,
+            361,
+            1551,
+            442
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "33",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.922,
+          "controlId": "c16"
+        },
+        {
+          "id": "photo-7",
+          "pixelBox": [
+            90,
+            102,
+            587,
+            506
+          ],
+          "numberPixelBox": [
+            454,
+            369,
+            557,
+            448
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "31",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.759,
+          "controlId": "c9"
+        },
+        {
+          "id": "photo-8",
+          "pixelBox": [
+            3074,
+            499,
+            3605,
+            909
+          ],
+          "numberPixelBox": [
+            3424,
+            762,
+            3533,
+            843
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "43",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.968,
+          "controlId": "c10"
+        },
+        {
+          "id": "photo-9",
+          "pixelBox": [
+            3089,
+            909,
+            3584,
+            1293
+          ],
+          "numberPixelBox": [
+            3441,
+            1171,
+            3550,
+            1252
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "44",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.829,
+          "controlId": "c2"
+        },
+        {
+          "id": "photo-10",
+          "pixelBox": [
+            90,
+            1301,
+            591,
+            1692
+          ],
+          "numberPixelBox": [
+            448,
+            1557,
+            557,
+            1638
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "40",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.965,
+          "controlId": "c6"
+        },
+        {
+          "id": "photo-11",
+          "pixelBox": [
+            3083,
+            1293,
+            3586,
+            1694
+          ],
+          "numberPixelBox": [
+            3447,
+            1557,
+            3552,
+            1636
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "45",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.804,
+          "controlId": "c1"
+        },
+        {
+          "id": "photo-12",
+          "pixelBox": [
+            90,
+            1692,
+            587,
+            2080
+          ],
+          "numberPixelBox": [
+            450,
+            1958,
+            553,
+            2039
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "41",
+          "labelSource": "sheet_glyphs",
+          "labelConfidence": 0.891,
+          "controlId": "c7"
+        },
+        {
+          "id": "photo-13",
+          "pixelBox": [
+            85,
+            2078,
+            582,
+            2455
+          ],
+          "numberPixelBox": [
+            439,
+            2342,
+            548,
+            2423
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "42",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.805,
+          "controlId": "c8"
+        },
+        {
+          "id": "photo-14",
+          "pixelBox": [
+            3036,
+            2460,
+            3554,
+            2863
+          ],
+          "numberPixelBox": [
+            3411,
+            2724,
+            3520,
+            2805
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "47",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.707,
+          "controlId": "c18"
+        },
+        {
+          "id": "photo-15",
+          "pixelBox": [
+            2479,
+            2445,
+            3036,
+            2886
+          ],
+          "numberPixelBox": [
+            2848,
+            2735,
+            2957,
+            2816
+          ],
+          "confidence": 0.78,
+          "layoutRecovered": true,
+          "label": "46",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.969,
+          "controlId": "c4"
+        },
+        {
+          "id": "photo-16",
+          "pixelBox": [
+            85,
+            491,
+            582,
+            894
+          ],
+          "layoutRecovered": true,
+          "confidence": 0.78,
+          "label": "38",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.961,
+          "controlId": "c13"
+        },
+        {
+          "id": "photo-17",
+          "pixelBox": [
+            85,
+            911,
+            576,
+            1301
+          ],
+          "layoutRecovered": true,
+          "confidence": 0.78,
+          "label": "39",
+          "labelSource": "tesseract",
+          "labelConfidence": 0.965,
+          "controlId": "c12"
+        }
+      ],
+      "image": {
+        "encodedSize": [
+          3613,
+          4096
+        ],
+        "orientedSourceSize": [
+          3613,
+          4096
+        ],
+        "workingSize": [
+          3613,
+          4096
+        ],
+        "exifOrientation": 1,
+        "decoderReduction": 1,
+        "resized": false,
+        "pixelFrame": "working_image_after_exif_orientation",
+        "workingToSource": [
+          [
+            1.0,
+            0,
+            0.0
+          ],
+          [
+            0,
+            1.0,
+            0.0
+          ]
+        ]
+      },
+      "analysisElapsedSec": 40.845,
+      "preview": "/tmp/dirmap-final-sheet-photos/campus-compressed.jpg"
+    }
+  ],
+  "allChecksPassed": true
+}

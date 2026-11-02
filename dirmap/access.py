@@ -198,44 +198,61 @@ class AccessResolver:
                 'mask': cv2.dilate(owned, np.ones((3, 3), np.uint8)), 'origin': np.array([x0, y0])}
 
     def _ink_feature(self, point, circle_radius):
-        """Footprint of thin black strokes under a circle centre.
+        """Approach a complete short stroke or the observed tip of a barrier.
 
-        A control centred on a fence, rock edge, or contour touches only a
-        few native pixels of that line. Region-size and elongation filters
-        drop those strokes from `point_ink`, but they still mark the feature
-        the checkpoint stands on, so approach them from outside the strokes.
+        A sign, curved wall, or wall end can be the feature under the circle.
+        Only its bounded body may associate an approach with the target;
+        route edges and the subsequent local-side check remain unchanged.
         """
-        ink = self.semantics.get('point_ink')
-        if ink is None:
+        parts = self._components('point_ink')
+        if parts is None:
             return None
-        ink = (ink > 0).astype(np.uint8)
-        height, width = ink.shape
-        radius = max(6, int(round(min(circle_radius, 12))))
+        labels, stats = parts
+        height, width = labels.shape
         x, y = np.rint(point).astype(int)
-        x0, y0 = max(0, x-radius), max(0, y-radius)
-        x1, y1 = min(width, x+radius+1), min(height, y+radius+1)
-        local = ink[y0:y1, x0:x1]
-        if not local.any():
+        label = int(labels[y, x])
+        if not label:
             return None
-        # Only the stroke under the circle counts. A wall a few pixels away
-        # must never be bridged just because the checkpoint happens to be
-        # near ink, and a long barrier is not a course-line-width stroke.
-        _, components, stats, _ = cv2.connectedComponentsWithStats(local, 8)
-        label = int(components[round(point[1])-y0, round(point[0])-x0])
-        if label == 0:
-            return None
-        if max(stats[label, cv2.CC_STAT_WIDTH], stats[label, cv2.CC_STAT_HEIGHT]) > max(6, radius*1.5):
-            return None
-        stroke = (components == label).astype(np.uint8)
-        # The stroke's own anti-aliased edge belongs to the symbol; the wider
-        # footprint only bounds the search, and blocked pixels outside the
-        # stroke itself are still refused in `_stroke_component`.
+        bx, by, bw, bh, _ = stats[label]
+        complete = (max(bw, bh) <= max(12., circle_radius*1.25) and max(bw, bh)*self.scale <= 18
+                    and bx > 0 and by > 0 and bx+bw < width and by+bh < height)
+        method = 'ink_stroke_edge'
+        if complete:
+            x0, y0 = max(0, bx-2), max(0, by-2)
+            x1, y1 = min(width, bx+bw+2), min(height, by+bh+2)
+            stroke = (labels[y0:y1, x0:x1] == label).astype(np.uint8)
+        else:
+            from .network_registration import thin
+            radius = max(6, int(np.ceil(min(circle_radius, 5/max(self.scale, .1)))))
+            x0, y0 = max(0, x-radius), max(0, y-radius)
+            x1, y1 = min(width, x+radius+1), min(height, y+radius+1)
+            local = (labels[y0:y1, x0:x1] == label).astype(np.uint8)
+            skeleton = thin(local)
+            kernel = np.ones((3, 3), np.uint8); kernel[1, 1] = 0
+            neighbours = cv2.filter2D(skeleton, cv2.CV_16U, kernel, borderType=cv2.BORDER_CONSTANT)
+            tips = (skeleton > 0) & (neighbours == 1)
+            tips[:3] = tips[-3:] = False; tips[:, :3] = tips[:, -3:] = False
+            ty, tx = np.nonzero(tips)
+            if not len(tx):
+                return None
+            distance = np.hypot(tx+x0-point[0], ty+y0-point[1])
+            index = int(np.argmin(distance))
+            if distance[index] > min(circle_radius*.25, 1.5/max(self.scale, .1)):
+                return None
+            yy, xx = np.indices(local.shape)
+            near_tip = (xx-tx[index])**2+(yy-ty[index])**2 <= (2/max(self.scale, .1))**2
+            _, connected = cv2.connectedComponents((local & near_tip).astype(np.uint8), 8)
+            own = connected[ty[index], tx[index]]
+            if not own or connected[y-y0, x-x0] != own:
+                return None
+            stroke = (connected == own).astype(np.uint8)
+            method = 'ink_tip_edge'
+        # Keep the one-pixel print rim with its stroke. Other hard pixels,
+        # restricted ground and manual closures are checked on every ray.
         symbol = cv2.dilate(stroke, np.ones((3, 3), np.uint8))
         grown = cv2.dilate(stroke, np.ones((5, 5), np.uint8))
-        if not grown[round(point[1])-y0, round(point[0])-x0]:
-            return None
-        return {'origin': np.array([x0, y0]), 'mask': grown, 'limitM': 4.,
-                'method': 'ink_stroke_edge', 'kind': 'point_ink', 'stroke': True,
+        return {'origin': np.array([x0, y0]), 'mask': grown, 'limitM': 3.,
+                'method': method, 'kind': 'point_ink', 'stroke': True,
                 'strokeLabel': label, 'symbol': symbol, 'symbolOrigin': np.array([x0, y0])}
 
     @staticmethod
@@ -248,6 +265,61 @@ class AccessResolver:
         if (xy < 0).any() or (xy[:, 0] >= symbol.shape[1]).any() or (xy[:, 1] >= symbol.shape[0]).any():
             return None
         return True if np.all(symbol[xy[:, 1], xy[:, 0]] > 0) else None
+
+    def review_candidates(self, control, required_component):
+        """Nearby reachable ground to preview, never an automatic approach.
+
+        Ambiguous symbols can require choosing a side by looking at a photo
+        or at the site. Offer spatially distinct choices without changing
+        the circle, opening obstacles, or allowing a plan before confirmation.
+        """
+        if required_component is None or control.get('approachPixel'):
+            return []
+        point = np.asarray(control['pixel'], float)
+        world, valid = self.registration.forward([point])
+        x, y = np.rint(point).astype(int)
+        if not valid[0] or not (0 <= x < self.graph.costs.shape[1] and 0 <= y < self.graph.costs.shape[0]):
+            return []
+        for mask in (self.semantics.get('restricted'), self.semantics.get('water'), getattr(self.graph, 'closed_edits', None)):
+            if mask is not None and mask[y, x]:
+                return []
+        limit_m = min(12., max(4., control.get('radiusPx', 15)*self.scale*1.4))
+        radius = int(np.ceil(limit_m/self.scale))
+        data = self.graph.surface_info('ground')
+        owner = data['owner']
+        if owner is None:
+            return []
+        ox, oy = np.rint(data['origin']).astype(int)
+        x0, x1 = max(0, x-ox-radius), min(owner.shape[1], x-ox+radius+1)
+        y0, y1 = max(0, y-oy-radius), min(owner.shape[0], y-oy+radius+1)
+        crop = owner[y0:y1, x0:x1]
+        yy, xx = np.nonzero((crop >= 0) & (self.graph.components[np.maximum(crop, 0)] == required_component))
+        if not len(xx):
+            return []
+        pixels = np.column_stack((xx+x0+ox, yy+y0+oy)).astype(float)
+        local, valid = self.registration.forward(pixels)
+        delta = local-world[0]
+        distances = np.linalg.norm(delta, axis=1)
+        bearings = (np.degrees(np.arctan2(delta[:, 0], delta[:, 1]))+360) % 360
+        candidates = []
+        for i in np.argsort(distances):
+            if not valid[i] or distances[i] > limit_m or distances[i] < .15:
+                continue
+            if any(min(abs(bearings[i]-c['bearingDeg']), 360-abs(bearings[i]-c['bearingDeg'])) < 60
+                   or np.linalg.norm(pixels[i]-c['pixel'])*self.scale < 1.5 for c in candidates):
+                continue
+            try:
+                node = self.graph.snap(pixels[i], max_distance_px=1)
+                if self.graph.components[node] != required_component:
+                    continue
+            except ValueError:
+                continue
+            direction = ['北', '东北', '东', '东南', '南', '西南', '西', '西北'][round(float(bearings[i])/45) % 8]
+            candidates.append({'pixel': pixels[i].tolist(), 'offsetM': round(float(distances[i]), 2),
+                               'bearingDeg': round(float(bearings[i]), 1), 'direction': direction, 'surfaceId': 'ground'})
+            if len(candidates) == 4:
+                break
+        return candidates
 
     def resolve(self, control, required_component=None):
         point = np.asarray(control.get('approachPixel') or control['pixel'], dtype=float)

@@ -44,6 +44,33 @@ def test_point_symbol_gets_legal_nearby_approach_without_moving_target_or_openin
     assert reg.forward([[47, 42]])[0][0].tolist() not in route['localGeometry']
 
 
+def test_uncertain_feature_has_review_choices_but_no_route_until_one_is_explicitly_selected():
+    masks, reg = scene()
+    masks['building'][30:60, 40:70] = 1
+    graph = graph_for(masks, reg)
+    control = {'id': 'pavilion', 'pixel': [55, 45], 'radiusPx': 20}
+    before = graph.costs.copy()
+    pending = plan_matrix(graph, [control], [15, 45], [15, 45], reg)
+    assert 'matrix' not in pending and len(pending['unresolved']) == 1
+    choices = pending['unresolved'][0]['candidates']
+    assert len(choices) >= 2 and all(c['offsetM'] <= 12 for c in choices)
+    assert control['pixel'] == [55, 45] and 'approachPixel' not in control
+    selected = {**control, 'approachPixel': choices[0]['pixel']}
+    ready = plan_matrix(graph, [selected], [15, 45], [15, 45], reg)
+    assert not ready['unresolved']
+    route = expand_route(graph, ready, [0, 1, 2])
+    assert all(graph.edge_valid(a, b) for a, b in route['edgeIds'])
+    np.testing.assert_array_equal(graph.costs, before)
+    # Explicit closure and restricted ground are not turned into easy
+    # "choose a side" suggestions by the generic reviewer.
+    component = graph.components[graph.snap([15, 45])]
+    masks['restricted'][45, 55] = 1
+    assert graph.access_resolver.review_candidates(control, component) == []
+    masks['restricted'][45, 55] = 0
+    graph.closed_edits = np.zeros_like(graph.costs, bool); graph.closed_edits[45, 55] = True
+    assert graph.access_resolver.review_candidates(control, component) == []
+
+
 def test_building_edge_allows_nearby_facade_not_a_path_inside_roof():
     masks, reg = scene()
     masks['building'][20:65, 40:80] = 1
@@ -60,6 +87,44 @@ def test_long_wall_never_becomes_a_point_symbol_even_when_sides_connect_far_away
     graph = graph_for(masks, reg)
     with pytest.raises(ValueError):
         graph.access_resolver.resolve({'id': 'wall', 'pixel': [48, 42], 'radiusPx': 16})
+
+
+def test_an_isolated_short_line_has_a_reachable_perimeter_without_opening_the_line():
+    masks, reg = scene()
+    cv2.line(masks['point_ink'], (40, 40), (55, 44), 1, 2)
+    graph = graph_for(masks, reg)
+    control = {'id': 'sign', 'pixel': [47, 42], 'radiusPx': 16}
+    before = graph.costs.copy()
+    bundle = plan_matrix(graph, [control], [20, 42], [20, 42], reg)
+    assert not bundle['unresolved']
+    assert bundle['approaches'][0]['method'] == 'ink_stroke_edge'
+    assert bundle['approaches'][0]['offsetM'] <= 3
+    np.testing.assert_array_equal(graph.costs, before)
+    route = expand_route(graph, bundle, [0, 1, 2])
+    assert all(graph.edge_valid(a, b) for a, b in route['edgeIds'])
+
+
+def test_a_nearby_wall_tip_can_be_approached_but_its_middle_cannot():
+    masks, reg = scene()
+    masks['point_ink'][15:80, 48:51] = 1
+    masks['point_ink'][60:63, 49:] = 1
+    graph = graph_for(masks, reg)
+    tip = {'id': 'tip', 'pixel': [49, 16], 'radiusPx': 16}
+    ready = plan_matrix(graph, [tip], [20, 40], [20, 40], reg)
+    assert not ready['unresolved']
+    assert ready['approaches'][0]['method'] == 'ink_tip_edge'
+    assert ready['approaches'][0]['offsetM'] <= 3
+    middle = plan_matrix(graph, [{**tip, 'pixel': [49, 40]}], [20, 40], [20, 40], reg)
+    assert middle['unresolved']
+
+
+def test_a_bounded_curved_stroke_can_be_approached_from_its_open_perimeter():
+    masks, reg = scene()
+    cv2.ellipse(masks['point_ink'], (50, 45), (9, 14), 0, -90, 90, 1, 3)
+    graph = graph_for(masks, reg)
+    bundle = plan_matrix(graph, [{'id': 'arc', 'pixel': [59, 45], 'radiusPx': 30}], [30, 45], [30, 45], reg)
+    assert not bundle['unresolved']
+    assert bundle['approaches'][0]['method'] == 'ink_stroke_edge'
 
 
 def test_tree_cannot_be_approached_through_another_wall():

@@ -22,7 +22,7 @@ from scipy.spatial import Delaunay, QhullError, cKDTree
 
 from .geometry import Frame, mercator
 
-SCHEMA = 'shared-track-height-v2'
+SCHEMA = 'shared-track-height-v4-relative-contours'
 CELL_M = 10.
 MAX_EDGE_M = 160.
 MAX_SUPPORT_M = 70.
@@ -34,6 +34,8 @@ WALKING_MPS = 1.2
 KNOT_SEC = 300.
 SESSION_GAP_SEC = 1800.
 HEIGHT_SIGMA_M = 2.
+RELATIVE_CONTOUR_SIGMA_M = .5
+REFERENCE_CONTOUR_SIGMA_M = 1.
 CURVATURE_SIGMA = .01  # grade may change by about 0.1 over 10 m
 GRADE_SIGMA = 3.  # only settles directions no recording constrains; no slope bias
 DRIFT_BEND_SIGMA_M = 1/3
@@ -75,7 +77,11 @@ def spatial_groups(tracks):
             keep = parts == part
             if keep.sum() >= 3:
                 times = track.get('times')
+                chosen = np.flatnonzero(keep)
+                old_breaks = np.asarray(track.get('breaks', [0]), int)
+                breaks = np.flatnonzero(np.r_[True, np.diff(chosen) != 1] | np.isin(chosen, old_breaks))
                 grouped[int(part)].append({**track, 'points': track['points'][keep],
+                                           'breaks': breaks,
                                            'times': None if times is None else np.asarray(times)[keep]})
     return list(grouped.values())
 
@@ -104,6 +110,14 @@ def observations(track, frame, step=SAMPLE_STEP_M):
     """One observation per few metres walked; a pause counts as a few at most."""
     xy = frame.to_local(track['points'][:, :2])
     heights = track['points'][:, 2]
+    if track.get('kind') == 'contours':
+        relative = track.get('heightReference') == 'relative'
+        # A checked relative level is a shape constraint. Its uncertain
+        # absolute datum is handled by the free offset, rather than reducing
+        # its influence until a printed 2 m height difference disappears.
+        sigma = RELATIVE_CONTOUR_SIGMA_M if relative else REFERENCE_CONTOUR_SIGMA_M
+        return {'xy': xy, 'z': heights, 't': np.zeros(len(xy)), 'w': np.full(len(xy), (HEIGHT_SIGMA_M/sigma)**2),
+                'fixed': not relative, 'relative': relative}
     times = track_times(track, xy)
     travelled = np.r_[0., np.cumsum(np.linalg.norm(np.diff(xy, axis=0), axis=1))]
     segment = np.floor(travelled/step).astype(np.int64)
@@ -158,7 +172,8 @@ def overlap_links(clouds, radius=12.):
             spread = float(1.4826*np.median(np.abs(values-median)))
             # A long shared stretch must agree up to a constant, e.g. not a
             # path on a footbridge beside the road below it.
-            if abs(median) > 80 or (len(values) >= 8 and spread > 6):
+            relative = clouds[int(group[0]//n)].get('relative') or clouds[int(group[0] % n)].get('relative')
+            if (not relative and abs(median) > 80) or (len(values) >= 8 and spread > 6):
                 continue
             links.append((int(group[0]//n), int(group[0] % n)))
     rows = [v for a, b in links for v in (a, b)]
@@ -190,7 +205,7 @@ def drift_knots(times):
     return first, second, fraction, chains, count
 
 
-def _regularization(index, spacing, chains, offset):
+def _regularization(index, spacing, chains, offset, error_count):
     """Thin-plate smoothness for the ground and slow change for each error."""
     rows, cols, values, used = [], [], [], [0]
     def add(columns, coefficients, weight):
@@ -214,7 +229,7 @@ def _regularization(index, spacing, chains, offset):
         add((knot[:-1], knot[1:]), (-1, 1), 1/DRIFT_STEP_SIGMA_M)
         add((knot,), (1,), 1/(DATUM_SIGMA_M*np.sqrt(knots)))
     rows, cols, values = np.concatenate(rows), np.concatenate(cols), np.concatenate(values)
-    return coo_matrix((values, (rows, cols)), shape=(used[0], offset+sum(k for _, k in chains))).tocsr()
+    return coo_matrix((values, (rows, cols)), shape=(used[0], offset+error_count)).tocsr()
 
 
 def solve_component(clouds, origin, spacing, shape, unknown):
@@ -227,14 +242,32 @@ def solve_component(clouds, origin, spacing, shape, unknown):
     z = np.concatenate([c['z'] for c in clouds])
     weights = np.concatenate([c['w'] for c in clouds])
     owner = np.concatenate([np.full(len(c['z']), i) for i, c in enumerate(clouds)])
-    first, second, fraction, chains = [], [], [], []
+    first, second, fraction, chains, fixed, relative = [], [], [], [], [], []
     count = 0
     for cloud in clouds:
+        relative.append(np.full(len(cloud['z']), bool(cloud.get('relative'))))
+        if cloud.get('fixed'):
+            size = len(cloud['z'])
+            first.append(np.zeros(size, np.int64)); second.append(np.zeros(size, np.int64)); fraction.append(np.zeros(size))
+            fixed.append(np.ones(size, bool))
+            continue
+        if cloud.get('relative'):
+            # All contour levels in one submitted set share one unknown
+            # offset. Its arbitrary zero is neither a height anchor nor a
+            # time-varying phone error, so it receives no zero-offset prior.
+            size = len(cloud['z'])
+            first.append(np.full(size, count, np.int64)); second.append(np.full(size, count, np.int64))
+            fraction.append(np.zeros(size)); fixed.append(np.zeros(size, bool))
+            count += 1
+            continue
         a, b, w, own, knots = drift_knots(cloud['t'])
         first.append(a+count); second.append(b+count); fraction.append(w)
+        fixed.append(np.zeros(len(cloud['z']), bool))
         chains.extend((start+count, n) for start, n in own)
         count += knots
     first, second, fraction = np.concatenate(first), np.concatenate(second), np.concatenate(fraction)
+    fixed = np.concatenate(fixed)
+    relative = np.concatenate(relative)
     grid = (xy-origin)/spacing
     cell = np.floor(grid).astype(np.int64)
     dx, dy = (grid-cell).T
@@ -242,11 +275,12 @@ def solve_component(clouds, origin, spacing, shape, unknown):
     corners = (index[y, x], index[y, x+1], index[y+1, x], index[y+1, x+1])
     if any((c < 0).any() for c in corners):
         raise ValueError('高程观测超出重建网格')
-    rows = np.repeat(np.arange(len(z)), 6)
-    cols = np.column_stack((*corners, nodes+first, nodes+second)).ravel()
-    values = np.column_stack(((1-dx)*(1-dy), dx*(1-dy), (1-dx)*dy, dx*dy, 1-fraction, fraction)).ravel()
+    rows = np.concatenate((np.repeat(np.arange(len(z)), 4), np.repeat(np.flatnonzero(~fixed), 2)))
+    cols = np.concatenate((np.column_stack(corners).ravel(), np.column_stack((nodes+first[~fixed], nodes+second[~fixed])).ravel()))
+    values = np.concatenate((np.column_stack(((1-dx)*(1-dy), dx*(1-dy), (1-dx)*dy, dx*dy)).ravel(),
+                             np.column_stack((1-fraction[~fixed], fraction[~fixed])).ravel()))
     design = coo_matrix((values, (rows, cols)), shape=(len(z), nodes+count)).tocsr()
-    prior = _regularization(index, spacing, chains, nodes)
+    prior = _regularization(index, spacing, chains, nodes, count)
     penalty = (prior.T@prior).tocsc()
     robust = np.ones(len(z))
     factor = solution = None
@@ -271,9 +305,10 @@ def solve_component(clouds, origin, spacing, shape, unknown):
         sigma = max(.7, 1.4826*float(np.median(np.abs(residual))))
         limit = 1.5*sigma
         robust = np.where(np.abs(residual) <= limit, 1., limit/np.maximum(np.abs(residual), 1e-9))
-    drift = (1-fraction)*solution[nodes+first]+fraction*solution[nodes+second]
+    drift = np.zeros(len(z))
+    drift[~fixed] = (1-fraction[~fixed])*solution[nodes+first[~fixed]]+fraction[~fixed]*solution[nodes+second[~fixed]]
     # The mean of all recordings, not one arbitrary walk, sets the datum.
-    shift = float(np.average(drift, weights=weights))
+    shift = 0. if fixed.any() else float(np.average(drift[~relative], weights=weights[~relative]))
     surface = np.full(shape, np.nan)
     surface[unknown] = solution[:nodes]+shift
     return {'surface': surface, 'drift': drift-shift, 'residual': residual, 'owner': owner, 'xy': xy, 'z': z,
@@ -332,7 +367,7 @@ def reconstruct(tracks):
             clouds.append({**cloud, 'id': track['id']})
     if not clouds:
         raise ValueError('有效高程观测不足，无法重建地形')
-    links, count, labels = overlap_links([{'xy': c['xy'], 'z': c['z']} for c in clouds])
+    links, count, labels = overlap_links(clouds)
     origin, spacing, shape, unknown = grid_geometry(clouds)
     rows, columns = shape
     yy, xx = np.mgrid[:rows, :columns]
@@ -341,9 +376,22 @@ def reconstruct(tracks):
     support = np.full(shape, np.inf)
     scatter = np.full(shape, np.nan)
     datum = np.full(shape, -1, np.int32)
-    corrections, observed, residuals = {}, [], []
+    corrections, observed = {}, []
+    offsets = np.cumsum([0]+[len(c['z']) for c in clouds])
+    residual = np.full(offsets[-1], np.nan)
+    unanchored = 0
     for component in range(count):
-        members = [clouds[i] for i in np.flatnonzero(labels == component)]
+        member_ids = np.flatnonzero(labels == component)
+        members = [clouds[i] for i in member_ids]
+        if all(c.get('relative') for c in members):
+            # Relative levels alone have no height datum. Retain the source
+            # for future alignment, without publishing arbitrary zero-height
+            # terrain or introducing a fictitious step beside real tracks.
+            unanchored += 1
+            for cloud in members:
+                corrections[cloud['id']] = {'id': cloud['id'], 'correctionM': None, 'driftRangeM': None,
+                    'component': int(component), 'observationCells': len(cloud['z']), 'anchored': False}
+            continue
         fitted = solve_component(members, origin, spacing, shape, unknown)
         mask, distance = supported_nodes(fitted['xy'], query, shape)
         # Each unaligned recording group keeps its own datum; the nearer
@@ -360,11 +408,12 @@ def reconstruct(tracks):
         for i, cloud in enumerate(members):
             own = fitted['owner'] == i
             drift = fitted['drift'][own]
+            source_id = member_ids[i]
+            residual[offsets[source_id]:offsets[source_id+1]] = fitted['residual'][own]
             corrections[cloud['id']] = {'id': cloud['id'], 'correctionM': round(-float(np.average(drift, weights=cloud['w'])), 2),
                                         'driftRangeM': round(float(np.ptp(drift)), 2), 'component': int(component),
-                                        'observationCells': int(own.sum())}
+                                        'observationCells': int(own.sum()), 'anchored': True}
         observed.append(np.column_stack((fitted['xy'], fitted['z']-fitted['drift'])))
-        residuals.append(fitted['residual'])
     # Unaligned recording datums must not meet as a made-up terrain step.
     for axis in (0, 1):
         before = [slice(None)]*2; after = [slice(None)]*2
@@ -375,8 +424,7 @@ def reconstruct(tracks):
     valid = np.isfinite(height)
     support[~valid] = np.inf
     scatter[~valid] = np.nan
-    observed = np.concatenate(observed)
-    residual = np.concatenate(residuals)
+    observed = np.concatenate(observed) if observed else np.empty((0, 3))
     # Residuals where another recording passed within 12 m measure agreement.
     owners = np.concatenate([np.full(len(c['z']), i) for i, c in enumerate(clouds)])
     positions = np.concatenate([c['xy'] for c in clouds])
@@ -384,6 +432,8 @@ def reconstruct(tracks):
     distance, near = distance.reshape(len(positions), -1), near.reshape(len(positions), -1)
     found = np.isfinite(distance)
     shared = np.any(found & (owners[np.where(found, near, 0)] != owners[:, None]), axis=1)
+    shared &= np.isfinite(residual)
+    known_residual = residual[np.isfinite(residual)]
     values = height[valid]
     metadata = {
         'schema': SCHEMA, 'frame': frame.as_dict(), 'origin': origin.tolist(), 'spacingM': spacing,
@@ -392,12 +442,15 @@ def reconstruct(tracks):
         'coverageFraction': round(float(valid.mean()), 4), 'supportedCells': int(valid.sum()),
         'minHeightM': round(float(values.min()), 1) if len(values) else None,
         'maxHeightM': round(float(values.max()), 1) if len(values) else None,
-        'alignment': {'alignedComponents': int(count), 'overlapPairs': len(links),
+        'alignment': {'alignedComponents': int(count), 'unanchoredComponents': unanchored, 'overlapPairs': len(links),
                       'overlapResidualM': round(float(np.median(np.abs(residual[shared]))), 2) if shared.any() else None,
-                      'residualM': round(float(1.4826*np.median(np.abs(residual))), 2),
+                      'residualM': round(float(1.4826*np.median(np.abs(known_residual))), 2) if len(known_residual) else None,
                       'tracks': [corrections[c['id']] for c in clouds]},
-        'datum': 'relative-recorded-height',
-        'method': 'robust joint least squares: ground surface + per-recording drift (5-min knots) / thin-plate smoothing',
+        'datum': 'awaiting-height-reference' if unanchored == count else 'confirmed-contour-height'
+                 if any(c.get('fixed') for c in clouds) else 'relative-recorded-height',
+        'contourSources': sum(t.get('kind') == 'contours' for t in tracks),
+        'relativeContourSources': sum(bool(c.get('relative')) for c in clouds),
+        'method': 'robust joint least squares: ground surface + per-recording drift + fixed/relative contour levels / thin-plate smoothing',
         'maxTriangleEdgeM': MAX_EDGE_M, 'maxSupportDistanceM': MAX_SUPPORT_M, 'nearSupportDistanceM': NEAR_SUPPORT_M,
     }
     observed_lnglat = frame.to_lnglat(observed[:, :2])

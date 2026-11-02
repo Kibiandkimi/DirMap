@@ -1,0 +1,10 @@
+{
+  "description": "Contributor-confirmed cycling recordings, supplied on 2026-11-02. All other recordings retain automatic, uncertain activity inference.",
+  "activities": {
+    "d0ae0fdd750e7ba782b4fa509341e98258807efc645e3a23d3c424378e1decf0": "bicycle",
+    "5a23c14d1a0f882a3db025af32ea9de6dbd967fce89efa362ea3b3235db63119": "bicycle",
+    "79a8641bd0485ba71ef5539843c2df19999557c7bd6318f59fa861602edc32f1": "bicycle",
+    "e840bb00bad0e9615a52241d1dbd6b0545c6c9156c6eb521b806d07139c87268": "bicycle",
+    "419cfd3c66ced005b6762fde858c57bffdfe345580eb1b88154ac1364bdb3d37": "bicycle"
+  }
+}

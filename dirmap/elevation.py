@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from . import store
+from . import store, travel
 from .elevation_model import HeightModel, SCHEMA, fingerprint, reconstruct, spatial_groups
 from .geometry import Frame, affine_points
 
@@ -47,17 +47,23 @@ def catalogue():
 
 
 def models():
-    return store.read_json(root()/'models.json', {'sourceVersion': 0, 'schema': SCHEMA, 'regions': []})
+    return store.read_json(root()/'models.json', {'sourceVersion': 0, 'schema': SCHEMA, 'regions': [],
+                                                'travelSchema': travel.SCHEMA, 'travelModels': []})
 
 
 def public_status():
     with store.LOCK:
         source, built = catalogue(), models()
+    datums = {r.get('datum', 'relative-recorded-height') for r in built['regions']}
+    travel_models = built.get('travelModels', [])
+    diagnostics = {t['id']: t for r in travel_models for t in r['tracks']}
     return {'version': source['version'], 'modelVersion': built.get('sourceVersion', 0),
-            'needsRebuild': source['version'] != built.get('sourceVersion') or built.get('schema') != SCHEMA,
-            'builtAt': built.get('builtAt'), 'tracks': source['tracks'], 'regions': built['regions'],
+            'needsRebuild': source['version'] != built.get('sourceVersion') or built.get('schema') != SCHEMA or built.get('travelSchema') != travel.SCHEMA,
+            'builtAt': built.get('builtAt'), 'tracks': [{**t, 'speedLearning': diagnostics.get(t['id'])} for t in source['tracks']],
+            'regions': built['regions'], 'travelModels': travel_models,
             'pointCount': sum(t['pointCount'] for t in source['tracks'] if t['enabled']),
-            'shared': True, 'datum': 'relative-recorded-height'}
+            'shared': True, 'datum': next(iter(datums)) if len(datums) == 1 else
+            'mixed-height-references' if datums else 'relative-recorded-height'}
 
 
 def parse_time(text):
@@ -92,8 +98,8 @@ def parse_kml(content, filename):
             raise ValueError('相对地面或海底的高度不能用于重建地形，请导出记录海拔的轨迹')
         start = len(rows)
         elements = [e for e in geometry.iter() if tag(e) in ('coordinates', 'coord')]
-        # gx:Track pairs its n <when> with its n <gx:coord>; the times only
-        # help separate a phone's slow height drift from the terrain.
+        # gx:Track pairs its n <when> with its n <gx:coord>. Never synthesize
+        # missing clocks: these now also supply observed moving speeds.
         whens = [e for e in geometry if tag(e) == 'when'] if tag(geometry) == 'Track' else []
         stamps = [parse_time(e.text) for e in whens] if len(whens) == len(elements) else [np.nan]*len(elements)
         for element, stamp in zip(elements, stamps):
@@ -137,12 +143,14 @@ def track_record(points, breaks, times, name, file_name, source_sha256, modes):
     breaks = np.asarray(sorted(set([0, *[i for i in breaks if i < len(points)]])), np.int32)
     digest = hashlib.sha256(points.astype('<f8').tobytes()+breaks.astype('<i4').tobytes()).hexdigest()
     times = np.asarray(times, float)
-    summary = {'id': digest, 'name': name[:120], 'fileName': Path(file_name).name[:180],
+    summary = {'id': digest, 'geometryId': digest, 'name': name[:120], 'fileName': Path(file_name).name[:180],
                'pointCount': len(points), 'rejectedPoints': 0,
                'recordedAt': float(np.nanmin(times)) if np.isfinite(times).any() else None,
                'bbox': [*points[:, :2].min(axis=0).tolist(), *points[:, :2].max(axis=0).tolist()],
                'minHeightM': float(points[:, 2].min()), 'maxHeightM': float(points[:, 2].max()),
-               'sourceSha256': source_sha256, 'altitudeModes': list(modes), 'enabled': True}
+               'sourceSha256': source_sha256, 'altitudeModes': list(modes), 'enabled': True,
+               'activity': 'auto', 'timedPointCount': int(np.isfinite(times).sum()),
+               'timingFingerprint': hashlib.sha256(np.nan_to_num(times, nan=-1).astype('<f8').tobytes()).hexdigest()}
     return summary, {'points': points, 'breaks': breaks, 'times': times}
 
 
@@ -184,7 +192,29 @@ def store_tracks(parsed, owner, errors=()):
     with store.LOCK:
         source = catalogue()
         existing = {t['id']: t for t in source['tracks']}
-        added, duplicates = [], []
+        # Equal coordinates can be separate walks/rides at different times.
+        # Keep legacy geometry IDs for the first survey and untimed upgrades,
+        # but do not discard a later, fully timed traversal of the same path.
+        timelines, resolved = {}, []
+        def complete_time(values):
+            return values is not None and np.ndim(values) == 1 and len(values) > 1 and np.isfinite(values).all() and (np.diff(values) > 0).all()
+        for summary, arrays in parsed:
+            identifier, times = summary['id'], arrays.get('times')
+            if identifier not in timelines:
+                previous = None
+                if identifier in existing:
+                    with np.load(root()/'tracks'/(identifier+'.npz'), allow_pickle=False) as saved:
+                        previous = saved['times'] if 'times' in saved.files else None
+                timelines[identifier] = previous
+            previous = timelines[identifier]
+            digest = hashlib.sha256(identifier.encode()+np.asarray(times, '<f8').tobytes()).hexdigest() if complete_time(times) else None
+            if digest in existing or (complete_time(previous) and complete_time(times) and not np.array_equal(previous, times)):
+                summary = {**summary, 'id': digest, 'geometryId': identifier}
+            elif not complete_time(previous) and complete_time(times):
+                timelines[identifier] = times
+            resolved.append((summary, arrays))
+        parsed = resolved
+        added, duplicates, upgraded = [], [], []
         new = {summary['id']: (summary, arrays) for summary, arrays in parsed if summary['id'] not in existing}
         total = sum(t['pointCount'] for t in source['tracks'])+sum(summary['pointCount'] for summary, _ in new.values())
         if total > MAX_TOTAL_POINTS or len(existing)+len(new) > MAX_TRACKS:
@@ -195,17 +225,28 @@ def store_tracks(parsed, owner, errors=()):
         for summary, arrays in parsed:
             if summary['id'] in existing:
                 duplicates.append({'id': summary['id'], 'fileName': summary['fileName'], 'ownerName': existing[summary['id']]['ownerName']})
+                # A later timed export can enrich the owner's untimed survey,
+                # without duplicating its terrain weight or transferring it.
+                record = existing[summary['id']]
+                if record['ownerId'] == owner['id'] and summary.get('timedPointCount', 0):
+                    path = root()/'tracks'/(record['id']+'.npz')
+                    with np.load(path, allow_pickle=False) as saved:
+                        old_count = int(np.isfinite(saved['times']).sum()) if 'times' in saved.files else 0
+                    if summary['timedPointCount'] > old_count:
+                        write_npz(path, arrays)
+                        record.update({k: summary[k] for k in ('timedPointCount', 'timingFingerprint', 'recordedAt')})
+                        upgraded.append(record['id'])
                 continue
             record = {**summary, 'ownerId': owner['id'], 'ownerName': owner['username'], 'createdAt': time.time()}
             write_npz(root()/'tracks'/(record['id']+'.npz'), arrays)
             source['tracks'].append(record); existing[record['id']] = record; added.append(record['id'])
-        if added:
+        if added or upgraded:
             source['version'] += 1
             store.atomic_json(root()/'tracks.json', source)
-        return {'version': source['version'], 'added': added, 'duplicates': duplicates, 'errors': errors}
+        return {'version': source['version'], 'added': added, 'duplicates': duplicates, 'timingUpgraded': upgraded, 'errors': errors}
 
 
-def change_track(identifier, owner, expected_version, *, name=None, enabled=None, delete=False):
+def change_track(identifier, owner, expected_version, *, name=None, enabled=None, activity=None, delete=False):
     with store.LOCK:
         source = catalogue()
         record = next((t for t in source['tracks'] if t['id'] == identifier), None)
@@ -219,6 +260,11 @@ def change_track(identifier, owner, expected_version, *, name=None, enabled=None
         if delete:
             source['tracks'].remove(record); changed = True
         else:
+            if activity is not None:
+                if activity not in travel.travel_model.ACTIVITIES or record.get('kind') == 'contours':
+                    raise ValueError('请选择有效的轨迹活动类型；等高线不参与速度学习')
+                if activity != record.get('activity', 'auto'):
+                    record['activity'] = activity; changed = True
             if name is not None and name.strip() != record['name']:
                 if not 1 <= len(name.strip()) <= 120:
                     raise ValueError('轨迹名称须为 1–120 个字符')
@@ -233,6 +279,32 @@ def change_track(identifier, owner, expected_version, *, name=None, enabled=None
         return {'version': source['version'], 'changed': changed}
 
 
+def label_activities(activities, owner, expected_version):
+    """Apply a contributor's known labels atomically, including existing tracks."""
+    if not isinstance(activities, dict) or len(activities) > MAX_TRACKS:
+        raise ValueError('活动标注必须按轨迹 ID 提供，且不能超过轨迹库容量')
+    with store.LOCK:
+        source = catalogue()
+        if source['version'] != expected_version:
+            raise Conflict('共享轨迹库已更新，请刷新后重试')
+        records = {t['id']: t for t in source['tracks']}
+        for identifier, activity in activities.items():
+            if identifier not in records:
+                raise ValueError('活动标注中的轨迹不存在：'+str(identifier))
+            if not owner or owner.get('id') != records[identifier]['ownerId']:
+                raise NotOwner('只能标注自己上传的轨迹')
+            if activity not in travel.travel_model.ACTIVITIES or records[identifier].get('kind') == 'contours':
+                raise ValueError('活动类型无效或所选记录不是轨迹')
+        changed = []
+        for identifier, activity in activities.items():
+            if records[identifier].get('activity', 'auto') != activity:
+                records[identifier]['activity'] = activity; changed.append(identifier)
+        if changed:
+            source['version'] += 1
+            store.atomic_json(root()/'tracks.json', source)
+        return {'version': source['version'], 'changed': changed}
+
+
 def rebuild(expected_version, progress=lambda p, m: None, operation_id=None):
     with store.LOCK:
         source, previous = catalogue(), models()
@@ -240,13 +312,14 @@ def rebuild(expected_version, progress=lambda p, m: None, operation_id=None):
             return public_status()
         if source['version'] != expected_version:
             raise Conflict('重建期间又有轨迹更新，请使用最新数据重新重建')
-        if previous.get('sourceVersion') == expected_version and previous.get('schema') == SCHEMA:
+        if previous.get('sourceVersion') == expected_version and previous.get('schema') == SCHEMA and previous.get('travelSchema') == travel.SCHEMA:
             return public_status()
         tracks = []
         for record in source['tracks']:
             if record['enabled']:
                 with np.load(root()/'tracks'/(record['id']+'.npz'), allow_pickle=False) as data:
-                    tracks.append({**record, 'points': data['points'], 'times': data['times'] if 'times' in data.files else None})
+                    tracks.append({**record, 'points': data['points'], 'times': data['times'] if 'times' in data.files else None,
+                                   'breaks': data['breaks'] if 'breaks' in data.files else np.array([0], np.int32)})
     progress(10, '按地理位置整理共享轨迹')
     regions, used_ids = [], set()
     groups = spatial_groups(tracks)
@@ -262,6 +335,7 @@ def rebuild(expected_version, progress=lambda p, m: None, operation_id=None):
         identifier = old['id'] if old else uuid.uuid4().hex[:16]
         used_ids.add(identifier)
         signature = fingerprint({'schema': SCHEMA, 'tracks': sorted(ids),
+                                 'timing': sorted([t['id'], hashlib.sha256(np.nan_to_num(np.asarray(t.get('times', []), float), nan=-1).astype('<f8').tobytes()).hexdigest()] for t in group),
                                  'bounds': [[t['id'], t['points'][:, :2].min(axis=0).tolist(), t['points'][:, :2].max(axis=0).tolist()] for t in group]})
         if old and old.get('inputSignature', old.get('fingerprint')) == signature and (root()/old['artifact']).exists():
             regions.append(old)
@@ -286,6 +360,7 @@ def rebuild(expected_version, progress=lambda p, m: None, operation_id=None):
             write_npz(root()/artifact, arrays)
         regions.append({**metadata, 'id': identifier, 'name': (old or {}).get('name', name), 'inputSignature': signature,
                         'fingerprint': fingerprint({'input': signature, 'content': digest.hexdigest()}), 'artifact': artifact})
+    travel_models = travel.rebuild(tracks, regions, previous.get('travelModels', []), progress)
     with store.LOCK:
         if catalogue()['version'] != expected_version:
             raise Conflict('重建期间又有轨迹更新，请使用最新数据重新重建')
@@ -295,12 +370,13 @@ def rebuild(expected_version, progress=lambda p, m: None, operation_id=None):
             if record['artifact'] not in current_files and counts.get(record['id'], 0) < 2:
                 history.append(record); current_files.add(record['artifact']); counts[record['id']] = counts.get(record['id'], 0)+1
         store.atomic_json(root()/'models.json', {'schema': SCHEMA, 'sourceVersion': expected_version,
-                          'regions': regions, 'history': history, 'builtAt': time.time(), 'operationId': operation_id})
+                          'regions': regions, 'history': history, 'travelSchema': travel.SCHEMA, 'travelModels': travel_models,
+                          'builtAt': time.time(), 'operationId': operation_id})
         try:
             prune_models()
         except (OSError, ValueError):
             pass  # housekeeping must not turn a committed reconstruction into a failed import
-    progress(100, '共享地形已更新')
+    progress(100, '共享地形与路线耗时模型已更新')
     return public_status()
 
 
@@ -309,11 +385,21 @@ def prune_models():
     with store.LOCK:
         built = models()
         keep = {r['artifact'] for r in [*built['regions'], *built.get('history', [])]}
-        for path in (store.DATA/'releases').glob('*/release.json'):
-            release = store.read_json(path, {})
-            keep.update(r['artifact'] for r in (release.get('plan', {}).get('elevationSnapshot') or {}).get('models', []))
-        for path in (root()/'models').glob('*.npz'):
-            if 'models/'+path.name not in keep and time.time()-path.stat().st_mtime > 86400:
+        keep.update(r['artifact'] for r in built.get('travelModels', []))
+        candidates = [p for p in [*(root()/'models').glob('*.npz'), *(root()/'travel-models').glob('*.json')]
+                      if p.relative_to(root()).as_posix() not in keep and time.time()-p.stat().st_mtime > 86400]
+        if not candidates:
+            return
+        # Both saved calculations and published courses pin their inputs.
+        for pattern in ('releases/*/release.json', 'projects/*/plan-*.json', 'projects/*/comparison-*.json',
+                        'workspaces/*/projects/*/plan-*.json', 'workspaces/*/projects/*/comparison-*.json'):
+            for path in store.DATA.glob(pattern):
+                value = store.read_json(path, {})
+                frozen = (value.get('plan', value.get('content', value)).get('elevationSnapshot') or {})
+                keep.update(r['artifact'] for r in frozen.get('models', []))
+                keep.update(r['artifact'] for r in (frozen.get('travel') or {}).get('models', []))
+        for path in candidates:
+            if path.relative_to(root()).as_posix() not in keep:
                 path.unlink(missing_ok=True)
 
 

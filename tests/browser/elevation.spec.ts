@@ -57,6 +57,11 @@ test('shared terrain is public to read, rebuilt from a contributor\'s walks, and
   const card = page.locator('.height-track').first();
   await expect(card).toContainText('大沙河公园 晨走'); await expect(card).toContainText('我的');
   await expect(card).toContainText('记录于');
+  await expect(page.locator('#height-travel')).toContainText('路线耗时学习');
+  await expect(card.locator('[data-track-activity]')).toHaveValue('auto');
+  await card.locator('[data-track-activity]').selectOption('bicycle');
+  await expect.poll(async () => (await (await page.request.get('/api/elevation')).json()).tracks[0].speedLearning?.inferredActivity).toBe('bicycle');
+  await expect(page.locator('#height-travel')).toContainText('骑行');
   await expect(page.locator('#height-statistics')).toContainText('有观测支持的范围');
   // The north-up height map reports the surface under the pointer.
   await page.locator('#height-map').click();
@@ -78,6 +83,7 @@ test('shared terrain is public to read, rebuilt from a contributor\'s walks, and
   const shared = visitor.locator('.height-track').first();
   await expect(shared).toContainText(owner); await expect(shared).toContainText('已分享，参与共同重建');
   await expect(shared.locator('[data-track-delete]')).toHaveCount(0);
+  await expect(shared.locator('[data-track-activity]')).toHaveCount(0);
   const status = await (await visitor.request.get('/api/elevation')).json();
   const refused = await visitor.request.delete('/api/elevation/tracks/' + status.tracks[0].id,
     { data: { version: status.version }, headers: { 'X-DirMap-Workbench': `${peer.id}:personal` } });
@@ -111,20 +117,29 @@ test('route planning can weigh uphill and downhill walking from the shared terra
     await expect(page.locator('#account-open')).toHaveText(name);
     await expect(page.locator('.control-row').first()).toBeVisible();
     await expect(page.locator('#use-elevation')).toBeChecked();
+    await expect(page.locator('#use-learned-speed')).toBeChecked();
+    await page.locator('#travel-mode').selectOption('run');
     await page.locator('#teams').fill('2');
+    const submitted = page.waitForRequest(request => request.method() === 'POST' && request.url().endsWith('/api/plans'));
     await page.locator('#plan-button').click();
+    expect((await submitted).postDataJSON()).toMatchObject({ travelMode: 'run', useLearnedSpeed: true });
     await expect(page.locator('.route-card')).toHaveCount(2, { timeout: 60000 });
     const summary = page.locator('.route-card .route-elevation').first();
     await expect(summary).toContainText('预计爬升');
     await expect(summary.locator('svg.route-height-profile polyline').first()).toBeVisible();
+    await expect(page.locator('.route-card .route-speed').first()).toContainText('跑步轨迹不足');
     // Flat costs on request; the choice is remembered with the course rules.
     await page.locator('#use-elevation').uncheck();
+    await page.locator('#use-learned-speed').uncheck();
     await page.locator('#plan-button').click();
     await expect(page.locator('.route-card')).toHaveCount(2, { timeout: 60000 });
     await expect(page.locator('.route-card .route-elevation')).toHaveCount(0);
+    await expect(page.locator('.route-card .route-speed')).toHaveCount(0);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('.control-row').first()).toBeVisible();
     await expect(page.locator('#use-elevation')).not.toBeChecked();
+    await expect(page.locator('#use-learned-speed')).not.toBeChecked();
+    await expect(page.locator('#travel-mode')).toHaveValue('run');
   } finally {
     // Shared terrain reaches every workbench; leave none for later scenarios.
     await removeOwnTracks(page, user.id, scope);

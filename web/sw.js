@@ -7,6 +7,7 @@ const BUILD_ASSETS = '__DIRMAP_ASSETS__';
 const COURSES = 'dirmap-courses-v1';
 const RELEASE = /^\/api\/releases\/([0-9a-f]{32})$/;
 const OVERLAY = /^\/api\/releases\/[0-9a-f]{32}\/overlay\.png$/;
+const PHOTO = /^\/api\/releases\/[0-9a-f]{32}\/sheet-photos\/[A-Za-z0-9_-]+\.jpg$/;
 const REFERENCE = /^\/api\/releases\/[0-9a-f]{32}\/reference$/;
 // Height reliefs are named by content: kept once, a few at a time.
 const RELIEFS = 'dirmap-reliefs-v1';
@@ -73,7 +74,7 @@ async function trimCourses(cache) {
   const kept = new Set(entries.slice(0, 3).map(entry => entry.id));
   for (const request of await cache.keys()) {
     const path = new URL(request.url).pathname;
-    if ((OVERLAY.test(path) || REFERENCE.test(path)) && !kept.has(path.split('/')[3])) await cache.delete(request);
+    if ((OVERLAY.test(path) || PHOTO.test(path) || REFERENCE.test(path)) && !kept.has(path.split('/')[3])) await cache.delete(request);
   }
 }
 
@@ -103,7 +104,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(freshJSON(request));
   } else if (RELIEF.test(url.pathname)) {
     event.respondWith(cachedRelief(request));
-  } else if (OVERLAY.test(url.pathname)) {
+  } else if (OVERLAY.test(url.pathname) || PHOTO.test(url.pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(COURSES), cached = await cache.match(request);
       if (cached) return cached;
@@ -130,6 +131,16 @@ self.addEventListener('message', event => {
       if (!overlay.ok) throw new Error('原图尚未下载完整');
       await cache.put(url + '/overlay.png', overlay);
       const saved = await course.clone().json(), origin = saved.frame?.origin;
+      const photos = saved.sheetPhotos ?? [];
+      for (let offset = 0; offset < photos.length; offset += 4) {
+        await Promise.all(photos.slice(offset, offset + 4).map(async photo => {
+          const path = `${url}/sheet-photos/${encodeURIComponent(photo.id)}.jpg`;
+          if (await cache.match(path)) return;
+          const response = await limitedFetch(path, 30000);
+          if (!response.ok) throw new Error('参考照片尚未下载完整，请联网后重试');
+          await cache.put(path, response);
+        }));
+      }
       await saveJSON(cache, url, course);
       // The heights the course was planned with, for the relief layer offline.
       for (const model of saved.plan?.elevationSnapshot?.models ?? []) {

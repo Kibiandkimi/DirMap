@@ -1,0 +1,2175 @@
+{
+  "schema": "activity-pace-corridor-v1",
+  "inventory": {
+    "files": 16,
+    "uniqueRecordings": 16,
+    "duplicateFiles": [],
+    "points": 22388
+  },
+  "validation": "leave-one-recording-out; terrain and travel model refitted on other recordings only; first 25% of held-out moving windows calibrate pace; score remaining 75%",
+  "limitations": [
+    "GPS-only walking inference remains uncertain; fast unlabelled records excluded.",
+    "Errors describe moving windows, not stops or a guarantee for a new person.",
+    "Few independent recordings; running has no confirmed training records."
+  ],
+  "regions": [
+    {
+      "origin": [
+        113.956692,
+        22.5598745
+      ],
+      "recordings": 2,
+      "profiles": {
+        "walk": {
+          "mode": "walk",
+          "tracks": 2,
+          "observations": 182,
+          "coefficients": [
+            3.5,
+            -3.5,
+            3.5
+          ],
+          "priorCoefficients": [
+            3.5,
+            -3.5,
+            3.5
+          ],
+          "gradeLearned": false,
+          "gradeRange": [
+            0.0,
+            0.0
+          ],
+          "residualLogMad": null,
+          "status": "insufficient_data",
+          "corridors": 0
+        },
+        "run": {
+          "mode": "run",
+          "tracks": 0,
+          "observations": 0,
+          "coefficients": [
+            3.5,
+            -3.5,
+            3.5
+          ],
+          "priorCoefficients": [
+            3.5,
+            -3.5,
+            3.5
+          ],
+          "gradeLearned": false,
+          "gradeRange": [
+            0.0,
+            0.0
+          ],
+          "residualLogMad": null,
+          "status": "insufficient_data",
+          "corridors": 0
+        },
+        "bicycle": {
+          "mode": "bicycle",
+          "tracks": 0,
+          "observations": 0,
+          "coefficients": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "priorCoefficients": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gradeLearned": false,
+          "gradeRange": [
+            0.0,
+            0.0
+          ],
+          "residualLogMad": null,
+          "status": "insufficient_data",
+          "corridors": 0
+        }
+      },
+      "tracks": [
+        {
+          "id": "af0cd63e5a57bc36df7d24dbe4c9aca810054977e73f4b5458188838af6ec799",
+          "activity": "auto",
+          "inferredActivity": "walk",
+          "confidence": 0.65,
+          "timedPairs": 2967,
+          "movingSec": 2345.0,
+          "stoppedSec": 318.0,
+          "rejectedPairs": 0,
+          "observations": 84,
+          "episodes": 1,
+          "medianSpeedMps": 1.154,
+          "reason": "walking_compatible",
+          "fileName": "20261029_183448.kml"
+        },
+        {
+          "id": "dca169fab5d74fb37ccde97e4579791fe9373123bdb815cb37ad467c1c53862d",
+          "activity": "auto",
+          "inferredActivity": "walk",
+          "confidence": 0.65,
+          "timedPairs": 3909,
+          "movingSec": 2685.0,
+          "stoppedSec": 365.0,
+          "rejectedPairs": 0,
+          "observations": 98,
+          "episodes": 4,
+          "medianSpeedMps": 1.209,
+          "reason": "walking_compatible",
+          "fileName": "20261101_190925.kml"
+        }
+      ],
+      "heldOut": [
+        {
+          "id": "af0cd63e5a57bc36df7d24dbe4c9aca810054977e73f4b5458188838af6ec799",
+          "fileName": "20261029_183448.kml",
+          "activity": "walk",
+          "trainingRecordings": 1,
+          "observationCount": 84,
+          "calibrationWindows": 21,
+          "testWindows": 63,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 0.8413,
+          "gradeLearned": false,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 1.316,
+              "observedMovingSec": 1805.0,
+              "predictedMovingSec": 1533.9,
+              "totalErrorPercent": 15.02,
+              "windowMedianErrorPercent": 14.4,
+              "windowMaeSec": 4.594
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 1.316,
+              "observedMovingSec": 1805.0,
+              "predictedMovingSec": 1667.0,
+              "totalErrorPercent": 7.65,
+              "windowMedianErrorPercent": 12.42,
+              "windowMaeSec": 4.925
+            },
+            "learned": {
+              "calibratedPaceMps": 1.316,
+              "observedMovingSec": 1805.0,
+              "predictedMovingSec": 1667.0,
+              "totalErrorPercent": 7.65,
+              "windowMedianErrorPercent": 12.42,
+              "windowMaeSec": 4.925
+            }
+          }
+        },
+        {
+          "id": "dca169fab5d74fb37ccde97e4579791fe9373123bdb815cb37ad467c1c53862d",
+          "fileName": "20261101_190925.kml",
+          "activity": "walk",
+          "trainingRecordings": 1,
+          "observationCount": 98,
+          "calibrationWindows": 25,
+          "testWindows": 73,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 0.6027,
+          "gradeLearned": false,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 1.263,
+              "observedMovingSec": 2020.0,
+              "predictedMovingSec": 1787.0,
+              "totalErrorPercent": 11.53,
+              "windowMedianErrorPercent": 14.55,
+              "windowMaeSec": 5.16
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 1.372,
+              "observedMovingSec": 2020.0,
+              "predictedMovingSec": 1719.4,
+              "totalErrorPercent": 14.88,
+              "windowMedianErrorPercent": 17.95,
+              "windowMaeSec": 5.733
+            },
+            "learned": {
+              "calibratedPaceMps": 1.372,
+              "observedMovingSec": 2020.0,
+              "predictedMovingSec": 1719.4,
+              "totalErrorPercent": 14.88,
+              "windowMedianErrorPercent": 17.95,
+              "windowMaeSec": 5.733
+            }
+          }
+        }
+      ],
+      "summaryByActivity": {
+        "walk": {
+          "flat": {
+            "windowMaeSec": 4.898,
+            "windowMedianErrorPercent": 14.55,
+            "windowP90ErrorPercent": 32.71,
+            "recordingMeanErrorPercent": 13.28,
+            "recordingMedianErrorPercent": 13.28
+          },
+          "gradeFormula": {
+            "windowMaeSec": 5.358,
+            "windowMedianErrorPercent": 15.56,
+            "windowP90ErrorPercent": 36.81,
+            "recordingMeanErrorPercent": 11.26,
+            "recordingMedianErrorPercent": 11.26
+          },
+          "learned": {
+            "windowMaeSec": 5.358,
+            "windowMedianErrorPercent": 15.56,
+            "windowP90ErrorPercent": 36.81,
+            "recordingMeanErrorPercent": 11.26,
+            "recordingMedianErrorPercent": 11.26
+          }
+        }
+      },
+      "chronologicalHoldout": {
+        "cutoff": "2026-10-30T00:00:00+08:00",
+        "trainingRecordings": 1,
+        "heldOut": [
+          {
+            "id": "dca169fab5d74fb37ccde97e4579791fe9373123bdb815cb37ad467c1c53862d",
+            "fileName": "20261101_190925.kml",
+            "activity": "walk",
+            "trainingRecordings": 1,
+            "observationCount": 98,
+            "calibrationWindows": 25,
+            "testWindows": 73,
+            "learnedCoverageFraction": 0.0,
+            "gradeCoverageFraction": 0.6027,
+            "gradeLearned": false,
+            "scores": {
+              "flat": {
+                "calibratedPaceMps": 1.263,
+                "observedMovingSec": 2020.0,
+                "predictedMovingSec": 1787.0,
+                "totalErrorPercent": 11.53,
+                "windowMedianErrorPercent": 14.55,
+                "windowMaeSec": 5.16
+              },
+              "gradeFormula": {
+                "calibratedPaceMps": 1.372,
+                "observedMovingSec": 2020.0,
+                "predictedMovingSec": 1719.4,
+                "totalErrorPercent": 14.88,
+                "windowMedianErrorPercent": 17.95,
+                "windowMaeSec": 5.733
+              },
+              "learned": {
+                "calibratedPaceMps": 1.372,
+                "observedMovingSec": 2020.0,
+                "predictedMovingSec": 1719.4,
+                "totalErrorPercent": 14.88,
+                "windowMedianErrorPercent": 17.95,
+                "windowMaeSec": 5.733
+              }
+            }
+          }
+        ],
+        "summaryByActivity": {
+          "walk": {
+            "flat": {
+              "windowMaeSec": 5.16,
+              "windowMedianErrorPercent": 14.55,
+              "windowP90ErrorPercent": 37.82,
+              "recordingMeanErrorPercent": 11.53,
+              "recordingMedianErrorPercent": 11.53
+            },
+            "gradeFormula": {
+              "windowMaeSec": 5.733,
+              "windowMedianErrorPercent": 17.95,
+              "windowP90ErrorPercent": 38.58,
+              "recordingMeanErrorPercent": 14.88,
+              "recordingMedianErrorPercent": 14.88
+            },
+            "learned": {
+              "windowMaeSec": 5.733,
+              "windowMedianErrorPercent": 17.95,
+              "windowP90ErrorPercent": 38.58,
+              "recordingMeanErrorPercent": 14.88,
+              "recordingMedianErrorPercent": 14.88
+            }
+          }
+        }
+      },
+      "elapsedSec": 0.74
+    },
+    {
+      "origin": [
+        113.931123,
+        22.536256
+      ],
+      "recordings": 14,
+      "profiles": {
+        "walk": {
+          "mode": "walk",
+          "tracks": 5,
+          "observations": 245,
+          "coefficients": [
+            2.1179664378150553,
+            -0.8183349134155637,
+            4.159989043699094
+          ],
+          "priorCoefficients": [
+            3.5,
+            -3.5,
+            3.5
+          ],
+          "gradeLearned": true,
+          "gradeRange": [
+            -0.050233384839666904,
+            0.057794522730793635
+          ],
+          "residualLogMad": 0.12,
+          "status": "learned",
+          "corridors": 0
+        },
+        "run": {
+          "mode": "run",
+          "tracks": 0,
+          "observations": 0,
+          "coefficients": [
+            3.5,
+            -3.5,
+            3.5
+          ],
+          "priorCoefficients": [
+            3.5,
+            -3.5,
+            3.5
+          ],
+          "gradeLearned": false,
+          "gradeRange": [
+            0.0,
+            0.0
+          ],
+          "residualLogMad": null,
+          "status": "insufficient_data",
+          "corridors": 0
+        },
+        "bicycle": {
+          "mode": "bicycle",
+          "tracks": 5,
+          "observations": 86,
+          "coefficients": [
+            2.2116001572238897,
+            -2.5907314563786623,
+            0.9004257523597377
+          ],
+          "priorCoefficients": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gradeLearned": true,
+          "gradeRange": [
+            -0.046425193425612764,
+            0.03937328548856598
+          ],
+          "residualLogMad": 0.1486,
+          "status": "learned",
+          "corridors": 7
+        }
+      },
+      "tracks": [
+        {
+          "id": "0993487e2a82932cb39c35bd6c03cc1215e5070a75a76be572d55b4ed29a9cf3",
+          "activity": "auto",
+          "inferredActivity": "walk",
+          "confidence": 0.65,
+          "timedPairs": 523,
+          "movingSec": 459.5,
+          "stoppedSec": 5.0,
+          "rejectedPairs": 0,
+          "observations": 19,
+          "episodes": 1,
+          "medianSpeedMps": 1.359,
+          "reason": "walking_compatible",
+          "fileName": "20261029_184104.kml"
+        },
+        {
+          "id": "193986605aa7433cbebe170a67c38959dfec8b1e535d41a8b6ff6180604d2e5a",
+          "activity": "auto",
+          "inferredActivity": "unknown",
+          "confidence": 0.0,
+          "timedPairs": 2245,
+          "movingSec": 1745.0,
+          "stoppedSec": 353.5,
+          "rejectedPairs": 1,
+          "observations": 105,
+          "episodes": 19,
+          "medianSpeedMps": 1.787,
+          "reason": "running_or_cycling_ambiguous",
+          "fileName": "20261029_184005.kml"
+        },
+        {
+          "id": "2d63b1abb695f0fe679be08b99b17868e4fcb5e3be8fd66a9f48c46fe428a447",
+          "activity": "auto",
+          "inferredActivity": "walk",
+          "confidence": 0.65,
+          "timedPairs": 717,
+          "movingSec": 664.0,
+          "stoppedSec": 5.0,
+          "rejectedPairs": 0,
+          "observations": 27,
+          "episodes": 1,
+          "medianSpeedMps": 1.317,
+          "reason": "walking_compatible",
+          "fileName": "20261029_184032.kml"
+        },
+        {
+          "id": "40585af03ca9ad93a74268db8850212dbd92760b77d4ff0ae376ee7324108b2d",
+          "activity": "auto",
+          "inferredActivity": "walk",
+          "confidence": 0.65,
+          "timedPairs": 6341,
+          "movingSec": 4260.3,
+          "stoppedSec": 1590.0,
+          "rejectedPairs": 2,
+          "observations": 149,
+          "episodes": 7,
+          "medianSpeedMps": 1.097,
+          "reason": "walking_compatible",
+          "fileName": "20261029_183932.kml"
+        },
+        {
+          "id": "419cfd3c66ced005b6762fde858c57bffdfe345580eb1b88154ac1364bdb3d37",
+          "activity": "bicycle",
+          "inferredActivity": "bicycle",
+          "confidence": 1.0,
+          "timedPairs": 232,
+          "movingSec": 182.0,
+          "stoppedSec": 5.0,
+          "rejectedPairs": 0,
+          "observations": 17,
+          "episodes": 1,
+          "medianSpeedMps": 4.664,
+          "reason": "contributor_label",
+          "fileName": "20261101_190858.kml"
+        },
+        {
+          "id": "42b8d5c362813cdfc92e0d14e9f71e00949bf19a2112983dfc04894d92f57234",
+          "activity": "auto",
+          "inferredActivity": "walk",
+          "confidence": 0.65,
+          "timedPairs": 710,
+          "movingSec": 680.0,
+          "stoppedSec": 25.0,
+          "rejectedPairs": 0,
+          "observations": 24,
+          "episodes": 1,
+          "medianSpeedMps": 1.147,
+          "reason": "walking_compatible",
+          "fileName": "20261101_190910.kml"
+        },
+        {
+          "id": "5a23c14d1a0f882a3db025af32ea9de6dbd967fce89efa362ea3b3235db63119",
+          "activity": "bicycle",
+          "inferredActivity": "bicycle",
+          "confidence": 1.0,
+          "timedPairs": 217,
+          "movingSec": 200.0,
+          "stoppedSec": 9.0,
+          "rejectedPairs": 0,
+          "observations": 15,
+          "episodes": 1,
+          "medianSpeedMps": 2.945,
+          "reason": "contributor_label",
+          "fileName": "20261029_184206.kml"
+        },
+        {
+          "id": "606aed949ed5cbc57d8cb78d5739219e9620534f00130a766aaeaae9b4cb2963",
+          "activity": "auto",
+          "inferredActivity": "walk",
+          "confidence": 0.65,
+          "timedPairs": 848,
+          "movingSec": 750.0,
+          "stoppedSec": 80.0,
+          "rejectedPairs": 0,
+          "observations": 26,
+          "episodes": 1,
+          "medianSpeedMps": 1.093,
+          "reason": "walking_compatible",
+          "fileName": "20261029_184122.kml"
+        },
+        {
+          "id": "6be4fc30013f4a324c005d58c446f3799140306d2233059df064f9d6133173a8",
+          "activity": "auto",
+          "inferredActivity": "unknown",
+          "confidence": 0.0,
+          "timedPairs": 2013,
+          "movingSec": 1609.5,
+          "stoppedSec": 195.0,
+          "rejectedPairs": 0,
+          "observations": 93,
+          "episodes": 17,
+          "medianSpeedMps": 1.877,
+          "reason": "running_or_cycling_ambiguous",
+          "fileName": "20261029_183953.kml"
+        },
+        {
+          "id": "79a8641bd0485ba71ef5539843c2df19999557c7bd6318f59fa861602edc32f1",
+          "activity": "bicycle",
+          "inferredActivity": "bicycle",
+          "confidence": 1.0,
+          "timedPairs": 206,
+          "movingSec": 175.0,
+          "stoppedSec": 13.5,
+          "rejectedPairs": 0,
+          "observations": 16,
+          "episodes": 1,
+          "medianSpeedMps": 3.801,
+          "reason": "contributor_label",
+          "fileName": "20261101_190828.kml"
+        },
+        {
+          "id": "858e9377c46a4e9bc7874a92c6f69ab53614bb5cb06c2b11a9019327ec9fe0fd",
+          "activity": "auto",
+          "inferredActivity": "unknown",
+          "confidence": 0.0,
+          "timedPairs": 225,
+          "movingSec": 210.0,
+          "stoppedSec": 13.0,
+          "rejectedPairs": 0,
+          "observations": 18,
+          "episodes": 1,
+          "medianSpeedMps": 3.095,
+          "reason": "running_or_cycling_ambiguous",
+          "fileName": "20261029_184138.kml"
+        },
+        {
+          "id": "d0ae0fdd750e7ba782b4fa509341e98258807efc645e3a23d3c424378e1decf0",
+          "activity": "bicycle",
+          "inferredActivity": "bicycle",
+          "confidence": 1.0,
+          "timedPairs": 428,
+          "movingSec": 310.0,
+          "stoppedSec": 69.5,
+          "rejectedPairs": 0,
+          "observations": 24,
+          "episodes": 6,
+          "medianSpeedMps": 4.034,
+          "reason": "contributor_label",
+          "fileName": "20261029_184151.kml"
+        },
+        {
+          "id": "e840bb00bad0e9615a52241d1dbd6b0545c6c9156c6eb521b806d07139c87268",
+          "activity": "bicycle",
+          "inferredActivity": "bicycle",
+          "confidence": 1.0,
+          "timedPairs": 156,
+          "movingSec": 140.0,
+          "stoppedSec": 8.5,
+          "rejectedPairs": 0,
+          "observations": 14,
+          "episodes": 1,
+          "medianSpeedMps": 4.582,
+          "reason": "contributor_label",
+          "fileName": "20261101_190842.kml"
+        },
+        {
+          "id": "fa388b4fd682e4913dae27dab8fcb8e94b29975d7edb716a3f5fd1fae7e1c3ad",
+          "activity": "auto",
+          "inferredActivity": "unknown",
+          "confidence": 0.0,
+          "timedPairs": 632,
+          "movingSec": 629.0,
+          "stoppedSec": 0.0,
+          "rejectedPairs": 0,
+          "observations": 58,
+          "episodes": 1,
+          "medianSpeedMps": 3.286,
+          "reason": "running_or_cycling_ambiguous",
+          "fileName": "20261029_184047.kml"
+        }
+      ],
+      "heldOut": [
+        {
+          "id": "40585af03ca9ad93a74268db8850212dbd92760b77d4ff0ae376ee7324108b2d",
+          "fileName": "20261029_183932.kml",
+          "activity": "walk",
+          "trainingRecordings": 13,
+          "observationCount": 149,
+          "calibrationWindows": 38,
+          "testWindows": 111,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 0.5766,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 1.06,
+              "observedMovingSec": 3110.3,
+              "predictedMovingSec": 3260.3,
+              "totalErrorPercent": 4.82,
+              "windowMedianErrorPercent": 16.54,
+              "windowMaeSec": 5.081
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 1.065,
+              "observedMovingSec": 3110.3,
+              "predictedMovingSec": 3272.5,
+              "totalErrorPercent": 5.22,
+              "windowMedianErrorPercent": 15.51,
+              "windowMaeSec": 5.359
+            },
+            "learned": {
+              "calibratedPaceMps": 1.059,
+              "observedMovingSec": 3110.3,
+              "predictedMovingSec": 3285.3,
+              "totalErrorPercent": 5.62,
+              "windowMedianErrorPercent": 16.16,
+              "windowMaeSec": 5.225
+            }
+          }
+        },
+        {
+          "id": "6be4fc30013f4a324c005d58c446f3799140306d2233059df064f9d6133173a8",
+          "fileName": "20261029_183953.kml",
+          "excluded": "running_or_cycling_ambiguous"
+        },
+        {
+          "id": "193986605aa7433cbebe170a67c38959dfec8b1e535d41a8b6ff6180604d2e5a",
+          "fileName": "20261029_184005.kml",
+          "excluded": "running_or_cycling_ambiguous"
+        },
+        {
+          "id": "2d63b1abb695f0fe679be08b99b17868e4fcb5e3be8fd66a9f48c46fe428a447",
+          "fileName": "20261029_184032.kml",
+          "activity": "walk",
+          "trainingRecordings": 13,
+          "observationCount": 27,
+          "calibrationWindows": 7,
+          "testWindows": 20,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 0.2,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 1.255,
+              "observedMovingSec": 479.0,
+              "predictedMovingSec": 510.5,
+              "totalErrorPercent": 6.57,
+              "windowMedianErrorPercent": 9.09,
+              "windowMaeSec": 3.073
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 1.255,
+              "observedMovingSec": 479.0,
+              "predictedMovingSec": 518.1,
+              "totalErrorPercent": 8.15,
+              "windowMedianErrorPercent": 6.98,
+              "windowMaeSec": 3.05
+            },
+            "learned": {
+              "calibratedPaceMps": 1.255,
+              "observedMovingSec": 479.0,
+              "predictedMovingSec": 515.3,
+              "totalErrorPercent": 7.59,
+              "windowMedianErrorPercent": 9.09,
+              "windowMaeSec": 3.068
+            }
+          }
+        },
+        {
+          "id": "fa388b4fd682e4913dae27dab8fcb8e94b29975d7edb716a3f5fd1fae7e1c3ad",
+          "fileName": "20261029_184047.kml",
+          "excluded": "running_or_cycling_ambiguous"
+        },
+        {
+          "id": "0993487e2a82932cb39c35bd6c03cc1215e5070a75a76be572d55b4ed29a9cf3",
+          "fileName": "20261029_184104.kml",
+          "activity": "walk",
+          "trainingRecordings": 13,
+          "observationCount": 19,
+          "calibrationWindows": 5,
+          "testWindows": 14,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 1.0,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 1.359,
+              "observedMovingSec": 334.5,
+              "predictedMovingSec": 335.7,
+              "totalErrorPercent": 0.37,
+              "windowMedianErrorPercent": 19.04,
+              "windowMaeSec": 4.589
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 1.372,
+              "observedMovingSec": 334.5,
+              "predictedMovingSec": 324.8,
+              "totalErrorPercent": 2.9,
+              "windowMedianErrorPercent": 23.6,
+              "windowMaeSec": 5.139
+            },
+            "learned": {
+              "calibratedPaceMps": 1.369,
+              "observedMovingSec": 334.5,
+              "predictedMovingSec": 333.2,
+              "totalErrorPercent": 0.39,
+              "windowMedianErrorPercent": 21.46,
+              "windowMaeSec": 4.671
+            }
+          }
+        },
+        {
+          "id": "606aed949ed5cbc57d8cb78d5739219e9620534f00130a766aaeaae9b4cb2963",
+          "fileName": "20261029_184122.kml",
+          "activity": "walk",
+          "trainingRecordings": 13,
+          "observationCount": 26,
+          "calibrationWindows": 7,
+          "testWindows": 19,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 1.0,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 1.045,
+              "observedMovingSec": 555.0,
+              "predictedMovingSec": 591.0,
+              "totalErrorPercent": 6.49,
+              "windowMedianErrorPercent": 8.02,
+              "windowMaeSec": 3.016
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 1.106,
+              "observedMovingSec": 555.0,
+              "predictedMovingSec": 582.5,
+              "totalErrorPercent": 4.96,
+              "windowMedianErrorPercent": 7.8,
+              "windowMaeSec": 3.516
+            },
+            "learned": {
+              "calibratedPaceMps": 1.094,
+              "observedMovingSec": 555.0,
+              "predictedMovingSec": 582.4,
+              "totalErrorPercent": 4.94,
+              "windowMedianErrorPercent": 7.07,
+              "windowMaeSec": 3.155
+            }
+          }
+        },
+        {
+          "id": "858e9377c46a4e9bc7874a92c6f69ab53614bb5cb06c2b11a9019327ec9fe0fd",
+          "fileName": "20261029_184138.kml",
+          "excluded": "running_or_cycling_ambiguous"
+        },
+        {
+          "id": "d0ae0fdd750e7ba782b4fa509341e98258807efc645e3a23d3c424378e1decf0",
+          "fileName": "20261029_184151.kml",
+          "activity": "bicycle",
+          "trainingRecordings": 13,
+          "observationCount": 24,
+          "calibrationWindows": 6,
+          "testWindows": 18,
+          "learnedCoverageFraction": 0.0829,
+          "gradeCoverageFraction": 1.0,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 4.102,
+              "observedMovingSec": 250.0,
+              "predictedMovingSec": 213.3,
+              "totalErrorPercent": 14.69,
+              "windowMedianErrorPercent": 53.44,
+              "windowMaeSec": 7.642
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 4.376,
+              "observedMovingSec": 250.0,
+              "predictedMovingSec": 185.8,
+              "totalErrorPercent": 25.69,
+              "windowMedianErrorPercent": 48.67,
+              "windowMaeSec": 6.951
+            },
+            "learned": {
+              "calibratedPaceMps": 3.913,
+              "observedMovingSec": 250.0,
+              "predictedMovingSec": 211.6,
+              "totalErrorPercent": 15.34,
+              "windowMedianErrorPercent": 48.59,
+              "windowMaeSec": 7.313
+            }
+          }
+        },
+        {
+          "id": "5a23c14d1a0f882a3db025af32ea9de6dbd967fce89efa362ea3b3235db63119",
+          "fileName": "20261029_184206.kml",
+          "activity": "bicycle",
+          "trainingRecordings": 13,
+          "observationCount": 15,
+          "calibrationWindows": 4,
+          "testWindows": 11,
+          "learnedCoverageFraction": 0.5076,
+          "gradeCoverageFraction": 1.0,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 3.11,
+              "observedMovingSec": 155.0,
+              "predictedMovingSec": 156.5,
+              "totalErrorPercent": 0.94,
+              "windowMedianErrorPercent": 7.09,
+              "windowMaeSec": 2.153
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 3.441,
+              "observedMovingSec": 155.0,
+              "predictedMovingSec": 149.5,
+              "totalErrorPercent": 3.54,
+              "windowMedianErrorPercent": 10.8,
+              "windowMaeSec": 2.078
+            },
+            "learned": {
+              "calibratedPaceMps": 3.207,
+              "observedMovingSec": 155.0,
+              "predictedMovingSec": 155.5,
+              "totalErrorPercent": 0.32,
+              "windowMedianErrorPercent": 8.44,
+              "windowMaeSec": 1.755
+            }
+          }
+        },
+        {
+          "id": "79a8641bd0485ba71ef5539843c2df19999557c7bd6318f59fa861602edc32f1",
+          "fileName": "20261101_190828.kml",
+          "activity": "bicycle",
+          "trainingRecordings": 13,
+          "observationCount": 16,
+          "calibrationWindows": 4,
+          "testWindows": 12,
+          "learnedCoverageFraction": 0.6626,
+          "gradeCoverageFraction": 1.0,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 4.163,
+              "observedMovingSec": 135.0,
+              "predictedMovingSec": 116.6,
+              "totalErrorPercent": 13.62,
+              "windowMedianErrorPercent": 22.74,
+              "windowMaeSec": 2.705
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 4.58,
+              "observedMovingSec": 135.0,
+              "predictedMovingSec": 111.9,
+              "totalErrorPercent": 17.08,
+              "windowMedianErrorPercent": 25.28,
+              "windowMaeSec": 2.704
+            },
+            "learned": {
+              "calibratedPaceMps": 4.38,
+              "observedMovingSec": 135.0,
+              "predictedMovingSec": 108.5,
+              "totalErrorPercent": 19.66,
+              "windowMedianErrorPercent": 28.17,
+              "windowMaeSec": 2.947
+            }
+          }
+        },
+        {
+          "id": "e840bb00bad0e9615a52241d1dbd6b0545c6c9156c6eb521b806d07139c87268",
+          "fileName": "20261101_190842.kml",
+          "activity": "bicycle",
+          "trainingRecordings": 13,
+          "observationCount": 14,
+          "calibrationWindows": 4,
+          "testWindows": 10,
+          "learnedCoverageFraction": 0.3965,
+          "gradeCoverageFraction": 1.0,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 5.063,
+              "observedMovingSec": 100.0,
+              "predictedMovingSec": 89.0,
+              "totalErrorPercent": 11.02,
+              "windowMedianErrorPercent": 20.3,
+              "windowMaeSec": 2.122
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 5.048,
+              "observedMovingSec": 100.0,
+              "predictedMovingSec": 82.8,
+              "totalErrorPercent": 17.24,
+              "windowMedianErrorPercent": 19.81,
+              "windowMaeSec": 2.137
+            },
+            "learned": {
+              "calibratedPaceMps": 4.807,
+              "observedMovingSec": 100.0,
+              "predictedMovingSec": 89.6,
+              "totalErrorPercent": 10.35,
+              "windowMedianErrorPercent": 14.21,
+              "windowMaeSec": 1.697
+            }
+          }
+        },
+        {
+          "id": "419cfd3c66ced005b6762fde858c57bffdfe345580eb1b88154ac1364bdb3d37",
+          "fileName": "20261101_190858.kml",
+          "activity": "bicycle",
+          "trainingRecordings": 13,
+          "observationCount": 17,
+          "calibrationWindows": 5,
+          "testWindows": 12,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 0.9167,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 5.063,
+              "observedMovingSec": 127.0,
+              "predictedMovingSec": 112.5,
+              "totalErrorPercent": 11.4,
+              "windowMedianErrorPercent": 13.93,
+              "windowMaeSec": 2.572
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 5.036,
+              "observedMovingSec": 127.0,
+              "predictedMovingSec": 108.0,
+              "totalErrorPercent": 14.93,
+              "windowMedianErrorPercent": 14.04,
+              "windowMaeSec": 2.275
+            },
+            "learned": {
+              "calibratedPaceMps": 4.964,
+              "observedMovingSec": 127.0,
+              "predictedMovingSec": 109.0,
+              "totalErrorPercent": 14.18,
+              "windowMedianErrorPercent": 14.46,
+              "windowMaeSec": 2.392
+            }
+          }
+        },
+        {
+          "id": "42b8d5c362813cdfc92e0d14e9f71e00949bf19a2112983dfc04894d92f57234",
+          "fileName": "20261101_190910.kml",
+          "activity": "walk",
+          "trainingRecordings": 13,
+          "observationCount": 24,
+          "calibrationWindows": 6,
+          "testWindows": 18,
+          "learnedCoverageFraction": 0.0,
+          "gradeCoverageFraction": 1.0,
+          "gradeLearned": true,
+          "scores": {
+            "flat": {
+              "calibratedPaceMps": 1.07,
+              "observedMovingSec": 505.0,
+              "predictedMovingSec": 552.0,
+              "totalErrorPercent": 9.3,
+              "windowMedianErrorPercent": 8.94,
+              "windowMaeSec": 2.881
+            },
+            "gradeFormula": {
+              "calibratedPaceMps": 1.208,
+              "observedMovingSec": 505.0,
+              "predictedMovingSec": 508.3,
+              "totalErrorPercent": 0.66,
+              "windowMedianErrorPercent": 11.35,
+              "windowMaeSec": 2.848
+            },
+            "learned": {
+              "calibratedPaceMps": 1.179,
+              "observedMovingSec": 505.0,
+              "predictedMovingSec": 513.4,
+              "totalErrorPercent": 1.66,
+              "windowMedianErrorPercent": 7.03,
+              "windowMaeSec": 2.274
+            }
+          }
+        }
+      ],
+      "summaryByActivity": {
+        "walk": {
+          "flat": {
+            "windowMaeSec": 4.389,
+            "windowMedianErrorPercent": 13.77,
+            "windowP90ErrorPercent": 34.35,
+            "recordingMeanErrorPercent": 5.51,
+            "recordingMedianErrorPercent": 6.49
+          },
+          "gradeFormula": {
+            "windowMaeSec": 4.648,
+            "windowMedianErrorPercent": 13.67,
+            "windowP90ErrorPercent": 36.07,
+            "recordingMeanErrorPercent": 4.38,
+            "recordingMedianErrorPercent": 4.96
+          },
+          "learned": {
+            "windowMaeSec": 4.438,
+            "windowMedianErrorPercent": 12.75,
+            "windowP90ErrorPercent": 35.89,
+            "recordingMeanErrorPercent": 4.04,
+            "recordingMedianErrorPercent": 4.94
+          }
+        },
+        "bicycle": {
+          "flat": {
+            "windowMaeSec": 3.901,
+            "windowMedianErrorPercent": 19.58,
+            "windowP90ErrorPercent": 74.02,
+            "recordingMeanErrorPercent": 10.33,
+            "recordingMedianErrorPercent": 11.4
+          },
+          "gradeFormula": {
+            "windowMaeSec": 3.636,
+            "windowMedianErrorPercent": 19.7,
+            "windowP90ErrorPercent": 62.36,
+            "recordingMeanErrorPercent": 15.7,
+            "recordingMedianErrorPercent": 17.08
+          },
+          "learned": {
+            "windowMaeSec": 3.682,
+            "windowMedianErrorPercent": 16.47,
+            "windowP90ErrorPercent": 71.32,
+            "recordingMeanErrorPercent": 11.97,
+            "recordingMedianErrorPercent": 14.18
+          }
+        }
+      },
+      "chronologicalHoldout": {
+        "cutoff": "2026-10-30T00:00:00+08:00",
+        "trainingRecordings": 10,
+        "heldOut": [
+          {
+            "id": "79a8641bd0485ba71ef5539843c2df19999557c7bd6318f59fa861602edc32f1",
+            "fileName": "20261101_190828.kml",
+            "activity": "bicycle",
+            "trainingRecordings": 10,
+            "observationCount": 16,
+            "calibrationWindows": 4,
+            "testWindows": 12,
+            "learnedCoverageFraction": 0.0,
+            "gradeCoverageFraction": 1.0,
+            "gradeLearned": false,
+            "scores": {
+              "flat": {
+                "calibratedPaceMps": 4.163,
+                "observedMovingSec": 135.0,
+                "predictedMovingSec": 116.6,
+                "totalErrorPercent": 13.62,
+                "windowMedianErrorPercent": 22.74,
+                "windowMaeSec": 2.705
+              },
+              "gradeFormula": {
+                "calibratedPaceMps": 4.465,
+                "observedMovingSec": 135.0,
+                "predictedMovingSec": 115.0,
+                "totalErrorPercent": 14.83,
+                "windowMedianErrorPercent": 21.83,
+                "windowMaeSec": 2.409
+              },
+              "learned": {
+                "calibratedPaceMps": 4.163,
+                "observedMovingSec": 135.0,
+                "predictedMovingSec": 116.6,
+                "totalErrorPercent": 13.62,
+                "windowMedianErrorPercent": 22.74,
+                "windowMaeSec": 2.705
+              }
+            }
+          },
+          {
+            "id": "e840bb00bad0e9615a52241d1dbd6b0545c6c9156c6eb521b806d07139c87268",
+            "fileName": "20261101_190842.kml",
+            "activity": "bicycle",
+            "trainingRecordings": 10,
+            "observationCount": 14,
+            "calibrationWindows": 4,
+            "testWindows": 10,
+            "learnedCoverageFraction": 0.0,
+            "gradeCoverageFraction": 1.0,
+            "gradeLearned": false,
+            "scores": {
+              "flat": {
+                "calibratedPaceMps": 5.063,
+                "observedMovingSec": 100.0,
+                "predictedMovingSec": 89.0,
+                "totalErrorPercent": 11.02,
+                "windowMedianErrorPercent": 20.3,
+                "windowMaeSec": 2.122
+              },
+              "gradeFormula": {
+                "calibratedPaceMps": 5.192,
+                "observedMovingSec": 100.0,
+                "predictedMovingSec": 80.5,
+                "totalErrorPercent": 19.55,
+                "windowMedianErrorPercent": 20.22,
+                "windowMaeSec": 2.296
+              },
+              "learned": {
+                "calibratedPaceMps": 5.063,
+                "observedMovingSec": 100.0,
+                "predictedMovingSec": 89.0,
+                "totalErrorPercent": 11.02,
+                "windowMedianErrorPercent": 20.3,
+                "windowMaeSec": 2.122
+              }
+            }
+          },
+          {
+            "id": "419cfd3c66ced005b6762fde858c57bffdfe345580eb1b88154ac1364bdb3d37",
+            "fileName": "20261101_190858.kml",
+            "activity": "bicycle",
+            "trainingRecordings": 10,
+            "observationCount": 17,
+            "calibrationWindows": 5,
+            "testWindows": 12,
+            "learnedCoverageFraction": 0.0,
+            "gradeCoverageFraction": 0.9167,
+            "gradeLearned": false,
+            "scores": {
+              "flat": {
+                "calibratedPaceMps": 5.063,
+                "observedMovingSec": 127.0,
+                "predictedMovingSec": 112.5,
+                "totalErrorPercent": 11.4,
+                "windowMedianErrorPercent": 13.93,
+                "windowMaeSec": 2.572
+              },
+              "gradeFormula": {
+                "calibratedPaceMps": 5.196,
+                "observedMovingSec": 127.0,
+                "predictedMovingSec": 104.2,
+                "totalErrorPercent": 17.93,
+                "windowMedianErrorPercent": 15.45,
+                "windowMaeSec": 2.398
+              },
+              "learned": {
+                "calibratedPaceMps": 5.063,
+                "observedMovingSec": 127.0,
+                "predictedMovingSec": 112.5,
+                "totalErrorPercent": 11.4,
+                "windowMedianErrorPercent": 13.93,
+                "windowMaeSec": 2.572
+              }
+            }
+          },
+          {
+            "id": "42b8d5c362813cdfc92e0d14e9f71e00949bf19a2112983dfc04894d92f57234",
+            "fileName": "20261101_190910.kml",
+            "activity": "walk",
+            "trainingRecordings": 10,
+            "observationCount": 24,
+            "calibrationWindows": 6,
+            "testWindows": 18,
+            "learnedCoverageFraction": 0.0,
+            "gradeCoverageFraction": 1.0,
+            "gradeLearned": true,
+            "scores": {
+              "flat": {
+                "calibratedPaceMps": 1.07,
+                "observedMovingSec": 505.0,
+                "predictedMovingSec": 552.0,
+                "totalErrorPercent": 9.3,
+                "windowMedianErrorPercent": 8.94,
+                "windowMaeSec": 2.881
+              },
+              "gradeFormula": {
+                "calibratedPaceMps": 1.171,
+                "observedMovingSec": 505.0,
+                "predictedMovingSec": 524.5,
+                "totalErrorPercent": 3.87,
+                "windowMedianErrorPercent": 8.08,
+                "windowMaeSec": 2.694
+              },
+              "learned": {
+                "calibratedPaceMps": 1.168,
+                "observedMovingSec": 505.0,
+                "predictedMovingSec": 517.9,
+                "totalErrorPercent": 2.56,
+                "windowMedianErrorPercent": 6.84,
+                "windowMaeSec": 2.247
+              }
+            }
+          }
+        ],
+        "summaryByActivity": {
+          "bicycle": {
+            "flat": {
+              "windowMaeSec": 2.487,
+              "windowMedianErrorPercent": 17.77,
+              "windowP90ErrorPercent": 40.66,
+              "recordingMeanErrorPercent": 12.01,
+              "recordingMedianErrorPercent": 11.4
+            },
+            "gradeFormula": {
+              "windowMaeSec": 2.372,
+              "windowMedianErrorPercent": 18.24,
+              "windowP90ErrorPercent": 38.0,
+              "recordingMeanErrorPercent": 17.44,
+              "recordingMedianErrorPercent": 17.93
+            },
+            "learned": {
+              "windowMaeSec": 2.487,
+              "windowMedianErrorPercent": 17.77,
+              "windowP90ErrorPercent": 40.66,
+              "recordingMeanErrorPercent": 12.01,
+              "recordingMedianErrorPercent": 11.4
+            }
+          },
+          "walk": {
+            "flat": {
+              "windowMaeSec": 2.881,
+              "windowMedianErrorPercent": 8.94,
+              "windowP90ErrorPercent": 18.99,
+              "recordingMeanErrorPercent": 9.3,
+              "recordingMedianErrorPercent": 9.3
+            },
+            "gradeFormula": {
+              "windowMaeSec": 2.694,
+              "windowMedianErrorPercent": 8.08,
+              "windowP90ErrorPercent": 19.75,
+              "recordingMeanErrorPercent": 3.87,
+              "recordingMedianErrorPercent": 3.87
+            },
+            "learned": {
+              "windowMaeSec": 2.247,
+              "windowMedianErrorPercent": 6.84,
+              "windowP90ErrorPercent": 15.47,
+              "recordingMeanErrorPercent": 2.56,
+              "recordingMedianErrorPercent": 2.56
+            }
+          }
+        }
+      },
+      "elapsedSec": 11.91
+    }
+  ],
+  "serverComparison": {
+    "version": 2,
+    "matches": true,
+    "sourceFileHashMismatches": [],
+    "localOnly": [],
+    "serverOnly": []
+  },
+  "generatedAt": "2026-11-02T05:21:27.863718+00:00",
+  "routingIntegration": {
+    "schema": "activity-pace-corridor-v1",
+    "scope": "sampled connected ground nodes on existing real map graphs; not a field passage survey",
+    "peakRssMiB": 698.2,
+    "maps": [
+      {
+        "assetId": "szu-1",
+        "mapVersion": 13,
+        "nodes": 228655,
+        "edges": 1973480,
+        "baselineGraphSec": 5.562,
+        "attachLearnedCostsSec": 1.723,
+        "legalEdgesAndLengthsUnchanged": true,
+        "changedEdgeCosts": 1433996,
+        "costRatioRange": [
+          0.9232,
+          1.1437
+        ],
+        "sampledPairs": 56,
+        "changedRoutes": 35,
+        "pairs": [
+          {
+            "fromSample": 0,
+            "toSample": 1,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 346.228,
+            "learnedMovingSecAt1_4Mps": 354.386
+          },
+          {
+            "fromSample": 0,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 563.827,
+            "learnedMovingSecAt1_4Mps": 589.983
+          },
+          {
+            "fromSample": 0,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 432.78,
+            "learnedMovingSecAt1_4Mps": 449.368
+          },
+          {
+            "fromSample": 0,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 806.866,
+            "learnedMovingSecAt1_4Mps": 835.918
+          },
+          {
+            "fromSample": 0,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 406.038,
+            "learnedMovingSecAt1_4Mps": 418.005
+          },
+          {
+            "fromSample": 0,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 580.728,
+            "learnedMovingSecAt1_4Mps": 604.999
+          },
+          {
+            "fromSample": 0,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 823.165,
+            "learnedMovingSecAt1_4Mps": 852.187
+          },
+          {
+            "fromSample": 1,
+            "toSample": 0,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 363.619,
+            "learnedMovingSecAt1_4Mps": 361.838
+          },
+          {
+            "fromSample": 1,
+            "toSample": 2,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 312.089,
+            "learnedMovingSecAt1_4Mps": 329.476
+          },
+          {
+            "fromSample": 1,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 129.009,
+            "learnedMovingSecAt1_4Mps": 137.877
+          },
+          {
+            "fromSample": 1,
+            "toSample": 4,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 604.008,
+            "learnedMovingSecAt1_4Mps": 624.195
+          },
+          {
+            "fromSample": 1,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 61.464,
+            "learnedMovingSecAt1_4Mps": 65.195
+          },
+          {
+            "fromSample": 1,
+            "toSample": 6,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 341.187,
+            "learnedMovingSecAt1_4Mps": 356.779
+          },
+          {
+            "fromSample": 1,
+            "toSample": 7,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 628.846,
+            "learnedMovingSecAt1_4Mps": 648.908
+          },
+          {
+            "fromSample": 2,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 633.152,
+            "learnedMovingSecAt1_4Mps": 619.641
+          },
+          {
+            "fromSample": 2,
+            "toSample": 1,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 357.214,
+            "learnedMovingSecAt1_4Mps": 348.669
+          },
+          {
+            "fromSample": 2,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 421.444,
+            "learnedMovingSecAt1_4Mps": 420.823
+          },
+          {
+            "fromSample": 2,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 374.936,
+            "learnedMovingSecAt1_4Mps": 379.074
+          },
+          {
+            "fromSample": 2,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 357.464,
+            "learnedMovingSecAt1_4Mps": 351.862
+          },
+          {
+            "fromSample": 2,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 34.387,
+            "learnedMovingSecAt1_4Mps": 32.475
+          },
+          {
+            "fromSample": 2,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 410.962,
+            "learnedMovingSecAt1_4Mps": 415.175
+          },
+          {
+            "fromSample": 3,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 469.298,
+            "learnedMovingSecAt1_4Mps": 464.3
+          },
+          {
+            "fromSample": 3,
+            "toSample": 1,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 152.881,
+            "learnedMovingSecAt1_4Mps": 147.938
+          },
+          {
+            "fromSample": 3,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 403.024,
+            "learnedMovingSecAt1_4Mps": 413.086
+          },
+          {
+            "fromSample": 3,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 723.403,
+            "learnedMovingSecAt1_4Mps": 738.085
+          },
+          {
+            "fromSample": 3,
+            "toSample": 5,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 81.373,
+            "learnedMovingSecAt1_4Mps": 78.693
+          },
+          {
+            "fromSample": 3,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 432.123,
+            "learnedMovingSecAt1_4Mps": 440.389
+          },
+          {
+            "fromSample": 3,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 748.241,
+            "learnedMovingSecAt1_4Mps": 762.798
+          },
+          {
+            "fromSample": 4,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 852.557,
+            "learnedMovingSecAt1_4Mps": 853.015
+          },
+          {
+            "fromSample": 4,
+            "toSample": 1,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 652.643,
+            "learnedMovingSecAt1_4Mps": 644.748
+          },
+          {
+            "fromSample": 4,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 374.514,
+            "learnedMovingSecAt1_4Mps": 378.877
+          },
+          {
+            "fromSample": 4,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 746.286,
+            "learnedMovingSecAt1_4Mps": 746.63
+          },
+          {
+            "fromSample": 4,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 682.306,
+            "learnedMovingSecAt1_4Mps": 677.313
+          },
+          {
+            "fromSample": 4,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 351.588,
+            "learnedMovingSecAt1_4Mps": 352.977
+          },
+          {
+            "fromSample": 4,
+            "toSample": 7,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 36.025,
+            "learnedMovingSecAt1_4Mps": 36.101
+          },
+          {
+            "fromSample": 5,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 433.752,
+            "learnedMovingSecAt1_4Mps": 429.919
+          },
+          {
+            "fromSample": 5,
+            "toSample": 1,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 71.892,
+            "learnedMovingSecAt1_4Mps": 69.654
+          },
+          {
+            "fromSample": 5,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 325.52,
+            "learnedMovingSecAt1_4Mps": 338.494
+          },
+          {
+            "fromSample": 5,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 68.29,
+            "learnedMovingSecAt1_4Mps": 73.306
+          },
+          {
+            "fromSample": 5,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 643.331,
+            "learnedMovingSecAt1_4Mps": 660.699
+          },
+          {
+            "fromSample": 5,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 354.618,
+            "learnedMovingSecAt1_4Mps": 365.797
+          },
+          {
+            "fromSample": 5,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 668.169,
+            "learnedMovingSecAt1_4Mps": 685.412
+          },
+          {
+            "fromSample": 6,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 641.892,
+            "learnedMovingSecAt1_4Mps": 631.165
+          },
+          {
+            "fromSample": 6,
+            "toSample": 1,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 378.598,
+            "learnedMovingSecAt1_4Mps": 372.636
+          },
+          {
+            "fromSample": 6,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 25.797,
+            "learnedMovingSecAt1_4Mps": 28.783
+          },
+          {
+            "fromSample": 6,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 442.829,
+            "learnedMovingSecAt1_4Mps": 444.79
+          },
+          {
+            "fromSample": 6,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 343.443,
+            "learnedMovingSecAt1_4Mps": 349.491
+          },
+          {
+            "fromSample": 6,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 378.848,
+            "learnedMovingSecAt1_4Mps": 375.829
+          },
+          {
+            "fromSample": 6,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 379.468,
+            "learnedMovingSecAt1_4Mps": 385.592
+          },
+          {
+            "fromSample": 7,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 867.472,
+            "learnedMovingSecAt1_4Mps": 868.875
+          },
+          {
+            "fromSample": 7,
+            "toSample": 1,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 677.153,
+            "learnedMovingSecAt1_4Mps": 669.643
+          },
+          {
+            "fromSample": 7,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 410.146,
+            "learnedMovingSecAt1_4Mps": 415.12
+          },
+          {
+            "fromSample": 7,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 770.796,
+            "learnedMovingSecAt1_4Mps": 771.525
+          },
+          {
+            "fromSample": 7,
+            "toSample": 4,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 35.632,
+            "learnedMovingSecAt1_4Mps": 36.243
+          },
+          {
+            "fromSample": 7,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 706.816,
+            "learnedMovingSecAt1_4Mps": 702.208
+          },
+          {
+            "fromSample": 7,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 387.221,
+            "learnedMovingSecAt1_4Mps": 389.22
+          }
+        ],
+        "modelRevision": "eb67e68cb5e842ff6269f39623954da9062732223053a7a04b3ec06b3dd3223b"
+      },
+      {
+        "assetId": "szu-3",
+        "mapVersion": 17,
+        "nodes": 308825,
+        "edges": 2657178,
+        "baselineGraphSec": 8.576,
+        "attachLearnedCostsSec": 2.335,
+        "legalEdgesAndLengthsUnchanged": true,
+        "changedEdgeCosts": 2115505,
+        "costRatioRange": [
+          0.9232,
+          1.1437
+        ],
+        "sampledPairs": 56,
+        "changedRoutes": 40,
+        "pairs": [
+          {
+            "fromSample": 0,
+            "toSample": 1,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 462.337,
+            "learnedMovingSecAt1_4Mps": 461.557
+          },
+          {
+            "fromSample": 0,
+            "toSample": 2,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 801.474,
+            "learnedMovingSecAt1_4Mps": 819.337
+          },
+          {
+            "fromSample": 0,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 542.945,
+            "learnedMovingSecAt1_4Mps": 547.775
+          },
+          {
+            "fromSample": 0,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 544.046,
+            "learnedMovingSecAt1_4Mps": 549.366
+          },
+          {
+            "fromSample": 0,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 593.738,
+            "learnedMovingSecAt1_4Mps": 605.221
+          },
+          {
+            "fromSample": 0,
+            "toSample": 6,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 760.773,
+            "learnedMovingSecAt1_4Mps": 778.647
+          },
+          {
+            "fromSample": 0,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 1018.25,
+            "learnedMovingSecAt1_4Mps": 1042.464
+          },
+          {
+            "fromSample": 1,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 443.679,
+            "learnedMovingSecAt1_4Mps": 453.409
+          },
+          {
+            "fromSample": 1,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 354.793,
+            "learnedMovingSecAt1_4Mps": 373.426
+          },
+          {
+            "fromSample": 1,
+            "toSample": 3,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 193.09,
+            "learnedMovingSecAt1_4Mps": 200.109
+          },
+          {
+            "fromSample": 1,
+            "toSample": 4,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 415.809,
+            "learnedMovingSecAt1_4Mps": 435.352
+          },
+          {
+            "fromSample": 1,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 227.35,
+            "learnedMovingSecAt1_4Mps": 243.694
+          },
+          {
+            "fromSample": 1,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 301.186,
+            "learnedMovingSecAt1_4Mps": 319.424
+          },
+          {
+            "fromSample": 1,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 557.167,
+            "learnedMovingSecAt1_4Mps": 582.039
+          },
+          {
+            "fromSample": 2,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 829.672,
+            "learnedMovingSecAt1_4Mps": 831.192
+          },
+          {
+            "fromSample": 2,
+            "toSample": 1,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 400.121,
+            "learnedMovingSecAt1_4Mps": 392.248
+          },
+          {
+            "fromSample": 2,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 378.856,
+            "learnedMovingSecAt1_4Mps": 377.178
+          },
+          {
+            "fromSample": 2,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 688.364,
+            "learnedMovingSecAt1_4Mps": 699.59
+          },
+          {
+            "fromSample": 2,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 358.508,
+            "learnedMovingSecAt1_4Mps": 362.826
+          },
+          {
+            "fromSample": 2,
+            "toSample": 6,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 80.046,
+            "learnedMovingSecAt1_4Mps": 80.915
+          },
+          {
+            "fromSample": 2,
+            "toSample": 7,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 317.283,
+            "learnedMovingSecAt1_4Mps": 325.475
+          },
+          {
+            "fromSample": 3,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 532.875,
+            "learnedMovingSecAt1_4Mps": 543.117
+          },
+          {
+            "fromSample": 3,
+            "toSample": 1,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 210.926,
+            "learnedMovingSecAt1_4Mps": 207.64
+          },
+          {
+            "fromSample": 3,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 356.853,
+            "learnedMovingSecAt1_4Mps": 368.245
+          },
+          {
+            "fromSample": 3,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 316.579,
+            "learnedMovingSecAt1_4Mps": 331.57
+          },
+          {
+            "fromSample": 3,
+            "toSample": 5,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 54.518,
+            "learnedMovingSecAt1_4Mps": 61.311
+          },
+          {
+            "fromSample": 3,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 358.507,
+            "learnedMovingSecAt1_4Mps": 368.981
+          },
+          {
+            "fromSample": 3,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 626.368,
+            "learnedMovingSecAt1_4Mps": 643.399
+          },
+          {
+            "fromSample": 4,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 545.472,
+            "learnedMovingSecAt1_4Mps": 550.671
+          },
+          {
+            "fromSample": 4,
+            "toSample": 1,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 458.482,
+            "learnedMovingSecAt1_4Mps": 452.522
+          },
+          {
+            "fromSample": 4,
+            "toSample": 2,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 692.412,
+            "learnedMovingSecAt1_4Mps": 700.83
+          },
+          {
+            "fromSample": 4,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 346.717,
+            "learnedMovingSecAt1_4Mps": 343.312
+          },
+          {
+            "fromSample": 4,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 335.215,
+            "learnedMovingSecAt1_4Mps": 338.713
+          },
+          {
+            "fromSample": 4,
+            "toSample": 6,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 695.469,
+            "learnedMovingSecAt1_4Mps": 702.756
+          },
+          {
+            "fromSample": 4,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 963.329,
+            "learnedMovingSecAt1_4Mps": 977.174
+          },
+          {
+            "fromSample": 5,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 602.899,
+            "learnedMovingSecAt1_4Mps": 608.299
+          },
+          {
+            "fromSample": 5,
+            "toSample": 1,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 272.881,
+            "learnedMovingSecAt1_4Mps": 263.082
+          },
+          {
+            "fromSample": 5,
+            "toSample": 2,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 358.113,
+            "learnedMovingSecAt1_4Mps": 362.75
+          },
+          {
+            "fromSample": 5,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 74.036,
+            "learnedMovingSecAt1_4Mps": 69.219
+          },
+          {
+            "fromSample": 5,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 330.464,
+            "learnedMovingSecAt1_4Mps": 337.404
+          },
+          {
+            "fromSample": 5,
+            "toSample": 6,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 360.859,
+            "learnedMovingSecAt1_4Mps": 364.676
+          },
+          {
+            "fromSample": 5,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 628.72,
+            "learnedMovingSecAt1_4Mps": 639.094
+          },
+          {
+            "fromSample": 6,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 790.774,
+            "learnedMovingSecAt1_4Mps": 791.121
+          },
+          {
+            "fromSample": 6,
+            "toSample": 1,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 349.003,
+            "learnedMovingSecAt1_4Mps": 339.701
+          },
+          {
+            "fromSample": 6,
+            "toSample": 2,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 80.276,
+            "learnedMovingSecAt1_4Mps": 81.091
+          },
+          {
+            "fromSample": 6,
+            "toSample": 3,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 383.042,
+            "learnedMovingSecAt1_4Mps": 379.091
+          },
+          {
+            "fromSample": 6,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 693.643,
+            "learnedMovingSecAt1_4Mps": 702.695
+          },
+          {
+            "fromSample": 6,
+            "toSample": 5,
+            "routeChanged": false,
+            "oldMovingSecAt1_4Mps": 363.788,
+            "learnedMovingSecAt1_4Mps": 365.93
+          },
+          {
+            "fromSample": 6,
+            "toSample": 7,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 304.655,
+            "learnedMovingSecAt1_4Mps": 312.613
+          },
+          {
+            "fromSample": 7,
+            "toSample": 0,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 1063.631,
+            "learnedMovingSecAt1_4Mps": 1061.472
+          },
+          {
+            "fromSample": 7,
+            "toSample": 1,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 620.698,
+            "learnedMovingSecAt1_4Mps": 608.839
+          },
+          {
+            "fromSample": 7,
+            "toSample": 2,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 332.459,
+            "learnedMovingSecAt1_4Mps": 331.812
+          },
+          {
+            "fromSample": 7,
+            "toSample": 3,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 666.75,
+            "learnedMovingSecAt1_4Mps": 660.075
+          },
+          {
+            "fromSample": 7,
+            "toSample": 4,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 977.351,
+            "learnedMovingSecAt1_4Mps": 983.679
+          },
+          {
+            "fromSample": 7,
+            "toSample": 5,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 647.496,
+            "learnedMovingSecAt1_4Mps": 646.914
+          },
+          {
+            "fromSample": 7,
+            "toSample": 6,
+            "routeChanged": true,
+            "oldMovingSecAt1_4Mps": 319.003,
+            "learnedMovingSecAt1_4Mps": 319.063
+          }
+        ],
+        "modelRevision": "eb67e68cb5e842ff6269f39623954da9062732223053a7a04b3ec06b3dd3223b"
+      }
+    ]
+  },
+  "realKmlBrowser": {
+    "source": "real KMLs in a disposable local workbench",
+    "screenshots": [
+      "/tmp/dirmap-travel-shared-desktop.png",
+      "/tmp/dirmap-travel-shared-mobile.png",
+      "/tmp/dirmap-travel-route-mobile.png"
+    ],
+    "summary": "路线耗时学习\n\n每次活动的基础配速单独估计。停留和定位跳点剔除后，使用同类活动的重复经过学习路段与上下坡影响。\n\n活动\t可用记录\t学习路段\t坡度\n步行 / 散步\t5\t0\t已学习\n跑步\t0\t0\t数据不足\n骑行\t5\t7\t已学习\n\n局部路段至少需要 3 条独立记录支持。尚无支持处使用基础估计。课程可选择步行或跑步；骑行单独分析。自动判断不能可靠区分跑步与骑行，请在自己的轨迹中确认类型。",
+    "learned": {
+      "graphHash": "70347a1f13485cffd478aa8d7fd8c0b9b2f24466fb3da55a3634f89d6faa3e94",
+      "distanceM": 3194.557832657051,
+      "movingSec": 2730.613845867818,
+      "speedLearning": {
+        "coverageFraction": 0,
+        "enabled": true,
+        "fallbackDistanceM": 3194.6,
+        "gradeLearned": true,
+        "learnedDistanceM": 0,
+        "mode": "walk",
+        "modelRevision": "eb67e68cb5e842ff6269f39623954da9062732223053a7a04b3ec06b3dd3223b",
+        "movingTimeOnly": true,
+        "status": "learned"
+      }
+    },
+    "mobileLayout": {
+      "cardWidth": 354,
+      "profileWidth": 326,
+      "explanationWidth": 326,
+      "stacked": true
+    },
+    "baseline": {
+      "graphHash": "d534125ad3591c90eef9e852774260e6d7305269426a597b81a47b486dfa7ef6",
+      "distanceM": 3208.3829322014394,
+      "movingSec": 2687.190253305576
+    },
+    "errors": []
+  },
+  "checks": {
+    "backend": {
+      "tests": 454,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frontendTestsPassed": 35,
+    "browserWorkflows": {
+      "startTime": "2026-11-02T05:17:33.231Z",
+      "duration": 71180.237,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "productionBuild": "passed",
+    "backendImplementationSha256": "3c0fed8cd4ced4a6d73dfdd8eed8bd932599be94db19e0cc3b2543f6787461a9",
+    "newCapabilities": [
+      "activity-labelled cohort isolation",
+      "unpenalized episode pace",
+      "within-episode grade identification",
+      "independent-recording weights and robust scale",
+      "timed duplicates and untimed upgrades",
+      "owner-only atomic labels",
+      "long-edge cost integration and unchanged legal edges",
+      "directional connectors and expanded times",
+      "team pace and service separation",
+      "automatic-team profile preservation",
+      "frozen publishing, continuation and navigation",
+      "draft and release artifact retention",
+      "real KML mobile rendering"
+    ]
+  },
+  "localImport": {
+    "tracks": 16,
+    "points": 22388,
+    "version": 2,
+    "confirmedBicycleIds": [
+      "419cfd3c66ced005b6762fde858c57bffdfe345580eb1b88154ac1364bdb3d37",
+      "5a23c14d1a0f882a3db025af32ea9de6dbd967fce89efa362ea3b3235db63119",
+      "79a8641bd0485ba71ef5539843c2df19999557c7bd6318f59fa861602edc32f1",
+      "d0ae0fdd750e7ba782b4fa509341e98258807efc645e3a23d3c424378e1decf0",
+      "e840bb00bad0e9615a52241d1dbd6b0545c6c9156c6eb521b806d07139c87268"
+    ],
+    "activityLabelReapplyChanged": [],
+    "speedArtifactsBytes": 9233
+  },
+  "delivery": {
+    "workspaceImplementation": "implemented and verified",
+    "localPreview": "http://127.0.0.1:8770/elevation",
+    "productionChanged": false,
+    "note": "Server catalogue was read for content-hash comparison. Code, labels and trained models were verified locally; no production deployment was performed."
+  }
+}

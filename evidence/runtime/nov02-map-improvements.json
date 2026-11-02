@@ -1,0 +1,346 @@
+{
+  "checkedAt": "2026-11-02T00:17:39Z",
+  "goalStatus": "active",
+  "fullObjectiveAchieved": false,
+  "scope": "Current source, three real collage files, image/registration invariants, isolated course workflows and browser tests. No independent field or real-phone accuracy validation.",
+  "implementationSignature": "69a2ec7127878d9d03fe8864b38fe3bf34793cc381d8ae62d86a9df346b12140",
+  "frontendSourceSha256": "a191e1d5ac88fe78f851919661596b9d3993f1b5f411fde44d686e274168fed2",
+  "realDashahe": {
+    "controls": {
+      "count": 32,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "calibrated": 32,
+      "maxErrorAt1400pxPreview": 1.53
+    },
+    "photos": {
+      "count": 32,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "linked": 32,
+      "printedLabelLocationsMatched": true,
+      "allCropsServed": true
+    },
+    "allPairsConnected": true,
+    "automaticApproachLabels": [
+      "33",
+      "41",
+      "44",
+      "45",
+      "46",
+      "51",
+      "53",
+      "60",
+      "61"
+    ],
+    "coveredPassage52": {
+      "keepsCircleCentre": true,
+      "northAndSouthConnected": true
+    },
+    "course": {
+      "scope": "仅在隔离测试工作台模拟教师确认自动到访建议和核验；不代表现场通行已确认。",
+      "mode": "mixed_coverage",
+      "teams": 3,
+      "mandatoryLabels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ],
+      "sharedLabels": [
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "coverageVerified": true,
+      "planStatus": "FEASIBLE",
+      "uniqueLegalEdgesChecked": 4845,
+      "referencePhotosPublished": 32,
+      "releaseId": "89c809e907e9448384388394de82c681",
+      "automaticApproachesConfirmed": 9
+    },
+    "report": "evidence/runtime/dashahe-real.json"
+  },
+  "photoLayouts": [
+    {
+      "sheet": "dashahe",
+      "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+      "photos": 32,
+      "allLinked": true,
+      "preview": "/tmp/dirmap-final-sheet-photos/dashahe.jpg"
+    },
+    {
+      "sheet": "campus",
+      "sourceSha256": "67db55e8b7249ae947a8e253aded172e343207b931432f622d407ceb74402bd8",
+      "photos": 17,
+      "allLinked": true,
+      "preview": "/tmp/dirmap-final-sheet-photos/campus.jpg"
+    },
+    {
+      "sheet": "campus-compressed",
+      "sourceSha256": "068f178d909ed25fe54e051b107dd785a58642053ebcdda5ebbc6c509b07673e",
+      "photos": 17,
+      "allLinked": true,
+      "preview": "/tmp/dirmap-final-sheet-photos/campus-compressed.jpg"
+    }
+  ],
+  "relativeContours": {
+    "report": "evidence/runtime/contour-terrain.json",
+    "curveFragments": 4,
+    "zeroShiftInvariant": true,
+    "supportedCellsBefore": 1641,
+    "supportedCellsAfter": 1734,
+    "independentSurveyValidation": false
+  },
+  "editorReference": {
+    "label": "33",
+    "visibleDuringPointPreview": true,
+    "photoViewerPreservedPendingPoint": true,
+    "smallScreens": [
+      {
+        "width": 375,
+        "height": 667,
+        "contentHeight": 681,
+        "visibleHeight": 645,
+        "overflow": "auto",
+        "saveReachableByScrolling": true
+      },
+      {
+        "width": 360,
+        "height": 640,
+        "contentHeight": 676,
+        "visibleHeight": 619,
+        "overflow": "auto",
+        "saveReachableByScrolling": true
+      }
+    ],
+    "landscape": {
+      "contentHeight": 609,
+      "visibleHeight": 376,
+      "overflow": "auto"
+    }
+  },
+  "offlinePhotosDecoded": 32,
+  "warpComparison": [
+    {
+      "assetId": "upload-fbdc0f2cf044",
+      "beforeSec": 21.163484637014335,
+      "afterSec": 7.3542437540018,
+      "unchangedPixels": true,
+      "unchangedExtent": true,
+      "shape": [
+        1700,
+        1490,
+        4
+      ],
+      "pngSha256": "99057baf0f2955b2a1209f354e75456b8162910c2ce192a5a0e8f7ff73b35cc7"
+    },
+    {
+      "assetId": "upload-55496a067ba7",
+      "beforeSec": 13.626586862985278,
+      "afterSec": 5.197378145006951,
+      "unchangedPixels": true,
+      "unchangedExtent": true,
+      "shape": [
+        1196,
+        1700,
+        4
+      ],
+      "pngSha256": "3c69d9756bee55d1a89637c8aa3dcab8f763a497fd951ff99f370e28fb3d194d"
+    }
+  ],
+  "processing": {
+    "previousImport": {
+      "jobId": "3db0a6489a534439",
+      "eventualState": "succeeded",
+      "elapsedSec": 123.316,
+      "browserWaitSec": 120,
+      "scope": "Same live job was polled to completion after the browser timeout."
+    },
+    "updatedImport": {
+      "id": "30d6374378334046",
+      "assetId": "upload-944aa3030e08",
+      "state": "succeeded",
+      "startedAt": 1793578100.6339598,
+      "finishedAt": 1793578198.0269217,
+      "processingSec": 97.288,
+      "photoCount": 17,
+      "allLinked": true
+    },
+    "updatedExistingMap": {
+      "id": "85ea0e0afe364b84",
+      "assetId": "upload-f4fd82f6605e",
+      "state": "succeeded",
+      "startedAt": 1793578011.2262511,
+      "finishedAt": 1793578086.3601928,
+      "processingSec": 75.014,
+      "version": 13,
+      "photoCount": 17,
+      "labels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47"
+      ],
+      "allLinked": true
+    }
+  },
+  "verification": {
+    "python": {
+      "passed": 420,
+      "failures": 0,
+      "report": "/tmp/dirmap-final-python.xml"
+    },
+    "frontend": {
+      "passed": 30,
+      "report": "/tmp/dirmap-final-frontend.log"
+    },
+    "productionBuild": true,
+    "browserFullRun": {
+      "startTime": "2026-11-01T23:57:29.019Z",
+      "duration": 879635.086,
+      "expected": 60,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "browserReadinessFollowup": {
+      "startTime": "2026-11-02T00:14:19.551Z",
+      "duration": 12212.55,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "distinctBrowserScenariosPassed": 61,
+    "browserReports": [
+      "/tmp/dirmap-final-browser.json",
+      "/tmp/dirmap-catalogue-readiness-browser.json"
+    ],
+    "browserNote": "The full run passed 60/61. The remaining case read the site selector before its catalogue arrived; the corrected case now waits for initialization, with delayed catalogue delivery to reproduce that ordering. Application source was unchanged for the followup.",
+    "realBrowserReport": "evidence/runtime/dashahe-browser.json"
+  },
+  "fieldPositioning": {
+    "classroomPlatform": "OpenHarmony 6.1 / ArkWeb 6.0.0.46SP3 / WeChat 8.0.19.47",
+    "currentOS": "OpenHarmony 7.0 (user reported)",
+    "newFieldSamples": 0,
+    "independentAccuracyVerified": false,
+    "UIInterpretation": "Map/GPS coordinate agreement, not independent positioning accuracy."
+  },
+  "localPreview": {
+    "url": "http://localhost:8765",
+    "health": "ok",
+    "currentBuildServed": true
+  },
+  "storage": {
+    "installedNewDependencies": false,
+    "usedCodespace": false,
+    "temporaryArtifactsUnder": "/tmp"
+  },
+  "remaining": [
+    "Independent geographic references and real-phone field walks, including actual approach locations.",
+    "Further independent map styles and complete traversability semantics; the existing forest-map limitation remains."
+  ]
+}

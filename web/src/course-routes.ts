@@ -1,5 +1,15 @@
 import type { Control, PlanRequest } from './types';
 
+export function draftControlIds(draft: string, controls: Control[]): string[] {
+  const tokens = draft.trim().split(/[\s,，、;；→>]+/u).filter(Boolean);
+  return tokens.map(token => {
+    const byId = controls.find(c => c.id === token);
+    const matches = byId ? [byId] : controls.filter(c => c.label === token);
+    if (matches.length !== 1) throw new Error(`目标 ${token} ${matches.length ? '编号重复，请先核对编号' : '不存在，请先修正点序'}`);
+    return matches[0].id;
+  });
+}
+
 export function routeToken(id: string, controls: Control[]): string {
   const control = controls.find(c => c.id === id);
   return control && control.label && !/[\s,，、;；→>]/u.test(control.label) &&

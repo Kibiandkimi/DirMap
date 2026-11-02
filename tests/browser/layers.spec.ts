@@ -51,6 +51,9 @@ test('teacher draws an explicit upper surface and portal, then publishes layered
   await page.getByLabel('笔刷半径').fill('10');
   await page.locator('#surface-cost').fill('1.7');
   await page.getByLabel('编辑操作').selectOption('open');
+  // Inspecting a target now zooms to it. Show the whole sheet before
+  // drawing a bridge whose other end is far from that target.
+  await page.locator('#fit-image').click();
   const a = await point(page, 120, 40), b = await point(page, 120, 200);
   await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.mouse.move(b.x, b.y, { steps: 12 }); await page.mouse.up();
   await page.locator(`[data-confirm-surface="${surface}"]`).check();

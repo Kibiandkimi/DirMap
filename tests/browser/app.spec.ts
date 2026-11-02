@@ -4,9 +4,19 @@ import fs from 'node:fs';
 test('three real maps, source editor, local overlays and independent review state', async ({ page }) => {
   test.setTimeout(60000);
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  // The direct API read can beat the page's catalogue load. Keep that
+  // ordering reproducible so an empty, uninitialized site is never used to
+  // derive the expected map count.
+  await page.route('**/api/catalog', async route => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await route.continue();
+  }, { times: 1 });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const catalog = await (await page.request.get('/api/catalog')).json();
-  await expect(page.locator('[data-map]')).toHaveCount(catalog.maps.length);
+  const sitePicker = page.locator('#site-select');
+  await expect(sitePicker).toHaveValue(/\S+/);
+  const site = await sitePicker.inputValue();
+  await expect(page.locator('[data-map]')).toHaveCount(catalog.maps.filter((map: { siteId?: string }) => (map.siteId ?? 'szu-yuehai') === site).length);
   await expect(page.locator('.control-row').first()).toBeVisible();
   const firstCount = await page.locator('.control-row').count(); expect(firstCount).toBeGreaterThan(5);
   await page.locator('#stitch-maps').check();

@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
+import pytest
 
 from dirmap.geometry import Registration, affine_points
 from dirmap.reference import polygon_properties
 from dirmap.registration import Matcher, extend_transfer_boundary, fit_observed_landmarks, partial_feature_corner_matches, recover_boundary_buildings, register_to_map
+from dirmap.registration import warp_overlay
 
 
 def test_outline_holdout_keeps_whole_objects_separate_and_uses_observed_boundary():
@@ -25,7 +27,49 @@ def test_outline_holdout_keeps_whole_objects_separate_and_uses_observed_boundary
     observed = {tuple(p['pixel']) for p in corners}
     assert all(tuple(p) in observed for p in reg.source)
     assert reg.forward([[-4, -4], [124, 124]])[1].all()
+
+
+def test_full_sheet_display_keeps_the_measured_mesh_and_does_not_calibrate_extrapolated_points(tmp_path):
+    source = [[20, 20], [50, 20], [80, 20], [80, 80], [20, 80], [50, 50]]
+    matrix = [[1., .05, -50], [.03, -1, 50]]
+    target = affine_points(matrix, source); target[1] += [0, 1]; target[-1] += [2, -2]
+    reg = Registration(matrix, source, target, regularization=0)
+    original = reg.as_dict()
+    display = reg.for_display(101, 101)
+    interior = np.array([[30, 21], [50, 20], [78, 78], [40, 52]])
+    np.testing.assert_allclose(display.forward(interior)[0], reg.forward(interior)[0], atol=1e-8)
+    exterior = [[2, 2], [98, 2], [98, 98], [2, 98]]
+    world, valid = display.forward(exterior)
+    assert valid.all() and not reg.forward(exterior)[1].any()
+    np.testing.assert_allclose(display.inverse(world), exterior, atol=1e-8)
+    assert reg.as_dict() == original
+    image = np.full((101, 101, 3), (40, 150, 220), np.uint8)
+    path = tmp_path/'overlay.png'
+    warp_overlay(image, reg, path, max_side=160)
+    overlay = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+    assert np.mean(overlay[..., 3] > 0) > .85
     assert not reg.forward([[-4.1, -4]])[1][0]
+
+
+def test_inverse_query_window_preserves_exterior_mesh_and_out_of_window_queries():
+    source = [[x, y] for y in (40, 50, 60) for x in (40, 50, 60)]
+    matrix = [[.8, .12, -50], [.05, -.9, 65]]
+    target = affine_points(matrix, source); target[4] += [.5, -.3]
+    reg = Registration(matrix, source, target, regularization=0)
+    display = reg.for_display(2000, 1500)
+    pixels = np.array([[5., 5.], [50., 50.], [700., 900.], [1800., 1400.]])
+    world, valid = display.forward(pixels)
+    assert valid.all()
+    queries = np.vstack((world, [1e8, 1e8], [np.nan, 0]))
+    expected = display.inverse(queries)
+    bounds = [world[:2].min(axis=0)-1, world[:2].max(axis=0)+1]
+    for _ in range(2):
+        actual = display.inverse(queries, index_bounds=bounds)
+        np.testing.assert_allclose(actual[:4], pixels, atol=1e-8)
+        np.testing.assert_allclose(actual, expected, atol=1e-8, equal_nan=True)
+    np.testing.assert_allclose(display.inverse(queries), expected, atol=1e-8, equal_nan=True)
+    with pytest.raises(ValueError, match='查询范围'):
+        display.inverse(queries, index_bounds=[[0, 0], [0, 1]])
 
 
 def test_clipped_building_uses_real_corners_and_excludes_the_image_cut():

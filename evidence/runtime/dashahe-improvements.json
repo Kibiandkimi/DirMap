@@ -1,0 +1,169 @@
+{
+  "checkedAt": "2026-11-01T10:54:27Z",
+  "goalStatus": "active",
+  "fullObjectiveAchieved": false,
+  "implementationSignature": "01cc877f177dc367add0dd480904a98a2ca2fc0fe68f6f067539289e7f9008bd",
+  "previousGoalTurnAssessment": "progress: existing implementations were present in the worktree and were revalidated, not merely planned",
+  "requirements": [
+    {
+      "requirement": "大沙河的目标和配准点识别",
+      "evidence": "dashahe-real.json",
+      "result": "32 个目标和起终点全部识别；372 个道路对应点；全部目标在配准范围内",
+      "limitation": "已匹配道路留出 P95 10.52 m；独立现场 GPS 精度未证明"
+    },
+    {
+      "requirement": "减少手动确定到访位置",
+      "evidence": "dashahe-real.json navigation/courseWorkflow",
+      "result": "3 个待核对点有可达候选；模拟确认后全点连通，三队全员必到和分担覆盖正确",
+      "limitation": "41、44、52 的真实到访侧仍需核对"
+    },
+    {
+      "requirement": "自动识别并方便查看原图打卡照片",
+      "evidence": "dashahe-browser.json; sheet-photos.json; tests/test_sheet_api.py",
+      "result": "两种拼版 32/32、17/17 张；大沙河 32 张实际图片在手机尺寸和断网重载下可读"
+    },
+    {
+      "requirement": "字典序排序与方便选择自定义点序",
+      "evidence": "tests/control-order.test.ts; tests/browser/course-picker.spec.ts; tests/browser/custom.spec.ts",
+      "result": "普通列表按 1、10、2 排序；编号按钮、地图选择、前后移动、撤销与每队草稿恢复通过"
+    },
+    {
+      "requirement": "减少对建筑水体的依赖并改善泛化",
+      "evidence": "tests/test_network_registration.py; dashahe-real.json registration",
+      "result": "公园轮廓及道路网络分支；旋转、缺失参照路段与对称歧义检查通过",
+      "limitation": "未证明对任意地图泛化，森林图通行语义尚有缺口"
+    },
+    {
+      "requirement": "显示配准点外侧的地图",
+      "evidence": "tests/test_registration.py; dashahe-browser.json",
+      "result": "整张纸面已显示；内部网格不变，外推位置仍不能作为已配准路由范围"
+    },
+    {
+      "requirement": "尝试用等高线辅助重建地形",
+      "evidence": "tests/test_contours.py; tests/test_contour_api.py; tests/browser/sheet.spec.ts",
+      "result": "133 段大沙河候选可核对；已确认高度约束共享地形且不当作手机漂移",
+      "limitation": "未自动给无标高曲线编造高度，实际候选及高度仍需核对"
+    }
+  ],
+  "tests": {
+    "python": [
+      {
+        "report": "/tmp/dirmap-goal-python.xml",
+        "passed": 388
+      },
+      {
+        "report": "/tmp/dirmap-nov01-targeted.xml",
+        "passed": 35
+      },
+      {
+        "report": "/tmp/dirmap-nov01-contour-recheck.xml",
+        "passed": 10
+      },
+      {
+        "report": "/tmp/dirmap-nov01-photos-recheck.xml",
+        "passed": 9
+      }
+    ],
+    "uniquePythonChecksPassed": 389,
+    "frontendUnitPassed": 30,
+    "browserFull": {
+      "startTime": "2026-11-01T10:16:17.102Z",
+      "duration": 900835.965,
+      "expected": 56,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "browserRecheck": {
+      "startTime": "2026-11-01T10:41:18.946Z",
+      "duration": 169431.842,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browserInitiallyFailed": [
+      "three real maps, source editor, local overlays and independent review state",
+      "a place chosen while the first map loads keeps the view on that place",
+      "obsolete recognition can be refreshed without losing calibration or teacher edits, then planned"
+    ],
+    "browserAll59NowPassed": true,
+    "browserRecheckReason": "两处旧测试假定只有校园图/大沙河为空；一项升级任务已成功但超过原页面等待，现跟踪同一任务至终态后核对页面及保留字段",
+    "albumDictionaryOrder": {
+      "expected": [
+        "1",
+        "10",
+        "2"
+      ],
+      "observed": [
+        "1",
+        "10",
+        "2"
+      ],
+      "scope": "controls_for is used by both the group album and photo exports"
+    }
+  },
+  "build": {
+    "passed": true,
+    "productionEntries": [
+      "/assets/index-Ds3SyAvk.js"
+    ],
+    "realBrowserPassed": true
+  },
+  "contourPerformance": [
+    {
+      "case": "large-campus",
+      "sourceSha256": "068f178d909ed25fe54e051b107dd785a58642053ebcdda5ebbc6c509b07673e",
+      "unchangedCandidates": 33,
+      "beforeSec": 10.829,
+      "afterSec": 9.178,
+      "pixelsAndIdsIdentical": true
+    },
+    {
+      "case": "dashahe",
+      "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+      "unchangedCandidates": 133,
+      "beforeSec": 2.497,
+      "afterSec": 2.496,
+      "pixelsAndIdsIdentical": true
+    }
+  ],
+  "phaseScope": "完整实图与浏览器流程先执行；最后仅优化等高线短碎片遍历，逐一比较候选不变。当前代码随后更新实际备课图，配准、曲线和整张通行图与已测试混合课程一致。 最后统一小组相册与照片导出的编号字典序，照片接口再次复验；该排序不影响已核对的图像识别、坐标或通行图。",
+  "existingMapUpdate": {
+    "assetId": "upload-55496a067ba7",
+    "beforeVersion": 2,
+    "version": 3,
+    "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+    "backup": "/home/kibi/Work/DirMap/data/backups/20261101-dashahe-v2",
+    "unpublished": true,
+    "reviewed": false,
+    "elapsedSec": 89.986,
+    "processingSec": 89.887,
+    "controls": 32,
+    "calibratedControls": 32,
+    "referencePhotos": 32,
+    "contourCandidates": 133,
+    "registrationMatchesIsolatedTest": true,
+    "contoursMatchIsolatedTest": true,
+    "graphMatchesTestedMixedCourse": true,
+    "graphHash": "af07b59e640447e44d7e",
+    "implementationSignature": "e1b6c70c45fe1bd4558264b1ae4fa64eba6acec9ecba34e24154c3f87c94922b"
+  },
+  "disk": {
+    "dependencyDownloads": false,
+    "codespaceUsed": false,
+    "temporaryRoot": "/tmp",
+    "workspaceFreeMiB": 1003.2
+  },
+  "remaining": [
+    "独立 GPS 配准与现场到访侧核对",
+    "真机课堂行走验收",
+    "完整森林图通行语义与更广泛独立地图验证"
+  ],
+  "localService": {
+    "url": "http://localhost:8765",
+    "health": "ok",
+    "uploadReserveMiB": 512,
+    "homepageStatus": 200
+  }
+}

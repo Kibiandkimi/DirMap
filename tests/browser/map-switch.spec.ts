@@ -40,8 +40,11 @@ test('a place chosen while the first map loads keeps the view on that place', as
   await page.route('**/api/maps/szu-1', async route => { await held; await route.continue(); });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-map="szu-1"]')).toBeVisible();
+  const catalog = await (await page.request.get('/api/catalog')).json();
+  const parkMaps = catalog.maps.filter((map: { siteId?: string }) => map.siteId === 'dashahe-park');
   await page.locator('#site-select').selectOption('dashahe-park');
-  await expect(page.locator('#map-cards')).toContainText('大沙河公园还没有地图');
+  if (parkMaps.length) await expect(page.locator('#map-cards [data-map]')).toHaveCount(parkMaps.length);
+  else await expect(page.locator('#map-cards')).toContainText('大沙河公园还没有地图');
   const stale = page.waitForResponse(r => r.url().endsWith('/api/maps/szu-1'));
   release(); await stale;
   await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 800)));

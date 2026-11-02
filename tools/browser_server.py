@@ -54,7 +54,7 @@ if __name__ == '__main__':
             # Accounts, their workbenches and live groups stay on this machine;
             # every browser run starts with the original workbench unclaimed.
             return [name for name in names if name == '.write.lock'
-                    or name.startswith(('.processing-', '.terrain-', '.anchors-', 'accounts.sqlite3', 'groups.sqlite3'))
+                    or name.startswith(('.processing-', '.terrain-', '.anchors-', 'accounts.sqlite3', 'groups.sqlite3', 'live-elevation.sqlite3'))
                     or (Path(path) == source and name in ('jobs', 'workspaces', 'group-photos', 'elevation'))]
         # Freeze the manifest and derived files together. A live teacher can
         # keep working; never replay their queued production jobs in tests.

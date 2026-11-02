@@ -1,5 +1,5 @@
 {
-  "auditedAt": "2026-10-30T04:26:38.695Z",
+  "auditedAt": "2026-11-02T00:10:00.059Z",
   "sourceHash": "67db55e8b7249ae947a8e253aded172e343207b931432f622d407ceb74402bd8",
   "freshUpload": true,
   "reusedTeacherControls": false,
@@ -59,13 +59,10 @@
     3614,
     4096
   ],
-  "registrationMethod": "water_seed_observed_outline_ransac_mesh",
-  "baseAssetId": null,
-  "recoveredBoundaryObjects": [
-    "629940895",
-    "629940896"
-  ],
-  "processingElapsedSec": 94.907,
+  "registrationMethod": "sift_cross_map_observed_boundary_mesh",
+  "baseAssetId": "upload-f4fd82f6605e",
+  "recoveredBoundaryObjects": [],
+  "processingElapsedSec": 97.288,
   "allChecksPassed": true,
   "independentFieldValidation": false,
   "scope": "Fresh original-file upload through the browser, processing job, geographic projection and pixel editor; development regression only."

@@ -12,7 +12,7 @@ export async function saveOfflineCourse(id: string): Promise<void> {
   if (!worker) throw new Error('此浏览器暂不能保存离线课程');
   await new Promise<void>((resolve, reject) => {
     const channel = new MessageChannel();
-    const timer = setTimeout(() => { channel.port1.close(); reject(new Error('课程尚未完整保存，联网后可重试')); }, 20000);
+    const timer = setTimeout(() => { channel.port1.close(); reject(new Error('课程尚未完整保存，联网后可重试')); }, 180000);
     channel.port1.onmessage = event => {
       clearTimeout(timer); channel.port1.close();
       if (event.data.ok) resolve(); else reject(new Error(event.data.message || '课程保存失败'));

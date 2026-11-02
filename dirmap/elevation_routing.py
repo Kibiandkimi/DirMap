@@ -5,7 +5,7 @@ import hashlib
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from . import elevation
+from . import elevation, travel
 from .elevation_model import SCHEMA, fingerprint, slope_factors
 from .geometry import Frame
 
@@ -14,16 +14,18 @@ MODEL_KEYS = ('id', 'name', 'fingerprint', 'artifact', 'frame', 'origin', 'spaci
               'minHeightM', 'maxHeightM')
 
 
-def snapshot(state, enabled=True):
+def snapshot(state, enabled=True, use_travel=None, travel_mode='walk'):
     records = elevation.relevant(state) if enabled else []
     return {'enabled': enabled, 'schema': SCHEMA, 'gradeSchema': GRADE_SCHEMA,
             'revision': fingerprint(sorted(r['fingerprint'] for r in records)) if enabled else 'disabled',
-            'models': [{k: r[k] for k in MODEL_KEYS} for r in records]}
+            'models': [{k: r[k] for k in MODEL_KEYS} for r in records],
+            **({'travel': travel.snapshot(state, use_travel, travel_mode)} if use_travel is not None else {})}
 
 
 def available(frozen):
     """A course can only be rerouted while its frozen height models exist."""
-    return all((elevation.root()/record['artifact']).is_file() for record in (frozen or {}).get('models', []))
+    return (all((elevation.root()/record['artifact']).is_file() for record in (frozen or {}).get('models', []))
+            and travel.available((frozen or {}).get('travel')))
 
 
 def attach(base, state, frozen):
@@ -65,11 +67,13 @@ def local_heights(graph, positions, surfaces=None):
 
 def connector_weights(graph, positions, nodes, surfaces, lengths, base_weights):
     if getattr(graph, 'elevation_node_heights', None) is None:
-        return base_weights, base_weights
-    endpoints = local_heights(graph, positions, surfaces)
-    node_heights = graph.elevation_node_heights[nodes]
-    return (base_weights*slope_factors(endpoints, node_heights, lengths),
-            base_weights*slope_factors(node_heights, endpoints, lengths))
+        fallback = base_weights, base_weights
+    else:
+        endpoints = local_heights(graph, positions, surfaces)
+        node_heights = graph.elevation_node_heights[nodes]
+        fallback = (base_weights*slope_factors(endpoints, node_heights, lengths),
+                    base_weights*slope_factors(node_heights, endpoints, lengths))
+    return travel.connector_weights(graph, positions, nodes, surfaces, lengths, base_weights, fallback)
 
 
 def profile(graph, positions, surfaces):

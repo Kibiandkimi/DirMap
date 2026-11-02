@@ -58,3 +58,53 @@ def test_errors_follow_a_later_recalibration(mapped):
     state['registration'] = Registration(shifted, pixels, affine_points(shifted, pixels)).as_dict()
     store.save_state('map', state)
     assert field_checks.report('map')['checks'][0]['errorM'] == pytest.approx(10)
+
+
+def test_capture_time_and_exported_model_are_frozen_independently_of_later_calibration(mapped):
+    state = store.get_state('map'); state['sourceHash'] = 'sheet-A'; store.save_state('map', state)
+    instant = 1792803928000
+    result = field_checks.add('map', {'pixel': [50, 150], 'lnglat': gps([53, 54]), 'accuracyM': 4,
+        'measuredAt': instant, 'receivedAt': instant, 'rawTimestamp': 12345, 'positionClock': 'received',
+        'sourceHash': 'sheet-A', 'imageSize': [201, 201]}, now=instant/1000+120)
+    row = result['checks'][0]
+    assert row['measuredAt'] == instant and row['recordedAt'] == instant/1000+120
+    assert row['rawTimestamp'] == 12345 and row['positionClock'] == 'received'
+    exported = field_checks.export_record('map')
+    assert exported['schema'] == 'dirmap-field-checks-v1'
+    assert exported['map']['sourceHash'] == 'sheet-A' and exported['map']['imageSize'] == [201, 201]
+    predicted, valid = Registration.from_dict(exported['map']['registration']).forward([row['pixel']])
+    assert valid.all()
+    np.testing.assert_allclose(np.linalg.norm(predicted-Frame.of(exported['map']).to_local([row['lnglat']]), axis=1), [row['errorM']])
+    state['registration']['affine'][0][2] += 10
+    state['registration']['target'] = (np.array(state['registration']['target'])+[10, 0]).tolist()
+    store.save_state('map', state)
+    assert exported['map']['registration']['affine'][0][2] == 0
+    assert exported['checks'][0]['errorM'] == pytest.approx(5)
+    assert field_checks.export_record('map')['checks'][0]['errorM'] != pytest.approx(5)
+    assert store.get_state('map')['version'] == 4
+
+
+def test_changed_image_identity_is_rejected_or_excluded_from_the_comparison(mapped):
+    state = store.get_state('map'); state['sourceHash'] = 'sheet-A'; store.save_state('map', state)
+    check = {'pixel': [50, 150], 'lnglat': gps([50, 50]), 'accuracyM': 4, 'measuredAt': 1,
+             'sourceHash': 'sheet-A', 'imageSize': [201, 201]}
+    with pytest.raises(ValueError, match='原图或像素尺寸'):
+        field_checks.add('map', {**check, 'sourceHash': 'sheet-B'})
+    with pytest.raises(ValueError, match='原图或像素尺寸'):
+        field_checks.add('map', {**check, 'imageSize': [200, 201]})
+    assert field_checks.report('map')['checks'] == []
+    field_checks.add('map', check)
+    state['sourceHash'] = 'sheet-B'; store.save_state('map', state)
+    report = field_checks.report('map')
+    assert report['summary']['usable'] == 0
+    assert report['checks'][0]['pixelFrameMatches'] is False
+    assert report['checks'][0]['errorM'] is None and report['checks'][0]['predictedLnglat'] is None
+
+
+def test_legacy_observations_are_exported_without_fabricating_capture_metadata(mapped):
+    store.atomic_json(field_checks.path('map'), [{'id': 'old', 'pixel': [50, 150], 'lnglat': gps([50, 50]),
+        'accuracyM': 4, 'measuredAt': 1000, 'recordedAt': 2}])
+    report = field_checks.export_record('map')
+    assert report['checks'][0]['measuredAt'] == 1000
+    assert 'receivedAt' not in report['checks'][0] and 'positionClock' not in report['checks'][0]
+    assert report['checks'][0]['usable']

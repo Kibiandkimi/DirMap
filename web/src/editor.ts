@@ -1,6 +1,7 @@
-import { escapeHtml, type Approach, type Control, type MapState, type Pixel, type Portal, type Surface, type TerrainEdit } from './types';
+import { escapeHtml, type Approach, type ApproachChoice, type Control, type MapState, type Pixel, type Portal, type Surface, type TerrainEdit } from './types';
 import { ImageViewport } from './image-viewport';
 import { mapAssetUrl } from './workbench';
+import { showSheetPhotos } from './sheet-photos';
 
 type Mode = 'inspect' | 'control' | 'approach' | 'open' | 'close' | 'anchor' | 'portal' | 'field';
 export class PixelEditor {
@@ -27,7 +28,7 @@ export class PixelEditor {
   private history: { controls: Control[]; edits: TerrainEdit[]; surfaces: Surface[]; portals: Portal[] }[] = [];
   private picked = false;
 
-  constructor(private state: MapState, private onSave: (controls: Control[], edits: TerrainEdit[], surfaces?: Surface[], portals?: Portal[]) => Promise<void>, private onAnchor: (pixel: Pixel) => void, private suggestions: Approach[] = [], private onDismiss?: () => void) {
+  constructor(private state: MapState, private onSave: (controls: Control[], edits: TerrainEdit[], surfaces?: Surface[], portals?: Portal[]) => Promise<void>, private onAnchor: (pixel: Pixel) => void, private suggestions: Approach[] = [], private onDismiss?: () => void, private reviewChoices: (ApproachChoice & { controlId: string })[] = []) {
     this.controls = structuredClone(state.controls);
     this.edits = structuredClone(state.edits);
     this.surfaces = structuredClone(state.surfaces ?? []);
@@ -40,7 +41,7 @@ export class PixelEditor {
     this.dialog.innerHTML = `<div class="dialog-heading"><div><span class="eyebrow">原图校核</span><h2>${escapeHtml(this.state.name)}</h2></div><button data-close class="icon-button" aria-label="关闭原图">×</button></div>
       <div class="editor-toolbar"><select id="edit-mode" aria-label="编辑操作"><option value="inspect">检查 / 选择目标</option><option value="control">新增目标</option><option value="approach">选择目标到访位置</option><option value="close">标记封闭路段</option><option value="open">确认开放通道</option><option value="portal">标记换层入口</option><option value="anchor">添加配准同名点</option><option value="field" hidden>标记所站位置</option></select>
       <label class="brush-label">笔刷 <input id="brush-size" type="number" value="6" min="1" max="100" aria-label="笔刷半径"></label><button id="undo-edit" class="soft-button">撤销</button><button id="pan-image" class="soft-button" aria-pressed="false">移动地图</button><button id="zoom-out" class="icon-button" aria-label="缩小原图">−</button><button id="zoom-in" class="icon-button" aria-label="放大原图">＋</button><button id="fit-image" class="text-button">全图</button><span id="image-zoom" class="muted"></span><label class="check-label"><input id="editor-terrain" type="checkbox">识别障碍</label></div>
-      <details class="layer-settings"><summary>桥隧与层级</summary><div id="layer-controls"></div></details><p id="editor-hint" class="muted editor-hint" role="status"></p><div class="editor-viewport" tabindex="0" aria-label="原图视野，可拖动、滚轮或双指缩放"><canvas aria-label="原图及目标点编辑画布"></canvas></div>
+      <details class="layer-settings"><summary>桥隧与层级</summary><div id="layer-controls"></div></details><p id="editor-hint" class="muted editor-hint" role="status"></p><div class="editor-map-area"><div class="editor-viewport" tabindex="0" aria-label="原图视野，可拖动、滚轮或双指缩放"><canvas aria-label="原图及目标点编辑画布"></canvas></div><aside class="editor-reference" aria-label="当前目标参考照片" hidden></aside></div>
       <div id="point-confirmation" class="point-confirmation hidden"><span id="point-preview" role="status"></span><button id="confirm-point" class="primary-button" disabled>确认选点</button><button id="cancel-point" class="text-button">取消选点</button></div>
       <div class="editor-footer"><span id="edit-selection" class="muted">点击目标可修改编号、删除或确认</span><button id="save-edits" class="primary-button">保存修改</button></div>`;
     document.body.append(this.dialog); this.dialog.showModal();
@@ -94,6 +95,8 @@ export class PixelEditor {
       catch (error) { this.dialog.querySelector('#editor-hint')!.textContent = String(error); button.disabled = false; }
     };
     this.renderLayers(); this.hint(); this.selection(); this.renderPick();
+    const focus = this.controls.find(c => c.id === selected);
+    if (focus) this.viewport.focus(focus.pixel, focus.radiusPx*3.8);
   }
   private remember() { this.history.push({ controls: structuredClone(this.controls), edits: structuredClone(this.edits), surfaces: structuredClone(this.surfaces), portals: structuredClone(this.portals) }); }
   private catalogue(): Surface[] { return [{ id: 'ground', label: '地面', level: 0, accepted: true }, ...this.surfaces]; }
@@ -210,12 +213,13 @@ export class PixelEditor {
     this.stroke = null; this.draw();
   }
   private hint() {
-    const messages: Record<Mode, string> = { inspect: '点击圈心或入口选择对象。', control: '点选新增目标的位置，再确认。', approach: '点选实际可以到访的位置，再确认；保留原圈心。', open: '沿当前层级可行走的区域描画；“移动地图”可拖动视野。', close: '沿当前层级的禁行线描画；“移动地图”可拖动视野。', anchor: '点选原图中的建筑角或路口，确认后再到标准地图选同一位置。', field: '点选你此刻所站位置在原图上的对应点，核对标记后确认。', portal: '在层级设置中选择另一层，再点选入口位置并确认。' };
+    const messages: Record<Mode, string> = { inspect: '点击圈心或入口选择对象。', control: '点选新增目标的位置，再确认。', approach: '点选实际可以到访的位置，再确认；保留原圈心。', open: '沿当前层级可行走的区域描画；“移动地图”可拖动视野。', close: '沿当前层级的禁行线描画；“移动地图”可拖动视野。', anchor: '点选原图中的建筑角或路口，确认后再到标准地图选同一位置。', field: '点选刚才采集定位时所站位置的原图对应点，核对标记后确认。', portal: '在层级设置中选择另一层，再点选入口位置并确认。' };
     this.dialog.querySelector('#editor-hint')!.textContent = this.panOnly ? '移动模式：拖动原图；滚轮或双指缩放。再次点击“移动地图”继续编辑。' : `${messages[this.mode]}${['open', 'close'].includes(this.mode) ? '' : '拖动可平移；'}滚轮或双指可缩放。`;
     this.dialog.querySelector('#pan-image')!.setAttribute('aria-pressed', String(this.panOnly));
     this.canvas.style.cursor = this.panOnly ? 'grab' : 'crosshair';
   }
   private selection() {
+    this.renderReference();
     const el = this.dialog.querySelector('#edit-selection')!;
     const portal = this.portals.find(p => p.id === this.selected);
     if (portal) {
@@ -231,17 +235,44 @@ export class PixelEditor {
     const suggestion = this.suggestions.find(a => a.controlId === control.id && a.automatic);
     el.innerHTML = `<label>编号 <input id="control-label" value="${escapeHtml(control.label)}" maxlength="40"></label><label>类型 <select id="control-role"><option value="control">目标</option><option value="start">起点</option><option value="finish">终点</option><option value="start_finish">起终点</option></select></label><button id="confirm-control" class="soft-button">确认目标</button>${suggestion ? `<button id="accept-approach" class="soft-button">采用建议到访位置（距圈心 ${suggestion.offsetM.toFixed(1)} m）</button>` : ''}<button id="delete-control" class="text-button danger">删除</button>`;
     const role = el.querySelector<HTMLSelectElement>('#control-role')!; role.value = control.role ?? 'control';
+    const choices = this.reviewChoices.filter(c => c.controlId === control.id && !control.approachPixel);
+    if (choices.length) {
+      el.insertAdjacentHTML('beforeend', `<div class="approach-choices"><span>结合参考照片核对到访侧：</span>${choices.map((choice, i) => `<button class="soft-button" data-approach-choice="${i}">预览 ${String.fromCharCode(65+i)} · ${escapeHtml(choice.direction)}侧 ${choice.offsetM.toFixed(1)} m</button>`).join('')}</div>`);
+      el.querySelectorAll<HTMLButtonElement>('[data-approach-choice]').forEach(button => button.onclick = () => {
+        const choice = choices[Number(button.dataset.approachChoice)];
+        this.mode = 'approach'; this.surfaceId = choice.surfaceId; this.pendingPixel = [...choice.pixel];
+        this.dialog.querySelector<HTMLSelectElement>('#edit-mode')!.value = 'approach'; this.hint(); this.renderPick(); this.draw();
+      });
+    }
     el.insertAdjacentHTML('beforeend', `<label>到访层级 <select id="control-surface"><option value="">未指定</option>${this.catalogue().map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.label)}</option>`).join('')}</select></label>`);
     const surface = el.querySelector<HTMLSelectElement>('#control-surface')!; surface.value = control.surfaceId ?? '';
     surface.onchange = () => { this.remember(); control.surfaceId = surface.value || null; this.draw(); };
-    role.onchange = () => { this.remember(); control.role = role.value as Control['role']; control.required = control.role === 'control'; this.draw(); };
+    role.onchange = () => { this.remember(); control.role = role.value as Control['role']; control.required = control.role === 'control'; this.draw(); this.renderReference(); };
     el.querySelector<HTMLButtonElement>('#accept-approach')?.addEventListener('click', () => {
       this.remember(); control.approachPixel = [...suggestion!.pixel]; control.surfaceId = suggestion!.surfaceId ?? null; control.state = 'accepted'; this.draw();
       this.dialog.querySelector('#editor-hint')!.textContent = '已采用到访位置，原圈心保持原位。保存后重新规划。';
     });
-    el.querySelector<HTMLInputElement>('#control-label')!.onchange = event => { control.label = (event.target as HTMLInputElement).value.trim() || control.label; this.draw(); };
+    el.querySelector<HTMLInputElement>('#control-label')!.onchange = event => {
+      this.remember(); control.label = (event.target as HTMLInputElement).value.trim() || control.label; this.draw(); this.renderReference();
+    };
     el.querySelector<HTMLButtonElement>('#confirm-control')!.onclick = () => { this.remember(); control.state = 'accepted'; this.draw(); this.dialog.querySelector('#editor-hint')!.textContent = '目标已确认，点击“保存修改”提交。'; };
     el.querySelector<HTMLButtonElement>('#delete-control')!.onclick = () => { this.remember(); this.controls = this.controls.filter(c => c.id !== control.id); this.selected = null; this.draw(); this.selection(); };
+  }
+  private renderReference() {
+    // Match the current draft labels, just as the server does when saving.
+    // Renaming or removing a control must not leave another target's photo.
+    const photos = (this.state.sheetPhotos ?? []).map(photo => {
+      const matches = this.controls.filter(c => c.label === photo.label && (c.role ?? 'control') === 'control' && c.state !== 'rejected');
+      return { ...photo, controlId: matches.length === 1 ? matches[0].id : null };
+    });
+    const photo = photos.find(p => p.controlId === this.selected && p.controlId !== null);
+    const panel = this.dialog.querySelector<HTMLElement>('.editor-reference')!;
+    panel.hidden = !photo;
+    this.dialog.querySelector('.editor-map-area')!.classList.toggle('with-reference', !!photo);
+    if (!photo) { panel.replaceChildren(); return; }
+    const url = (p: { id: string }) => mapAssetUrl(this.state, `sheet-photos/${encodeURIComponent(p.id)}.jpg`);
+    panel.innerHTML = `<button type="button" class="editor-reference-card" aria-label="查看目标 ${escapeHtml(photo.label)} 的参考照片"><img src="${escapeHtml(url(photo))}" alt="目标 ${escapeHtml(photo.label)} 的原图参考照片"><span><strong>目标 ${escapeHtml(photo.label)}</strong><small>打卡参考 · 点开大图</small></span></button>`;
+    panel.querySelector('button')!.onclick = () => showSheetPhotos(photos, url, photo.controlId!);
   }
   private draw() {
     const ctx = this.canvas.getContext('2d')!; ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -267,6 +298,12 @@ export class PixelEditor {
       ctx.strokeStyle = portal.accepted ? '#126a85' : '#dc851c'; ctx.fillStyle = portal.accepted ? '#ffffffdd' : '#fff0cfaa'; ctx.lineWidth = Math.max(2, this.state.width/600);
       ctx.beginPath(); ctx.arc(...portal.pixel, Math.max(7, this.state.width/170), 0, Math.PI*2); ctx.fill(); ctx.stroke();
     }
+    this.reviewChoices.filter(c => c.controlId === this.selected && !this.controls.find(control => control.id === c.controlId)?.approachPixel).forEach((choice, i) => {
+      ctx.fillStyle = '#e96719'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2/this.viewScale;
+      ctx.beginPath(); ctx.arc(...choice.pixel, 8/this.viewScale, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.font = `bold ${11/this.viewScale}px sans-serif`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String.fromCharCode(65+i), ...choice.pixel); ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    });
     const reference = this.referencePaths[this.referenceIndex];
     if (reference) { ctx.strokeStyle = '#18a246'; ctx.lineWidth = Math.max(2, this.state.width/400); ctx.setLineDash([10, 7]); ctx.beginPath(); reference.pixels.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); ctx.setLineDash([]); }
     for (const a of this.suggestions) {

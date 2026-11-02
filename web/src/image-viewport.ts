@@ -77,6 +77,12 @@ export class ImageViewport {
     this.offset = [at[0] - pixel[0] * this.scale, at[1] - pixel[1] * this.scale];
     this.render();
   }
+  focus(point: Pixel, radiusPx: number) {
+    this.fitted = false;
+    this.scale = Math.max(this.minimum(), Math.min(8, Math.min(...this.size)/Math.max(1, radiusPx*2)));
+    this.offset = [this.size[0]/2-point[0]*this.scale, this.size[1]/2-point[1]*this.scale];
+    this.render();
+  }
   private pan(from: Pixel, to: Pixel) {
     this.fitted = false;
     this.offset = [this.offset[0] + to[0] - from[0], this.offset[1] + to[1] - from[1]];

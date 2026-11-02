@@ -14,6 +14,7 @@ data/releases/
 data/backups/
 data/accounts.sqlite3*
 data/groups.sqlite3*
+data/live-elevation.sqlite3*
 data/workspaces/
 data/group-photos/
 data/sites/

@@ -5,18 +5,25 @@ import { CampusMap, teamColors } from './map';
 import { MapPointPicker } from './map-picker';
 import { NavigationSensors, type HeadingSample } from './heading';
 import { PixelEditor } from './editor';
+import { captureFieldPosition } from './field-position';
 import { OffRouteMonitor, remainingPath } from './navigation';
 import { installOffline, saveOfflineCourse } from './offline';
-import { parseCustomRoutes, routeToken } from './course-routes';
+import { draftControlIds, parseCustomRoutes, routeToken } from './course-routes';
+import { compareControls, sortedControls } from './control-order';
+import { routePickerHtml } from './route-picker';
+import { showSheetPhotos, referencePhotoButton } from './sheet-photos';
+import { showContours } from './contours';
+import type { SheetPhoto, ContourReport } from './types';
 import { teamComparisonHtml } from './team-comparison';
 import { canRefine, refinementHtml } from './plan-refinement';
 import { resultsCsv } from './class-results';
 import { elevationSummary } from './elevation-profile';
+import { speedSummary } from './travel';
 import { legend as elevationLegend, modelExtent, overlapping, sharedReliefUrl, type HeightModelRef } from './elevation-layer';
 import { HeightSampler } from './live-sampler';
 import { printSheets } from './print';
 import { fetchAccount, openSignIn, renderAccountChip, signInGate } from './account';
-import { setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
+import { mapAssetUrl, setWorkbench, watchAccountChanges, workbenchKey, workbenchScope } from './workbench';
 import { GroupOverview, GroupPanel } from './groups';
 import { escapeHtml as e, lngLatToPixel, pixelToLngLat, type AccountState, type Anchor, type AutoTeamRequest, type Catalog, type ClassProgress, type Control, type Job, type MapState, type Pixel, type Plan, type PlanRequest, type Portal, type Route, type Site, type Surface, type TerrainEdit } from './types';
 
@@ -58,6 +65,7 @@ let arrivedAt: number | null = null;
 let classProgress: ClassProgress | null = null;
 let syncingProgress = false;
 let studentControls: Control[] = [];
+let studentPhotos: SheetPhoto[] = [];
 let releasePoll: ReturnType<typeof setInterval> | null = null;
 let courseSuperseded = false;
 let navigationRoute: Route | null = null;
@@ -83,7 +91,7 @@ document.querySelector('#app')!.innerHTML = `
 <section id="tab-course" class="tab-content"><div class="section-title"><h2>路线规则</h2><span class="step-number">01</span></div><label class="field-label" for="course-mode">访问方式</label><select id="course-mode"><option value="all_visit">每队访问全部目标</option><option value="split_coverage">全班分担全部目标</option><option value="fixed_order">按列表顺序访问</option></select><div class="form-grid"><label>总人数<input id="people" type="number" value="20" min="1" max="500"></label><label>队伍数<input id="teams" type="number" value="4" min="1" max="30"></label><label>步行 / 跑速 <span>m/s</span><input id="speed" type="number" value="1.4" step="0.1" min="0.2" max="10"></label><label>错峰间隔 <span>秒</span><input id="stagger" type="number" value="0" min="0" max="3600"></label></div><p id="group-preview" class="muted compact">每队 5 人 · 同时出发</p><label class="field-label" for="objective">优化目标</label><select id="objective"><option value="min_max_finish_then_sum">优先让最后一队更早完成</option><option value="min_total_time">全班总耗时最短</option></select>
 <div class="section-title section-gap"><h2>起终点与目标</h2><span class="step-number">02</span></div><div class="endpoint-row"><button id="pick-start" class="endpoint-button"><i class="endpoint-dot start"></i><span>在地图选起点</span></button><button id="pick-finish" class="endpoint-button"><i class="endpoint-dot finish"></i><span>在地图选终点</span></button></div><label class="check-label"><input id="return-start" type="checkbox" checked>回到起点结束</label><div class="control-heading"><span id="control-count">尚未识别目标</span><button id="edit-controls" class="text-button">原图校核 ↗</button></div><p class="muted compact">勾选本次课程目标；固定顺序模式可上下调整。</p><div id="control-list" class="control-list"><div class="empty-small">识别后，控制圈会显示在这里。</div></div><button id="plan-button" class="primary-button wide plan-button">生成队伍路线 <span>→</span></button><div id="plan-errors" role="status"></div><div id="route-results"></div>
 <div id="publish-section" class="publish-section hidden"><button id="review-button" class="soft-button wide">核验课程并发布</button><div id="share-result"></div></div></section>
-<section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>地物匹配与局部校准</h2><span class="step-number">01</span></div><p class="muted">先通过水体和建筑匹配到标准地图；同一校园的图幅也会匹配共同地物。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><div id="field-check-card" class="quality-card"><strong>现场 GPS 核查</strong><p class="muted compact">站在原图上能认出的位置（路口、建筑角或目标圈心），用手机当前定位记录核查点，再在原图上点出所站位置。核查点不参与拟合，也不会让路线或已发布课程失效。</p><div id="field-check-summary"></div><button id="add-field-check" class="soft-button wide">＋ 用当前位置添加核查点</button><div id="field-check-list" class="anchor-list"></div></div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
+<section id="tab-registration" class="tab-content hidden"><div class="section-title"><h2>自动配准与局部校准</h2><span class="step-number">01</span></div><p class="muted">通过建筑、水体或道路网络对齐标准地图，也可与同一场地的已有图幅对照。局部网格修正纸图的比例偏差。</p><div id="registration-quality" class="quality-card">完成自动处理后显示匹配结果。</div><div id="field-check-card" class="quality-card"><strong>现场 GPS 核查</strong><p class="muted compact">站在原图上能认出的位置（路口、建筑角或目标圈心），用手机当前定位记录核查点，再在原图上点出所站位置。核查点不参与拟合，也不会让路线或已发布课程失效。</p><div id="field-check-summary"></div><button id="add-field-check" class="soft-button wide">＋ 用当前位置添加核查点</button><div id="field-check-list" class="anchor-list"></div></div><button id="add-anchor" class="soft-button wide">＋ 在原图选择同名点</button><label class="check-label section-gap"><input id="validation-anchor" type="checkbox">下一点用于独立核查，不参与拟合</label><div id="anchor-list" class="anchor-list"></div><button id="fit-anchors" class="primary-button wide" disabled>用同名点重新校准</button><p class="muted">至少 3 个分散的非共线拟合点。建议加入 8 个以上拟合点，并另设核查点。</p><a id="export-map" class="text-link" href="#">导出配准和目标数据 ↗</a></section>
 <section id="tab-terrain" class="tab-content hidden"><div class="section-title"><h2>核对可通行区域</h2><span class="step-number">01</span></div><p class="muted">红色区域为识别出的障碍。重点核对围墙、门洞、水体、禁区和上下层通道。</p><label class="check-label"><input id="show-terrain" type="checkbox">在地图上显示障碍候选</label><button id="edit-terrain" class="primary-button wide section-gap">打开原图修正通行区域</button><div id="terrain-summary" class="quality-card"></div><p class="muted">原图修正保存后需重新生成路线。二维相交不能证明桥上、桥下可以互通。</p><div class="section-title section-gap"><h2>随图图例</h2></div><div id="legend-links" class="legend-links"></div></section></aside>
 <aside id="student-panel" class="sidebar student-panel hidden"><div id="group-only-heading" class="group-keep hidden"><p class="eyebrow">TEAM UP</p><h1>组队定位</h1><p class="muted">输入同伴告诉你的 6 位组队码，或创建新小组再把组队码告诉同伴。</p></div><p class="eyebrow">TODAY'S ADVENTURE</p><h1 id="course-title">定向越野课</h1><p class="muted">选择队伍，打开定位，出发探索。</p><label class="field-label" for="student-team">我的队伍</label><select id="student-team"></select><a id="print-team" class="text-link" target="_blank" rel="noreferrer">打印本队路线 ↗</a><p id="class-clock" class="class-clock" role="timer"></p><div id="student-overview" class="quality-card"></div><div class="section-title"><h2>下一目标</h2><span id="student-progress" class="muted"></span></div><div id="next-control" class="next-control"></div><button id="check-in" class="primary-button wide">已完成这个目标</button><button id="arrive-finish" class="primary-button wide hidden">已到达终点</button><button id="undo-check-in" class="text-button wide">撤销上一个打点</button><div id="student-stops" class="student-stops"></div><details id="class-board" class="class-board"><summary>全班进度</summary><div id="class-board-list" class="muted compact">联网后显示各队打点。</div></details><details id="group-section" class="group-section group-keep"><summary>组队与位置共享</summary><div id="group-panel" class="group-panel"></div></details><details id="group-overview-section" class="group-section hidden"><summary>各小组位置</summary><div id="group-overview" class="group-panel"></div></details><p class="muted">打点由本人确认；当前位置精度不足时，请结合原图和现场地物判断。</p></aside>
 <main class="map-panel"><div id="map" role="application" aria-label="校园标准地图与定向路线"></div><div class="map-topbar"><div class="map-title"><span class="map-kicker">CAMPUS EXPLORER</span><strong id="map-title">深圳大学 · 粤海校区</strong><span id="map-subtitle">标准地图 / WGS84</span></div><div class="layer-tools"><label class="check-label"><input id="standard-map" type="checkbox" checked>标准底图</label><label class="check-label teacher-only"><input id="stitch-maps" type="checkbox">叠合图幅</label><label class="opacity-control">原图 <input id="overlay-opacity" type="range" min="0" max="100" value="70" aria-label="原图透明度"></label></div></div><div id="map-action-hint" class="map-action-hint hidden" role="status"></div><button id="north-button" class="compass-button" title="北向上" aria-label="切换北向上"><span>N</span><svg id="compass-arrow" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 21 25 12 20 3 25Z" fill="#295c46"/><path d="M12 1v19l9 5Z" fill="#abbdb1"/></svg></button><div class="map-bottom"><div class="navigation-card"><button id="follow-button" class="follow-button"><span class="locate-icon">◎</span><span id="follow-label">开始定位与朝向跟随</span></button><div id="sensor-status" class="sensor-status" role="status">手机打开 HTTPS 链接即可启用</div></div><div class="map-key"><span><i class="key-control"></i>目标点</span><span><i class="key-route"></i>队伍路线</span><span id="location-status">位置尚未开启</span></div></div></main></div><div id="toast" class="toast hidden" role="status"></div>`;
@@ -179,6 +187,7 @@ document.addEventListener('keydown', event => { if (event.key === 'Escape' && ph
 setMobilePanel(false);
 $('objective').insertAdjacentHTML('beforeend', '<option value="min_distance">全班总距离最短</option>');
 $('objective').insertAdjacentHTML('afterend', '<div class="elevation-option"><label class="check-label"><input id="use-elevation" type="checkbox" checked>考虑上下坡</label><a class="text-link" href="/elevation" target="_blank" rel="noreferrer">共享地形 ↗</a><small>使用共享轨迹高程；无覆盖的路段暂不计坡度。</small></div>');
+$('group-preview').insertAdjacentHTML('beforebegin', '<div class="travel-option"><label>活动方式<select id="travel-mode" aria-label="课程活动方式"><option value="walk">步行（含散步）</option><option value="run">跑步</option></select></label><label class="check-label"><input id="use-learned-speed" type="checkbox" checked>从轨迹学习耗时</label><small>使用同类活动的路段与坡度影响；上方速度填写本队平地移动速度。</small></div>');
 if (!courseId && !groupCode) document.querySelector('.header-context')?.insertAdjacentHTML('beforeend', '<a class="text-link" href="/elevation">共享地形 ↗</a>');
 $('group-preview').insertAdjacentHTML('afterend', '<details class="auto-team-settings"><summary>按分队收益自动选择队数</summary><div class="form-grid"><label>每队至少几人<input id="auto-min-people" type="number" min="1" max="500" value="2"></label><label>最多比较几队<input id="auto-max-teams" type="number" min="1" max="30" value="30"></label><label>保留最佳改善收益 <span>%</span><input id="auto-gain" type="number" min="50" max="100" step="5" value="90"></label></div><p class="muted compact">比较允许的全部队数，选择达到收益目标的最少队数。沿用总人数、速度、出发间隔与当前优化目标。</p><button id="recommend-teams" class="soft-button wide">比较收益并自动分队</button><p id="auto-team-hint" class="muted compact"></p></details>');
 for (const id of ['auto-min-people', 'auto-max-teams', 'auto-gain']) $(id).oninput = () => { resetPlan(); persistRules(); };
@@ -231,9 +240,12 @@ async function renderReleases() {
 }
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="mixed_coverage">全员必到 + 其余点全班分担</option>');
 $('course-mode').insertAdjacentHTML('beforeend', '<option value="custom">自定义每队路线</option>');
+$('control-list').insertAdjacentHTML('beforebegin', '<button id="sheet-photo-album" class="soft-button wide hidden">原图参考照片</button>');
+$('student-stops').insertAdjacentHTML('afterend', '<button id="student-reference-album" class="soft-button wide hidden">原图参考照片</button>');
+$('terrain-summary').insertAdjacentHTML('afterend', '<button id="contour-review" class="soft-button wide hidden">等高线辅助地形</button>');
 $('plan-button').insertAdjacentHTML('beforebegin', '<section id="custom-routes" class="custom-routes hidden"><div class="section-title"><h2>每队目标点序</h2><button id="custom-fill" class="text-button">按列表填入各队</button></div><p class="muted compact">按到访顺序填写目标编号，用空格、逗号或 → 分隔。也可在地图上依次点选。各点之间自动沿可通行路段连接。</p><div id="custom-team-routes"></div><p id="custom-route-error" class="danger" role="status"></p></section>');
 $('custom-fill').onclick = () => {
-  const selected = state?.controls.filter(c => c.required && (c.role ?? 'control') === 'control' && c.state !== 'rejected') ?? [];
+  const selected = sortedControls(state?.controls.filter(c => c.required && (c.role ?? 'control') === 'control' && c.state !== 'rejected') ?? []);
   const order = rulePayload().mandatoryControlIds;
   const ids = $<HTMLInputElement>('mandatory-order').checked ? [...order, ...selected.map(c => c.id).filter(id => !order.includes(id))] : selected.map(c => c.id);
   for (const team of courseTeams()) customDrafts[team.id] = ids.map(id => routeToken(id, selected)).join(' → ');
@@ -241,10 +253,37 @@ $('custom-fill').onclick = () => {
 };
 $('custom-team-routes').oninput = event => {
   const input = event.target as HTMLTextAreaElement, team = input.dataset.customTeam;
-  if (team) { customDrafts[team] = input.value; resetPlan(); persistRules(); $('custom-route-error').textContent = ''; }
+  if (team) {
+    customDrafts[team] = input.value; resetPlan(); persistRules(); $('custom-route-error').textContent = '';
+    const picker = input.closest('.custom-team')?.querySelector('.route-picker-container');
+    if (picker && state) picker.innerHTML = routePickerHtml(team, input.value, state.controls, mandatory);
+  }
 };
 $('custom-team-routes').onclick = event => {
-  const button = (event.target as HTMLElement).closest<HTMLElement>('[data-custom-map]');
+  const target = event.target as HTMLElement;
+  const action = target.closest<HTMLElement>('[data-route-add],[data-route-move],[data-route-remove],[data-route-undo],[data-route-clear]');
+  if (action && state) {
+    const team = action.closest<HTMLElement>('[data-picker-team]')!.dataset.pickerTeam!;
+    try {
+      const ids = draftControlIds(customDrafts[team] ?? '', state.controls);
+      if (action.dataset.routeAdd) {
+        const id = action.dataset.routeAdd, index = ids.indexOf(id);
+        if (index >= 0) ids.splice(index, 1);
+        else ids.push(id);
+      } else if (action.dataset.routeMove !== undefined) {
+        const from = Number(action.dataset.routeMove), to = from + Number(action.dataset.direction);
+        if (to >= 0 && to < ids.length) [ids[from], ids[to]] = [ids[to], ids[from]];
+      } else if (action.dataset.routeRemove !== undefined) ids.splice(Number(action.dataset.routeRemove), 1);
+      else if (action.hasAttribute('data-route-undo')) ids.pop();
+      else if (action.hasAttribute('data-route-clear')) ids.length = 0;
+      customDrafts[team] = ids.map(id => routeToken(id, state!.controls)).join(' → ');
+      const selected = new Set([...mandatory, ...Object.values(customDrafts).flatMap(draft => draftControlIds(draft, state!.controls))]);
+      for (const control of state.controls) control.required = (control.role ?? 'control') === 'control' && selected.has(control.id);
+      resetPlan(); persistRules(); renderState();
+    } catch (error) { $('custom-route-error').textContent = (error as Error).message; }
+    return;
+  }
+  const button = target.closest<HTMLElement>('[data-custom-map]');
   if (!button || !state?.registration) return;
   mapPicker.cancel();
   customMapTeam = button.dataset.customMap!;
@@ -393,6 +432,8 @@ function restorePlanFields(request: PlanRequest) {
   $<HTMLSelectElement>('course-mode').value = request.mode;
   $<HTMLSelectElement>('objective').value = request.objective;
   $<HTMLInputElement>('use-elevation').checked = request.useElevation !== false;
+  $<HTMLInputElement>('use-learned-speed').checked = request.useLearnedSpeed !== false;
+  $<HTMLSelectElement>('travel-mode').value = request.travelMode ?? 'walk';
   mandatory = new Set(request.mandatoryControlIds ?? []); missingPresetLabels = [];
   $<HTMLInputElement>('mandatory-order').checked = request.mandatoryOrder ?? false;
   $<HTMLInputElement>('people').value = String(request.teams.reduce((total, team) => total + team.people, 0));
@@ -466,14 +507,17 @@ function restoreAutoTeamFields(settings: Pick<AutoTeamRequest, 'minPeoplePerTeam
   if (Number.isFinite(settings.targetGainFraction) && settings.targetGainFraction >= .5 && settings.targetGainFraction <= 1) $<HTMLInputElement>('auto-gain').value = String(settings.targetGainFraction * 100);
 }
 function persistRules() {
-  try { localStorage.setItem(rulesKey(), JSON.stringify({ mode: value('course-mode'), objective: value('objective'), useElevation: $<HTMLInputElement>('use-elevation').checked, mandatory: [...mandatory], order: $<HTMLInputElement>('mandatory-order').checked, selected: state?.controls.filter(c => c.required).map(c => c.id), customDrafts, teamInputs: courseTeams(), autoTeams: { minPeoplePerTeam: number('auto-min-people'), maxTeams: number('auto-max-teams'), targetGainFraction: number('auto-gain') / 100 } })); }
+  try { localStorage.setItem(rulesKey(), JSON.stringify({ mode: value('course-mode'), objective: value('objective'), useElevation: $<HTMLInputElement>('use-elevation').checked, useLearnedSpeed: $<HTMLInputElement>('use-learned-speed').checked, travelMode: value('travel-mode'), mandatory: [...mandatory], order: $<HTMLInputElement>('mandatory-order').checked, selected: state?.controls.filter(c => c.required).map(c => c.id), customDrafts, controlOrder: state?.controls.map(c => c.id), teamInputs: courseTeams(), autoTeams: { minPeoplePerTeam: number('auto-min-people'), maxTeams: number('auto-max-teams'), targetGainFraction: number('auto-gain') / 100 } })); }
   catch { /* Planning still works if private mode prevents local preferences. */ }
 }
 function initializeRules() {
   mandatory = new Set(); missingPresetLabels = [];
   customDrafts = {}; restoredTeams = null; customMapTeam = null;
+  state?.controls.sort(compareControls);
   $<HTMLInputElement>('mandatory-order').checked = false;
   $<HTMLInputElement>('use-elevation').checked = true;
+  $<HTMLInputElement>('use-learned-speed').checked = true;
+  $<HTMLSelectElement>('travel-mode').value = 'walk';
   restoreAutoTeamFields({ minPeoplePerTeam: 2, maxTeams: 30, targetGainFraction: .9 });
   const allowed = ['all_visit', 'split_coverage', 'fixed_order', 'mixed_coverage', 'custom'];
   try {
@@ -481,8 +525,14 @@ function initializeRules() {
     if (saved && allowed.includes(saved.mode) && Array.isArray(saved.mandatory) && saved.mandatory.every((id: unknown) => typeof id === 'string')) {
       if (saved.autoTeams) restoreAutoTeamFields(saved.autoTeams);
       $<HTMLInputElement>('use-elevation').checked = saved.useElevation !== false;
+      $<HTMLInputElement>('use-learned-speed').checked = saved.useLearnedSpeed !== false;
+      $<HTMLSelectElement>('travel-mode').value = saved.travelMode === 'run' ? 'run' : 'walk';
       if (['min_max_finish_then_sum', 'min_total_time', 'min_distance'].includes(saved.objective)) $<HTMLSelectElement>('objective').value = saved.objective;
       $<HTMLSelectElement>('course-mode').value = saved.mode;
+      if (saved.mode === 'fixed_order' && Array.isArray(saved.controlOrder) && state) {
+        const positions = new Map<string, number>(saved.controlOrder.map((id: string, index: number) => [id, index]));
+        state.controls.sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity) || compareControls(a, b));
+      }
       mandatory = new Set(saved.mandatory.filter((id: string) => state?.controls.some(c => c.id === id && (c.role ?? 'control') === 'control')));
       $<HTMLInputElement>('mandatory-order').checked = saved.order === true;
       if (Array.isArray(saved.selected) && state) for (const c of state.controls) c.required = (c.role ?? 'control') === 'control' && (saved.selected.includes(c.id) || mandatory.has(c.id));
@@ -534,7 +584,7 @@ function renderCustomRoutes() {
   $('custom-routes').classList.toggle('hidden', !active);
   if (!active) return;
   const open = new Set(Array.from(document.querySelectorAll<HTMLDetailsElement>('.custom-team[open]')).map(el => el.dataset.teamIndex));
-  $('custom-team-routes').innerHTML = courseTeams().map((team, i) => `<details class="custom-team" data-team-index="${i}" ${open.has(String(i)) || (!open.size && i === 0) ? 'open' : ''}><summary>${e(team.id)} · ${team.people} 人</summary><label class="field-label" for="custom-team-${i}">目标点序</label><textarea id="custom-team-${i}" data-custom-team="${e(team.id)}" aria-label="${e(team.id)} 点序" rows="3" placeholder="例如：31 → 42 → 32 → 33">${e(customDrafts[team.id] ?? '')}</textarea><button class="soft-button" data-custom-map="${e(team.id)}">在地图上为${e(team.id)}点选</button></details>`).join('');
+  $('custom-team-routes').innerHTML = courseTeams().map((team, i) => `<details class="custom-team" data-team-index="${i}" ${open.has(String(i)) || (!open.size && i === 0) ? 'open' : ''}><summary>${e(team.id)} · ${team.people} 人</summary><div class="route-picker-container">${routePickerHtml(team.id, customDrafts[team.id] ?? '', state?.controls ?? [], mandatory)}</div><label class="field-label" for="custom-team-${i}">目标点序（也可直接输入）</label><textarea id="custom-team-${i}" data-custom-team="${e(team.id)}" aria-label="${e(team.id)} 点序" rows="2" placeholder="例如：31 → 42 → 32 → 33">${e(customDrafts[team.id] ?? '')}</textarea><button class="soft-button" data-custom-map="${e(team.id)}">在地图上为${e(team.id)}点选</button></details>`).join('');
 }
 const currentSite = (): Site | undefined => catalog?.sites?.find(site => site.id === activeSite);
 const siteMaps = () => catalog.maps.filter(map => (map.siteId ?? 'szu-yuehai') === activeSite);
@@ -560,14 +610,15 @@ async function showSiteReference() {
   try { const data = await api<object>(`/api/reference?site=${encodeURIComponent(site)}`); if (site === activeSite) campusMap.setReference(data); }
   catch { if (site === activeSite) campusMap.setReference({ type: 'FeatureCollection', features: [] }); }
 }
-/** Switch place: its reference, view and first map. */
+/** Switch place: its reference, view and last selected map in this workbench. */
 async function selectSite(id: string, mapId?: string) {
   activeSite = id;
   try { localStorage.setItem(workbenchKey('site'), id); } catch { /* the choice lasts this page */ }
   renderCatalog();
   void showSiteReference();
   const site = currentSite();
-  const target = mapId ?? siteMaps()[0]?.id;
+  const remembered = stored(workbenchKey(`map:${id}`));
+  const target = mapId ?? siteMaps().find(map => map.id === remembered)?.id ?? siteMaps()[0]?.id;
   // A place chosen while this one was loading keeps the view.
   const current = await loadState(target ?? '');
   if (current && site && activeSite === id && !state?.extent) campusMap.fitBounds(site.bbox);
@@ -609,6 +660,8 @@ async function loadState(id: string, fit = true) {
   // A place without maps yet has no map to select.
   const next = id ? await api<MapState & { processed: boolean }>(`/api/maps/${id}`) : { processed: false } as MapState & { processed: boolean };
   if (load !== stateLoad) return false;
+  try { if (id) localStorage.setItem(workbenchKey(`map:${activeSite}`), id); else localStorage.removeItem(workbenchKey(`map:${activeSite}`)); }
+  catch { /* Selection still works when local preferences cannot be stored. */ }
   activeId = id; state = next.processed ? next : null; fieldCheckPoints = []; campusMap.setFieldChecks([]); anchors = []; renderAnchors(); resetPlan(); startPixel = finishPixel = null; startSurfaceId = finishSurfaceId = null;
   initializeRules();
   campusMap.setEndpoint('start', null); campusMap.setEndpoint('finish', null); mapPicker.cancel(); $('map-action-hint').classList.add('hidden');
@@ -658,6 +711,8 @@ function renderState() {
     $('map-summary').textContent = activeId ? '原图尚未处理' : '导入这个场地的定向地图后开始准备课程';
     $('control-list').innerHTML = `<div class="empty-small">${activeId ? '点击“自动识别与配准”开始。' : '先导入地图。'}</div>`;
     $('control-count').textContent = '尚未识别目标';
+    $('sheet-photo-album').classList.add('hidden');
+    $('contour-review').classList.add('hidden');
     $('registration-quality').textContent = '完成自动处理后显示匹配结果。';
     $('terrain-summary').textContent = '完成自动处理后显示通行候选。';
     return;
@@ -665,10 +720,15 @@ function renderState() {
   $('map-subtitle').textContent = state.registrationStale ? '基准图已更新，请重新配准' : state.registration ? '已叠合至标准地图 · 待现场核对' : '地理参照待补充';
   $('map-summary').innerHTML = `<span><b>${state.controls.length}</b> 候选目标</span><span><b>${state.quality?.fitCount ?? 0}</b> 配准点</span><span class="review-dot">待复核</span>`;
   $('control-count').textContent = `${state.controls.filter(c => c.required).length} / ${state.controls.length} 个目标已选`;
+  $('sheet-photo-album').classList.toggle('hidden', !state.sheetPhotos?.length);
+  $('sheet-photo-album').textContent = `原图参考照片 · ${state.sheetPhotos?.length ?? 0} 张`;
+  $('contour-review').classList.toggle('hidden', !state.contours?.length);
+  $('contour-review').textContent = `核对等高线 · ${state.contours?.length ?? 0} 条候选`;
   const numbered = state.controls.filter(c => (c.role ?? 'control') === 'control').map(c => c.label);
-  $('control-list').innerHTML = state.controls.map((c, index) => `<div class="control-row" data-id="${e(c.id)}"><label class="control-toggle"><input type="checkbox" data-required="${e(c.id)}" ${c.role && c.role !== 'control' ? 'disabled' : ''} ${c.required ? 'checked' : ''}><span class="control-number ${c.calibrated ? '' : 'uncalibrated'}">${e(c.label)}</span></label>${['mixed_coverage', 'custom'].includes(value('course-mode')) && (c.role ?? 'control') === 'control' ? `<label class="every-team-toggle"><input type="checkbox" data-mandatory="${e(c.id)}" aria-label="${e(c.label)} 每队必到" ${mandatory.has(c.id) ? 'checked' : ''}>每队必到</label>` : ''}<span class="control-state">${(c.role ?? 'control') === 'control' && numbered.filter(label => label === c.label).length > 1 ? '<b class="danger">编号重复</b> · ' : ''}${!c.calibrated ? '待补配准' : c.state === 'accepted' ? '已确认' : '待核对'}</span><button class="text-button" data-control-edit="${e(c.id)}" aria-label="编辑目标 ${e(c.label)}">↗</button>${value('course-mode') === 'fixed_order' ? `<button class="text-button" data-up="${index}" aria-label="上移 ${e(c.label)}">↑</button><button class="text-button" data-down="${index}" aria-label="下移 ${e(c.label)}">↓</button>` : ''}</div>`).join('');
+  $('control-list').innerHTML = (value('course-mode') === 'fixed_order' ? state.controls : sortedControls(state.controls)).map((c, index) => `<div class="control-row" data-id="${e(c.id)}"><label class="control-toggle"><input type="checkbox" data-required="${e(c.id)}" ${c.role && c.role !== 'control' ? 'disabled' : ''} ${c.required ? 'checked' : ''}><span class="control-number ${c.calibrated ? '' : 'uncalibrated'}">${e(c.label)}</span></label>${['mixed_coverage', 'custom'].includes(value('course-mode')) && (c.role ?? 'control') === 'control' ? `<label class="every-team-toggle"><input type="checkbox" data-mandatory="${e(c.id)}" aria-label="${e(c.label)} 每队必到" ${mandatory.has(c.id) ? 'checked' : ''}>每队必到</label>` : ''}<span class="control-state">${(c.role ?? 'control') === 'control' && numbered.filter(label => label === c.label).length > 1 ? '<b class="danger">编号重复</b> · ' : ''}${!c.calibrated ? '待补配准' : c.state === 'accepted' ? '已确认' : '待核对'}</span>${referencePhotoButton(state!.sheetPhotos ?? [], c.id)}<button class="text-button" data-control-edit="${e(c.id)}" aria-label="编辑目标 ${e(c.label)}">↗</button>${value('course-mode') === 'fixed_order' ? `<button class="text-button" data-up="${index}" aria-label="上移 ${e(c.label)}">↑</button><button class="text-button" data-down="${index}" aria-label="下移 ${e(c.label)}">↓</button>` : ''}</div>`).join('');
   const q = state.quality;
-  $('registration-quality').innerHTML = q ? `<span class="quality-label">${q.baseAssetId ? '共同地物对齐' : '标准地图地物匹配'}</span><div class="quality-values"><div><strong>${q.fitCount}</strong><span>拟合同名点</span></div><div><strong>${q.p95ErrorM?.toFixed(1) ?? '—'}<small> m</small></strong><span>留出误差 P95</span></div></div><p>${e(q.validationScope)}</p>${q.inheritedGeographicP95M ? `<p>基准图地理匹配 P95：${q.inheritedGeographicP95M.toFixed(1)} m</p>` : ''}` : '自动匹配证据不足，可添加同名点完成校准。';
+  $('registration-quality').innerHTML = q ? `<span class="quality-label">${q.baseAssetId ? '共同地物对齐' : q.method === 'park_outline_road_network' ? '道路网络对齐' : '标准地图地物匹配'}</span><div class="quality-values"><div><strong>${q.fitCount}</strong><span>拟合同名点</span></div><div><strong>${q.p95ErrorM?.toFixed(1) ?? '—'}<small> m</small></strong><span>${q.method === 'park_outline_road_network' ? '已匹配道路留出 P95' : '留出误差 P95'}</span></div></div><p>${e(q.validationScope)}</p>${q.inheritedGeographicP95M ? `<p>基准图地理匹配 P95：${q.inheritedGeographicP95M.toFixed(1)} m</p>` : ''}` : '自动匹配证据不足，可添加同名点完成校准。';
+  if (state.overlayScope === 'full-sheet') $('registration-quality').insertAdjacentHTML('beforeend', '<p class="muted">整张原图已显示。配准点包围范围外为外推位置，补同名点后才能用于路线。</p>');
   $('terrain-summary').innerHTML = `<strong>${Math.round(state.statistics.forbiddenPixelFraction * 100)}%</strong> 像素被识别为障碍候选<p>${state.edits.length} 处教师通行修正</p><p>${state.statistics.staircaseCandidates ?? 0} 处楼梯候选，可在原图中勾选查看；楼梯按较慢速度估计。</p><p>路线会检查每条边经过的工作图像素。未知层级及模糊的门洞仍需核验。</p>`;
 }
 async function saveEdits(controls: Control[], edits: TerrainEdit[], surfaces?: Surface[], portals?: Portal[]) {
@@ -692,14 +752,15 @@ function openEditor(mode: 'inspect' | 'close' | 'anchor' = 'inspect', id: string
     if (!lnglat || state !== source) return;
     anchors.push({ pixel, lnglat, purpose }); renderAnchors(); notify('同名点已添加，地图上保留编号标记');
   })();
-  }, plan?.approaches ?? []).open(mode, id);
+  }, plan?.approaches ?? [], undefined, plan?.unresolved?.flatMap(issue => (issue.candidates ?? []).map(choice => ({ ...choice, controlId: issue.id }))) ?? []).open(mode, id);
 }
-type FieldCheckReport = { checks: { id: string; errorM: number | null; accuracyM: number; usable: boolean; insideRegistration: boolean; recordedAt: number; lnglat: Pixel; predictedLnglat: Pixel | null }[];
+type FieldCheckReport = { checks: { id: string; errorM: number | null; accuracyM: number; usable: boolean; insideRegistration: boolean; recordedAt: number; receivedAt?: number; pixelFrameMatches?: boolean; lnglat: Pixel; predictedLnglat: Pixel | null }[];
   summary: { count: number; usable: number; medianM?: number; p95M?: number; maxM?: number; accuracyMedianM?: number; meetsThresholds?: boolean;
     thresholds: { medianM: number; p95M: number; maxM: number }; maxAccuracyM: number; minimumForVerdict: number } };
 let fieldRender = 0;
 let fieldCheckPoints: FieldCheckReport['checks'] = [];
 const registrationTabOpen = () => !$('tab-registration').classList.contains('hidden');
+$('add-field-check').insertAdjacentHTML('afterend', '<button id="cancel-field-check" class="text-button hidden">取消采集</button><button id="export-field-checks" class="text-button" disabled>导出 GPS 核查记录</button>');
 async function renderFieldChecks() {
   if (courseId || !state) return;
   const render = ++fieldRender, assetId = activeId;
@@ -708,11 +769,16 @@ async function renderFieldChecks() {
   if (render !== fieldRender || assetId !== activeId) return;
   fieldCheckPoints = result.checks; campusMap.setFieldChecks(registrationTabOpen() ? fieldCheckPoints : []);
   const s = result.summary, t = s.thresholds;
-  const verdict = s.meetsThresholds === undefined ? `至少 ${s.minimumForVerdict} 个可用点后对照门槛。` : s.meetsThresholds ? '达到独立精度门槛。' : '未达到独立精度门槛，可补同名点重新校准后复查。';
-  $('field-check-summary').innerHTML = s.usable ? `<p><strong>${s.usable}</strong> 个可用点（共 ${s.count} 个）：中位 ${s.medianM} m · P95 ${s.p95M} m · 最大 ${s.maxM} m。门槛为中位 ≤${t.medianM}、P95 ≤${t.p95M}、最大 ≤${t.maxM} m；${verdict}</p><p class="muted compact">误差含手机定位误差（本组精度中位 ${s.accuracyMedianM} m）；精度差于 ${s.maxAccuracyM} m 或在配准范围外的点不计入。</p>`
-    : s.count ? `<p>已记录 ${s.count} 个点，暂无可用点：定位精度需在 ${s.maxAccuracyM} m 以内且位于配准范围内。</p>` : '';
-  $('field-check-list').innerHTML = result.checks.map((c, i) => `<div><span>${i + 1}. ${c.errorM === null ? '配准范围外' : `误差 ${c.errorM.toFixed(1)} m`}</span><small>定位精度 ${Math.round(c.accuracyM)} m${c.usable ? '' : ' · 不计入'}</small><button data-remove-field-check="${e(c.id)}" class="text-button" aria-label="删除核查点 ${i + 1}">×</button></div>`).join('');
+  const verdict = s.meetsThresholds === undefined ? `至少 ${s.minimumForVerdict} 个可用点后对照门槛。` : s.meetsThresholds ? '地图与手机读数的差值在门槛内。' : '地图与手机读数的差值超出门槛，需核对现场定位和配准。';
+  $('field-check-summary').innerHTML = s.usable ? `<p><strong>${s.usable}</strong> 个可用点（共 ${s.count} 个）：中位 ${s.medianM} m · P95 ${s.p95M} m · 最大 ${s.maxM} m。门槛为中位 ≤${t.medianM}、P95 ≤${t.p95M}、最大 ≤${t.maxM} m；${verdict}</p><p class="muted compact">差值含手机定位误差，不能单独证明真实定位精度。手机报告的精度中位为 ${s.accuracyMedianM} m；差于 ${s.maxAccuracyM} m 或在配准范围外的点不计入。</p>`
+    : s.count ? `<p>已记录 ${s.count} 个点，暂无可用点：原图需一致，定位精度需在 ${s.maxAccuracyM} m 以内且位于配准范围内。</p>` : '';
+  $<HTMLButtonElement>('export-field-checks').disabled = result.checks.length === 0;
+  $('field-check-list').innerHTML = result.checks.map((c, i) => `<div><span>${i + 1}. ${c.pixelFrameMatches === false ? '原图已变更' : c.errorM === null ? '配准范围外' : `误差 ${c.errorM.toFixed(1)} m`}</span><small>手机报告精度 ${Math.round(c.accuracyM)} m${c.usable ? '' : ' · 不计入'}${c.receivedAt ? ` · 收到定位 ${e(new Date(c.receivedAt).toLocaleTimeString())}` : ''}</small><button data-remove-field-check="${e(c.id)}" class="text-button" aria-label="删除核查点 ${i + 1}">×</button></div>`).join('');
 }
+$('export-field-checks').onclick = () => task(async () => {
+  const assetId = activeId;
+  download(`${assetId}-gps-checks.json`, await api(`/api/maps/${encodeURIComponent(assetId)}/field-checks/export`));
+});
 $('field-check-list').addEventListener('click', event => {
   const id = (event.target as HTMLElement).closest<HTMLElement>('[data-remove-field-check]')?.dataset.removeFieldCheck;
   if (id) void task(async () => { await api(`/api/maps/${encodeURIComponent(activeId)}/field-checks/${encodeURIComponent(id)}`, { method: 'DELETE' }); await renderFieldChecks(); });
@@ -721,14 +787,30 @@ $('add-field-check').onclick = () => task(async () => {
   mapPicker.cancel();
   if (!state?.registration || state.registrationStale) throw new Error('请先完成当前地图的配准');
   if (!navigator.geolocation) throw new Error('此浏览器不能定位');
-  $('field-check-summary').textContent = '正在获取当前位置…';
-  const fix = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }))
-    .catch(() => { void renderFieldChecks(); throw new Error('没有取得当前位置，请允许定位后到开阔处重试'); });
-  notify(fix.coords.accuracy > 10 ? `定位精度约 ${Math.round(fix.coords.accuracy)} m，会保存但不计入统计；可到开阔处重试` : `定位精度约 ${Math.round(fix.coords.accuracy)} m，请在原图上点出你所站的位置`);
-  const pixel = await new Promise<Pixel | null>(resolve => new PixelEditor(state!, saveEdits, resolve, [], () => resolve(null)).open('field'));
-  if (!pixel) { void renderFieldChecks(); return; }
-  await api(`/api/maps/${encodeURIComponent(activeId)}/field-checks`, { method: 'POST', body: JSON.stringify({ pixel, lnglat: [fix.coords.longitude, fix.coords.latitude], accuracyM: fix.coords.accuracy, measuredAt: Date.now() }) });
-  await renderFieldChecks(); notify('已添加核查点');
+  const source = state, controller = new AbortController(), cancel = $<HTMLButtonElement>('cancel-field-check');
+  cancel.classList.remove('hidden'); cancel.onclick = () => controller.abort();
+  $('field-check-summary').textContent = '正在获取当前位置，最多等待 20 秒…';
+  try {
+    const fix = await captureFieldPosition(navigator.geolocation, navigator.userAgent, controller.signal);
+    cancel.classList.add('hidden');
+    if (state !== source) return;
+    // Freeze the received position and its clock before the teacher spends
+    // time finding that place on the source image.
+    const observation = { lnglat: [fix.coords.longitude, fix.coords.latitude], accuracyM: fix.coords.accuracy,
+      measuredAt: fix.timestamp, receivedAt: fix.receivedAt, rawTimestamp: fix.rawTimestamp, positionClock: fix.clock,
+      sourceHash: source.sourceHash, imageSize: [source.width, source.height] };
+    notify(`手机报告精度约 ${Math.round(fix.coords.accuracy)} m${fix.coords.accuracy > 10 ? '，会保存但不计入统计' : ''}；请在原图标出采集定位时的位置`);
+    const pixel = await new Promise<Pixel | null>(resolve => new PixelEditor(source, saveEdits, resolve, [], () => resolve(null)).open('field'));
+    if (!pixel) return;
+    await api(`/api/maps/${encodeURIComponent(source.assetId)}/field-checks`, { method: 'POST', body: JSON.stringify({ pixel, ...observation }) });
+    notify('已添加核查点');
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') notify('已取消定位采集');
+    else throw error;
+  } finally {
+    cancel.classList.add('hidden'); cancel.onclick = null;
+    await renderFieldChecks();
+  }
 });
 function renderAnchors() {
   campusMap.setAnchors(anchors);
@@ -774,7 +856,7 @@ function showPlan(result: Plan) {
   $('export-route').onclick = () => download('dirmap-routes.geojson', { type: 'FeatureCollection', features: result.routes.map(r => ({ type: 'Feature', properties: { team: r.teamId, distanceM: r.distanceM, durationSec: r.durationSec, graphHash: result.graphHash }, geometry: { type: 'LineString', coordinates: r.geometry } })) });
   for (const card of Array.from($('route-results').querySelectorAll<HTMLElement>('.route-card'))) {
     const route = result.routes.find(r => r.teamId === card.dataset.team);
-    if (route) card.insertAdjacentHTML('beforeend', elevationSummary(route));
+    if (route) card.insertAdjacentHTML('beforeend', elevationSummary(route) + speedSummary(route));
   }
   $('route-results').insertAdjacentHTML('beforeend', '<button id="customize-plan" class="soft-button wide">以这些路线为基础，自定义各队点序</button>');
   $('customize-plan').onclick = () => {
@@ -808,6 +890,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button => but
 for (const id of ['people', 'teams', 'stagger', 'speed']) $<HTMLInputElement>(id).oninput = () => { restoredTeams = null; groupPreview(); renderCustomRoutes(); resetPlan(); persistRules(); };
 $<HTMLSelectElement>('objective').onchange = () => { resetPlan(); persistRules(); };
 $<HTMLInputElement>('use-elevation').onchange = () => { resetPlan(); persistRules(); };
+for (const id of ['use-learned-speed', 'travel-mode']) $(id).onchange = () => { resetPlan(); persistRules(); };
 $<HTMLSelectElement>('course-mode').onchange = () => { missingPresetLabels = []; customMapTeam = null; mapPicker.cancel(); $('map-action-hint').classList.add('hidden'); resetPlan(); persistRules(); renderState(); };
 for (const id of ['pick-start', 'pick-finish']) $(id).onclick = async () => {
   if (!state?.registration || state.registrationStale) { notify('请先完成配准'); return; }
@@ -888,7 +971,7 @@ document.body.addEventListener('click', event => {
   if (el.dataset.controlEdit) openEditor('inspect', el.dataset.controlEdit);
   else if (el.dataset.removeAnchor !== undefined) { anchors.splice(Number(el.dataset.removeAnchor), 1); renderAnchors(); }
   else if (el.dataset.team) { selectedTeam = selectedTeam === el.dataset.team ? null : el.dataset.team; campusMap.setRoutes(plan?.routes ?? [], selectedTeam); document.querySelectorAll('[data-team]').forEach(card => card.classList.toggle('selected', (card as HTMLElement).dataset.team === selectedTeam)); }
-  else if (state) { const from = Number(el.dataset.up ?? el.dataset.down), to = from + (el.dataset.up !== undefined ? -1 : 1); if (to >= 0 && to < state.controls.length) { [state.controls[from], state.controls[to]] = [state.controls[to], state.controls[from]]; resetPlan(); renderState(); } }
+  else if (state) { const from = Number(el.dataset.up ?? el.dataset.down), to = from + (el.dataset.up !== undefined ? -1 : 1); if (to >= 0 && to < state.controls.length) { [state.controls[from], state.controls[to]] = [state.controls[to], state.controls[from]]; resetPlan(); persistRules(); renderState(); } }
 });
 $('control-list').onchange = event => {
   const input = event.target as HTMLInputElement, id = input.dataset.mandatory ?? input.dataset.required;
@@ -913,7 +996,8 @@ function planInputs(): Omit<PlanRequest, 'teams' | 'customRoutes'> {
   if (value('course-mode') === 'mixed_coverage' && (missingPresetLabels.length || !rules.mandatoryControlIds.length)) throw new Error('请明确选择所有每队必到点后再规划');
   return { assetId: activeId, version: state.version, controlIds, startPixel, finishPixel: finish, startSurfaceId,
     finishSurfaceId: $<HTMLInputElement>('return-start').checked ? startSurfaceId : finishSurfaceId,
-    mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget'), useElevation: $<HTMLInputElement>('use-elevation').checked };
+    mode: value('course-mode'), objective: value('objective'), ...rules, timeLimitSec: number('solver-budget'), useElevation: $<HTMLInputElement>('use-elevation').checked,
+    useLearnedSpeed: $<HTMLInputElement>('use-learned-speed').checked, travelMode: value('travel-mode') as 'walk' | 'run' };
 }
 $('plan-button').onclick = () => task(async () => {
   const input = planInputs();
@@ -1180,7 +1264,7 @@ function renderStudent() {
   $('team-sync').innerHTML = ahead.length || (teamArrived && !viewing()) ? `<div class="notice-card team-sync"><strong>队友的手机已${ahead.length ? `打点：${ahead.map(id => e(studentControls.find(c => c.id === id)?.label ?? id)).join('、')}` : '记录到达终点'}</strong><button id="adopt-team-progress" class="soft-button wide">同步到本机</button></div>` : '';
   $('student-overview').innerHTML = `<div class="quality-values"><div><strong>${distance(route.distanceM)}</strong><span>全程距离</span></div><div><strong>${Math.round(route.durationSec / 60)}<small> 分钟</small></strong><span>预计用时（含打点与等待）</span></div></div><p>${route.people} 人同行${route.departureSec ? ` · 开课后 ${minutes(route.departureSec)}出发` : plan?.routes.some(r => r.departureSec > 0) ? ' · 开课即出发，其他队错峰' : ' · 统一出发'}</p>`;
   const surfaceNames = Object.fromEntries((plan?.surfaces ?? []).map(s => [s.id, s.label]));
-  $('student-overview').insertAdjacentHTML('beforeend', elevationSummary(route, true, false));
+  $('student-overview').insertAdjacentHTML('beforeend', elevationSummary(route, true, false) + speedSummary(route));
   if (route.transitions?.length) $('student-overview').insertAdjacentHTML('beforeend', `<div id="student-transitions" class="notice-card"><strong>按标记换层</strong>${route.transitions.map(t => `<p>${e(t.label)}：${e(surfaceNames[t.fromSurface])} → ${e(surfaceNames[t.toSurface])}</p>`).join('')}<p class="muted compact">道路在屏幕上重合不代表互通。换层后请确认当前位置层级。</p></div>`);
   const requiredByAll = new Set(plan?.coverage?.mandatoryControlIds ?? []);
   if (plan?.coverage?.mandatoryControlIds.length) {
@@ -1211,6 +1295,8 @@ function renderStudent() {
   renderClassBoard();
   $('student-stops').innerHTML = route.controlIds.map((id, i) => `<div class="student-stop ${completed.has(id) ? 'done' : ''}"><i>${completed.has(id) ? '✓' : i + 1}</i><span>目标 ${e(studentControls.find(c => c.id === id)?.label ?? id)}${plan?.coverage?.mandatoryControlIds.length ? `<small> · ${requiredByAll.has(id) ? '全员必到' : '本队分担'}</small>` : ''}</span><small>${completed.has(id) ? `已完成${checkInTimes[id] ? ' ' + new Date(checkInTimes[id]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}` : '待到访'}</small></div>`).join('');
   const photoTarget = waiting ?? next;
+  if (photoTarget) $('next-control').insertAdjacentHTML('beforeend', referencePhotoButton(studentPhotos, photoTarget.id));
+  $('student-stops').querySelectorAll<HTMLElement>('.student-stop').forEach((row, i) => row.insertAdjacentHTML('beforeend', referencePhotoButton(studentPhotos, route.controlIds[i])));
   if (!viewing()) {
     $('next-control').insertAdjacentHTML('beforeend', `<button class="soft-button student-photo-button" data-student-photo="${e(photoTarget?.id ?? '')}">${photoTarget ? `为 ${e(photoTarget.label)} 拍照 / 查看小组照片` : '整理并导出小组照片'}</button>`);
     $('student-stops').querySelectorAll<HTMLElement>('.student-stop').forEach((row, i) => {
@@ -1297,7 +1383,10 @@ async function boot() {
   }
   if (courseId) {
     $('teacher-panel').classList.add('hidden'); $('student-panel').classList.remove('hidden'); document.querySelectorAll('.teacher-only').forEach(el => el.classList.add('hidden')); $('header-mode').textContent = '学生导航';
-    const course = await api<{ id: string; title: string; plan: Plan; controls: Control[]; extent: number[]; superseded: boolean; routingSchema?: string; offline?: boolean; siteName?: string; frame?: { origin: Pixel } }>(`/api/releases/${courseId}`);
+    const course = await api<{ id: string; title: string; plan: Plan; controls: Control[]; sheetPhotos?: SheetPhoto[]; extent: number[]; superseded: boolean; routingSchema?: string; offline?: boolean; siteName?: string; frame?: { origin: Pixel } }>(`/api/releases/${courseId}`);
+    studentPhotos = course.sheetPhotos ?? [];
+    $('student-reference-album').classList.toggle('hidden', !studentPhotos.length);
+    $('student-reference-album').textContent = `原图参考照片 · ${studentPhotos.length} 张`;
     $('site-name').textContent = course.siteName ?? '深圳大学粤海校区';
     $('map-title').textContent = course.title; $('map-subtitle').textContent = course.siteName ?? '标准地图 / WGS84';
     void applyDeclination(course.frame?.origin);
@@ -1406,6 +1495,41 @@ async function boot() {
     if (pending && JSON.stringify(pendingJob()) === JSON.stringify(pending)) await task(() => resumeJob(pending));
   }
 }
+
+function openReferencePhotos(controlId?: string) {
+  if (courseId) { showSheetPhotos(studentPhotos, p => `/api/releases/${courseId}/sheet-photos/${encodeURIComponent(p.id)}.jpg`, controlId); return; }
+  if (!state) return;
+  const assetId = state.assetId;
+  let photoState = state;
+  showSheetPhotos(state.sheetPhotos ?? [], p => mapAssetUrl(photoState, `sheet-photos/${encodeURIComponent(p.id)}.jpg`), controlId, async (photo, label) => {
+    if (!state || state.assetId !== assetId) throw new Error('地图已切换，请重新打开参考照片');
+    photoState = await api<MapState>(`/api/maps/${assetId}/sheet-photos/${encodeURIComponent(photo.id)}`, { method: 'PATCH', body: JSON.stringify({ version: photoState.version, label }) });
+    if (state?.assetId === assetId && state.version <= photoState.version) { state = photoState; resetPlan(); renderState(); }
+    return photoState.sheetPhotos ?? [];
+  });
+}
+$('contour-review').onclick = () => { void task(async () => {
+  if (!state) return;
+  const assetId = state.assetId;
+  const report = await api<ContourReport>(`/api/maps/${assetId}/contours`);
+  if (state?.assetId !== assetId || state.version !== report.version) return;
+  showContours(state, report, async (contours, intervalM, heightReference) => {
+    const receipt = await api<{ state: MapState; job?: Job<unknown> }>(`/api/maps/${assetId}/contours`, {
+      method: 'POST', body: JSON.stringify({ version: report.version, revision: report.revision, contours, intervalM, heightReference }) });
+    report.version = receipt.state.version;
+    report.revision = receipt.state.contourRevision ?? 0;
+    if (state?.assetId === assetId && state.version <= receipt.state.version) { state = receipt.state; resetPlan(); renderState(); }
+    if (receipt.job) { rememberJob({ id: receipt.job.id }); await watchJob(receipt.job); }
+    await renderElevationLayer();
+    notify('等高线已保存，可在共享地形页查看重建结果与对齐状态');
+  });
+}); };
+$('sheet-photo-album').onclick = () => openReferencePhotos();
+$('student-reference-album').onclick = () => openReferencePhotos();
+document.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLElement>('[data-reference-photo]');
+  if (button) openReferencePhotos(button.dataset.referencePhoto);
+});
 document.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLElement>('[data-student-photo]');
   if (!button || viewing()) return;

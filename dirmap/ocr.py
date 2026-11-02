@@ -15,6 +15,35 @@ import numpy as np
 from .symbols import course_ink_mask
 
 
+def number_words(mask, executable, output, offset=(0, 0), scale=1, psm=11):
+    border = 16
+    crop = cv2.copyMakeBorder(255-mask, border, border, border, border, cv2.BORDER_CONSTANT, value=255)
+    if scale != 1:
+        crop = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite(str(output), crop)
+    try:
+        process = subprocess.run([executable, str(output), 'stdout', '--psm', str(psm),
+                                   '-c', 'tessedit_char_whitelist=0123456789-', 'tsv'],
+                                  capture_output=True, text=True, timeout=8)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    words = []
+    for row in csv.DictReader(io.StringIO(process.stdout), delimiter='\t'):
+        text = row.get('text', '').strip()
+        confidence = float(row.get('conf', -1))
+        label = re.fullmatch(r'(?:[1-9]-)?([1-9]\d{0,2})', text)
+        # Course maps number controls 1, 2, 3...; a lone digit is
+        # also what a stroke fragment reads as, so it needs more.
+        if not label or confidence < (80 if len(label.group(1)) == 1 else 65):
+            continue
+        center = np.array([offset[0]-border+(int(row['left'])+int(row['width'])/2)/scale,
+                           offset[1]-border+(int(row['top'])+int(row['height'])/2)/scale])
+        box = [offset[0]-border+int(row['left'])/scale, offset[1]-border+int(row['top'])/scale,
+               offset[0]-border+(int(row['left'])+int(row['width']))/scale,
+               offset[1]-border+(int(row['top'])+int(row['height']))/scale]
+        words.append({'label': label.group(1), 'confidence': confidence, 'center': center, 'box': box})
+    return words
+
 def label_controls(purple, controls, text_ink=None):
     executable = os.environ.get('DIRMAP_TESSERACT') or shutil.which('tesseract')
     if not executable or not controls:
@@ -44,33 +73,7 @@ def label_controls(purple, controls, text_ink=None):
         output = Path(temporary)/'numbers.png'
 
         def recognize(mask, offset=(0, 0), scale=1, psm=11):
-            border = 16
-            crop = cv2.copyMakeBorder(255-mask, border, border, border, border, cv2.BORDER_CONSTANT, value=255)
-            if scale != 1:
-                crop = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-            cv2.imwrite(str(output), crop)
-            try:
-                process = subprocess.run([executable, str(output), 'stdout', '--psm', str(psm),
-                                           '-c', 'tessedit_char_whitelist=0123456789-', 'tsv'],
-                                          capture_output=True, text=True, timeout=8)
-            except (OSError, subprocess.TimeoutExpired):
-                return []
-            words = []
-            for row in csv.DictReader(io.StringIO(process.stdout), delimiter='\t'):
-                text = row.get('text', '').strip()
-                confidence = float(row.get('conf', -1))
-                label = re.fullmatch(r'(?:[1-9]-)?([1-9]\d{0,2})', text)
-                # Course maps number controls 1, 2, 3...; a lone digit is
-                # also what a stroke fragment reads as, so it needs more.
-                if not label or confidence < (80 if len(label.group(1)) == 1 else 65):
-                    continue
-                center = np.array([offset[0]-border+(int(row['left'])+int(row['width'])/2)/scale,
-                                   offset[1]-border+(int(row['top'])+int(row['height'])/2)/scale])
-                box = [offset[0]-border+int(row['left'])/scale, offset[1]-border+int(row['top'])/scale,
-                       offset[0]-border+(int(row['left'])+int(row['width']))/scale,
-                       offset[1]-border+(int(row['top'])+int(row['height']))/scale]
-                words.append({'label': label.group(1), 'confidence': confidence, 'center': center, 'box': box})
-            return words
+            return number_words(mask, executable, output, offset, scale, psm)
 
         def glyph_rows(mask, point, radius):
             x0, y0 = np.maximum(0, np.floor(point-radius*5).astype(int))
@@ -109,6 +112,27 @@ def label_controls(purple, controls, text_ink=None):
             point, radius = np.asarray(control['pixel']), control['radiusPx']
             words = global_words.copy()
             nearby = [word for word in words if np.linalg.norm(word['center']-point) < radius*4.8]
+            # A confident single digit can still be only the visible end of
+            # a number. If separate, aligned glyph ink extends its box, read
+            # that complete row before trusting the fragment. Removing just
+            # circle strokes keeps this evidence, unlike erasing the disk.
+            single = [word for word in nearby if len(word['label']) == 1 and word['confidence'] > 90]
+            if single:
+                for mask in (strokes_removed, broad_strokes_removed):
+                    for left, top, right, bottom in glyph_rows(mask, point, radius):
+                        h = bottom-top
+                        supported = False
+                        for word in single:
+                            a, b, c, d = word['box']; wh = d-b
+                            overlap = min(bottom, d)-max(top, b)
+                            if (.7*wh <= h <= wh*1.4 and overlap >= wh*.7
+                                    and left <= word['center'][0] <= right
+                                    and right-left >= c-a+wh*.3
+                                    and (left < a-wh*.2 or right > c+wh*.2)):
+                                supported = True; break
+                        if supported:
+                            words += [word for word in recognize(mask[top:bottom, left:right], (left, top),
+                                      scale=max(2, 48/h), psm=7) if len(word['label']) > 1 and word['confidence'] >= 85]
             if not any(word['confidence'] > 90 for word in nearby):
                 for factor in (3, 4.5):
                     x0, y0 = np.maximum(0, np.floor(point-radius*factor).astype(int))

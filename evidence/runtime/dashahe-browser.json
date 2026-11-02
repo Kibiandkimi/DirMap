@@ -1,0 +1,250 @@
+{
+  "checkedAt": "2026-11-02T01:57:30.060Z",
+  "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "implementationSignature": "4a94cd023642e24aee3a5dd10ec7e01fc00ff49ed7f64f03530c1eebba684cc3",
+  "scope": "真实大沙河图的桌面核对、手机尺寸参考照片、32 张照片离线重载；浏览器模拟不代表真机或现场定位验收。",
+  "teacherControlLabels": [
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "60",
+    "61",
+    "62"
+  ],
+  "contourCandidates": 133,
+  "editorReference": {
+    "label": "33",
+    "visibleDuringPointPreview": true,
+    "photoViewerPreservedPendingPoint": true,
+    "smallScreens": [
+      {
+        "width": 375,
+        "height": 667,
+        "contentHeight": 681,
+        "visibleHeight": 645,
+        "overflow": "auto",
+        "saveReachableByScrolling": true
+      },
+      {
+        "width": 360,
+        "height": 640,
+        "contentHeight": 676,
+        "visibleHeight": 619,
+        "overflow": "auto",
+        "saveReachableByScrolling": true
+      }
+    ],
+    "landscape": {
+      "contentHeight": 609,
+      "visibleHeight": 376,
+      "overflow": "auto"
+    }
+  },
+  "target52Method": "exact",
+  "target52Pixel": [
+    2285.6264503378707,
+    1674.309954298354
+  ],
+  "photosLoadedOffline": [
+    {
+      "label": "41",
+      "width": 405,
+      "height": 299
+    },
+    {
+      "label": "42",
+      "width": 408,
+      "height": 299
+    },
+    {
+      "label": "43",
+      "width": 407,
+      "height": 299
+    },
+    {
+      "label": "32",
+      "width": 405,
+      "height": 305
+    },
+    {
+      "label": "31",
+      "width": 401,
+      "height": 305
+    },
+    {
+      "label": "44",
+      "width": 405,
+      "height": 307
+    },
+    {
+      "label": "45",
+      "width": 408,
+      "height": 307
+    },
+    {
+      "label": "46",
+      "width": 407,
+      "height": 307
+    },
+    {
+      "label": "33",
+      "width": 403,
+      "height": 303
+    },
+    {
+      "label": "34",
+      "width": 406,
+      "height": 306
+    },
+    {
+      "label": "48",
+      "width": 403,
+      "height": 307
+    },
+    {
+      "label": "49",
+      "width": 407,
+      "height": 307
+    },
+    {
+      "label": "47",
+      "width": 399,
+      "height": 303
+    },
+    {
+      "label": "35",
+      "width": 403,
+      "height": 305
+    },
+    {
+      "label": "36",
+      "width": 404,
+      "height": 305
+    },
+    {
+      "label": "51",
+      "width": 408,
+      "height": 309
+    },
+    {
+      "label": "52",
+      "width": 403,
+      "height": 309
+    },
+    {
+      "label": "50",
+      "width": 401,
+      "height": 303
+    },
+    {
+      "label": "38",
+      "width": 406,
+      "height": 305
+    },
+    {
+      "label": "37",
+      "width": 405,
+      "height": 298
+    },
+    {
+      "label": "54",
+      "width": 403,
+      "height": 314
+    },
+    {
+      "label": "55",
+      "width": 407,
+      "height": 314
+    },
+    {
+      "label": "53",
+      "width": 401,
+      "height": 303
+    },
+    {
+      "label": "39",
+      "width": 405,
+      "height": 271
+    },
+    {
+      "label": "40",
+      "width": 412,
+      "height": 298
+    },
+    {
+      "label": "57",
+      "width": 403,
+      "height": 314
+    },
+    {
+      "label": "58",
+      "width": 407,
+      "height": 314
+    },
+    {
+      "label": "56",
+      "width": 399,
+      "height": 303
+    },
+    {
+      "label": "59",
+      "width": 399,
+      "height": 305
+    },
+    {
+      "label": "60",
+      "width": 406,
+      "height": 305
+    },
+    {
+      "label": "61",
+      "width": 408,
+      "height": 305
+    },
+    {
+      "label": "62",
+      "width": 407,
+      "height": 305
+    }
+  ],
+  "screenshots": [
+    "/tmp/dirmap-network-final-browser/teacher-registration.png",
+    "/tmp/dirmap-network-final-browser/printed-contours.png",
+    "/tmp/dirmap-network-final-browser/teacher-reference-beside-map.png",
+    "/tmp/dirmap-network-final-browser/teacher-reference-375x667.png",
+    "/tmp/dirmap-network-final-browser/teacher-reference-360x640.png",
+    "/tmp/dirmap-network-final-browser/teacher-reference-during-point-preview.png",
+    "/tmp/dirmap-network-final-browser/teacher-reference-landscape.png",
+    "/tmp/dirmap-network-final-browser/student-reference-52.png",
+    "/tmp/dirmap-network-final-browser/student-reference-album.png",
+    "/tmp/dirmap-network-final-browser/student-reference-62.png",
+    "/tmp/dirmap-network-final-browser/student-reference-offline.png"
+  ],
+  "allChecksPassed": true
+}

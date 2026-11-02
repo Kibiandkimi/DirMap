@@ -1,7 +1,10 @@
 """Explicit WGS84/local metre coordinates and an invertible registration mesh."""
 
 from dataclasses import dataclass
+from collections import Counter, defaultdict
+import copy
 import math
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -93,6 +96,8 @@ class Registration:
         self.target = np.asarray(target if target is not None else [], dtype=float).reshape(-1, 2)
         self.tri = None
         self._inverse_grid = None
+        self._inverse_domain = None
+        self._forward_inverse = None
         self.folded = 0
         if len(self.source) >= 3:
             if len(self.source) != len(self.target) or not np.isfinite(self.source).all() or not np.isfinite(self.target).all():
@@ -132,6 +137,18 @@ class Registration:
         points = np.asarray(points, dtype=float).reshape(-1, 2)
         result = affine_points(self.affine, points)
         valid = np.zeros(len(points), dtype=bool)
+        if self.tri is not None and not hasattr(self.tri, 'find_simplex'):
+            if self._forward_inverse is None:
+                reverse = copy.copy(self)
+                reverse.source, reverse.target = self.target, self.source
+                reverse._inverse_grid = None
+                self._forward_inverse = reverse
+            projected = self._forward_inverse.inverse(points)
+            valid = np.isfinite(projected).all(axis=1)
+            result[valid] = projected[valid]
+            if strict:
+                result[~valid] = np.nan
+            return result, valid
         if self.tri is not None:
             simplex = self.tri.find_simplex(points)
             valid = simplex >= 0
@@ -143,14 +160,30 @@ class Registration:
             result[~valid] = np.nan
         return result, valid
 
-    def inverse(self, points):
-        """Invert the SAME triangles; retriangulating target vertices is wrong."""
+    def inverse(self, points, index_bounds=None):
+        """Invert the same triangles, optionally indexing a smaller query window.
+
+        Display-only exterior triangles can extend far beyond the paper.
+        Indexing their entire bounding box puts most image pixels in a few
+        crowded buckets. A window changes only the search index; queries
+        outside it still use the full mesh, and no triangles are refitted.
+        """
         points = np.asarray(points, dtype=float).reshape(-1, 2)
         result = np.full_like(points, np.nan)
         if self.tri is None:
             return result
-        if self._inverse_grid is None:
+        domain = None
+        if index_bounds is not None:
+            bounds = np.asarray(index_bounds, dtype=float)
+            if bounds.shape != (2, 2) or not np.isfinite(bounds).all() or np.any(bounds[1] <= bounds[0]):
+                raise ValueError('配准查询范围无效')
+            domain = tuple(bounds.ravel())
+        if self._inverse_grid is None or self._inverse_domain != domain:
             lower, upper = self.target.min(axis=0)-1e-6, self.target.max(axis=0)+1e-6
+            if domain is not None:
+                lo, hi = np.maximum(lower, bounds[0]-1e-6), np.minimum(upper, bounds[1]+1e-6)
+                if np.all(hi > lo):
+                    lower, upper = lo, hi
             span = upper-lower
             cell_count = max(1, len(self.tri.simplices)//3)
             shape = np.clip(np.rint(np.sqrt(cell_count)*np.sqrt(span/span[::-1])).astype(int), 1, 64)
@@ -167,6 +200,7 @@ class Registration:
                     for x in range(lo[0], hi[0]+1):
                         buckets.setdefault(int(y*shape[0]+x), []).append(triangle)
             self._inverse_grid = lower, span, shape, buckets, np.array(transforms), np.array(anchors)
+            self._inverse_domain = domain
         lower, span, shape, buckets, transforms, anchors = self._inverse_grid
         finite = np.isfinite(points).all(axis=1)
         candidates = np.flatnonzero(finite & np.all((points >= lower) & (points <= lower+span), axis=1))
@@ -182,7 +216,86 @@ class Registration:
                 weights = np.column_stack((weights01, 1-weights01.sum(axis=1)))
                 keep = np.all(weights >= -1e-7, axis=1)
                 result[indexes[keep]] = weights[keep] @ self.source[self.tri.simplices[triangle]]
+        if domain is not None:
+            outside = finite & np.any((points < lower) | (points > lower+span), axis=1)
+            if outside.any():
+                cached = self._inverse_grid, self._inverse_domain
+                try:
+                    result[outside] = self.inverse(points[outside])
+                finally:
+                    self._inverse_grid, self._inverse_domain = cached
         return result
+
+    def for_display(self, width, height):
+        """Continue the measured mesh to the whole paper, for display only.
+
+        Keep every measured triangle exactly. A ring of exterior triangles
+        carries its boundary displacement continuously towards the global
+        affine fit. These invented vertices never enter saved registration,
+        target calibration, field-check accuracy, or the routing graph.
+        """
+        corners = np.array([[0., 0.], [width-1., 0.], [width-1., height-1.], [0., height-1.]])
+        if self.tri is None:
+            return Registration(self.affine, corners, affine_points(self.affine, corners), regularization=0)
+        counts = Counter(tuple(sorted((int(i), int(j)))) for ids in self.tri.simplices for i, j in zip(ids, np.roll(ids, -1)))
+        neighbours = defaultdict(list)
+        for (i, j), count in counts.items():
+            if count == 1:
+                neighbours[i].append(j); neighbours[j].append(i)
+        # Keep collinear boundary vertices as well: their measured local
+        # corrections may bend the geographic boundary between its corners.
+        start = min(neighbours)
+        hull, previous, current = [start], start, neighbours[start][0]
+        while current != start:
+            hull.append(current)
+            following = next(i for i in neighbours[current] if i != previous)
+            previous, current = current, following
+        hull = np.asarray(hull, np.int32)
+        boundary = self.source[hull]
+        centre = boundary.mean(axis=0)
+        edges = np.roll(boundary, -1, axis=0)-boundary
+        delta = centre-boundary
+        distances = np.abs(edges[:, 0]*delta[:, 1]-edges[:, 1]*delta[:, 0])/np.linalg.norm(edges, axis=1)
+        factor = max(2., np.linalg.norm(corners-centre, axis=1).max()/distances.min()*1.1)
+        count = len(self.source)
+        outer = np.arange(count, count+len(hull))
+        triangles = np.array([*self.tri.simplices, *[
+            triangle for i, j in zip(range(len(hull)), np.roll(np.arange(len(hull)), -1))
+            for triangle in ([hull[i], hull[j], outer[i]], [outer[i], hull[j], outer[j]])]], dtype=np.int32)
+        for _ in range(8):
+            ring = centre+(boundary-centre)*factor
+            source = np.vstack((self.source, ring))
+            target = np.vstack((self.target, affine_points(self.affine, ring)))
+            a, b = source[triangles], target[triangles]
+            area_a = np.linalg.det(np.stack((a[:, 1]-a[:, 0], a[:, 2]-a[:, 0]), axis=1))
+            area_b = np.linalg.det(np.stack((b[:, 1]-b[:, 0], b[:, 2]-b[:, 0]), axis=1))
+            if np.all(area_a*area_b*np.linalg.det(self.affine[:, :2]) > 0):
+                display = copy.copy(self)
+                display.source, display.target = source, target
+                display.tri = SimpleNamespace(simplices=triangles)
+                display._inverse_grid = display._forward_inverse = None
+                return display
+            factor *= 2
+        raise ValueError('配准外推出现折叠，请检查边界同名点')
+
+    def image_extent_points(self, width, height):
+        """Exact extrema of a piecewise affine image rectangle, before CRS conversion."""
+        limit = np.array([width-1., height-1.])
+        inside = np.all((self.source >= 0) & (self.source <= limit), axis=1)
+        corners = np.array([[0., 0.], [limit[0], 0.], limit, [0., limit[1]]])
+        points = [*self.target[inside], *self.forward(corners)[0]]
+        edges = {tuple(sorted((int(i), int(j)))) for ids in self.tri.simplices for i, j in zip(ids, np.roll(ids, -1))}
+        for i, j in edges:
+            a, delta = self.source[i], self.source[j]-self.source[i]
+            for axis in (0, 1):
+                if abs(delta[axis]) < 1e-10:
+                    continue
+                for value in (0., limit[axis]):
+                    fraction = (value-a[axis])/delta[axis]
+                    other = a[1-axis]+fraction*delta[1-axis]
+                    if 0 <= fraction <= 1 and 0 <= other <= limit[1-axis]:
+                        points.append(self.target[i]+fraction*(self.target[j]-self.target[i]))
+        return np.asarray(points)
 
     def as_dict(self):
         return {"affine": self.affine.tolist(), "source": self.source.tolist(),

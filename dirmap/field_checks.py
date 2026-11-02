@@ -31,15 +31,24 @@ def add(asset_id, check, now=None):
         state = store.get_state(asset_id)
         if not state:
             raise ValueError('请先识别地图')
+        if check.get('sourceHash') is not None and (check['sourceHash'] != state.get('sourceHash')
+                or list(check['imageSize']) != [state['width'], state['height']]):
+            raise ValueError('核查所用的原图或像素尺寸已改变，请重新选点')
         x, y = check['pixel']
         if not (0 <= x < state['width'] and 0 <= y < state['height']):
             raise ValueError('核查点超出原图范围')
         checks = store.read_json(path(asset_id), [])
         if len(checks) >= MAX_CHECKS:
             raise ValueError('核查点过多，请先删除不再需要的点')
-        checks.append({'id': uuid.uuid4().hex[:12], 'pixel': [float(x), float(y)],
+        record = {'id': uuid.uuid4().hex[:12], 'pixel': [float(x), float(y)],
                        'lnglat': [float(v) for v in check['lnglat']], 'accuracyM': float(check['accuracyM']),
-                       'measuredAt': float(check['measuredAt']), 'recordedAt': time.time() if now is None else now})
+                       'measuredAt': float(check['measuredAt']), 'recordedAt': time.time() if now is None else now,
+                       'sourceHash': state.get('sourceHash'), 'imageSize': [state['width'], state['height']],
+                       'recordedMapVersion': state['version']}
+        for key in ('receivedAt', 'rawTimestamp', 'positionClock'):
+            if check.get(key) is not None:
+                record[key] = check[key]
+        checks.append(record)
         store.atomic_json(path(asset_id), checks)
     return report(asset_id)
 
@@ -65,12 +74,33 @@ def report(asset_id):
     measured = frame.to_local([c['lnglat'] for c in checks])
     rows = []
     for check, guess, valid, truth in zip(checks, predicted, inside, measured):
-        error = float(np.linalg.norm(guess-truth)) if valid else None
+        same_image = ((not check.get('sourceHash') or check['sourceHash'] == state.get('sourceHash'))
+                      and (not check.get('imageSize') or check['imageSize'] == [state['width'], state['height']]))
+        error = float(np.linalg.norm(guess-truth)) if valid and same_image else None
         rows.append({**check, 'errorM': error, 'insideRegistration': bool(valid),
-                     'predictedLnglat': frame.to_lnglat(guess).tolist() if valid else None,
-                     'usable': bool(valid and check['accuracyM'] <= MAX_ACCURACY_M)})
+                     'pixelFrameMatches': same_image,
+                     'predictedLnglat': frame.to_lnglat(guess).tolist() if valid and same_image else None,
+                     'usable': bool(valid and same_image and check['accuracyM'] <= MAX_ACCURACY_M)})
     usable = [row for row in rows if row['usable']]
     return {'checks': rows, 'summary': summarize(usable, len(rows))}
+
+
+def export_record(asset_id):
+    """Freeze observations and their current comparison model in one read."""
+    with store.LOCK:
+        state = store.get_state(asset_id)
+        if not state:
+            raise ValueError('地图不存在')
+        return {'schema': 'dirmap-field-checks-v1', 'exportedAt': time.time(),
+                'scope': '地图与手机 GPS 读数的一致性记录；包含手机误差，不是独立测量级精度证明。',
+                'timeUnits': {'measuredAt': 'Unix milliseconds after normalization', 'receivedAt': 'Unix milliseconds',
+                              'rawTimestamp': 'provider-specific; inspect positionClock', 'recordedAt': 'Unix seconds',
+                              'exportedAt': 'Unix seconds'},
+                'legacyTimingNote': '没有 receivedAt 和 positionClock 的旧记录可能在图上选点后才填写 measuredAt，无法据此还原定位发生时间。',
+                'map': {'assetId': asset_id, 'name': state.get('name'), 'version': state['version'],
+                        'sourceHash': state.get('sourceHash'), 'imageSize': [state['width'], state['height']],
+                        'frame': Frame.of(state).as_dict(), 'registration': state.get('registration')},
+                **report(asset_id)}
 
 
 def summarize(usable, count):

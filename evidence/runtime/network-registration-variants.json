@@ -1,0 +1,958 @@
+{
+  "checkedAt": "2026-11-02T01:48:26Z",
+  "scope": "Check road-registration stability on the supplied Dashahe image.\n\nPhoto masks and printed control locations are held fixed from the saved\nsheet so this isolates geographic registration. Dimming/JPEG/cropping here\ndo not measure end-to-end photo recognition or real-phone/GPS accuracy.\nThe unchanged image establishes the comparison; it is not survey truth.\nIncomplete observed coverage is recorded separately from coordinate drift.\n",
+  "implementationSignature": "4a94cd023642e24aee3a5dd10ec7e01fc00ff49ed7f64f03530c1eebba684cc3",
+  "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "referenceSha256": "f73b3f31e26f28b5ef2a351466be9a8316fb4917e7c761cd9cd9a659bddf0565",
+  "maximumAdditionalShiftM": 4.0,
+  "cases": [
+    {
+      "case": "original",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 32,
+      "uncoveredLabels": [],
+      "differenceFromOriginalM": {
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 394,
+      "internalRoadP95M": 10.52,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 7.48,
+          "p95NearestPathM": 10.74,
+          "maxNearestPathM": 11.06
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.3,
+          "p95NearestPathM": 10.78,
+          "maxNearestPathM": 12.13
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.74,
+          "p95NearestPathM": 4.69,
+          "maxNearestPathM": 4.79
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.6,
+          "p95NearestPathM": 5.08,
+          "maxNearestPathM": 6.78
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.1,
+          "p95NearestPathM": 47.52,
+          "maxNearestPathM": 48.41
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 0.86,
+          "p95NearestPathM": 5.46,
+          "maxNearestPathM": 6.67
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.32,
+          "p95NearestPathM": 6.55,
+          "maxNearestPathM": 11.44
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.66,
+          "p95NearestPathM": 2.94,
+          "maxNearestPathM": 3.3
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {},
+      "extraBoundarySamples": 22,
+      "coverageComplete": true,
+      "elapsedSec": 3.569
+    },
+    {
+      "case": "white-border-1400",
+      "imageSize": [
+        6896,
+        5589
+      ],
+      "registrationFound": true,
+      "calibratedControls": 32,
+      "uncoveredLabels": [],
+      "differenceFromOriginalM": {
+        "median": 1.73,
+        "p95": 2.814,
+        "max": 2.95
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 27,
+      "fitCount": 395,
+      "internalRoadP95M": 8.79,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 6.2,
+          "p95NearestPathM": 8.8,
+          "maxNearestPathM": 8.91
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.31,
+          "p95NearestPathM": 9.97,
+          "maxNearestPathM": 10.67
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.33,
+          "p95NearestPathM": 4.27,
+          "maxNearestPathM": 4.39
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.96,
+          "p95NearestPathM": 5.12,
+          "maxNearestPathM": 6.89
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 32.69,
+          "p95NearestPathM": 47.13,
+          "maxNearestPathM": 47.65
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.44,
+          "p95NearestPathM": 5.0,
+          "maxNearestPathM": 6.13
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 2.43,
+          "p95NearestPathM": 6.93,
+          "maxNearestPathM": 9.43
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.23,
+          "p95NearestPathM": 2.88,
+          "maxNearestPathM": 3.38
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {
+        "analysisPixelBox": [
+          1403,
+          1398,
+          5499,
+          4192
+        ]
+      },
+      "extraBoundarySamples": 22,
+      "coverageComplete": true,
+      "elapsedSec": 5.533
+    },
+    {
+      "case": "map-crop",
+      "imageSize": [
+        2070,
+        2589
+      ],
+      "registrationFound": true,
+      "calibratedControls": 32,
+      "uncoveredLabels": [],
+      "differenceFromOriginalM": {
+        "median": 1.411,
+        "p95": 2.139,
+        "max": 2.281
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 398,
+      "internalRoadP95M": 9.57,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 6.74,
+          "p95NearestPathM": 9.43,
+          "maxNearestPathM": 9.51
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.57,
+          "p95NearestPathM": 10.04,
+          "maxNearestPathM": 11.25
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.7,
+          "p95NearestPathM": 4.78,
+          "maxNearestPathM": 4.9
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 2.0,
+          "p95NearestPathM": 5.81,
+          "maxNearestPathM": 13.53
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 32.88,
+          "p95NearestPathM": 46.62,
+          "maxNearestPathM": 47.63
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 0.88,
+          "p95NearestPathM": 5.41,
+          "maxNearestPathM": 6.59
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 2.93,
+          "p95NearestPathM": 7.07,
+          "maxNearestPathM": 10.58
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.14,
+          "p95NearestPathM": 2.88,
+          "maxNearestPathM": 3.37
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {},
+      "extraBoundarySamples": 25,
+      "coverageComplete": true,
+      "elapsedSec": 4.217
+    },
+    {
+      "case": "jpeg-60",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 31,
+      "uncoveredLabels": [
+        "62"
+      ],
+      "differenceFromOriginalM": {
+        "median": 0.474,
+        "p95": 0.85,
+        "max": 0.984
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 392,
+      "internalRoadP95M": 11.17,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 7.41,
+          "p95NearestPathM": 11.05,
+          "maxNearestPathM": 11.46
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.68,
+          "p95NearestPathM": 11.29,
+          "maxNearestPathM": 12.56
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.48,
+          "p95NearestPathM": 4.99,
+          "maxNearestPathM": 5.17
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.94,
+          "p95NearestPathM": 6.21,
+          "maxNearestPathM": 11.36
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 30.64,
+          "p95NearestPathM": 43.25,
+          "maxNearestPathM": 46.31
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 5.75,
+          "p95NearestPathM": 16.13,
+          "maxNearestPathM": 16.25
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.69,
+          "p95NearestPathM": 6.92,
+          "maxNearestPathM": 11.41
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.98,
+          "p95NearestPathM": 3.47,
+          "maxNearestPathM": 3.87
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {},
+      "extraBoundarySamples": 23,
+      "coverageComplete": false,
+      "elapsedSec": 3.194
+    },
+    {
+      "case": "dim-0.9",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 32,
+      "uncoveredLabels": [],
+      "differenceFromOriginalM": {
+        "median": 0.5,
+        "p95": 0.683,
+        "max": 0.718
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 393,
+      "internalRoadP95M": 9.96,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 7.13,
+          "p95NearestPathM": 10.22,
+          "maxNearestPathM": 10.39
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.24,
+          "p95NearestPathM": 10.41,
+          "maxNearestPathM": 11.71
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.65,
+          "p95NearestPathM": 4.32,
+          "maxNearestPathM": 4.34
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.46,
+          "p95NearestPathM": 5.49,
+          "maxNearestPathM": 6.74
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.21,
+          "p95NearestPathM": 47.87,
+          "maxNearestPathM": 48.73
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.03,
+          "p95NearestPathM": 5.32,
+          "maxNearestPathM": 6.56
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 2.92,
+          "p95NearestPathM": 6.38,
+          "maxNearestPathM": 9.22
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.77,
+          "p95NearestPathM": 3.06,
+          "maxNearestPathM": 3.43
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {
+        "neutralWhiteValue": 230.0,
+        "pathColourTolerance": 2,
+        "pathValueFloor": 193.42,
+        "exposureReference": "unmasked_map"
+      },
+      "extraBoundarySamples": 21,
+      "coverageComplete": true,
+      "elapsedSec": 3.711
+    },
+    {
+      "case": "dim-0.85",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 31,
+      "uncoveredLabels": [
+        "62"
+      ],
+      "differenceFromOriginalM": {
+        "median": 1.095,
+        "p95": 1.611,
+        "max": 1.74
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 398,
+      "internalRoadP95M": 11.2,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 8.5,
+          "p95NearestPathM": 11.56,
+          "maxNearestPathM": 11.97
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.64,
+          "p95NearestPathM": 11.37,
+          "maxNearestPathM": 13.09
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.98,
+          "p95NearestPathM": 5.39,
+          "maxNearestPathM": 5.48
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.46,
+          "p95NearestPathM": 4.94,
+          "maxNearestPathM": 7.1
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.21,
+          "p95NearestPathM": 47.46,
+          "maxNearestPathM": 48.2
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.16,
+          "p95NearestPathM": 5.47,
+          "maxNearestPathM": 6.55
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.71,
+          "p95NearestPathM": 7.14,
+          "maxNearestPathM": 8.76
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 2.47,
+          "p95NearestPathM": 3.8,
+          "maxNearestPathM": 4.17
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {
+        "neutralWhiteValue": 217.0,
+        "pathColourTolerance": 2,
+        "pathValueFloor": 182.46,
+        "exposureReference": "unmasked_map"
+      },
+      "extraBoundarySamples": 26,
+      "coverageComplete": false,
+      "elapsedSec": 3.75
+    },
+    {
+      "case": "dim-0.8",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 31,
+      "uncoveredLabels": [
+        "62"
+      ],
+      "differenceFromOriginalM": {
+        "median": 0.822,
+        "p95": 1.241,
+        "max": 1.367
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 394,
+      "internalRoadP95M": 10.8,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 8.04,
+          "p95NearestPathM": 11.12,
+          "maxNearestPathM": 11.4
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.78,
+          "p95NearestPathM": 11.03,
+          "maxNearestPathM": 12.69
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 4.31,
+          "p95NearestPathM": 5.17,
+          "maxNearestPathM": 5.17
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.42,
+          "p95NearestPathM": 5.08,
+          "maxNearestPathM": 6.99
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.31,
+          "p95NearestPathM": 47.42,
+          "maxNearestPathM": 48.12
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.04,
+          "p95NearestPathM": 5.65,
+          "maxNearestPathM": 6.75
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.42,
+          "p95NearestPathM": 6.75,
+          "maxNearestPathM": 8.87
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 2.17,
+          "p95NearestPathM": 3.52,
+          "maxNearestPathM": 3.88
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {
+        "neutralWhiteValue": 204.0,
+        "pathColourTolerance": 2,
+        "pathValueFloor": 171.5,
+        "exposureReference": "unmasked_map"
+      },
+      "extraBoundarySamples": 23,
+      "coverageComplete": false,
+      "elapsedSec": 2.993
+    },
+    {
+      "case": "dim-0.75",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 32,
+      "uncoveredLabels": [],
+      "differenceFromOriginalM": {
+        "median": 0.23,
+        "p95": 0.389,
+        "max": 0.398
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 387,
+      "internalRoadP95M": 10.31,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 7.23,
+          "p95NearestPathM": 10.56,
+          "maxNearestPathM": 10.81
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.44,
+          "p95NearestPathM": 10.67,
+          "maxNearestPathM": 12.07
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.88,
+          "p95NearestPathM": 4.61,
+          "maxNearestPathM": 4.65
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.66,
+          "p95NearestPathM": 5.26,
+          "maxNearestPathM": 6.76
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.11,
+          "p95NearestPathM": 47.64,
+          "maxNearestPathM": 48.47
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 0.87,
+          "p95NearestPathM": 5.45,
+          "maxNearestPathM": 6.65
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.12,
+          "p95NearestPathM": 6.39,
+          "maxNearestPathM": 9.29
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.81,
+          "p95NearestPathM": 3.1,
+          "maxNearestPathM": 3.46
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {
+        "neutralWhiteValue": 191.0,
+        "pathColourTolerance": 2,
+        "pathValueFloor": 160.54,
+        "exposureReference": "unmasked_map"
+      },
+      "extraBoundarySamples": 18,
+      "coverageComplete": true,
+      "elapsedSec": 3.092
+    },
+    {
+      "case": "dim-0.7",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 32,
+      "uncoveredLabels": [],
+      "differenceFromOriginalM": {
+        "median": 0.168,
+        "p95": 0.29,
+        "max": 0.296
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 392,
+      "internalRoadP95M": 10.39,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 7.25,
+          "p95NearestPathM": 10.65,
+          "maxNearestPathM": 10.93
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.44,
+          "p95NearestPathM": 10.71,
+          "maxNearestPathM": 12.14
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.87,
+          "p95NearestPathM": 4.67,
+          "maxNearestPathM": 4.73
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.33,
+          "p95NearestPathM": 5.2,
+          "maxNearestPathM": 6.78
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.12,
+          "p95NearestPathM": 47.62,
+          "maxNearestPathM": 48.44
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 0.87,
+          "p95NearestPathM": 5.46,
+          "maxNearestPathM": 6.65
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.1,
+          "p95NearestPathM": 6.39,
+          "maxNearestPathM": 9.32
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.8,
+          "p95NearestPathM": 3.09,
+          "maxNearestPathM": 3.45
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {
+        "neutralWhiteValue": 178.0,
+        "pathColourTolerance": 2,
+        "pathValueFloor": 149.58,
+        "exposureReference": "unmasked_map"
+      },
+      "extraBoundarySamples": 19,
+      "coverageComplete": true,
+      "elapsedSec": 3.265
+    },
+    {
+      "case": "dim-0.65",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "registrationFound": true,
+      "calibratedControls": 32,
+      "uncoveredLabels": [],
+      "differenceFromOriginalM": {
+        "median": 0.228,
+        "p95": 0.342,
+        "max": 0.374
+      },
+      "alignmentStable": true,
+      "fitObjectCount": 28,
+      "fitCount": 392,
+      "internalRoadP95M": 10.5,
+      "validationWays": [
+        {
+          "referenceId": "251476469",
+          "matched": true,
+          "sampleCount": 27,
+          "medianNearestPathM": 7.23,
+          "p95NearestPathM": 10.75,
+          "maxNearestPathM": 11.08
+        },
+        {
+          "referenceId": "913431711",
+          "matched": true,
+          "sampleCount": 51,
+          "medianNearestPathM": 4.56,
+          "p95NearestPathM": 10.7,
+          "maxNearestPathM": 12.24
+        },
+        {
+          "referenceId": "913431715",
+          "matched": true,
+          "sampleCount": 5,
+          "medianNearestPathM": 3.99,
+          "p95NearestPathM": 4.77,
+          "maxNearestPathM": 4.82
+        },
+        {
+          "referenceId": "913431718",
+          "matched": true,
+          "sampleCount": 23,
+          "medianNearestPathM": 1.55,
+          "p95NearestPathM": 5.12,
+          "maxNearestPathM": 6.84
+        },
+        {
+          "referenceId": "913431722",
+          "matched": false,
+          "sampleCount": 16,
+          "medianNearestPathM": 33.15,
+          "p95NearestPathM": 47.56,
+          "maxNearestPathM": 48.35
+        },
+        {
+          "referenceId": "913763000",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 0.88,
+          "p95NearestPathM": 5.53,
+          "maxNearestPathM": 6.72
+        },
+        {
+          "referenceId": "913763004",
+          "matched": true,
+          "sampleCount": 37,
+          "medianNearestPathM": 3.05,
+          "p95NearestPathM": 6.36,
+          "maxNearestPathM": 9.32
+        },
+        {
+          "referenceId": "913763010",
+          "matched": true,
+          "sampleCount": 6,
+          "medianNearestPathM": 1.78,
+          "p95NearestPathM": 3.06,
+          "maxNearestPathM": 3.43
+        }
+      ],
+      "validationSeparateFromFit": true,
+      "exposure": {
+        "neutralWhiteValue": 166.0,
+        "pathColourTolerance": 2,
+        "pathValueFloor": 139.46,
+        "exposureReference": "unmasked_map"
+      },
+      "extraBoundarySamples": 19,
+      "coverageComplete": true,
+      "elapsedSec": 3.36
+    }
+  ],
+  "allRegistrationsFound": true,
+  "allCoverageComplete": false,
+  "allAlignmentsStable": true,
+  "allChecksPassed": false,
+  "independentSurveyValidation": false
+}

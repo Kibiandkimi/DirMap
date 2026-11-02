@@ -29,6 +29,8 @@ test('original photo collage imports, finds every control and opens in its worki
   const state = await (await page.request.get('/api/maps/' + asset.id)).json();
   const controls = state.controls.filter((control: any) => control.role === 'control');
   expect(controls.map((control: any) => control.label).sort()).toEqual(fixture.labels);
+  expect(state.sheetPhotos.map((photo: any) => photo.label).sort()).toEqual(fixture.labels);
+  expect(state.sheetPhotos.every((photo: any) => photo.controlId)).toBe(true);
   expect(state.controls.filter((control: any) => control.role === 'start_finish')).toHaveLength(1);
   expect(state.controls.filter((control: any) => control.role === 'start')).toHaveLength(0);
   expect(state.controls.some((control: any) => control.id.startsWith('manual-'))).toBe(false);

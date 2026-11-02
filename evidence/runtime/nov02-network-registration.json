@@ -1,0 +1,134 @@
+{
+  "checkedAt": "2026-11-02T02:02:35Z",
+  "goalStatus": "active",
+  "fullObjectiveAchieved": false,
+  "implementationSignature": "4a94cd023642e24aee3a5dd10ec7e01fc00ff49ed7f64f03530c1eebba684cc3",
+  "scope": "Road registration under image transformations; complete processing and course verification of the supplied unchanged Dashahe sheet. No new GPS/survey/device observations.",
+  "original": {
+    "controls": 32,
+    "calibratedControls": 32,
+    "referencePhotos": 32,
+    "allPairsConnected": true,
+    "unresolvedLabels": [],
+    "coveredPassage52": {
+      "keepsCircleCentre": true,
+      "northAndSouthConnected": true
+    },
+    "course": {
+      "scope": "仅在隔离测试工作台模拟教师确认自动到访建议和核验；不代表现场通行已确认。",
+      "mode": "mixed_coverage",
+      "teams": 3,
+      "mandatoryLabels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ],
+      "sharedLabels": [
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "coverageVerified": true,
+      "planStatus": "FEASIBLE",
+      "uniqueLegalEdgesChecked": 4845,
+      "referencePhotosPublished": 32,
+      "releaseId": "f0c1925a3fc645abb901be45d2497e56",
+      "automaticApproachesConfirmed": 9
+    },
+    "processingSec": 89.17,
+    "sameAffineAsPreviousRun": true,
+    "affine": [
+      [
+        0.296738816746235,
+        0.01045041405050057,
+        -567.5360936078538
+      ],
+      [
+        0.01045041405050057,
+        -0.296738816746235,
+        423.7688812636308
+      ]
+    ],
+    "fitCount": 394,
+    "fitObjectCount": 28,
+    "extraBoundarySamples": 22,
+    "internalRoadP95M": 10.52
+  },
+  "variants": {
+    "report": "evidence/runtime/network-registration-variants.json",
+    "count": 10,
+    "allRegistrationsFound": true,
+    "allAlignmentsStable": true,
+    "allCoverageComplete": false,
+    "allChecksPassed": false,
+    "knownFailures": [
+      {
+        "case": "jpeg-60",
+        "uncoveredLabels": [
+          "62"
+        ],
+        "error": null
+      },
+      {
+        "case": "dim-0.85",
+        "uncoveredLabels": [
+          "62"
+        ],
+        "error": null
+      },
+      {
+        "case": "dim-0.8",
+        "uncoveredLabels": [
+          "62"
+        ],
+        "error": null
+      }
+    ],
+    "maxDifferenceFromOriginalM": 2.95
+  },
+  "verification": {
+    "pythonPassed": 430,
+    "pythonReport": "/tmp/dirmap-network-final-python.xml",
+    "realBrowserPassed": true,
+    "offlinePhotos": 32,
+    "realBrowserReport": "evidence/runtime/dashahe-browser.json",
+    "frontendChanged": false,
+    "priorFrontendChecks": "evidence/runtime/nov02-map-improvements.json"
+  },
+  "localPreview": {
+    "url": "http://localhost:8765",
+    "status": "ok",
+    "currentBuildServed": true
+  },
+  "remaining": [
+    "Observed boundary support for target 62 in the three named image variants.",
+    "Independent geographic accuracy and real-phone field verification.",
+    "Further map styles and complete traversability semantics."
+  ]
+}

@@ -254,7 +254,7 @@ def operation_result(asset_id, operation_id):
     return None
 
 
-ARTIFACT_NAMES = {'terrain.npz', 'terrain.png', 'terrain-warp.png', 'blocked.png', 'overlay.png', 'working.jpg'}
+ARTIFACT_NAMES = {'terrain.npz', 'terrain.png', 'terrain-warp.png', 'blocked.png', 'overlay.png', 'working.jpg', 'sheet-photos.zip'}
 
 
 def artifact_path(state, name):

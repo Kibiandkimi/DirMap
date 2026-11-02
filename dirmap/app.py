@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, FiniteFloat, model_validator
 
-from . import accounts, groups, photos, service, store, layers, memory, printing, progress, field_checks, sites, elevation, elevation_render, live_elevation
+from . import accounts, groups, photos, service, store, layers, memory, printing, progress, field_checks, sites, elevation, elevation_render, live_elevation, sheet, contours
 from .geometry import Frame
 from .graph import ROUTING_SCHEMA
 from .jobs import JobQueue
@@ -65,7 +65,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 Point = tuple[FiniteFloat, FiniteFloat]
 MAX_UPLOADS = 30
 # Anyone may register, so uploads stop well before the data disk fills.
-MIN_FREE_BYTES = 2*1024**3
+MIN_FREE_BYTES = max(512, int(os.environ.get('DIRMAP_MIN_FREE_MIB', '2048')))*1024**2
 
 
 class Model(BaseModel):
@@ -100,6 +100,8 @@ class PlanRequest(Model):
     teams: list[Team] = Field(min_length=1, max_length=30)
     timeLimitSec: FiniteFloat = Field(default=5, ge=.1, le=30)
     useElevation: bool = True
+    useLearnedSpeed: bool = True
+    travelMode: Literal['walk', 'run'] = 'walk'
 
     @model_validator(mode='after')
     def unique(self):
@@ -134,6 +136,8 @@ class AutoTeamRequest(Model):
     mandatoryOrder: bool = False
     objective: Literal['min_max_finish_then_sum', 'min_total_time', 'min_distance'] = 'min_max_finish_then_sum'
     useElevation: bool = True
+    useLearnedSpeed: bool = True
+    travelMode: Literal['walk', 'run'] = 'walk'
     totalPeople: int = Field(ge=1, le=500, strict=True)
     minPeoplePerTeam: int = Field(default=2, ge=1, le=500, strict=True)
     maxTeams: int = Field(default=30, ge=1, le=30, strict=True)
@@ -227,6 +231,24 @@ class StatePatch(Model):
     portals: list[Portal] | None = Field(default=None, max_length=64)
 
 
+class PhotoLabelPatch(Model):
+    version: int
+    label: str = Field(max_length=50)
+
+
+class ContourHeight(Model):
+    id: str = Field(pattern=r'^contour-[0-9a-f]{12}$')
+    heightM: FiniteFloat = Field(ge=-500, le=9000)
+
+
+class ContourContribution(Model):
+    version: int
+    revision: int = Field(default=0, ge=0)
+    contours: list[ContourHeight] = Field(min_length=1, max_length=300)
+    intervalM: FiniteFloat | None = Field(default=None, gt=0, le=100)
+    heightReference: Literal['reference', 'relative'] = 'reference'
+
+
 class Anchor(Model):
     pixel: Point
     lnglat: Point
@@ -238,11 +260,20 @@ class FieldCheck(Model):
     lnglat: Point
     accuracyM: FiniteFloat = Field(gt=0, le=1000)
     measuredAt: FiniteFloat
+    receivedAt: FiniteFloat | None = None
+    rawTimestamp: FiniteFloat | None = None
+    positionClock: Literal['unix-ms', 'unix-seconds', 'received'] | None = None
+    sourceHash: str | None = Field(default=None, min_length=1, max_length=128)
+    imageSize: tuple[int, int] | None = None
 
     @model_validator(mode='after')
     def plausible_position(self):
         if not (-180 <= self.lnglat[0] <= 180 and -90 <= self.lnglat[1] <= 90):
             raise ValueError('经纬度无效')
+        if (self.sourceHash is None) != (self.imageSize is None):
+            raise ValueError('请同时提供核查所用的原图标识和像素尺寸')
+        if self.receivedAt is not None and not -250 <= self.receivedAt-self.measuredAt <= 10000:
+            raise ValueError('定位时间与接收时间不一致，请重新采集')
         return self
 
 
@@ -387,6 +418,7 @@ class ElevationEdit(Model):
     version: int = Field(ge=0)
     name: str | None = Field(default=None, min_length=1, max_length=120)
     enabled: bool | None = None
+    activity: Literal['auto', 'walk', 'run', 'bicycle', 'exclude'] | None = None
 
 
 class ElevationDelete(Model):
@@ -436,7 +468,7 @@ async def elevation_not_owner(request, exc):
 
 WRITES = ('POST', 'PUT', 'PATCH', 'DELETE')
 OPEN_PATHS = re.compile(r'/api/(?:health|auth/[a-z-]+|groups(?:/.*)?)')
-STUDENT_READS = re.compile(r'/api/releases/[0-9a-f]{32}(?:/(?:status|progress|overlay\.png|route-map|qr\.png|reference|live-elevation(?:/[0-9a-f]{40}\.png)?))?')
+STUDENT_READS = re.compile(r'/api/releases/[0-9a-f]{32}(?:/(?:status|progress|overlay\.png|sheet-photos/[A-Za-z0-9_-]+\.jpg|route-map|qr\.png|reference|live-elevation(?:/[0-9a-f]{40}\.png)?))?')
 STUDENT_WRITES = re.compile(r'/api/releases/[0-9a-f]{32}/(?:navigate|progress|elevation-samples)')
 OWNER_PATHS = re.compile(r'/api/releases/[0-9a-f]{32}/(?:session|groups|live-elevation)')
 
@@ -664,7 +696,7 @@ async def contribute_elevation(request: Request, files: list[UploadFile] = File(
 
 @app.patch('/api/elevation/tracks/{track_id}')
 def edit_elevation_track(track_id: str, body: ElevationEdit, request: Request):
-    receipt = elevation.change_track(track_id, current_user(request), body.version, name=body.name, enabled=body.enabled)
+    receipt = elevation.change_track(track_id, current_user(request), body.version, name=body.name, enabled=body.enabled, activity=body.activity)
     return {**receipt, 'job': submit_elevation_rebuild(request)}
 
 
@@ -710,6 +742,34 @@ def legend(index: int):
 @app.get('/assets/maps/{asset_id}/original')
 def original(asset_id: str):
     return FileResponse(store.get_asset(asset_id)['path'])
+
+
+@app.get('/assets/maps/{asset_id}/sheet-photos/{photo_id}.jpg')
+def sheet_photo(asset_id: str, photo_id: str, v: int | None = None):
+    state = store.get_state(asset_id)
+    if not state or (v is not None and state['version'] != v):
+        raise HTTPException(409, '地图版本已更新，请刷新后查看参考照片')
+    photo = next((p for p in state.get('sheetPhotos', []) if p['id'] == photo_id), None)
+    if not photo:
+        raise HTTPException(404, '参考照片不存在')
+    return Response(sheet.archived_photo(store.artifact_path(state, 'sheet-photos.zip'), photo_id),
+                    media_type='image/jpeg', headers={'Cache-Control': 'private, no-cache'})
+
+
+@app.patch('/api/maps/{asset_id}/sheet-photos/{photo_id}')
+def label_sheet_photo(asset_id: str, photo_id: str, patch: PhotoLabelPatch):
+    with store.LOCK:
+        state = store.get_state(asset_id)
+        if not state or state['version'] != patch.version:
+            raise HTTPException(409, '地图已更新，请刷新后重试')
+        photo = next((p for p in state.get('sheetPhotos', []) if p['id'] == photo_id), None)
+        if not photo:
+            raise HTTPException(404, '参考照片不存在')
+        photo.update(label=patch.label.strip() or None, labelSource='manual')
+        sheet.link_photos(state['sheetPhotos'], state['controls'])
+        state.update(version=state['version']+1, reviewed=False, updatedAt=time.time())
+        store.save_state(asset_id, state)
+        return state
 
 
 @app.get('/assets/maps/{asset_id}/{artifact}')
@@ -944,6 +1004,7 @@ def patch_map(asset_id: str, patch: StatePatch):
         layers.validate(state.get('surfaces', []), state.get('portals', []), state['edits'], state['controls'])
         state.update(version=state['version']+1, reviewed=False, graphHash=None, updatedAt=time.time())
         service.project_controls(state)
+        sheet.link_photos(state.get('sheetPhotos', []), state['controls'])
         store.save_state(asset_id, state)
         service.forget_graph(asset_id)
         return state
@@ -957,6 +1018,44 @@ def anchors(asset_id: str, request: AnchorRequest, http_request: Request):
 @app.get('/api/maps/{asset_id}/field-checks')
 def list_field_checks(asset_id: str):
     return field_checks.report(asset_id)
+
+
+@app.get('/api/maps/{asset_id}/field-checks/export')
+def export_field_checks(asset_id: str):
+    return JSONResponse(field_checks.export_record(asset_id), headers={
+        'Content-Disposition': f'attachment; filename="{asset_id}-gps-checks.json"', 'Cache-Control': 'no-store'})
+
+
+@app.get('/api/maps/{asset_id}/contours')
+def map_contours(asset_id: str):
+    state = store.get_state(asset_id)
+    if not state:
+        raise ValueError('请先识别地图')
+    if service.registration_stale(state):
+        raise ValueError('基准图已更新，请重新配准后查看等高线')
+    return contours.report(state)
+
+
+@app.post('/api/maps/{asset_id}/contours')
+def contribute_map_contours(asset_id: str, body: ContourContribution, request: Request):
+    with store.LOCK:
+        state = store.get_state(asset_id)
+        if not state or state['version'] != body.version:
+            raise HTTPException(409, '地图已更新，请重新核对等高线')
+        if state.get('contourRevision', 0) != body.revision:
+            raise HTTPException(409, '等高线标高已更新，请重新打开核对页')
+        if service.registration_stale(state):
+            raise ValueError('基准图已更新，请重新配准')
+        selected = [item.model_dump() for item in body.contours]
+        receipt = contours.contribute(state, selected, current_user(request), body.heightReference)
+        state['contourHeights'] = {item['id']: item['heightM'] for item in selected}
+        # These annotations change shared terrain, not the map geometry or
+        # the frozen heights of an already published class.
+        state.update(contourIntervalM=body.intervalM, contourRevision=body.revision+1,
+                     contourHeightReference=body.heightReference,
+                     contourRegistrationStamp=service.registration_stamp(state), updatedAt=time.time())
+        store.save_state(asset_id, state)
+    return {**receipt, 'state': state, 'job': submit_elevation_rebuild(request)}
 
 
 @app.post('/api/maps/{asset_id}/field-checks')
@@ -1043,7 +1142,7 @@ def release(request: ReleaseRequest):
         site = sites.get(store.site_of(store.get_asset(request.assetId)))
         result = {'id': release_id, 'title': request.title, 'assetId': request.assetId, 'createdAt': time.time(),
                   'siteId': site['id'], 'siteName': site['name'], 'workspace': store.current_workspace(),
-                  'plan': plan, 'controls': state['controls'], 'frame': state['frame'], 'extent': state['extent'],
+                  'plan': plan, 'controls': state['controls'], 'sheetPhotos': state.get('sheetPhotos', []), 'frame': state['frame'], 'extent': state['extent'],
                   'quality': state['quality'], 'review': state['review'], 'version': state['version'],
                   'routingSchema': ROUTING_SCHEMA}
         # Freeze derived raster together with the course. A later source edit
@@ -1051,6 +1150,8 @@ def release(request: ReleaseRequest):
         path = store.DATA/'releases'/release_id
         path.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(store.artifact_path(state, 'overlay.png'), path/'overlay.png')
+        if result['sheetPhotos']:
+            shutil.copyfile(store.artifact_path(state, 'sheet-photos.zip'), path/'sheet-photos.zip')
         try:
             store.atomic_json(path/'reference.json', geojson(sites.reference(site['id'])))
         except ValueError:
@@ -1318,6 +1419,15 @@ def release_reference(release_id: str):
 def release_overlay(release_id: str):
     load_release(release_id)
     return FileResponse(store.DATA/'releases'/release_id/'overlay.png', headers={'Cache-Control': 'public, max-age=31536000, immutable'})
+
+
+@app.get('/api/releases/{release_id}/sheet-photos/{photo_id}.jpg')
+def released_sheet_photo(release_id: str, photo_id: str):
+    release = load_release(release_id)
+    if not any(p['id'] == photo_id for p in release.get('sheetPhotos', [])):
+        raise HTTPException(404, '参考照片不存在')
+    return Response(sheet.archived_photo(store.DATA/'releases'/release_id/'sheet-photos.zip', photo_id),
+                    media_type='image/jpeg', headers={'Cache-Control': 'public, max-age=31536000, immutable'})
 
 
 @app.get('/api/maps/{asset_id}/export')

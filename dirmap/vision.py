@@ -17,6 +17,11 @@ from .stairs import detect_stairs
 from .hatching import lower_level_hatching
 from .protocol import TERRAIN_SCHEMA
 from .images import read_map_image
+from .sheet import photo_regions, numbered_panels, cartographic_image, photograph_mask, label_photos, link_photos, fill_panel_gaps
+from .network_registration import map_footprint
+from .contours import extract as extract_contours
+from .point_symbols import recover_point_ink
+from .canopies import open_boundaries as canopy_boundaries
 
 
 def read_image(path, target_size=None):
@@ -34,13 +39,17 @@ def colour_masks(image):
     # solid roof into traversable speckles. Keep the medium grey palette;
     # light grey canopies/passages (about V=215) remain separate.
     building = ((s < 48) & (v > 58) & (v < 196)).astype(np.uint8)*255
-    green = ((g-r > 9) & (g-b > 8) & (h >= 32) & (h <= 90)).astype(np.uint8)*255
+    saturated_green = (h >= 31) & (h <= 90) & (s > 200) & (g-r > 4)
+    green = (((g-r > 9) & (g-b > 8) & (h >= 32) & (h <= 90)) | saturated_green).astype(np.uint8)*255
     dark_green = ((green > 0) & (v < 159) & (s > 80)).astype(np.uint8)*255
     black = ((v < 108) & (s < 115)).astype(np.uint8)*255
     # Olive green is the ISSprOM settlement/out-of-bounds fill, unlike yellow
     # open land or light green vegetation. Bright red custom course ink is
     # unknown, never treated as a new road.
-    olive = ((h >= 22) & (h <= 39) & (s > 62) & (v < 216) & (v > 90)).astype(np.uint8)*255
+    # Saturated green vegetation can lean towards yellow on a park print.
+    # Keep the muted olive settlement fill (including its overlap with the
+    # broad green mask); hue alone cannot distinguish these two inks.
+    olive = ((h >= 22) & (h <= 39) & (s > 62) & (v < 216) & (v > 90) & ~saturated_green).astype(np.uint8)*255
     ink_threshold = max(45., float(np.percentile(s[purple > 0], 90))*.55) if np.any(purple) else 100.
     course_ink = purple & ((s >= ink_threshold).astype(np.uint8)*255)
     return dict(purple=purple, water=water, building=building, green=green,
@@ -117,15 +126,16 @@ def paved_boundaries(image, masks, controls):
     """
     hue, saturation, value = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
     paving = (hue <= 25) & (saturation >= 18) & (saturation <= 100) & (value >= 205)
-    open_green = (masks['green'] > 0) & (value >= 195) & (saturation >= 100)
+    open_green = (masks['green'] > 0) & (masks['olive'] == 0) & (saturation >= 100) & (
+        (value >= 195) | ((value >= 159) & (saturation > 200)))
     if not paving.any() or not open_green.any():
         return np.zeros(value.shape, np.uint8)
     radius = float(np.median([c['radiusPx'] for c in controls])) if controls else 15.
     width_limit = max(1.4, radius/30*1.6+.25)
     to_paving = cv2.distanceTransform((~paving).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
     to_green = cv2.distanceTransform((~open_green).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
-    edge = ((masks['black'] > 0) | (masks['dark_green'] > 0)) & (to_paving+to_green <= width_limit+2)
-    edge &= (masks['water'] == 0) & (masks['olive'] == 0)
+    edge = ((masks['black'] > 0) | (masks['dark_green'] > 0) | (masks['olive'] > 0)) & (to_paving+to_green <= width_limit+2)
+    edge &= masks['water'] == 0
     count, labels, stats, _ = cv2.connectedComponentsWithStats(edge.astype(np.uint8), 8)
     keep = np.zeros(count, bool)
     for i in range(1, count):
@@ -430,8 +440,30 @@ def purple_restrictions(purple, controls, annotations=None):
 
 
 def analyze(image, labeler=None):
+    original = image
+    photos = photo_regions(image)
+    image = cartographic_image(image, photos)
     masks = colour_masks(image)
     height, width = image.shape[:2]
+    controls = detect_controls(masks['course_ink'], image)
+    initial_count = len(photos)
+    photos = numbered_panels(original, photos, controls)
+    photos = fill_panel_gaps(original, photos, controls)
+    if len(photos) != initial_count:
+        del masks
+        image = cartographic_image(original, photos)
+        masks = colour_masks(image)
+    if len(photos) >= 3:
+        factor = min(1., 1400/max(height, width))
+        footprint = map_footprint(cv2.resize(image, None, fx=factor, fy=factor, interpolation=cv2.INTER_AREA))
+        if footprint is not None:
+            outline = (footprint/factor).astype(np.float32)
+            controls = [c for c in controls if cv2.pointPolygonTest(outline, tuple(c['pixel']), True) >= -1.5*c['radiusPx']]
+    classify_course_symbols(masks['course_ink'], controls)
+    ocr = labeler(masks['purple'], controls, masks['course_text']) if labeler else None
+    if labeler:
+        label_photos(original, photos, controls)
+    link_photos(photos, controls)
     features = region_features(masks['building'], 'building', height*width, close=5)
     features += region_features(masks['water'], 'water', height*width, close=7)
     h, s, v = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
@@ -442,11 +474,8 @@ def analyze(image, labeler=None):
         if rectangularity > .72 and feature['area'] > height*width*.0004 and feature['aspect'] < 3.5:
             feature['rectangularity'] = float(rectangularity)
             features.append(feature)
-    del h, s, v, pitch_ink  # full-size scratch; later steps peak higher
-    controls = detect_controls(masks['course_ink'], image)
-    classify_course_symbols(masks['course_ink'], controls)
+    del h, s, v, pitch_ink
     features += black_roofs(masks['black'], masks['building'], controls, height*width)
-    ocr = labeler(masks['purple'], controls, masks['course_text']) if labeler else None
     annotations = annotation_mask(masks['purple'], controls, masks['course_text'])
     restrictions = purple_restrictions(masks['purple'], controls, annotations)
     recovered, hidden, continued_barriers = restore(image, masks['purple'], annotations, restrictions, masks['black'], controls)
@@ -466,7 +495,7 @@ def analyze(image, labeler=None):
     terrain_masks['black'] |= continued_barriers
     boundaries = paved_boundaries(image, masks, controls)
     boundaries[continued_barriers > 0] = 0
-    for kind in ('dark_green', 'black'):
+    for kind in ('dark_green', 'black', 'olive'):
         terrain_masks[kind][boundaries > 0] = 0
     # Do not fill an entire external contour: it may contain a courtyard,
     # portico, garden, or an opening through a U-shaped building. Roof fill
@@ -488,14 +517,27 @@ def analyze(image, labeler=None):
     roof_edge = ((terrain_v < 165) & (terrain_s < 150)
                  & (cv2.dilate(buildings, np.ones((3, 3), np.uint8)) > 0) & (lower_stripes == 0))
     buildings[roof_edge] = 255
+    # JPEG chroma is unstable near black. Requiring low saturation punches
+    # traversable holes in black symbols and walls printed over green.
+    # This only adds terrain obstacles; geographic feature matching above
+    # keeps its separate roof/landmark interpretation.
+    dark_ink = (terrain_v < 70) & (boundaries == 0)
+    recovered_dark_ink = int(np.count_nonzero(dark_ink & (terrain_masks['black'] == 0)))
+    terrain_masks['black'][dark_ink] = 255
     water_regions = water_obstacles(terrain_masks['water'])
+    point_symbols, point_count = recover_point_ink(recovered,
+        {**terrain_masks, 'building': buildings, 'water': water_regions}, controls)
+    point_protection = (terrain_masks['olive'] | terrain_masks['dark_green']) & point_symbols
+    terrain_masks['black'] |= point_symbols
+    for kind in ('olive', 'dark_green'):
+        terrain_masks[kind][point_symbols > 0] = 0
     hard = cv2.bitwise_or(buildings, water_regions)
     for kind in ('dark_green', 'olive', 'black'):
         hard = cv2.bitwise_or(hard, terrain_masks[kind])
     hard = cv2.bitwise_or(hard, restrictions)
     unknown_ink = cv2.bitwise_and(masks['purple'], cv2.bitwise_not(cv2.bitwise_or(annotations, hidden)))
     hard = cv2.bitwise_or(hard, unknown_ink)
-    protected = buildings | water_regions | terrain_masks['dark_green'] | terrain_masks['olive'] | restrictions | unknown_ink
+    protected = buildings | water_regions | terrain_masks['dark_green'] | terrain_masks['olive'] | restrictions | unknown_ink | point_protection
     stairs, treads, stair_features = detect_stairs(recovered, controls, protected)
     hard[treads > 0] = 0
     # Tiny isolated compression flecks are not walls. A 2x2 black pillar on
@@ -503,23 +545,40 @@ def analyze(image, labeler=None):
     count, labels, stats, _ = cv2.connectedComponentsWithStats(hard, 8)
     keep = np.array([False]+[int(stats[i, cv2.CC_STAT_AREA]) >= 4 for i in range(1, count)])
     hard = keep[labels].astype(np.uint8)*255
+    canopy_edges, canopy_count = canopy_boundaries(recovered, hard, buildings,
+        water_regions | terrain_masks['dark_green'] | terrain_masks['olive'] | restrictions | unknown_ink, controls)
+    hard[canopy_edges > 0] = 0
+    buildings[canopy_edges > 0] = 0
+    terrain_masks['black'][canopy_edges > 0] = 0
+    photo_mask = photograph_mask(image.shape, photos) > 0
+    hard[photo_mask] = 255
     costs = np.ones((height, width), np.float32)
     costs[terrain_masks['green'] > 0] = 1.5
     costs[stairs > 0] = 1.7
     costs[hard > 0] = 0
-    return {'width': width, 'height': height, 'controls': controls, 'features': features,
+    contours = extract_contours(image, controls)
+    return {'width': width, 'height': height, 'controls': controls, 'features': features, 'sheetPhotos': photos,
+            'contours': contours,
             'terrainFeatures': [{'kind': 'stairs', **feature} for feature in stair_features]+lower_features,
             'masks': masks, 'blocked': hard, 'costs': costs,
             'semantics': {'building': buildings > 0, 'water': water_regions > 0,
                           'point_ink': terrain_masks['black'] > 0, 'vegetation': terrain_masks['dark_green'] > 0,
-                          'restricted': (restrictions > 0) | (terrain_masks['olive'] > 0),
+                          'restricted': (restrictions > 0) | (terrain_masks['olive'] > 0) | photo_mask,
                           'stairs': stairs > 0,
                           'lower_level': lower_area > 0,
+                          'canopy_openings': canopy_edges > 0,
                           'course_ink': hidden > 0, 'uncertain_ink': unknown_ink > 0},
             'statistics': {'buildingCandidates': sum(f['kind']=='building' for f in features),
                            'waterCandidates': sum(f['kind']=='water' for f in features),
                            'controlCandidates': sum(c.get('role') == 'control' for c in controls),
                            'courseSymbolCandidates': len(controls),
+                           'sheetPhotoCandidates': len(photos),
+                           'contourCandidates': len(contours),
+                           'pointSymbolCandidates': point_count,
+                           'pointSymbolPixels': int(np.count_nonzero(point_symbols)),
+                           'recoveredDarkInkPixels': recovered_dark_ink,
+                           'canopyCandidates': canopy_count,
+                           'canopyBoundaryPixels': int(np.count_nonzero(canopy_edges)),
                            'forbiddenPixelFraction': round(float(np.mean(hard > 0)), 4),
                            'restoredCourseInkPixels': int(np.count_nonzero(hidden)),
                            'continuedBarrierPixels': int(np.count_nonzero(continued_barriers)),

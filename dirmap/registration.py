@@ -567,10 +567,12 @@ def extend_transfer_boundary(reg, quality, geographic_quality):
 
 
 def warp_overlay(image, reg, output, frame=None, max_side=1700, nearest=False):
-    """Inverse sampling to EPSG:3857, cropped to the valid registration hull."""
+    """Display the full sheet, keeping the measured mesh and its boundary continuous."""
     frame = frame or Frame()
-    geo = mercator(frame.to_lnglat(reg.target))
+    display = reg.for_display(image.shape[1], image.shape[0])
+    geo = mercator(frame.to_lnglat(display.image_extent_points(image.shape[1], image.shape[0])))
     lower, upper = geo.min(axis=0), geo.max(axis=0)
+    local_bounds = frame.to_local(unmercator(np.array([lower, upper])))
     span = upper-lower
     factor = max_side/max(span)
     width, height = np.maximum(1, np.ceil(span*factor).astype(int))
@@ -582,7 +584,7 @@ def warp_overlay(image, reg, output, frame=None, max_side=1700, nearest=False):
         xx, yy = np.meshgrid(lower[0]+(np.arange(width)+.5)/width*span[0],
                              upper[1]-(np.arange(y, y+rows)+.5)/height*span[1])
         world = np.column_stack((xx.ravel(), yy.ravel()))
-        pixels = reg.inverse(frame.to_local(unmercator(world)))
+        pixels = display.inverse(frame.to_local(unmercator(world)), index_bounds=local_bounds)
         valid = np.isfinite(pixels).all(axis=1)
         pixels[~valid] = -1000
         mx = pixels[:, 0].reshape(rows, width).astype(np.float32)

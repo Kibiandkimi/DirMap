@@ -56,9 +56,8 @@ def controls_for(group):
         raise ValueError('课程资料暂不可用，请稍后再试')
     selected = {identifier for route in release['plan']['routes'] for identifier in route['controlIds']}
     controls = [{'id': c['id'], 'label': str(c['label'])} for c in release['controls'] if c['id'] in selected]
-    def order(control):
-        return [(0, int(p)) if p.isdigit() else (1, p.casefold()) for p in re.split(r'(\d+)', control['label'])]
-    return sorted(controls, key=order), release.get('title', '定向越野课')
+    # Album pages and exports follow the target list's dictionary order.
+    return sorted(controls, key=lambda c: (c['label'].casefold(), c['id'])), release.get('title', '定向越野课')
 
 
 def _rows(db, group_id):

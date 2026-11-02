@@ -1,0 +1,1095 @@
+{
+  "checkedAt": "2026-11-01T10:17:42Z",
+  "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "scope": "真实大沙河原图；上传、识别、自动道路配准、照片裁切、目标连通性与隔离工作台中的混合课程发布。道路留出误差不是现场 GPS 误差。",
+  "independentFieldValidation": false,
+  "assetId": "upload-555a90a67212",
+  "workingSize": [
+    4096,
+    2789
+  ],
+  "processingSec": 108.934,
+  "statistics": {
+    "buildingCandidates": 22,
+    "waterCandidates": 23,
+    "controlCandidates": 32,
+    "courseSymbolCandidates": 33,
+    "sheetPhotoCandidates": 32,
+    "contourCandidates": 133,
+    "forbiddenPixelFraction": 0.4406,
+    "restoredCourseInkPixels": 87882,
+    "continuedBarrierPixels": 67,
+    "continuedRoofPixels": 11041,
+    "staircaseCandidates": 0,
+    "stairTreadPixels": 0,
+    "pavedBoundaryPixels": 37175,
+    "lowerLevelHatchingPixels": 0,
+    "ocr": {
+      "available": true,
+      "recognized": 32,
+      "preserved": 0,
+      "method": "tesseract_global_and_digit_crops"
+    }
+  },
+  "controls": {
+    "count": 32,
+    "labels": [
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "51",
+      "52",
+      "53",
+      "54",
+      "55",
+      "56",
+      "57",
+      "58",
+      "59",
+      "60",
+      "61",
+      "62"
+    ],
+    "calibrated": 32,
+    "maxErrorAt1400pxPreview": 1.53
+  },
+  "photos": {
+    "count": 32,
+    "labels": [
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "51",
+      "52",
+      "53",
+      "54",
+      "55",
+      "56",
+      "57",
+      "58",
+      "59",
+      "60",
+      "61",
+      "62"
+    ],
+    "linked": 32,
+    "printedLabelLocationsMatched": true,
+    "allCropsServed": true
+  },
+  "registration": {
+    "state": "needs_review",
+    "method": "park_outline_road_network",
+    "parkReferenceId": "15626540",
+    "fitCount": 372,
+    "fitObjectCount": 28,
+    "validationCount": 155,
+    "validationObjectCount": 7,
+    "validationOmittedWayIds": [
+      "913431722"
+    ],
+    "validationTotalWays": 8,
+    "validationWays": [
+      {
+        "referenceId": "251476469",
+        "matched": true,
+        "sampleCount": 27,
+        "medianNearestPathM": 7.48,
+        "p95NearestPathM": 10.74,
+        "maxNearestPathM": 11.06
+      },
+      {
+        "referenceId": "913431711",
+        "matched": true,
+        "sampleCount": 51,
+        "medianNearestPathM": 4.3,
+        "p95NearestPathM": 10.78,
+        "maxNearestPathM": 12.13
+      },
+      {
+        "referenceId": "913431715",
+        "matched": true,
+        "sampleCount": 5,
+        "medianNearestPathM": 3.74,
+        "p95NearestPathM": 4.69,
+        "maxNearestPathM": 4.79
+      },
+      {
+        "referenceId": "913431718",
+        "matched": true,
+        "sampleCount": 23,
+        "medianNearestPathM": 1.6,
+        "p95NearestPathM": 5.08,
+        "maxNearestPathM": 6.78
+      },
+      {
+        "referenceId": "913431722",
+        "matched": false,
+        "sampleCount": 16,
+        "medianNearestPathM": 33.1,
+        "p95NearestPathM": 47.52,
+        "maxNearestPathM": 48.41
+      },
+      {
+        "referenceId": "913763000",
+        "matched": true,
+        "sampleCount": 6,
+        "medianNearestPathM": 0.86,
+        "p95NearestPathM": 5.46,
+        "maxNearestPathM": 6.67
+      },
+      {
+        "referenceId": "913763004",
+        "matched": true,
+        "sampleCount": 37,
+        "medianNearestPathM": 3.32,
+        "p95NearestPathM": 6.55,
+        "maxNearestPathM": 11.44
+      },
+      {
+        "referenceId": "913763010",
+        "matched": true,
+        "sampleCount": 6,
+        "medianNearestPathM": 1.66,
+        "p95NearestPathM": 2.94,
+        "maxNearestPathM": 3.3
+      }
+    ],
+    "validationInsideHull": 155,
+    "medianErrorM": 3.55,
+    "p95ErrorM": 10.52,
+    "maxErrorM": 12.13,
+    "foldedTriangles": 0,
+    "validationScope": "公园轮廓提出位置，再按道路形状对齐；内部留出 8 条道路，其中 7 条能对应。误差统计仅针对能对应的路段与原图道路中心线，仍需现场核对。",
+    "roadRefinement": {
+      "fitWays": 41,
+      "retainedWays": 27,
+      "excludedWayIds": [
+        "1460036367",
+        "1460037348",
+        "1545742000",
+        "246481986",
+        "251476471",
+        "385694347",
+        "479397891",
+        "913431716",
+        "913439821",
+        "913779741",
+        "913779743",
+        "913779744",
+        "913779745",
+        "914373861"
+      ],
+      "scope": "仅用拟合道路筛选并细化；未使用留出道路或目标位置。",
+      "retainedBoundaryPoints": 15
+    }
+  },
+  "frameOrigin": [
+    113.9566,
+    22.5599
+  ],
+  "navigation": {
+    "unresolved": [
+      {
+        "id": "c17",
+        "message": "圈心处的地物或通行侧不明确，请核对实际到访位置",
+        "candidates": [
+          {
+            "pixel": [
+              2286.0,
+              1663.0
+            ],
+            "offsetM": 3.36,
+            "bearingDeg": 359.9,
+            "direction": "北",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              2286.0,
+              1688.0
+            ],
+            "offsetM": 4.07,
+            "bearingDeg": 176.4,
+            "direction": "南",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              2307.0,
+              1663.0
+            ],
+            "offsetM": 7.18,
+            "bearingDeg": 60.1,
+            "direction": "东北",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              2263.0,
+              1688.0
+            ],
+            "offsetM": 7.85,
+            "bearingDeg": 236.8,
+            "direction": "西南",
+            "surfaceId": "ground"
+          }
+        ]
+      },
+      {
+        "id": "c27",
+        "message": "圈心处的地物或通行侧不明确，请核对实际到访位置",
+        "candidates": [
+          {
+            "pixel": [
+              1509.0,
+              2202.0
+            ],
+            "offsetM": 0.55,
+            "bearingDeg": 40.2,
+            "direction": "东北",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              1510.0,
+              2207.0
+            ],
+            "offsetM": 1.27,
+            "bearingDeg": 146.4,
+            "direction": "东南",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              1504.0,
+              2200.0
+            ],
+            "offsetM": 1.5,
+            "bearingDeg": 309.8,
+            "direction": "西北",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              1504.0,
+              2209.0
+            ],
+            "offsetM": 2.01,
+            "bearingDeg": 211.7,
+            "direction": "西南",
+            "surfaceId": "ground"
+          }
+        ]
+      },
+      {
+        "id": "c31",
+        "message": "地物符号外部没有可确认的到访位置",
+        "candidates": [
+          {
+            "pixel": [
+              1244.0,
+              2386.0
+            ],
+            "offsetM": 0.61,
+            "bearingDeg": 251.1,
+            "direction": "西",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              1249.0,
+              2388.0
+            ],
+            "offsetM": 1.19,
+            "bearingDeg": 128.5,
+            "direction": "东南",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              1251.0,
+              2383.0
+            ],
+            "offsetM": 1.66,
+            "bearingDeg": 62.4,
+            "direction": "东北",
+            "surfaceId": "ground"
+          },
+          {
+            "pixel": [
+              1242.0,
+              2381.0
+            ],
+            "offsetM": 1.76,
+            "bearingDeg": 316.0,
+            "direction": "西北",
+            "surfaceId": "ground"
+          }
+        ]
+      }
+    ],
+    "approaches": [
+      {
+        "controlId": "c1",
+        "targetPixel": [
+          1054.4594829013097,
+          395.06725835975976
+        ],
+        "pixel": [
+          1054.4594829013097,
+          395.06725835975976
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95416437711103,
+          22.562767641665083
+        ],
+        "targetLnglat": [
+          113.95416437711103,
+          22.562767641665083
+        ]
+      },
+      {
+        "controlId": "c2",
+        "targetPixel": [
+          1487.2552623466718,
+          416.02695698235874
+        ],
+        "pixel": [
+          1487.2552623466718,
+          416.02695698235874
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.9554151693403,
+          22.562752320252937
+        ],
+        "targetLnglat": [
+          113.9554151693403,
+          22.562752320252937
+        ]
+      },
+      {
+        "controlId": "c4",
+        "targetPixel": [
+          1349.838842251597,
+          750.4518101731825
+        ],
+        "pixel": [
+          1349.838842251597,
+          750.4518101731825
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95505268783755,
+          22.561843210637562
+        ],
+        "targetLnglat": [
+          113.95505268783755,
+          22.561843210637562
+        ]
+      },
+      {
+        "controlId": "c5",
+        "targetPixel": [
+          2746.734076863442,
+          876.003877596019
+        ],
+        "pixel": [
+          2746.734076863442,
+          876.003877596019
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95909563842761,
+          22.56163860103749
+        ],
+        "targetLnglat": [
+          113.95909563842761,
+          22.56163860103749
+        ]
+      },
+      {
+        "controlId": "c6",
+        "targetPixel": [
+          1841.3701404546446,
+          969.5359086205825
+        ],
+        "pixel": [
+          1841.3701404546446,
+          969.5359086205825
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95649306909931,
+          22.56130252810561
+        ],
+        "targetLnglat": [
+          113.95649306909931,
+          22.56130252810561
+        ]
+      },
+      {
+        "controlId": "c7",
+        "targetPixel": [
+          1697.2832980854976,
+          1065.884206209917
+        ],
+        "pixel": [
+          1697.2832980854976,
+          1065.884206209917
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95608715259709,
+          22.56103075082089
+        ],
+        "targetLnglat": [
+          113.95608715259709,
+          22.56103075082089
+        ]
+      },
+      {
+        "controlId": "c8",
+        "targetPixel": [
+          2125.2585924812674,
+          1101.069998408029
+        ],
+        "pixel": [
+          2125.2585924812674,
+          1101.069998408029
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95732548266881,
+          22.560976853545668
+        ],
+        "targetLnglat": [
+          113.95732548266881,
+          22.560976853545668
+        ]
+      },
+      {
+        "controlId": "c9",
+        "targetPixel": [
+          2443.1190188334554,
+          1127.1204144852106
+        ],
+        "pixel": [
+          2443.1190188334554,
+          1127.1204144852106
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95824519123485,
+          22.56093704426267
+        ],
+        "targetLnglat": [
+          113.95824519123485,
+          22.56093704426267
+        ]
+      },
+      {
+        "controlId": "c10",
+        "targetPixel": [
+          1531.0617492789793,
+          1160.255408318901
+        ],
+        "pixel": [
+          1531.0617492789793,
+          1160.255408318901
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95561717418946,
+          22.560762182592082
+        ],
+        "targetLnglat": [
+          113.95561717418946,
+          22.560762182592082
+        ]
+      },
+      {
+        "controlId": "c12",
+        "targetPixel": [
+          1658.61315165679,
+          1476.9166727530205
+        ],
+        "pixel": [
+          1658.61315165679,
+          1476.9166727530205
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95601734859041,
+          22.55992567837595
+        ],
+        "targetLnglat": [
+          113.95601734859041,
+          22.55992567837595
+        ]
+      },
+      {
+        "controlId": "c13",
+        "targetPixel": [
+          1996.5354810788563,
+          1498.6042092333953
+        ],
+        "pixel": [
+          1996.5354810788563,
+          1498.6042092333953
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95699449461793,
+          22.559899453338836
+        ],
+        "targetLnglat": [
+          113.95699449461793,
+          22.559899453338836
+        ]
+      },
+      {
+        "controlId": "c14",
+        "targetPixel": [
+          1480.9634835285428,
+          1510.494003925732
+        ],
+        "pixel": [
+          1482.5,
+          1508.5
+        ],
+        "method": "point_symbol_edge",
+        "automatic": true,
+        "offsetM": 0.7474516863624321,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95551245218749,
+          22.559824426193448
+        ],
+        "targetLnglat": [
+          113.95550822177508,
+          22.559818937958845
+        ]
+      },
+      {
+        "controlId": "c15",
+        "targetPixel": [
+          2472.3284373440792,
+          1512.05545378386
+        ],
+        "pixel": [
+          2472.3284373440792,
+          1512.05545378386
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95836857544109,
+          22.55990830962891
+        ],
+        "targetLnglat": [
+          113.95836857544109,
+          22.55990830962891
+        ]
+      },
+      {
+        "controlId": "c16",
+        "targetPixel": [
+          2630.2449482949487,
+          1512.061830066411
+        ],
+        "pixel": [
+          2630.2449482949487,
+          1512.061830066411
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95882418228655,
+          22.559923195235086
+        ],
+        "targetLnglat": [
+          113.95882418228655,
+          22.559923195235086
+        ]
+      },
+      {
+        "controlId": "c18",
+        "targetPixel": [
+          1480.920050771917,
+          1787.279305913142
+        ],
+        "pixel": [
+          1480.920050771917,
+          1787.279305913142
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95553621963509,
+          22.55907724614781
+        ],
+        "targetLnglat": [
+          113.95553621963509,
+          22.55907724614781
+        ]
+      },
+      {
+        "controlId": "c19",
+        "targetPixel": [
+          1934.980340087168,
+          1828.710711660083
+        ],
+        "pixel": [
+          1934.980340087168,
+          1828.710711660083
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95685044233028,
+          22.55900907447409
+        ],
+        "targetLnglat": [
+          113.95685044233028,
+          22.55900907447409
+        ]
+      },
+      {
+        "controlId": "c20",
+        "targetPixel": [
+          2376.7120220637353,
+          1832.2763643416215
+        ],
+        "pixel": [
+          2376.7120220637353,
+          1832.2763643416215
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95812524825689,
+          22.55904120630317
+        ],
+        "targetLnglat": [
+          113.95812524825689,
+          22.55904120630317
+        ]
+      },
+      {
+        "controlId": "c21",
+        "targetPixel": [
+          2549.679235843009,
+          1960.1700618843468
+        ],
+        "pixel": [
+          2549.679235843009,
+          1960.1700618843468
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95863727218129,
+          22.558714819004624
+        ],
+        "targetLnglat": [
+          113.95863727218129,
+          22.558714819004624
+        ]
+      },
+      {
+        "controlId": "c22",
+        "targetPixel": [
+          1737.6082087653435,
+          2005.5992357798903
+        ],
+        "pixel": [
+          1737.6082087653435,
+          2005.5992357798903
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95629897541717,
+          22.55851644900756
+        ],
+        "targetLnglat": [
+          113.95629897541717,
+          22.55851644900756
+        ]
+      },
+      {
+        "controlId": "c23",
+        "targetPixel": [
+          1212.3890915551553,
+          2106.2336350521405
+        ],
+        "pixel": [
+          1212.3890915551553,
+          2106.2336350521405
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95479388661472,
+          22.558197218749548
+        ],
+        "targetLnglat": [
+          113.95479388661472,
+          22.558197218749548
+        ]
+      },
+      {
+        "controlId": "c24",
+        "targetPixel": [
+          2680.394050228227,
+          2121.277427149239
+        ],
+        "pixel": [
+          2680.394050228227,
+          2121.277427149239
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95903076809033,
+          22.558295443315338
+        ],
+        "targetLnglat": [
+          113.95903076809033,
+          22.558295443315338
+        ]
+      },
+      {
+        "controlId": "c25",
+        "targetPixel": [
+          2108.3003222649304,
+          2129.600211991107
+        ],
+        "pixel": [
+          2108.3003222649304,
+          2129.600211991107
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95738106151667,
+          22.55821915227749
+        ],
+        "targetLnglat": [
+          113.95738106151667,
+          22.55821915227749
+        ]
+      },
+      {
+        "controlId": "c26",
+        "targetPixel": [
+          2390.2194672508062,
+          2135.482153925258
+        ],
+        "pixel": [
+          2390.2194672508062,
+          2135.482153925258
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.9581950263556,
+          22.558229995640566
+        ],
+        "targetLnglat": [
+          113.9581950263556,
+          22.558229995640566
+        ]
+      },
+      {
+        "controlId": "c28",
+        "targetPixel": [
+          1750.9495959394228,
+          2295.7519514747173
+        ],
+        "pixel": [
+          1750.9495959394228,
+          2295.7519514747173
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95636694814424,
+          22.557740200342344
+        ],
+        "targetLnglat": [
+          113.95636694814424,
+          22.557740200342344
+        ]
+      },
+      {
+        "controlId": "c29",
+        "targetPixel": [
+          2683.9463698581753,
+          2327.7349765789563
+        ],
+        "pixel": [
+          2683.9463698581753,
+          2327.7349765789563
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95906199433219,
+          22.557742544594486
+        ],
+        "targetLnglat": [
+          113.95906199433219,
+          22.557742544594486
+        ]
+      },
+      {
+        "controlId": "c30",
+        "targetPixel": [
+          2133.581910113056,
+          2379.8427656910408
+        ],
+        "pixel": [
+          2133.581910113056,
+          2379.8427656910408
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95747942788354,
+          22.55755097567981
+        ],
+        "targetLnglat": [
+          113.95747942788354,
+          22.55755097567981
+        ]
+      },
+      {
+        "controlId": "c32",
+        "targetPixel": [
+          1888.3925986022198,
+          2414.968386107449
+        ],
+        "pixel": [
+          1888.3925986022198,
+          2414.968386107449
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95677559921528,
+          22.55743371262583
+        ],
+        "targetLnglat": [
+          113.95677559921528,
+          22.55743371262583
+        ]
+      },
+      {
+        "controlId": "c33",
+        "targetPixel": [
+          1406.3043671100982,
+          2451.727551777601
+        ],
+        "pixel": [
+          1406.3043671100982,
+          2451.727551777601
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95538845754372,
+          22.557289715924483
+        ],
+        "targetLnglat": [
+          113.95538845754372,
+          22.557289715924483
+        ]
+      },
+      {
+        "controlId": "c34",
+        "targetPixel": [
+          2009.2193287830426,
+          2602.899323837383
+        ],
+        "pixel": [
+          2009.2193287830426,
+          2602.899323837383
+        ],
+        "method": "exact",
+        "automatic": false,
+        "offsetM": 0.0,
+        "surfaceId": "ground",
+        "lnglat": [
+          113.95714329238055,
+          22.556941526007268
+        ],
+        "targetLnglat": [
+          113.95714329238055,
+          22.556941526007268
+        ]
+      }
+    ],
+    "allPairsConnected": false,
+    "unresolvedLabels": [
+      "52",
+      "44",
+      "41"
+    ],
+    "afterSimulatedCandidateConfirmation": {
+      "scope": "测试中采用各点第一个候选；真实课堂仍需教师对照参考照片和现场确认。",
+      "unresolved": [],
+      "allPairsConnected": true
+    }
+  },
+  "overlayScope": "full-sheet",
+  "courseWorkflow": {
+    "scope": "仅在隔离测试工作台模拟教师确认候选位置和核验；不代表实际到访侧或现场通行已确认。",
+    "mode": "mixed_coverage",
+    "teams": 3,
+    "mandatoryLabels": [
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "39",
+      "40"
+    ],
+    "sharedLabels": [
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "51",
+      "52",
+      "53",
+      "54",
+      "55",
+      "56",
+      "57",
+      "58",
+      "59",
+      "60",
+      "61",
+      "62"
+    ],
+    "coverageVerified": true,
+    "planStatus": "FEASIBLE",
+    "uniqueLegalEdgesChecked": 5660,
+    "referencePhotosPublished": 32,
+    "releaseId": "8e16f22a838a43d68e83e27db0ede5e4"
+  },
+  "implementationSignature": "3a64845b40a8276c4a7a92975df8f32c7b60512d33f8e3675b608c61cccb9e77",
+  "allChecksPassed": true
+}

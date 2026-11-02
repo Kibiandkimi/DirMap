@@ -1,0 +1,85 @@
+{
+  "checkedAt": "2026-11-02T02:40:06Z",
+  "implementationSignature": "171bfd5a93264987d2c5d991a1f3cb5b5d658a84d43affb68214034173a559d9",
+  "scope": "GPS collection, timeout/cancel behavior, timestamp provenance, image-frame checks and reproducible export. Browser coordinates are injected tests; no field/device accuracy measurements.",
+  "changes": [
+    "Independent 20-second deadline, checked against monotonic time even if timers are delayed.",
+    "Cancel and late-callback retirement; normal browser freshness checks and the confirmed OpenHarmony received-clock policy.",
+    "Freeze location/clock metadata before choosing the corresponding image pixel.",
+    "Bind new records to the source image; export observations with the current registration snapshot without modifying map versions."
+  ],
+  "tests": {
+    "pythonPassed": 63,
+    "pythonReport": "/tmp/dirmap-field-final-python.xml",
+    "frontendPassed": 35,
+    "frontendLog": "/tmp/dirmap-field-final-frontend.log",
+    "buildPassed": true,
+    "buildLog": "/tmp/dirmap-field-final-build.log",
+    "browser": {
+      "startTime": "2026-11-02T02:33:23.116Z",
+      "duration": 26490.523,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browserReport": "/tmp/dirmap-field-final-browser.json"
+  },
+  "livePreview": {
+    "url": "http://127.0.0.1:8765",
+    "updatedBuildServed": true,
+    "exportSchema": "dirmap-field-checks-v1",
+    "existingFieldObservations": 0
+  },
+  "fieldDataRequired": true,
+  "actualDeviceAccuracyVerified": false,
+  "fullObjectiveAchieved": false,
+  "fieldProtocol": "design/field-verification.zh-CN.md",
+  "completionAudit": [
+    {
+      "requirement": "Supplied Dashahe sheet registration, target approaches and complete course flow",
+      "evidence": "evidence/runtime/dashahe-real.json",
+      "state": "software workflow verified; field passage/position accuracy unverified"
+    },
+    {
+      "requirement": "Printed reference photos and usable review",
+      "evidence": "evidence/runtime/sheet-photos.json; evidence/runtime/dashahe-browser.json",
+      "state": "verified on supplied real inputs"
+    },
+    {
+      "requirement": "Dictionary order and easier custom routes",
+      "evidence": "tests/control-order.test.ts; tests/browser/course-picker.spec.ts; evidence/runtime/nov02-map-improvements.json",
+      "state": "verified"
+    },
+    {
+      "requirement": "Reduced dependence on buildings/water",
+      "evidence": "dirmap/network_registration.py; evidence/runtime/network-registration-variants.json",
+      "state": "implemented and checked; three exploratory variants still lack observed support for target 62"
+    },
+    {
+      "requirement": "Display outside registration anchors",
+      "evidence": "tests/test_registration.py; evidence/runtime/dashahe-browser.json",
+      "state": "verified display; does not fabricate calibration"
+    },
+    {
+      "requirement": "Try contour-assisted terrain reconstruction",
+      "evidence": "evidence/runtime/contour-terrain.json",
+      "state": "implemented and verified as an experiment, not surveyed height accuracy"
+    },
+    {
+      "requirement": "G1, G4, G7, G8 field/device validation",
+      "evidence": "design/validation-plan.zh-CN.md; no field observation files in the current data directory",
+      "state": "missing external evidence"
+    }
+  ],
+  "blockingAudit": {
+    "condition": "No independent field/reference observations or actual phone/course-walk results for the remaining field gates.",
+    "consecutiveGoalTurns": 3,
+    "evidence": [
+      "evidence/runtime/nov02-map-improvements.json",
+      "evidence/runtime/nov02-network-registration.json",
+      "current live data and this audit"
+    ],
+    "userRequest": "Requested existing paired image/GPS observations or reliable coordinate references; platform version alone cannot provide them."
+  }
+}

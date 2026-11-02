@@ -12,13 +12,28 @@ export interface Surface { id: string; label: string; level: number; accepted?: 
 export interface Portal { id: string; label: string; fromSurface: string; toSurface: string; pixel: Pixel;
   radiusPx: number; lengthM: number; costFactor: number; accepted: boolean }
 export interface Anchor { pixel: Pixel; lnglat: Pixel; purpose: 'fit' | 'validation' }
+export interface SheetPhoto {
+  id: string; label: string | null; controlId?: string | null; pixelBox: [number, number, number, number];
+  labelSource: 'unread' | 'tesseract' | 'sheet_glyphs' | 'manual'; confidence?: number;
+}
+export interface MapContour { id: string; pixels: Pixel[]; closed: boolean; lengthPx: number; heightM: number | null }
+export type ContourHeightReference = 'reference' | 'relative';
+export interface ContourReport { assetId: string; version: number; revision: number; intervalM?: number | null;
+  heightReference: ContourHeightReference; contributionStale?: boolean;
+  contours: (MapContour & { calibrated: boolean; suggestedHeightM: number | null; suggestionSpreadM: number | null;
+    referenceCoverage: number; referenceSamples: number })[] }
 export interface MapState {
   assetId: string; processed?: boolean; name: string; width: number; height: number; version: number;
+  sourceHash: string;
   registrationStale?: boolean;
   terrainSchema?: string;
   terrainStale?: boolean;
   sourceImage?: { encodedSize: Pixel; orientedSourceSize: Pixel; workingSize: Pixel; resized: boolean; exifOrientation: number; decoderReduction: number; pixelFrame: string; workingToSource: number[][] };
   controls: Control[]; edits: TerrainEdit[]; extent?: number[]; reviewed: boolean;
+  sheetPhotos?: SheetPhoto[];
+  overlayScope?: 'full-sheet';
+  contours?: MapContour[];
+  contourRevision?: number;
   surfaces?: Surface[]; portals?: Portal[];
   terrainFeatures?: { kind: 'stairs' | 'lower_level'; polygon: Pixel[]; visibleTreadCells?: number; traversableTreadLines?: number }[];
   registration: { affine: number[][]; source: Pixel[]; target: Pixel[]; triangles: number[][] } | null;
@@ -36,6 +51,9 @@ export interface Route {
   elevation?: { modelRevision: string; coverageFraction: number; knownDistanceM: number; unknownDistanceM: number;
     ascentM: number | null; descentM: number | null; estimated: boolean;
     profile: { distanceM: number; heightM: number | null }[] };
+  speedLearning?: { enabled: boolean; mode: 'walk' | 'run'; modelRevision: string; coverageFraction: number;
+    learnedDistanceM: number; fallbackDistanceM: number; gradeLearned: boolean; movingTimeOnly: boolean;
+    status: 'learned' | 'insufficient_data' };
 }
 export interface TeamProgress {
   teamId: string; completed: string[]; checkIns: Record<string, number>; departed: string[]; finished: boolean; reportedAt: number | null;
@@ -45,7 +63,7 @@ export interface ClassProgress { teams: TeamProgress[]; serverTime: number }
 export interface Plan {
   id: string; status: string; routes: Route[]; version: number; graphHash: string; draft: boolean;
   assetId?: string; routingSchema?: string; request?: PlanRequest;
-  unresolved?: { id: string; message: string }[];
+  unresolved?: { id: string; message: string; candidates?: ApproachChoice[] }[];
   approaches?: Approach[];
   coverage?: { mode: string; mandatoryControlIds: string[]; mandatoryOrder: boolean; sharedControlIds: string[]; synchronization?: string; rendezvousControlIds?: string[] };
   rendezvous?: { controlId: string; allArrivedSec: number; departureSec: number }[];
@@ -66,6 +84,8 @@ export interface PlanRequest {
   teams: { id: string; people: number; speedMps: number; departureSec?: number }[];
   timeLimitSec: number;
   useElevation?: boolean;
+  useLearnedSpeed?: boolean;
+  travelMode?: 'walk' | 'run';
 }
 export interface AutoTeamRequest extends Omit<PlanRequest, 'teams' | 'customRoutes'> {
   totalPeople: number; minPeoplePerTeam: number; maxTeams: number; speedMps: number;
@@ -94,6 +114,7 @@ export interface Approach {
   automatic: boolean; offsetM: number; lnglat: Pixel; targetLnglat: Pixel;
   surfaceId?: string;
 }
+export interface ApproachChoice { pixel: Pixel; offsetM: number; bearingDeg: number; direction: string; surfaceId: string }
 export interface Site {
   id: string; name: string; shortName?: string; origin: Pixel; bbox: [number, number, number, number];
   builtin: boolean; status: 'ready' | 'pending' | 'fetching' | 'failed'; featureCount?: number; retrievedAt?: number; error?: string | null;

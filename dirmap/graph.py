@@ -511,7 +511,12 @@ def plan_matrix(graph, controls, start_pixel, finish_pixel, registration, metric
             nodes.append(node)
             points.append(world[0])
         except ValueError as exc:
-            unresolved.append({'id': endpoint['id'], 'message': str(exc)})
+            issue = {'id': endpoint['id'], 'message': str(exc)}
+            if resolver is not None and endpoint.get('surfaceId', 'ground') in (None, 'ground') and endpoint['id'] not in ('start', 'finish'):
+                candidates = resolver.review_candidates(endpoint, start_component)
+                if candidates:
+                    issue['candidates'] = candidates
+            unresolved.append(issue)
     if resolver is not None:
         resolver.release()
     if unresolved:
@@ -579,8 +584,11 @@ def expand_route(graph, bundle, order, frame=None):
             sections.append({'surfaceId': surface, 'label': data['label'], 'level': data['level'],
                              'startIndex': index, 'endIndex': index})
     from .elevation_routing import profile
+    from .travel import profile as travel_profile
     heights = profile(graph, positions, position_surfaces)
+    speed = travel_profile(graph, positions, position_surfaces)
     return {'geometry': frame.to_lnglat(positions).tolist(), 'localGeometry': positions,
             'distanceM': distance, 'travelWeightM': travel_weight, 'nodeIds': node_ids, 'edgeIds': edge_ids,
             'legs': legs, 'surfaceSections': sections, 'transitions': transitions,
-            **({'elevation': heights} if heights is not None else {})}
+            **({'elevation': heights} if heights is not None else {}),
+            **({'speedLearning': speed} if speed is not None else {})}

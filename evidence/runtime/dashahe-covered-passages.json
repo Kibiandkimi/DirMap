@@ -1,0 +1,164 @@
+{
+  "checkedAt": "2026-11-01T12:45:03Z",
+  "goalStatus": "active",
+  "fullObjectiveAchieved": false,
+  "implementationSignature": "9dad5565e0483ec9852a656ba603d41e8d5decf74433d5f12f9145b0d04587bc",
+  "terrainSchema": "print-scale-boundaries-v11-covered-passages",
+  "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "userClarification": "52 号浅灰色区域可通行，两侧均可到访。",
+  "scope": "真实原图、完整处理和发布流程、网页与像素通行对照；保持原配准及圈心。不是独立 GPS 或现场通行验收。",
+  "navigation": {
+    "controlCount": 32,
+    "allPairsConnected": true,
+    "unresolvedLabels": [],
+    "automaticApproachLabels": [
+      "33",
+      "41",
+      "44",
+      "45",
+      "46",
+      "51",
+      "53",
+      "60",
+      "61"
+    ],
+    "coveredPassage52": {
+      "keepsCircleCentre": true,
+      "northAndSouthConnected": true
+    },
+    "course": {
+      "scope": "仅在隔离测试工作台模拟教师确认自动到访建议和核验；不代表现场通行已确认。",
+      "mode": "mixed_coverage",
+      "teams": 3,
+      "mandatoryLabels": [
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ],
+      "sharedLabels": [
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62"
+      ],
+      "coverageVerified": true,
+      "planStatus": "FEASIBLE",
+      "uniqueLegalEdgesChecked": 4845,
+      "referencePhotosPublished": 32,
+      "releaseId": "0413e481573d4ade948d21e738e3e9bd",
+      "automaticApproachesConfirmed": 9
+    }
+  },
+  "pixelChanges": {
+    "openedCanopyBoundaryPixels": 741,
+    "openedElsewhere": 0,
+    "newlyBlockedPixels": 45231,
+    "registrationUnchanged": true,
+    "circleCentresUnchanged": true
+  },
+  "campusRegression": [
+    {
+      "assetId": "szu-1",
+      "unresolvedLabels": [],
+      "openedCanopyBoundaryPixels": 1562,
+      "openedElsewhere": 0,
+      "newlyBlockedPixels": 6,
+      "allPairsConnected": true
+    },
+    {
+      "assetId": "szu-2",
+      "unresolvedLabels": [
+        "35"
+      ],
+      "openedCanopyBoundaryPixels": 522,
+      "openedElsewhere": 0,
+      "newlyBlockedPixels": 112,
+      "allPairsConnected": false
+    },
+    {
+      "assetId": "szu-3",
+      "unresolvedLabels": [],
+      "openedCanopyBoundaryPixels": 3721,
+      "openedElsewhere": 0,
+      "newlyBlockedPixels": 18009,
+      "allPairsConnected": true
+    }
+  ],
+  "tests": {
+    "pythonPassed": 404,
+    "pythonReport": "/tmp/dirmap-covered-python.xml",
+    "frontendPassed": 30,
+    "productionBuildPassed": true,
+    "browser": {
+      "startTime": "2026-11-01T12:27:24.357Z",
+      "duration": 106087.05099999999,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "realBrowserPassed": true,
+    "realPhotosLoadedOffline": 32
+  },
+  "existingMapUpdate": {
+    "assetId": "upload-55496a067ba7",
+    "beforeVersion": 3,
+    "version": 4,
+    "terrainSchema": "print-scale-boundaries-v11-covered-passages",
+    "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+    "backup": "/home/kibi/Work/DirMap/data/backups/20261101-dashahe-v3-covered",
+    "reviewed": false,
+    "elapsedSec": 91.328,
+    "processingSec": 87.1,
+    "controlCount": 32,
+    "calibratedControls": 32,
+    "referencePhotos": 32,
+    "contourCandidates": 133,
+    "allPairsConnected": true,
+    "unresolved": [],
+    "automaticApproaches": 9,
+    "coveredPassage52": {
+      "keepsCircleCentre": true,
+      "northAndSouthConnected": true
+    },
+    "registrationPreserved": true,
+    "graphMatchesTestedCourse": true,
+    "graphHash": "31e065cddc4cc6a4e196",
+    "implementationSignature": "9dad5565e0483ec9852a656ba603d41e8d5decf74433d5f12f9145b0d04587bc"
+  },
+  "localService": {
+    "url": "http://localhost:8765",
+    "status": "ok",
+    "servedMapVersion": 4,
+    "terrainStale": false
+  },
+  "remaining": [
+    "独立 GPS 配准精度及真实手机课堂行走验收",
+    "更多独立地图及森林图完整通行语义的验证"
+  ]
+}

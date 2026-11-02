@@ -23,10 +23,12 @@ from .schedule import apply_schedule
 from .team_planning import recommend_teams
 from .ocr import label_controls
 from .registration import auto_register, extend_transfer_boundary, manual_register, recover_boundary_buildings, register_to_map, warp_overlay
-from . import store, graph_cache, comparisons, layers, sites, elevation, elevation_routing
+from . import store, graph_cache, comparisons, layers, sites, elevation, elevation_routing, travel
 from .protocol import ROUTING_SCHEMA
 from .images import read_map_image
 from .recognition import reconcile_controls
+from .sheet import cartographic_image, link_photos, save_photos, reconcile_photos
+from .network_registration import road_network_register
 from .vision import TERRAIN_SCHEMA, analyze, colour_masks, read_image, save_analysis
 
 GRAPH_CACHE = {}
@@ -185,6 +187,12 @@ def registration_stamp(state):
                                      sort_keys=True).encode()).hexdigest()
 
 
+def editing_stamp(state):
+    """Both geometry and independent height annotations can change during an image job."""
+    state = state or {}
+    return state.get('version', 0), state.get('contourRevision', 0)
+
+
 def registration_stale(state):
     quality = state.get('quality') or {}
     base_id = quality.get('baseAssetId')
@@ -213,12 +221,13 @@ def refresh_ocr(asset_id):
     if state['sourceHash'] != asset['sha256']:
         raise ValueError('原图已改变，请重新识别整图')
     before = copy.deepcopy(state)
-    masks = colour_masks(read_image(asset['path'], (state['width'], state['height'])))
+    masks = colour_masks(cartographic_image(read_image(asset['path'], (state['width'], state['height'])), state.get('sheetPhotos', [])))
     state['statistics']['ocr'] = label_controls(masks['purple'], state['controls'], masks['course_text'])
+    link_photos(state.get('sheetPhotos', []), state['controls'])
     if state == before:
         return state
     with store.LOCK:
-        if store.get_state(asset_id)['version'] != before['version']:
+        if editing_stamp(store.get_state(asset_id)) != editing_stamp(before):
             raise ValueError('识别编号期间地图被修改，已保留最新修改')
         state.update(version=before['version']+1, reviewed=False, graphHash=None, updatedAt=time.time())
         store.save_state(asset_id, state)
@@ -236,24 +245,34 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
     asset = store.get_asset(asset_id)
     if state['sourceHash'] != asset['sha256']:
         raise ValueError('原图已改变，请重新识别整图')
-    before = state['version']; started = time.perf_counter()
+    before = state['version']; before_stamp = editing_stamp(state); started = time.perf_counter()
     progress(10, '分离紫色课程标记，恢复被遮挡的水体、建筑与围墙')
-    result = analyze(read_image(asset['path'], (state['width'], state['height'])), labeler=label_controls)
+    image = read_image(asset['path'], (state['width'], state['height']))
+    result = analyze(image, labeler=label_controls)
+    state['sheetPhotos'] = reconcile_photos(result['sheetPhotos'], state.get('sheetPhotos', []), state['controls'])
     with tempfile.TemporaryDirectory(prefix='.terrain-', dir=store.asset_dir(asset_id)) as temporary:
         directory = Path(temporary)
         save_analysis(result, directory)
+        save_photos(image, result['sheetPhotos'], directory)
+        state['extent'] = warp_overlay(image, Registration.from_dict(state['registration']), directory/'overlay.png', frame=Frame.of(state))
+        state['overlayScope'] = 'full-sheet'
         progress(65, '生成更新后的障碍图')
         terrain = cv2.imread(str(directory/'terrain.png'), cv2.IMREAD_UNCHANGED)
         warp_overlay(terrain, Registration.from_dict(state['registration']), directory/'terrain-warp.png', frame=Frame.of(state),
                      max_side=1200, nearest=True)
         for key in ('forbiddenPixelFraction', 'restoredCourseInkPixels', 'continuedBarrierPixels',
-                    'continuedRoofPixels', 'staircaseCandidates', 'stairTreadPixels', 'pavedBoundaryPixels', 'lowerLevelHatchingPixels'):
+                    'continuedRoofPixels', 'staircaseCandidates', 'stairTreadPixels', 'pavedBoundaryPixels', 'lowerLevelHatchingPixels',
+                    'pointSymbolCandidates', 'pointSymbolPixels', 'recoveredDarkInkPixels',
+                    'canopyCandidates', 'canopyBoundaryPixels'):
             state['statistics'][key] = result['statistics'][key]
         state['terrainFeatures'] = result['terrainFeatures']
+        state['contours'] = result['contours']
+        state['statistics']['contourCandidates'] = len(result['contours'])
+        state['statistics']['sheetPhotoCandidates'] = len(state['sheetPhotos'])
         state.update(terrainSchema=TERRAIN_SCHEMA, version=before+1, reviewed=False, graphHash=None,
                      updatedAt=time.time(), terrainProcessingElapsedSec=round(time.perf_counter()-started, 3))
         with store.LOCK:
-            if store.get_state(asset_id)['version'] != before:
+            if editing_stamp(store.get_state(asset_id)) != before_stamp:
                 raise ValueError('识别期间地图被修改，已保留最新修改，请重试')
             store.stage_artifacts(state, directory)
             store.save_state(asset_id, state, operation_id)
@@ -278,7 +297,9 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
     image, image_info = read_map_image(asset['path'], size)
     progress(10, '提取控制圈、建筑、水体与通行候选')
     result = analyze(image, labeler=label_controls)
+    result['sheetPhotos'] = reconcile_photos(result['sheetPhotos'], previous.get('sheetPhotos', []) if keep else [], result['controls'])
     save_analysis(result, directory)
+    save_photos(image, result['sheetPhotos'], directory)
     if image_info['resized'] or image_info['exifOrientation'] != 1:
         cv2.imwrite(str(directory/'working.jpg'), image, [cv2.IMWRITE_JPEG_QUALITY, 94])
     progress(35, f'匹配{site["name"]}参照与同一场地的其他原图')
@@ -296,34 +317,67 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
             geographic_reference = sites.reference(site['id'], frame)
             reg, quality = auto_register(result['features'], geographic_reference, result['width'], result['height'])
             if result['controls'] and not reg.forward([c['pixel'] for c in result['controls']])[1].all():
-                reg, quality = recover_boundary_buildings(image, reg, quality, geographic_reference)
+                reg, quality = recover_boundary_buildings(cartographic_image(image, result['sheetPhotos']), reg, quality, geographic_reference)
         except ValueError as exc:
             failures.append(str(exc))
+            try:
+                cartography = cartographic_image(image, result['sheetPhotos'])
+                reg, quality = road_network_register(cartography, sites.reference(site['id'], frame), exposure_image=image)
+                reg, quality = recover_boundary_buildings(cartography, reg, quality, sites.reference(site['id'], frame))
+            except ValueError as network_failure:
+                failures.append(str(network_failure))
     # Prefer direct geographic evidence. A low-resolution copy may inherit
     # more reliable detail from a higher-resolution source of the same map.
     bases = [] if keep_registration else [a for a in store.catalog() if a['id'] != asset_id and store.site_of(a) == site['id']]
+    pixels = [c['pixel'] for c in result['controls']]
+    incomplete_coverage = reg is None or not reg.forward(pixels)[1].all()
+    geographic_quality = quality
     for base in bases:
         state = store.get_state(base['id'])
         if not state or not state.get('registration') or state['quality'].get('baseAssetId') or Frame.of(state) != frame:
             continue
-        if reg is not None and state['width']*state['height'] < image.shape[0]*image.shape[1]*1.5:
+        # A smaller sheet can still supply observed boundary detail. Do not
+        # skip it when geographic matching leaves course targets outside the
+        # measured hull; a transfer must still improve coverage and validate.
+        if not incomplete_coverage and state['width']*state['height'] < image.shape[0]*image.shape[1]*1.5:
             continue
         try:
-            candidate, info = register_to_map(image, read_image(base['path'], (state['width'], state['height'])), Registration.from_dict(state['registration']),
+            # Duplicate imports share an exact, documented pixel frame. The
+            # existing measured anchors remain evidence for these same pixels;
+            # refinding SIFT features must not arbitrarily shrink that boundary.
+            same_pixels = (state['sourceHash'] == asset['sha256'] and
+                (state['width'], state['height']) == (result['width'], result['height']) and
+                (state.get('sourceImage') or {}).get('workingToSource') == image_info['workingToSource'])
+            if incomplete_coverage and same_pixels:
+                candidate = Registration.from_dict(state['registration'])
+                old_coverage = int(reg.forward(pixels)[1].sum()) if reg else 0
+                if int(candidate.forward(pixels)[1].sum()) > old_coverage:
+                    reg, quality = candidate, copy.deepcopy(state['quality'])
+                    quality.update(method='same_image_registration', baseAssetId=base['id'], baseVersion=state['version'],
+                        baseSourceHash=state['sourceHash'], baseRegistrationHash=registration_stamp(state),
+                        inheritedGeographicP95M=state['quality'].get('p95ErrorM'),
+                        validationScope='原文件与工作像素坐标完全一致，继承本工作台已有配准与误差统计；仍需现场核对。')
+                    if reg.forward(pixels)[1].all():
+                        break
+            candidate, info = register_to_map(cartographic_image(image, result['sheetPhotos']),
+                                               cartographic_image(read_image(base['path'], (state['width'], state['height'])), state.get('sheetPhotos', [])), Registration.from_dict(state['registration']),
                                                base['id'], state['quality'])
-            candidate, info = extend_transfer_boundary(candidate, info, quality)
-            pixels = [c['pixel'] for c in result['controls']]
+            candidate, info = extend_transfer_boundary(candidate, info, geographic_quality)
             old_coverage = int(reg.forward(pixels)[1].sum()) if reg else 0
             new_coverage = int(candidate.forward(pixels)[1].sum())
-            if info['p95ErrorM'] < 6 and new_coverage >= old_coverage:
+            better_coverage = new_coverage > old_coverage if incomplete_coverage and pixels else new_coverage >= old_coverage
+            if info['p95ErrorM'] < 6 and better_coverage:
                 reg, quality = candidate, info
                 quality.update(baseVersion=state['version'], baseSourceHash=state['sourceHash'],
                                baseRegistrationHash=registration_stamp(state))
-                break
+                if new_coverage == len(pixels):
+                    break
         except ValueError as exc:
             failures.append(str(exc))
     state = {'assetId': asset_id, 'name': asset['name'], 'filename': asset['filename'], 'sourceHash': asset['sha256'],
              'width': result['width'], 'height': result['height'], 'controls': result['controls'], 'sourceImage': image_info,
+             'sheetPhotos': result['sheetPhotos'],
+             'contours': result['contours'],
              'statistics': result['statistics'], 'warnings': result['warnings'],
              'terrainFeatures': result['terrainFeatures'], 'edits': [], 'frame': frame.as_dict(), 'siteId': site['id'],
              'version': (previous or {}).get('version', 0)+1, 'updatedAt': time.time(),
@@ -335,6 +389,13 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
         state['surfaces'] = copy.deepcopy(previous.get('surfaces', []))
         state['portals'] = copy.deepcopy(previous.get('portals', []))
         state['recognitionExclusions'] = copy.deepcopy(previous.get('recognitionExclusions', []))
+        state['contourHeights'] = {key: value for key, value in previous.get('contourHeights', {}).items()
+                                  if any(c['id'] == key for c in state['contours'])}
+        state['contourIntervalM'] = previous.get('contourIntervalM')
+        for key in ('contourRevision', 'contourHeightReference', 'contourRegistrationStamp'):
+            if key in previous:
+                state[key] = previous[key]
+        link_photos(state['sheetPhotos'], state['controls'])
     if keep_registration:
         # Keep the serialized registration stamp too, so unchanged transforms
         # do not invalidate dependent sheets through int/float round-tripping.
@@ -343,6 +404,7 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
     if reg is not None:
         progress(60, '生成统一坐标叠层与目标点')
         state['extent'] = warp_overlay(image, reg, directory/'overlay.png', frame=frame)
+        state['overlayScope'] = 'full-sheet'
         terrain = cv2.imread(str(directory/'terrain.png'), cv2.IMREAD_UNCHANGED)
         warp_overlay(terrain, reg, directory/'terrain-warp.png', frame=frame, max_side=1200, nearest=True)
         project_controls(state)
@@ -354,7 +416,7 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
     forget_graph(asset_id)
     with store.LOCK:
         current = store.get_state(asset_id)
-        if (current or {}).get('version', 0) != (previous or {}).get('version', 0):
+        if editing_stamp(current) != editing_stamp(previous):
             raise ValueError('处理期间地图被修改，已保留最新修改；请重新处理')
         store.stage_artifacts(state, directory, replace_all=True)
         store.save_state(asset_id, state, operation_id)
@@ -367,7 +429,7 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
             state['warnings'].append(f'通行图待核验：{exc}')
     state['processingElapsedSec'] = round(time.perf_counter()-started, 3)
     with store.LOCK:
-        if store.get_state(asset_id)['version'] == state['version']:
+        if editing_stamp(store.get_state(asset_id)) == editing_stamp(state):
             store.save_state(asset_id, state, operation_id)
     return state
 
@@ -385,7 +447,7 @@ def project_controls(state):
         control['calibrated'] = bool(valid)
 
 
-def get_graph(state, use_elevation=True, elevation_snapshot=None):
+def get_graph(state, use_elevation=True, elevation_snapshot=None, use_travel=True, travel_mode='walk'):
     # Same lock order as publication; keep terrain and state from the same
     # atomic processing commit while constructing a new cached graph.
     with store.LOCK, GRAPH_LOCK:
@@ -396,13 +458,15 @@ def get_graph(state, use_elevation=True, elevation_snapshot=None):
         current = store.get_state(state['assetId'])
         if current and current['version'] != state['version']:
             raise ValueError('地图已更新，请刷新后重试')
-        return _get_graph(state, use_elevation, elevation_snapshot)
+        return _get_graph(state, use_elevation, elevation_snapshot, use_travel, travel_mode)
 
 
-def _get_graph(state, use_elevation=True, elevation_snapshot=None):
+def _get_graph(state, use_elevation=True, elevation_snapshot=None, use_travel=True, travel_mode='walk'):
     asset_id = state['assetId']
-    frozen = elevation_snapshot if elevation_snapshot is not None else elevation_routing.snapshot(state, use_elevation)
-    tag = frozen['revision'], frozen.get('gradeSchema')
+    frozen = elevation_snapshot if elevation_snapshot is not None else elevation_routing.snapshot(state, use_elevation, use_travel, travel_mode)
+    if elevation_snapshot is not None and not elevation_routing.available(frozen):
+        raise ValueError('这份路线所用的地形或速度快照已不可用，请重新生成路线')
+    tag = frozen['revision'], frozen.get('gradeSchema'), (frozen.get('travel') or {}).get('revision'), (frozen.get('travel') or {}).get('mode')
     cached = GRAPH_CACHE.get(graph_key(asset_id))
     if not cached or cached['version'] != state['version']:
         if not state.get('registration'):
@@ -430,6 +494,7 @@ def _get_graph(state, use_elevation=True, elevation_snapshot=None):
         # A course's frozen heights and the current shared terrain may both be
         # in use; each variant only adds its own edge costs to the flat graph.
         graph = elevation_routing.attach(cached['base'], state, frozen)
+        graph = travel.attach(graph, cached['base'], frozen.get('travel'))
         graph.access_resolver = AccessResolver(graph, cached['registration'], cached['semantics']) if cached['semantics'] else None
         variants[tag] = graph
         while len(variants) > 2:
@@ -548,7 +613,7 @@ def choose_team_count(payload, progress=lambda p, m: None, operation_id=None):
         raise ValueError('这次比较所用地图已更新，请重新比较')
     original = content['recommendation']['sourceRequest']
     request = {key: original[key] for key in ('assetId', 'controlIds', 'startPixel', 'finishPixel', 'startSurfaceId', 'finishSurfaceId',
-               'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder', 'useElevation') if key in original}
+               'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder', 'useElevation', 'useLearnedSpeed', 'travelMode') if key in original}
     request.update(version=payload['version'], teams=copy.deepcopy(candidate['teams']))
     return plan_course(request, progress, operation_id, selection={'saved': saved, 'payload': payload, 'candidate': candidate})
 
@@ -587,6 +652,7 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
     # a shared-terrain update since then does not change that calculation.
     origin = selection['saved'] if selection else continuing['saved'] if continuing else None
     graph = get_graph(state, use_elevation=request.get('useElevation', True),
+                      use_travel=request.get('useLearnedSpeed', True), travel_mode=request.get('travelMode', 'walk'),
                       elevation_snapshot=(origin or {}).get('content', {}).get('elevationSnapshot'))
     reg = Registration.from_dict(state['registration'])
     progress(40, '计算必到点之间的合法最短路')
@@ -658,7 +724,7 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
                                                  graph.content_hash, implementation_signature(), graph.elevation_snapshot)
         result['teamRecommendation'] = comparisons.public(comparison_to_save, len(chosen_teams), 'automatic')
         request = {key: request[key] for key in ('assetId', 'version', 'controlIds', 'startPixel', 'finishPixel', 'startSurfaceId', 'finishSurfaceId',
-                   'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder', 'useElevation') if key in request}
+                   'mode', 'objective', 'timeLimitSec', 'mandatoryControlIds', 'mandatoryOrder', 'useElevation', 'useLearnedSpeed', 'travelMode') if key in request}
         request['teams'] = chosen_teams
     elif selection:
         saved, candidate = selection['saved'], selection['candidate']
@@ -800,10 +866,11 @@ def apply_anchors(asset_id, anchors, expected_version=None, operation_id=None):
     image = read_image(store.get_asset(asset_id)['path'], (state['width'], state['height']))
     state['registration'] = reg.as_dict()
     state['quality'] = quality
-    initial_version = state['version']
+    initial_stamp = editing_stamp(state)
     with tempfile.TemporaryDirectory(prefix='.anchors-', dir=store.asset_dir(asset_id)) as temporary:
         directory = Path(temporary)
         state['extent'] = warp_overlay(image, reg, directory/'overlay.png', frame=frame)
+        state['overlayScope'] = 'full-sheet'
         terrain = cv2.imread(str(store.artifact_path(state, 'terrain.png')), cv2.IMREAD_UNCHANGED)
         warp_overlay(terrain, reg, directory/'terrain-warp.png', frame=frame, max_side=1200, nearest=True)
         state['version'] += 1
@@ -811,7 +878,7 @@ def apply_anchors(asset_id, anchors, expected_version=None, operation_id=None):
         state['graphHash'] = None
         project_controls(state)
         with store.LOCK:
-            if store.get_state(asset_id)['version'] != initial_version:
+            if editing_stamp(store.get_state(asset_id)) != initial_stamp:
                 raise ValueError('校准期间地图被修改，已保留最新修改')
             store.stage_artifacts(state, directory)
             store.save_state(asset_id, state, operation_id)
