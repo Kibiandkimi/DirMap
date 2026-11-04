@@ -38,7 +38,8 @@ export interface MapState {
   surfaces?: Surface[]; portals?: Portal[];
   terrainFeatures?: { kind: 'stairs' | 'lower_level'; polygon: Pixel[]; visibleTreadCells?: number; traversableTreadLines?: number }[];
   registration: { affine: number[][]; source: Pixel[]; target: Pixel[]; triangles: number[][] } | null;
-  quality: { state: string; method: string; fitCount: number; validationCount: number; medianErrorM: number | null; p95ErrorM: number | null; inheritedGeographicP95M?: number; validationScope: string; baseAssetId?: string } | null;
+  quality: { state: string; method: string; fitCount: number; validationCount: number; medianErrorM: number | null; p95ErrorM: number | null; inheritedGeographicP95M?: number; validationScope: string; baseAssetId?: string; leaveOneOut?: boolean; poseSupport?: { value: number; margin: number } } | null;
+  failures?: string[];
   warnings: string[]; statistics: { buildingCandidates: number; waterCandidates: number; controlCandidates: number; forbiddenPixelFraction: number; staircaseCandidates?: number; lowerLevelHatchingPixels?: number };
   frame: { crs: string; origin: Pixel };
 }

@@ -1,5 +1,5 @@
 {
-  "auditedAt": "2026-11-02T12:42:31.428Z",
+  "auditedAt": "2026-11-04T04:01:03.214Z",
   "sourceHash": "67db55e8b7249ae947a8e253aded172e343207b931432f622d407ceb74402bd8",
   "freshUpload": true,
   "reusedTeacherControls": false,
@@ -62,7 +62,7 @@
   "registrationMethod": "sift_cross_map_observed_boundary_mesh",
   "baseAssetId": "upload-f4fd82f6605e",
   "recoveredBoundaryObjects": [],
-  "processingElapsedSec": 99.606,
+  "processingElapsedSec": 103.275,
   "allChecksPassed": true,
   "independentFieldValidation": false,
   "scope": "Fresh original-file upload through the browser, processing job, geographic projection and pixel editor; development regression only."

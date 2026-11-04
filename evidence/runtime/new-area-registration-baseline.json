@@ -1,0 +1,430 @@
+{
+  "checkedAt": "2026-11-03T22:22:08Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file; that world file is only used\nafterwards to measure the result and never enters matching.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "f94e829f0232e8cd4c7e4ce61ccc2f8832ab6617ce91162f30633d54262cdd29",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "cases": [
+    {
+      "event": 433,
+      "map": 446,
+      "name": "Wardown Park HH Sprint Champs 2025",
+      "date": "2025-09-02",
+      "imageSize": [
+        1906,
+        2750
+      ],
+      "upscale": 2.0,
+      "referenceFeatures": 474,
+      "referenceSha256": "386cec00311360086c9ba1bd2550c5c70c918dd595789cfc7b82d1393ffa66ff",
+      "elapsedSec": 20.5,
+      "failures": [
+        "独立地物或覆盖范围不足，不能建立可核查的配准",
+        "道路匹配的独立核查证据不足，需补充同名点"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 446,
+      "map": 456,
+      "name": "Highfield Park Saturday Series",
+      "date": "2026-05-23",
+      "imageSize": [
+        2906,
+        4096
+      ],
+      "upscale": 1.8028169014084507,
+      "referenceFeatures": 3159,
+      "referenceSha256": "ba9372d73355a9bc59525a03518c1140f2e72ce67a2fd86b21a39dd8d415284e",
+      "elapsedSec": 21.7,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 12.63,
+      "truthErrorM": {
+        "all": {
+          "median": 424.36,
+          "p95": 788.0,
+          "max": 887.77
+        },
+        "insideHull": {
+          "median": 233.58,
+          "p95": 451.06,
+          "max": 482.51
+        },
+        "insideFraction": 0.109
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 343,
+      "map": 368,
+      "name": "Oaklands AGM Sprint",
+      "date": "2019-09-10",
+      "imageSize": [
+        2742,
+        1928
+      ],
+      "upscale": 2.0,
+      "referenceFeatures": 795,
+      "referenceSha256": "9436e12b0d97ea5f03ffeb834a56b8b92294709f207cb7d5a91496bb0796de0a",
+      "elapsedSec": 8.0,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 11.02,
+      "truthErrorM": {
+        "all": {
+          "median": 1.77,
+          "p95": 3.03,
+          "max": 3.81
+        },
+        "insideHull": {
+          "median": 1.56,
+          "p95": 2.36,
+          "max": 2.73
+        },
+        "insideFraction": 0.637
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 310,
+      "map": 332,
+      "name": "Habs AGM Sprint",
+      "date": "2018-09-04",
+      "imageSize": [
+        2592,
+        3664
+      ],
+      "upscale": 2.0,
+      "referenceFeatures": 477,
+      "referenceSha256": "9d369043362985d6c1a402ae1d9b62cfcc1eb8542af74cd32d4eab25e6529a0e",
+      "elapsedSec": 16.4,
+      "failures": [
+        "独立地物或覆盖范围不足，不能建立可核查的配准",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 274,
+      "map": 291,
+      "name": "De Havilland Campus AGM Sprint",
+      "date": "2017-09-05",
+      "imageSize": [
+        1399,
+        2261
+      ],
+      "upscale": 1.3,
+      "referenceFeatures": 1627,
+      "referenceSha256": "45d002c39529f7406a0600d584ea2e296fa1a8250d336f332d5560f7ee943a60",
+      "elapsedSec": 9.7,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 20.72,
+      "truthErrorM": {
+        "all": {
+          "median": 303.63,
+          "p95": 388.21,
+          "max": 406.62
+        },
+        "insideHull": {
+          "median": 292.16,
+          "p95": 380.78,
+          "max": 393.67
+        },
+        "insideFraction": 0.345
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 270,
+      "map": 287,
+      "name": "Park-O 2017 #3: Stanborough Park",
+      "date": "2017-08-15",
+      "imageSize": [
+        2075,
+        4096
+      ],
+      "upscale": 1.7746967071057191,
+      "referenceFeatures": 3845,
+      "referenceSha256": "e9af0905e4d13de9cc8c956a7aba01f8e26ac7a75132b3a62709346ec63cc721",
+      "elapsedSec": 32.8,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 18.52,
+      "truthErrorM": {
+        "all": {
+          "median": 480.7,
+          "p95": 639.71,
+          "max": 694.59
+        },
+        "insideHull": {
+          "median": 480.7,
+          "p95": 608.87,
+          "max": 640.0
+        },
+        "insideFraction": 0.597
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 385,
+      "map": 399,
+      "name": "Cassiobury Park Saturday Series",
+      "date": "2022-04-02",
+      "imageSize": [
+        4096,
+        2883
+      ],
+      "upscale": 2.392523364485981,
+      "referenceFeatures": 10280,
+      "referenceSha256": "f642ac3db2634a8407e12d30b4617cfdc762ac49b26412fc9ee14042101af126",
+      "elapsedSec": 23.5,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 17.34,
+      "truthErrorM": {
+        "all": {
+          "median": 427.93,
+          "p95": 909.59,
+          "max": 1062.83
+        },
+        "insideHull": {
+          "median": 441.71,
+          "p95": 614.28,
+          "max": 682.02
+        },
+        "insideFraction": 0.243
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 418,
+      "map": 432,
+      "name": "Hatfield Urban Race",
+      "date": "2024-08-18",
+      "imageSize": [
+        4096,
+        2855
+      ],
+      "upscale": 1.5603809523809524,
+      "referenceFeatures": 6382,
+      "referenceSha256": "e1c74d70a2cb556f38f2199b5bf1bed11e29cfde47302b68a4c2bdc7b00a6690",
+      "elapsedSec": 32.8,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 17.95,
+      "truthErrorM": {
+        "all": {
+          "median": 52.9,
+          "p95": 106.27,
+          "max": 134.93
+        },
+        "insideHull": {
+          "median": 38.71,
+          "p95": 82.79,
+          "max": 98.25
+        },
+        "insideFraction": 0.595
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 434,
+      "map": 447,
+      "name": "St Albans City Race 2025",
+      "date": "2025-10-26",
+      "imageSize": [
+        4096,
+        2898
+      ],
+      "upscale": 1.4686267479383293,
+      "referenceFeatures": 7695,
+      "referenceSha256": "ceb794f5559a55863d5d9369476bcc34dcf17e266934ea776e051d7a4441dab4",
+      "elapsedSec": 58.8,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 4.93,
+      "truthErrorM": {
+        "all": {
+          "median": 3.13,
+          "p95": 4.25,
+          "max": 4.87
+        },
+        "insideHull": {
+          "median": 3.16,
+          "p95": 4.23,
+          "max": 4.64
+        },
+        "insideFraction": 0.917
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 450,
+      "map": 461,
+      "name": "Welwyn Garden City Urban Race",
+      "date": "2026-10-25",
+      "imageSize": [
+        2940,
+        4096
+      ],
+      "upscale": 1.104936606420286,
+      "referenceFeatures": 9355,
+      "referenceSha256": "b86ea4ed77717455b458db20f941b9cc5b1f79b5d17209d539a2e69361308897",
+      "elapsedSec": 36.1,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 23.23,
+      "truthErrorM": {
+        "all": {
+          "median": 1718.28,
+          "p95": 2714.85,
+          "max": 3252.03
+        },
+        "insideHull": {
+          "median": 857.41,
+          "p95": 1690.99,
+          "max": 1954.51
+        },
+        "insideFraction": 0.122
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 387,
+      "map": 401,
+      "name": "Welwyn Garden City Race 2022",
+      "date": "2022-05-08",
+      "imageSize": [
+        3367,
+        4096
+      ],
+      "upscale": 1.228922892289229,
+      "referenceFeatures": 10379,
+      "referenceSha256": "9959fd8070d5aa9993646c8bc40c37659f787cef01e05410bd54ccf1bc3bb084",
+      "elapsedSec": 55.9,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 21.5,
+      "truthErrorM": {
+        "all": {
+          "median": 1057.55,
+          "p95": 1741.22,
+          "max": 2050.39
+        },
+        "insideHull": {
+          "median": 1083.13,
+          "p95": 1720.1,
+          "max": 1989.8
+        },
+        "insideFraction": 0.512
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 430,
+      "map": 443,
+      "name": "Moneyhole Park Saturday Series",
+      "date": "2025-06-07",
+      "imageSize": [
+        4096,
+        2909
+      ],
+      "upscale": 2.4222353636901244,
+      "referenceFeatures": 5324,
+      "referenceSha256": "f54b206bff36c305f1c633d6cde0f5b168a40c8e777552ba8ebfaa88dd9fb731",
+      "elapsedSec": 13.5,
+      "failures": [],
+      "method": "building_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 17.73,
+      "truthErrorM": {
+        "all": {
+          "median": 1203.88,
+          "p95": 1488.06,
+          "max": 1582.64
+        },
+        "insideHull": {
+          "median": 1233.45,
+          "p95": 1392.95,
+          "max": 1422.85
+        },
+        "insideFraction": 0.302
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 406,
+      "map": 421,
+      "name": "Panshanger Park: Jack of Herts",
+      "date": "2023-10-15",
+      "imageSize": [
+        4096,
+        2877
+      ],
+      "upscale": 1.8028169014084507,
+      "referenceFeatures": 1515,
+      "referenceSha256": "cff83d7ab802e5f2fd8822029d75f97fd882ca2c3ab682454829d1fddb828ee2",
+      "elapsedSec": 34.7,
+      "failures": [
+        "自动配准仅找到 6 组稳定地物，需补充同名点",
+        "印刷道路不足以进行网络配准"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 436,
+      "map": 448,
+      "name": "Panshanger Park West Saturday Series",
+      "date": "2025-12-06",
+      "imageSize": [
+        4096,
+        2877
+      ],
+      "upscale": 2.3995313415348565,
+      "referenceFeatures": 482,
+      "referenceSha256": "a6a20619c3c7dbba9ffded8f5a5f994f851ff970985c7b8340434a76fac6bfe3",
+      "elapsedSec": 26.4,
+      "failures": [
+        "自动配准仅找到 3 组稳定地物，需补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 365,
+      "map": 380,
+      "name": "Highfield Park",
+      "date": "2020-09-05",
+      "imageSize": [
+        2906,
+        4096
+      ],
+      "upscale": 1.8028169014084507,
+      "referenceFeatures": 3160,
+      "referenceSha256": "51fcf3264b9033e41d173dd5318cde19b484143dd6b5ef26dc9bf8f484b715b2",
+      "elapsedSec": 27.0,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 16.49,
+      "truthErrorM": {
+        "all": {
+          "median": 418.68,
+          "p95": 754.49,
+          "max": 871.64
+        },
+        "insideHull": {
+          "median": 266.81,
+          "p95": 454.73,
+          "max": 479.61
+        },
+        "insideFraction": 0.066
+      },
+      "outcome": "wrong"
+    }
+  ],
+  "summary": {
+    "correct": 2,
+    "wrong": 9,
+    "refused": 4
+  }
+}

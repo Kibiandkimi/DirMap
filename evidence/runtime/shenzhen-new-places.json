@@ -1,0 +1,336 @@
+{
+  "checkedAt": "2026-11-04T03:08:11Z",
+  "scope": "First registration of degraded sprint sheets of Shenzhen places DirMap never saw.\n\nThe next classes go to parks like 大沙河公园: a new place each time, drawn in\nthe same sprint style. For each listed place this downloads the OSM features\naround it, renders a sheet in that style and deliberately damages it the way\nreal sheets differ from OSM: a quarter of the footpaths missing, paths that\nOSM lacks, a fifth of the roofs missing, smooth mapping distortion of a few\nmetres, vegetation and contour clutter, course circles and JPEG compression,\nat a random scale and a small rotation. The teacher's place is framed around\nthe sheet with an uneven margin. Recognition and automatic registration then\nrun exactly as for an upload, and the known rendering transform measures the\nresult.\n\nRendering from OSM is still more favourable than a real print. This checks\nthat the search and its checks generalise across places and OSM content; it\nis not a field accuracy measurement.",
+  "implementationSignature": "199a4ca5c0c6a70ca210d84877deb4ea843c079cfd8a755505f7403cab57c536",
+  "cases": [
+    {
+      "place": "莲花山公园",
+      "imageSize": [
+        2754,
+        3325
+      ],
+      "metresPerPixel": 0.3439,
+      "rotationDeg": 1.03,
+      "controls": 15,
+      "referenceFeatures": 445,
+      "detectedControls": 15,
+      "elapsedSec": 25.8,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 2.01,
+      "poseSupport": {
+        "value": 0.7962,
+        "layers": {
+          "building": 0.8365,
+          "water": 0.9417,
+          "path": 0.7397
+        },
+        "margin": 0.7962
+      },
+      "truthErrorM": {
+        "median": 2.18,
+        "p95": 4.77,
+        "max": 5.44
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "荔枝公园",
+      "imageSize": [
+        2038,
+        2425
+      ],
+      "metresPerPixel": 0.3598,
+      "rotationDeg": 0.29,
+      "controls": 15,
+      "referenceFeatures": 745,
+      "detectedControls": 15,
+      "elapsedSec": 27.0,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 5.16,
+      "poseSupport": {
+        "value": 0.777,
+        "layers": {
+          "building": 0.7888,
+          "path": 0.7646
+        },
+        "margin": 0.777
+      },
+      "truthErrorM": {
+        "median": 2.19,
+        "p95": 5.67,
+        "max": 7.07
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "中山公园（南山）",
+      "imageSize": [
+        2191,
+        2450
+      ],
+      "metresPerPixel": 0.3828,
+      "rotationDeg": 0.5,
+      "controls": 15,
+      "referenceFeatures": 412,
+      "detectedControls": 15,
+      "elapsedSec": 17.0,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 3.32,
+      "poseSupport": {
+        "value": 0.796,
+        "layers": {
+          "building": 0.8723,
+          "path": 0.7436
+        },
+        "margin": 0.796
+      },
+      "truthErrorM": {
+        "median": 1.95,
+        "p95": 4.22,
+        "max": 6.01
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "人才公园",
+      "imageSize": [
+        2929,
+        3251
+      ],
+      "metresPerPixel": 0.2955,
+      "rotationDeg": 2.71,
+      "controls": 12,
+      "referenceFeatures": 214,
+      "detectedControls": 12,
+      "elapsedSec": 25.9,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "道路匹配的独立核查证据不足，需补充同名点"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 1.27,
+      "poseSupport": {
+        "value": 0.6684,
+        "layers": {
+          "building": 0.8343,
+          "path": 0.6196
+        },
+        "margin": 0.3453
+      },
+      "truthErrorM": {
+        "median": 9.14,
+        "p95": 15.02,
+        "max": 17.44
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "香蜜公园",
+      "imageSize": [
+        1802,
+        2104
+      ],
+      "metresPerPixel": 0.3855,
+      "rotationDeg": -1.81,
+      "controls": 12,
+      "referenceFeatures": 184,
+      "detectedControls": 12,
+      "elapsedSec": 32.3,
+      "failures": [
+        "自动配准仅找到 6 组稳定地物，需补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 9.94,
+      "poseSupport": {
+        "value": 0.8352,
+        "layers": {
+          "building": 0.8897,
+          "path": 0.8063
+        },
+        "margin": 0.5154
+      },
+      "truthErrorM": {
+        "median": 3.84,
+        "p95": 6.92,
+        "max": 8.39
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "洪湖公园",
+      "imageSize": [
+        2906,
+        3235
+      ],
+      "metresPerPixel": 0.2935,
+      "rotationDeg": -1.88,
+      "controls": 15,
+      "referenceFeatures": 320,
+      "detectedControls": 15,
+      "elapsedSec": 56.2,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "building_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 1.74,
+      "poseSupport": {
+        "value": 0.8129,
+        "layers": {
+          "building": 0.9059,
+          "path": 0.761
+        },
+        "margin": 0.8129
+      },
+      "truthErrorM": {
+        "median": 3.65,
+        "p95": 7.3,
+        "max": 8.72
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "南方科技大学",
+      "imageSize": [
+        3574,
+        4245
+      ],
+      "metresPerPixel": 0.2926,
+      "rotationDeg": 1.06,
+      "controls": 15,
+      "referenceFeatures": 731,
+      "detectedControls": 15,
+      "elapsedSec": 39.4,
+      "failures": [],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 3.34,
+      "poseSupport": {
+        "value": 0.8236,
+        "layers": {
+          "building": 0.8893,
+          "water": 0.9133,
+          "path": 0.7118
+        },
+        "margin": 0.8212
+      },
+      "truthErrorM": {
+        "median": 0.9,
+        "p95": 1.84,
+        "max": 2.31
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "深圳湾公园（红树林段）",
+      "imageSize": [
+        3511,
+        2576
+      ],
+      "metresPerPixel": 0.3208,
+      "rotationDeg": -0.03,
+      "controls": 15,
+      "referenceFeatures": 210,
+      "detectedControls": 15,
+      "elapsedSec": 27.6,
+      "failures": [
+        "缺少可匹配水体。请补充建筑/路口同名点，或导入校园参考。",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 3.13,
+      "poseSupport": {
+        "value": 0.7117,
+        "layers": {
+          "building": 0.3214,
+          "path": 0.7747
+        },
+        "margin": 0.3106
+      },
+      "truthErrorM": {
+        "median": 2.48,
+        "p95": 3.39,
+        "max": 3.71
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "笔架山公园",
+      "imageSize": [
+        2466,
+        2961
+      ],
+      "metresPerPixel": 0.3916,
+      "rotationDeg": 1.8,
+      "controls": 15,
+      "referenceFeatures": 799,
+      "detectedControls": 15,
+      "elapsedSec": 15.4,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 4.02,
+      "poseSupport": {
+        "value": 0.7368,
+        "layers": {
+          "building": 0.7474,
+          "path": 0.735
+        },
+        "margin": 0.7368
+      },
+      "truthErrorM": {
+        "median": 1.09,
+        "p95": 2.15,
+        "max": 2.51
+      },
+      "outcome": "correct"
+    },
+    {
+      "place": "东湖公园",
+      "imageSize": [
+        2632,
+        2891
+      ],
+      "metresPerPixel": 0.3688,
+      "rotationDeg": -2.4,
+      "controls": 15,
+      "referenceFeatures": 360,
+      "detectedControls": 15,
+      "elapsedSec": 17.0,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 2.72,
+      "poseSupport": {
+        "value": 0.661,
+        "layers": {
+          "building": 0.892,
+          "path": 0.5433
+        },
+        "margin": 0.661
+      },
+      "truthErrorM": {
+        "median": 3.28,
+        "p95": 7.63,
+        "max": 8.73
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 10,
+    "wrong": 0,
+    "refused": 0,
+    "reference_unavailable": 0
+  }
+}

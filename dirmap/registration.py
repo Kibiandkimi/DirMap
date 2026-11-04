@@ -232,9 +232,18 @@ def partial_feature_corner_matches(matcher, matrix, width, height):
     must agree on one reference object, edge direction and physical length.
     This avoids the centroid bias of partially visible stadium pitches.
     """
-    scale = math.sqrt(abs(np.linalg.det(matrix[:, :2])))
+    determinant = abs(np.linalg.det(matrix[:, :2]))
+    scale = math.sqrt(determinant)
     result = []
     for kind in ('building', 'pitch'):
+        targets = matcher.target[kind]
+        if not targets:
+            continue
+        # Only targets within their own centre-distance limit can pass; the
+        # tree finds them without testing every object of the place.
+        centres = cKDTree([target['center'] for target in targets])
+        reach = max(60., 1.5*math.sqrt(max(target['area'] for target in targets)))
+        reference_corners_of = {}
         for feature in matcher.source[kind]:
             raw = np.array(feature['points'])
             clipped = np.any(raw[:, 0] <= 2) or np.any(raw[:, 1] <= 2) or np.any(raw[:, 0] >= width-3) or np.any(raw[:, 1] >= height-3)
@@ -246,13 +255,17 @@ def partial_feature_corner_matches(matcher, matrix, width, height):
             world = affine_points(matrix, corners)
             projected_outline = affine_points(matrix, raw)
             options = []
-            for target in matcher.target[kind]:
-                area_ratio = feature['area']*abs(np.linalg.det(matrix[:, :2]))/target['area']
+            middle = np.mean(world, axis=0)
+            for index in sorted(centres.query_ball_point(middle, reach)):
+                target = targets[index]
+                area_ratio = feature['area']*determinant/target['area']
                 if kind == 'building' and not clipped and area_ratio > .70:
                     continue  # a partial outline may end at an inset/photo, not the sheet border
-                if np.linalg.norm(np.mean(world, axis=0)-target['center']) > max(60, math.sqrt(target['area'])*1.5):
+                if np.linalg.norm(middle-target['center']) > max(60, math.sqrt(target['area'])*1.5):
                     continue
-                reference_corners = _corners(target['points'], 1.2)
+                if index not in reference_corners_of:
+                    reference_corners_of[index] = _corners(target['points'], 1.2)
+                reference_corners = reference_corners_of[index]
                 if len(reference_corners) < 2:
                     continue
                 distances, indexes = cKDTree(reference_corners).query(world)
@@ -356,9 +369,14 @@ def fit_observed_landmarks(pairs, extra):
                  'foldedTriangles': reg.folded, 'landmarks': fitting+validation}
 
 
-def auto_register(features, reference, width, height):
+def auto_register(features, reference, width, height, initial=None):
+    """Match observed roofs, water and pitches; `initial` skips the seeds."""
     matcher = Matcher(features, reference)
-    matrix, candidates = matcher.initial(width, height)
+    if initial is None:
+        matrix, candidates = matcher.initial(width, height)
+    else:
+        matrix, candidates = np.asarray(initial, float), 1
+        matcher.seed_kind = 'global'
     for tolerance in (45, 35, 28, 23):
         _, pairs = matcher.matches(matrix, max_distance=tolerance)
         if len(pairs) < 6:
@@ -420,12 +438,17 @@ def recover_boundary_buildings(image, reg, quality, reference):
     if not extra:
         return reg, quality
     validation = [dict(p) for p in quality['landmarks'] if p['purpose'] == 'validation']
+    recovered_ids = sorted({p['referenceId'] for p in extra})
+    fitting = [p for p in quality['landmarks'] if p['purpose'] == 'fit']+extra
+    if not validation:
+        # Leave-one-out checks (block correlation) describe the measured
+        # blocks, which the added roof corners do not change.
+        return updated, {**quality, 'fitCount': len(fitting), 'recoveredBoundaryObjectIds': recovered_ids,
+                         'landmarks': fitting}
     predicted, inside = updated.forward([p['pixel'] for p in validation], strict=False)
     errors = np.linalg.norm(predicted-np.array([p['local'] for p in validation]), axis=1)
     for point, error, valid in zip(validation, errors, inside):
         point.update(errorM=float(error), insideHull=bool(valid))
-    recovered_ids = sorted({p['referenceId'] for p in extra})
-    fitting = [p for p in quality['landmarks'] if p['purpose'] == 'fit']+extra
     return updated, {**quality, 'fitCount': len(fitting),
                      'fitObjectCount': len({p['referenceId'] for p in fitting}),
                      'validationInsideHull': int(inside.sum()),

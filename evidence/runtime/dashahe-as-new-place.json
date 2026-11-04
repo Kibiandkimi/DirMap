@@ -1,0 +1,264 @@
+{
+  "checkedAt": "2026-11-04T03:08:12Z",
+  "scope": "The real 大沙河 sheet registered as if its place were new.\n\n大沙河 was the first park sheet; its first automatic registration only\nworked once a park outline seed was added. Later sheets of new places will\nnot match a park outline as conveniently. This reruns recognition and the\nwhole automatic registration chain on the supplied sheet under conditions a\nnew place brings: no park outline in OSM, only part of the park printed\n(crops), a teacher's own viewport downloaded fresh from OSM instead of the\nbuilt-in reference, and JPEG/exposure damage on top.\n\nThe reviewed workbench registration of the unchanged sheet is the\ncomparison baseline. It is itself an automatic road fit (internal road P95\nabout 10 m), not survey truth: differences here measure consistency.",
+  "implementationSignature": "199a4ca5c0c6a70ca210d84877deb4ea843c079cfd8a755505f7403cab57c536",
+  "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "baselineMethod": "park_outline_road_network",
+  "stableWithinM": 12.0,
+  "viewportReferenceSha256": "e792e514c778df2301bfb01139ecf5841319fe5cdb3f58075eeff73b18cc7190",
+  "cases": [
+    {
+      "case": "original",
+      "reference": "builtin",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 57.8,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点"
+      ],
+      "method": "park_outline_road_network",
+      "reportedP95M": 10.52,
+      "poseSupport": {
+        "value": 0.3592,
+        "layers": {
+          "building": 0.4407,
+          "water": 0.0662,
+          "path": 0.3294
+        },
+        "margin": 0.3592
+      },
+      "calibratedControls": 32,
+      "differenceFromBaselineM": {
+        "median": 0.0,
+        "max": 0.0
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "no-park-outline",
+      "reference": "no-park",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 62.2,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 12.7,
+      "poseSupport": {
+        "value": 0.4707,
+        "layers": {
+          "building": 0.4686,
+          "water": 0.0475,
+          "path": 0.4714
+        },
+        "margin": 0.2764
+      },
+      "calibratedControls": 32,
+      "differenceFromBaselineM": {
+        "median": 1.71,
+        "max": 2.31
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "fresh-viewport",
+      "reference": "viewport",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 62.0,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 12.7,
+      "poseSupport": {
+        "value": 0.4707,
+        "layers": {
+          "building": 0.4686,
+          "water": 0.0475,
+          "path": 0.4714
+        },
+        "margin": 0.4707
+      },
+      "calibratedControls": 32,
+      "differenceFromBaselineM": {
+        "median": 1.71,
+        "max": 2.31
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "left-half",
+      "reference": "builtin",
+      "imageSize": [
+        2253,
+        2789
+      ],
+      "printedControls": 22,
+      "elapsedSec": 48.1,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 8.57,
+      "poseSupport": {
+        "value": 0.4257,
+        "layers": {
+          "building": 0.1593,
+          "water": 0.0046,
+          "path": 0.506
+        },
+        "margin": 0.4257
+      },
+      "calibratedControls": 22,
+      "differenceFromBaselineM": {
+        "median": 2.53,
+        "max": 3.17
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "right-half",
+      "reference": "builtin",
+      "imageSize": [
+        2253,
+        2789
+      ],
+      "printedControls": 17,
+      "elapsedSec": 50.4,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 7.77,
+      "poseSupport": {
+        "value": 0.4486,
+        "layers": {
+          "building": 0.6079,
+          "water": 0.0012,
+          "path": 0.395
+        },
+        "margin": 0.1727
+      },
+      "calibratedControls": 17,
+      "differenceFromBaselineM": {
+        "median": 4.23,
+        "max": 6.76
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "top-half",
+      "reference": "builtin",
+      "imageSize": [
+        4096,
+        1534
+      ],
+      "printedControls": 14,
+      "elapsedSec": 37.3,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "没有可核查的候选配准；仅 4 个图块与参照清晰吻合，不足以核查配准；全局搜索的候选位置缺少足够的道路可核对；自动配准仅找到 0 组稳定地物，需补充同名点；仅 0 个图块与参照清晰吻合，不足以核查配准；自动配准仅找到 1 组稳定地物，需补充同名点；仅 2 个图块与参照清晰吻合，不足以核查配准；仅 3 个图块与参照清晰吻合，不足以核查配准"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "case": "bottom-half",
+      "reference": "builtin",
+      "imageSize": [
+        4096,
+        1534
+      ],
+      "printedControls": 23,
+      "elapsedSec": 42.5,
+      "failures": [
+        "自动配准仅找到 7 组稳定地物，需补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "另一处位置与原图同样吻合（0.35，已选 0.25），请补充同名点确定位置"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "case": "centre",
+      "reference": "builtin",
+      "imageSize": [
+        2458,
+        1673
+      ],
+      "printedControls": 23,
+      "elapsedSec": 38.1,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "候选配准与参照的吻合度过低（0.17），请补充同名点"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "case": "jpeg-60-no-park",
+      "reference": "no-park",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 59.4,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 11.15,
+      "poseSupport": {
+        "value": 0.4572,
+        "layers": {
+          "building": 0.5722,
+          "water": 0.0997,
+          "path": 0.4233
+        },
+        "margin": 0.2202
+      },
+      "calibratedControls": 31,
+      "differenceFromBaselineM": {
+        "median": 4.61,
+        "max": 6.77
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "dim-80-no-park",
+      "reference": "no-park",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 79.9,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络",
+        "另一处位置与原图同样吻合（0.28，已选 0.32），请补充同名点确定位置"
+      ],
+      "outcome": "refused"
+    }
+  ],
+  "summary": {
+    "consistent": 6,
+    "inconsistent": 0,
+    "refused": 4
+  }
+}

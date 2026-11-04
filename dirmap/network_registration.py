@@ -139,6 +139,14 @@ def printed_paths(image, max_side=1400, *, diagnostics=None, crop_margins=True, 
             if diagnostics is not None:
                 diagnostics['pathValueFloor'] = round(value_floor, 2)
     if len(pixels) < 200:
+        # Some mapping software prints paving as a deeper tan (S about 80).
+        # Yellow open land stays excluded by its higher saturation; this is
+        # only tried when the usual beige paving is missing.
+        pale = (h >= 5) & (h <= 25) & (s >= 12) & (s <= 100)
+        pixels = centreline(floor)
+        if diagnostics is not None and len(pixels) >= 200:
+            diagnostics['pathSaturationMax'] = 100
+    if len(pixels) < 200:
         raise ValueError('印刷道路不足以进行网络配准')
     return pixels, footprint, ratio
 
@@ -306,15 +314,133 @@ def boundary_path_matches(matrix, pixels, tree, observed, roads, trusted_ids=())
              math.sqrt(best[matched[i]])) for i in keep]
 
 
-def road_network_register(image, reference, *, exposure_image=None):
-    extraction = {}
-    pixels, footprint, ratio = printed_paths(image, diagnostics=extraction, exposure_image=exposure_image)
+PARK_PATHS = ('footway', 'path', 'pedestrian', 'cycleway', 'steps', 'service')
+# A sheet found by global search may be urban: any printed way counts, except
+# ways a map never draws as paths on the ground.
+NOT_PATHS = ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'proposed', 'construction', 'platform',
+             'elevator', 'corridor', 'bus_stop', 'raceway')
+
+
+def _ways_within(reference, hull, types=None, excluded=()):
+    roads = []
+    for feature in sorted(reference, key=lambda f: f['id']):
+        highway = feature.get('tags', {}).get('highway')
+        if feature['kind'] != 'road' or (types is not None and highway not in types) or highway in excluded:
+            continue
+        points = sample_line(feature['points'])
+        inside = np.array([cv2.pointPolygonTest(hull, tuple(p), True) >= -15 for p in points])
+        if inside.sum() >= 4:
+            roads.append((feature['id'], points[inside]))
+    return roads
+
+
+def _holdout(roads, hull):
+    """Hold out whole interior ways, chosen from reference geometry only.
+
+    Holding out the only road along one map edge would shrink calibration
+    for an arbitrary split. This partition is fixed before looking at any
+    road matching residual or at a control's location.
+    """
+    interior = [key for key, points in roads if all(cv2.pointPolygonTest(hull, tuple(p), True) > 25 for p in points)]
+    holdout = set(interior[1::3])
+    return ([(key, points) for key, points in roads if key not in holdout],
+            [(key, points) for key, points in roads if key in holdout])
+
+
+def _fit_roads(initial, pixels, tree, fit):
+    """Fit a similarity to whole training ways; return its score and matrix."""
+    world = np.concatenate([p for _, p in fit])
+    weights = np.concatenate([np.full(len(p), math.sqrt(20/len(p))) for _, p in fit])
+
+    def residual(parameters):
+        matrix = matrix_of(parameters)
+        projected = (world-matrix[:, 2]) @ np.linalg.inv(matrix[:, :2]).T
+        _, near = tree.query(projected)
+        error = affine_points(matrix, pixels[near])-world
+        return (error*weights[:, None]).ravel()
+
+    fitted = least_squares(residual, initial, loss='soft_l1', f_scale=4., max_nfev=100,
+                           bounds=(initial-[.25, .2, 90, 90], initial+[.25, .2, 90, 90])).x
+    matrix = matrix_of(fitted)
+    projected = (world-matrix[:, 2]) @ np.linalg.inv(matrix[:, :2]).T
+    distance, _ = tree.query(projected)
+    return float(np.mean(np.minimum(distance*math.exp(fitted[1]), 25))), matrix
+
+
+def path_directions(pixels, tree):
+    """Unit direction of the printed centre line at each skeleton pixel."""
+    _, near = tree.query(pixels, k=min(9, len(pixels)))
+    offsets = pixels[near]-pixels[near].mean(axis=1, keepdims=True)
+    xx, xy, yy = (np.sum(offsets[..., 0]**2, axis=1), np.sum(offsets[..., 0]*offsets[..., 1], axis=1),
+                  np.sum(offsets[..., 1]**2, axis=1))
+    angle = .5*np.arctan2(2*xy, xx-yy)
+    return np.column_stack((np.cos(angle), np.sin(angle)))
+
+
+def oriented_support(matrix, pixels, tree, directions, roads, tolerance=8., degrees=25.):
+    """Share of way samples lying on a printed path running the same way.
+
+    In a park with paths every few tens of metres almost any pose puts a
+    way within 12 m of some printed path; following its direction as well
+    is what a wrong pose rarely achieves.
+    """
+    inverse = np.linalg.inv(matrix[:, :2])
+    scale = math.sqrt(abs(np.linalg.det(matrix[:, :2])))
+    hits = total = 0
+    for _, world in roads:
+        if len(world) < 2:
+            continue
+        projected = (world-matrix[:, 2]) @ inverse.T
+        distance, near = tree.query(projected)
+        heading = np.gradient(projected, axis=0)
+        heading /= np.maximum(np.linalg.norm(heading, axis=1)[:, None], 1e-9)
+        aligned = np.abs(np.sum(directions[near]*heading, axis=1)) >= math.cos(math.radians(degrees))
+        hits += int(np.sum((distance*scale <= tolerance) & aligned))
+        total += len(world)
+    return hits/max(1, total)
+
+
+def road_network_register(image, reference, *, exposure_image=None, seeds=None, paths=None):
+    """Align printed paths to the place's ways.
+
+    Without `seeds`, a park outline proposes scale and rotation. `seeds` are
+    coarse similarity poses (working pixels to local metres) from the
+    global search; each is fitted to the ways within its own projected
+    sheet outline instead. `paths` reuses an earlier `printed_paths` result
+    of the same image as (pixels, footprint, ratio, diagnostics).
+    """
+    if paths is None:
+        extraction = {}
+        pixels, footprint, ratio = printed_paths(image, diagnostics=extraction, exposure_image=exposure_image)
+    else:
+        pixels, footprint, ratio, extraction = paths
+        extraction = dict(extraction)
     tree = cKDTree(pixels)
+    options = []
+    directions = path_directions(pixels, tree) if seeds else None
+    for seed in seeds or []:
+        # Analysis pixels are working pixels times `ratio`.
+        seed = np.column_stack((np.asarray(seed, float)[:, :2]/ratio, np.asarray(seed, float)[:, 2]))
+        if np.linalg.det(seed[:, :2]) > 0:
+            continue  # a sheet is never mirrored
+        hull = affine_points(seed, footprint).astype(np.float32)
+        roads = _ways_within(reference, hull, excluded=NOT_PATHS)
+        if len(roads) < 8:
+            continue
+        fit, validation = _holdout(roads, hull)
+        if len(validation) < 2:
+            continue
+        score, matrix = _fit_roads(parameters_of(seed), pixels, tree, fit)
+        # Rank searched poses by direction-aware support of training ways.
+        support = oriented_support(matrix, pixels, tree, directions, fit)
+        options.append((1-support, score, matrix, fit, validation, None))
+    if seeds is not None and not options:
+        raise ValueError('全局搜索的候选位置缺少足够的道路可核对')
     source_shape = polygon_properties(footprint)
     source_outline = sample_line(np.vstack((footprint, footprint[0])), 12.)
-    parks = [f for f in reference if f['kind'] == 'green' and f.get('tags', {}).get('leisure') in ('park', 'recreation_ground')
-             and 10000 < f['area'] < 3_000_000 and max(np.ptp(f['points'], axis=0)) < 3500]
-    options = []
+    parks = [] if seeds is not None else [
+        f for f in reference if f['kind'] == 'green' and f.get('tags', {}).get('leisure') in ('park', 'recreation_ground')
+        and 10000 < f['area'] < 3_000_000 and max(np.ptp(f['points'], axis=0)) < 3500]
     for park in parks:
         hull = cv2.convexHull(np.asarray(park['points'], np.float32)).reshape(-1, 2)
         target_shape = polygon_properties(hull)
@@ -323,28 +449,12 @@ def road_network_register(image, reference, *, exposure_image=None):
             continue
         outline = sample_line(np.vstack((hull, hull[0])), 8.)
         outline_tree = cKDTree(outline)
-        roads = []
-        for feature in sorted(reference, key=lambda f: f['id']):
-            if feature['kind'] != 'road' or feature.get('tags', {}).get('highway') not in ('footway', 'path', 'pedestrian', 'cycleway', 'steps', 'service'):
-                continue
-            points = sample_line(feature['points'])
-            inside = np.array([cv2.pointPolygonTest(hull, tuple(p), True) >= -15 for p in points])
-            if inside.sum() >= 4:
-                roads.append((feature['id'], points[inside]))
+        roads = _ways_within(reference, hull, types=PARK_PATHS)
         if len(roads) < 8:
             continue
-        # Hold out whole interior ways. Holding out the only road along one
-        # map edge would otherwise shrink calibration for an arbitrary split.
-        # This partition uses reference geometry, before looking at any road
-        # matching residual or at a control's location.
-        interior = [key for key, points in roads if all(cv2.pointPolygonTest(hull, tuple(p), True) > 25 for p in points)]
-        holdout = set(interior[1::3])
-        fit = [(key, points) for key, points in roads if key not in holdout]
-        validation = [(key, points) for key, points in roads if key in holdout]
+        fit, validation = _holdout(roads, hull)
         if len(validation) < 2:
             continue
-        world = np.concatenate([p for _, p in fit])
-        weights = np.concatenate([np.full(len(p), math.sqrt(20/len(p))) for _, p in fit])
         a = principal_angle(footprint*np.array([1, -1]))
         b = principal_angle(hull)
         for turn in (0, math.pi/2, math.pi, 3*math.pi/2):
@@ -360,30 +470,16 @@ def road_network_register(image, reference, *, exposure_image=None):
 
             shaped = least_squares(outline_residual, initial, loss='soft_l1', f_scale=8., max_nfev=60,
                                    bounds=(initial-[.35, .3, 150, 150], initial+[.35, .3, 150, 150])).x
-
-            def residual(parameters):
-                matrix = matrix_of(parameters)
-                projected = (world-matrix[:, 2]) @ np.linalg.inv(matrix[:, :2]).T
-                _, near = tree.query(projected)
-                error = affine_points(matrix, pixels[near])-world
-                return (error*weights[:, None]).ravel()
-
-            fitted = least_squares(residual, shaped, loss='soft_l1', f_scale=4., max_nfev=100,
-                                   bounds=(shaped-[.25, .2, 90, 90], shaped+[.25, .2, 90, 90])).x
-            matrix = matrix_of(fitted)
-            projected = (world-matrix[:, 2]) @ np.linalg.inv(matrix[:, :2]).T
-            distance, _ = tree.query(projected)
-            error = distance*math.exp(fitted[1])
-            score = float(np.mean(np.minimum(error, 25)))
-            options.append((score, matrix, fit, validation, park['id']))
+            score, matrix = _fit_roads(shaped, pixels, tree, fit)
+            options.append((score, score, matrix, fit, validation, park['id']))
     if not options:
         raise ValueError('场地缺少可核对的公园轮廓与道路网络')
     options.sort(key=lambda candidate: candidate[0])
-    score, matrix, roads, validation, park_id = options[0]
+    rank, score, matrix, roads, validation, park_id = options[0]
     # Repeated rectangular paths can support two quite different positions.
     # Do not resolve that ambiguity using arbitrary candidate iteration order.
-    for alternative_score, alternative, *_ in options[1:]:
-        if alternative_score > score+max(1., score*.2):
+    for alternative_rank, _, alternative, *_ in options[1:]:
+        if alternative_rank > (rank+max(1., rank*.2) if seeds is None else rank+.1):
             break
         disagreement = np.linalg.norm(affine_points(matrix, footprint)-affine_points(alternative, footprint), axis=1)
         if np.median(disagreement) > 20:
@@ -439,7 +535,16 @@ def road_network_register(image, reference, *, exposure_image=None):
                 retained += 1
         refinement['retainedBoundaryPoints'] = retained
     way_errors = [p['errorM'] for p in checks]
-    if score > 9 or len(observations) < 16 or len({p['referenceId'] for p in checks}) < 2 or not way_errors or np.percentile(way_errors, 95) > 18:
+    # A searched pose is judged against other poses by the common support
+    # check; its own gate need not assume that most of the place's ways are
+    # printed as paving (forest-style paths are not), only that enough of
+    # them, and held-out ones, are.
+    fitted_ways = len({p['referenceId'] for p in observations})
+    checked_ways = len({p['referenceId'] for p in checks})
+    # A searched pose on a small sheet may have one matched held-out way:
+    # it is marked thin, and the common support check demands a wide margin.
+    thin = seeds is not None and checked_ways == 1
+    if (score > 9 if seeds is None else fitted_ways < 8) or len(observations) < 16 or (checked_ways < 2 and not thin) or not way_errors or np.percentile(way_errors, 95) > 18:
         raise ValueError('道路匹配的独立核查证据不足，需补充同名点')
     # Boundary ways are often only partly visible. They may add spatial
     # support after a stable fit, but cannot pull that fit or use held-out
@@ -469,7 +574,8 @@ def road_network_register(image, reference, *, exposure_image=None):
     _, inside = reg.forward([p['pixel'] for p in checks])
     for check, valid in zip(checks, inside):
         check['insideHull'] = bool(valid)
-    quality = {'state': 'needs_review', 'method': 'park_outline_road_network', 'parkReferenceId': park_id,
+    quality = {'state': 'needs_review', 'method': 'park_outline_road_network' if park_id else 'global_search_road_network',
+               **({'parkReferenceId': park_id} if park_id else {}),
                'fitCount': len(observations), 'fitObjectCount': len({p['referenceId'] for p in observations}),
                'validationCount': len(checks), 'validationObjectCount': len({p['referenceId'] for p in checks}),
                'validationOmittedWayIds': omitted_ways, 'validationTotalWays': len(validation),
@@ -477,12 +583,16 @@ def road_network_register(image, reference, *, exposure_image=None):
                'validationInsideHull': int(inside.sum()), 'medianErrorM': round(float(np.median(way_errors)), 2),
                'p95ErrorM': round(float(np.percentile(way_errors, 95)), 2), 'maxErrorM': round(float(max(way_errors)), 2),
                'foldedTriangles': 0, 'landmarks': observations+checks,
-               'validationScope': f'公园轮廓提出位置，再按道路形状对齐；内部留出 {len(validation)} 条道路，其中 {len(validation)-len(omitted_ways)} 条能对应。'
+               'validationScope': f'{"公园轮廓" if park_id else "全局搜索"}提出位置，再按道路形状对齐；内部留出 {len(validation)} 条道路，其中 {len(validation)-len(omitted_ways)} 条能对应。'
                                   '误差统计仅针对能对应的路段与原图道路中心线，仍需现场核对。'}
     if refinement:
         quality['roadRefinement'] = refinement
     if extraction:
         quality['pathExtraction'] = extraction
+    if seeds:
+        quality['orientedPathSupport'] = round(1-rank, 3)
+    if thin:
+        quality['thinValidation'] = True
     if boundary_matches:
         quality['boundaryPathSamples'] = len(boundary_matches)
         quality['boundaryPixelTolerance'] = .5

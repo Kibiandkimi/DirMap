@@ -29,6 +29,7 @@ from .images import read_map_image
 from .recognition import reconcile_controls
 from .sheet import cartographic_image, link_photos, save_photos, reconcile_photos
 from .network_registration import road_network_register
+from . import global_registration
 from .vision import TERRAIN_SCHEMA, analyze, colour_masks, read_image, save_analysis
 
 GRAPH_CACHE = {}
@@ -306,6 +307,49 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
     return state
 
 
+def geographic_registration(image, result, reference):
+    """Register a recognised sheet to its place's OSM reference, or refuse.
+
+    Seeded fits (a lake, a large roof, a park outline) are fast but can lock
+    onto a look-alike when a place is new. A global search proposes further
+    poses, and every candidate is judged by how well the whole sheet agrees
+    with the place at its final pose. A seeded result that agrees with the
+    best-supported pose is kept, so maps that registered before keep their
+    measured anchors.
+    """
+    failures = []
+    cartography = cartographic_image(image, result['sheetPhotos'])
+    established = []
+    try:
+        reg, quality = auto_register(result['features'], reference, result['width'], result['height'])
+        if result['controls'] and not reg.forward([c['pixel'] for c in result['controls']])[1].all():
+            reg, quality = recover_boundary_buildings(cartography, reg, quality, reference)
+        established.append((reg, quality))
+    except ValueError as exc:
+        failures.append(str(exc))
+    try:
+        reg, quality = road_network_register(cartography, reference, exposure_image=image)
+        established.append(recover_boundary_buildings(cartography, reg, quality, reference))
+    except ValueError as exc:
+        failures.append(str(exc))
+    try:
+        reg, quality = global_registration.register(image, cartography, result, reference, established=established)
+    except global_registration.NoEvidence as exc:
+        # Nothing on the sheet can be compared with the place; only a
+        # seeded result remains, as before the global check existed.
+        failures.append(str(exc))
+        return (*established[0], failures) if established else (None, None, failures)
+    except ValueError as exc:
+        failures.append(str(exc))
+        return None, None, failures
+    except Exception as exc:  # noqa: BLE001 - an unexpected fault must not cost the seeded result
+        failures.append(f'全局核查出错，沿用原自动配准：{type(exc).__name__}: {exc}'[:300])
+        return (*established[0], failures) if established else (None, None, failures)
+    if not any(reg is candidate for candidate, _ in established):
+        reg, quality = recover_boundary_buildings(cartography, reg, quality, reference)
+    return reg, quality, failures
+
+
 def _process_asset(asset_id, progress, directory, previous, operation_id=None, preserve_edits=True, preserve_registration=False):
     started = time.perf_counter()
     asset = store.get_asset(asset_id)
@@ -337,18 +381,9 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
         reg, quality = Registration.from_dict(previous['registration']), copy.deepcopy(previous['quality'])
     else:
         try:
-            geographic_reference = sites.reference(site['id'], frame)
-            reg, quality = auto_register(result['features'], geographic_reference, result['width'], result['height'])
-            if result['controls'] and not reg.forward([c['pixel'] for c in result['controls']])[1].all():
-                reg, quality = recover_boundary_buildings(cartographic_image(image, result['sheetPhotos']), reg, quality, geographic_reference)
+            reg, quality, failures = geographic_registration(image, result, sites.reference(site['id'], frame))
         except ValueError as exc:
             failures.append(str(exc))
-            try:
-                cartography = cartographic_image(image, result['sheetPhotos'])
-                reg, quality = road_network_register(cartography, sites.reference(site['id'], frame), exposure_image=image)
-                reg, quality = recover_boundary_buildings(cartography, reg, quality, sites.reference(site['id'], frame))
-            except ValueError as network_failure:
-                failures.append(str(network_failure))
     # Prefer direct geographic evidence. A low-resolution copy may inherit
     # more reliable detail from a higher-resolution source of the same map.
     bases = [] if keep_registration else [a for a in store.catalog() if a['id'] != asset_id and store.site_of(a) == site['id']]
