@@ -254,7 +254,10 @@ def operation_result(asset_id, operation_id):
     return None
 
 
-ARTIFACT_NAMES = {'terrain.npz', 'terrain.png', 'terrain-warp.png', 'blocked.png', 'overlay.png', 'working.jpg', 'sheet-photos.zip'}
+# Overlay previews of the places a refused registration still found.
+PLACE_PREVIEWS = ('place-1.png', 'place-2.png', 'place-3.png')
+ARTIFACT_NAMES = {'terrain.npz', 'terrain.png', 'terrain-warp.png', 'blocked.png', 'overlay.png', 'working.jpg', 'sheet-photos.zip',
+                  *PLACE_PREVIEWS}
 
 
 def artifact_path(state, name):

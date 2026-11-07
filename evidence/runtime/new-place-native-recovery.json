@@ -1,0 +1,518 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-05T12:24:04Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "d567e6aab8934d70906495ec87ee69034324b1f23c01347a83c4c1cd20b780fe",
+  "verifierSha256": "f1e7098c526f9e5d2e2416938b8f307728d77d8a43e69a2ec72e4b46f72bfd69",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 403,
+      "map": 418,
+      "name": "Nomansland Common GLOSS and Saturday Series",
+      "date": "2023-07-01",
+      "imageSize": [
+        1299,
+        1193
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "3966129e1bcdc77287ea7c7ccfed3556d15a6e05a566a6c8e16a670285a7874d",
+      "worldFile": [
+        [
+          1.840756477957657e-05,
+          5.335560436043896e-07,
+          -0.31960816268569
+        ],
+        [
+          3.3272591762781e-07,
+          -1.1411845944677778e-05,
+          51.80342116498
+        ]
+      ],
+      "referenceFeatures": 859,
+      "referenceSha256": "d9ddb555ce78129fa6d8ddedccc7ccb2be1a4ff97cf1211edceea654cb221550",
+      "elapsedSec": 80.6,
+      "failures": [
+        "缺少可匹配水体。请补充建筑/路口同名点，或导入校园参考。",
+        "印刷道路不足以进行网络配准"
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 6.55,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": -0.0059,
+            "metresPerPixel": 0.70082,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": -0.004,
+            "metresPerPixel": 0.1642,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.0806,
+            "metresPerPixel": 0.15181,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": -0.0344,
+            "metresPerPixel": 1.31263,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": -0.0694,
+            "metresPerPixel": 0.1642,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.06,
+            "metresPerPixel": 0.23371,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.0211,
+            "metresPerPixel": 1.53559,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.1717,
+            "metresPerPixel": 0.34595,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.0581,
+            "metresPerPixel": 0.1847,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.0709,
+            "metresPerPixel": 0.99749,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1507,
+            "metresPerPixel": 0.15789,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.0698,
+            "metresPerPixel": 1.86828,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2516,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2171,
+            "metresPerPixel": 0.33264,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.3015,
+            "metresPerPixel": 0.13496,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2252,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.4991,
+            "metresPerPixel": 1.2136,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2803,
+            "metresPerPixel": 0.22472,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.6028,
+            "metresPerPixel": 1.26215,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.3438,
+            "metresPerPixel": 0.45524,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.3398,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.3332,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.3176,
+            "metresPerPixel": 0.95913,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.3111,
+            "metresPerPixel": 0.81987,
+            "rotationDeg": -4.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 16,
+        "pathEvidence": "linear_ink",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 6.81,
+          "p95": 12.82,
+          "max": 15.08
+        },
+        "insideHull": {
+          "median": 6.75,
+          "p95": 11.29,
+          "max": 12.99
+        },
+        "insideFraction": 0.376,
+        "wholeImage": {
+          "median": 8.92,
+          "p95": 15.2,
+          "max": 17.42
+        },
+        "evaluationSamples": 202
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.5919,
+          "agreesWithChosen": true,
+          "truthMedianM": 6.8
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.5844,
+          "agreesWithChosen": true,
+          "truthMedianM": 5.56
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3061,
+          "agreesWithChosen": false,
+          "truthMedianM": 283.75
+        }
+      ],
+      "poseSupport": {
+        "value": 0.5919,
+        "layers": {
+          "building": 0.1398,
+          "path": 0.6801
+        },
+        "margin": 0.2481
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 404,
+      "map": 419,
+      "name": "Burnham Beeches Saturday Series",
+      "date": "2023-09-09",
+      "imageSize": [
+        2263,
+        1571
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "4520a790ad27da723d8cd53305c5944e2bb46c77b3e4e31792fac2dc75a55393",
+      "worldFile": [
+        [
+          1.8319694320791005e-05,
+          1.3163675283894537e-07,
+          -0.65197798293468
+        ],
+        [
+          8.528253380321204e-08,
+          -1.1417451282623217e-05,
+          51.565748378259
+        ]
+      ],
+      "referenceFeatures": 2306,
+      "referenceSha256": "a713029fdb7637c8321de94df34dbce57edc1f68a642dce3448323b259133603",
+      "elapsedSec": 959.5,
+      "failures": [
+        "印刷道路不足以进行网络配准",
+        "存在吻合度相近的不同位置（0.25 与 0.24），请补充同名点确定位置"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.2511,
+          "method": "global_search_road_network",
+          "p95ErrorM": 10.31,
+          "truthErrorM": {
+            "median": 2053.78,
+            "p95": 3166.69,
+            "max": 3516.72
+          }
+        },
+        {
+          "support": 0.2296,
+          "method": "global_search_road_network",
+          "p95ErrorM": 16.73,
+          "truthErrorM": {
+            "median": 2193.52,
+            "p95": 2664.53,
+            "max": 2878.09
+          }
+        },
+        {
+          "support": 0.2276,
+          "method": "global_search_road_network",
+          "p95ErrorM": 10.9,
+          "truthErrorM": {
+            "median": 2184.59,
+            "p95": 2651.93,
+            "max": 2842.23
+          }
+        }
+      ],
+      "correctPlaceOffered": null
+    },
+    {
+      "event": 414,
+      "map": 413,
+      "name": "Chipperfield Saturday Series",
+      "date": "2024-04-06",
+      "imageSize": [
+        1684,
+        1146
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "0d5367dffbe1b0e29865be055b14930e9e736ff1a7e36249ece2f3bdd1b13c47",
+      "worldFile": [
+        [
+          1.837261917578979e-05,
+          -3.841178121902594e-07,
+          -0.50415804504912
+        ],
+        [
+          -2.363229067701941e-07,
+          -1.1414712009600272e-05,
+          51.706756875392
+        ]
+      ],
+      "referenceFeatures": 341,
+      "referenceSha256": "543ef012ccbf3843c9c9a144568fe8d349abe4a590fa40584e042b0b077c6294",
+      "elapsedSec": 86.5,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 6.68,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.1402,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.1189,
+            "metresPerPixel": 0.31686,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.1659,
+            "metresPerPixel": 0.31686,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.1192,
+            "metresPerPixel": 0.21406,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": 0.173,
+            "metresPerPixel": 0.32953,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1993,
+            "metresPerPixel": 0.43364,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.1402,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.1659,
+            "metresPerPixel": 0.31686,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.1189,
+            "metresPerPixel": 0.31686,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.173,
+            "metresPerPixel": 0.32953,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1192,
+            "metresPerPixel": 0.21406,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": 0.1993,
+            "metresPerPixel": 0.43364,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.2304,
+            "metresPerPixel": 0.13905,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2119,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2312,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2075,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2293,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2109,
+            "metresPerPixel": 0.34272,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.3719,
+            "metresPerPixel": 1.25036,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2623,
+            "metresPerPixel": 0.24079,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.2609,
+            "metresPerPixel": 0.45099,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.2573,
+            "metresPerPixel": 0.22262,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.253,
+            "metresPerPixel": 3.74945,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.2523,
+            "metresPerPixel": 2.53299,
+            "rotationDeg": 1.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 16,
+        "pathEvidence": "linear_ink",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 24.09,
+          "p95": 38.13,
+          "max": 46.39
+        },
+        "insideHull": {
+          "median": 8.05,
+          "p95": 17.72,
+          "max": 19.23
+        },
+        "insideFraction": 0.045,
+        "wholeImage": {
+          "median": 24.09,
+          "p95": 38.13,
+          "max": 46.39
+        },
+        "evaluationSamples": 576
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3494,
+          "agreesWithChosen": true,
+          "truthMedianM": 24.09
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3471,
+          "agreesWithChosen": true,
+          "truthMedianM": 11.9
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.345,
+          "agreesWithChosen": true,
+          "truthMedianM": 18.51
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3447,
+          "agreesWithChosen": true,
+          "truthMedianM": 12.23
+        }
+      ],
+      "poseSupport": {
+        "value": 0.3494,
+        "layers": {
+          "building": -0.004,
+          "path": 0.492
+        },
+        "margin": 0.0871
+      },
+      "outcome": "wrong"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 1,
+    "refused": 1,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

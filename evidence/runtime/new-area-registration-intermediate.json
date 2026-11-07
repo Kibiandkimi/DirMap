@@ -1,0 +1,2084 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-04T10:28:50Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "962037474c1998e24962f5700dae477046a64a6ffe57ebb783d235cbcfa9ccb0",
+  "verifierSha256": "b122c4c72a5ca3f27324ec3dbe0724a467e04d150206b2b18784f2f699bee122",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "complete": true,
+  "cases": [
+    {
+      "event": 433,
+      "map": 446,
+      "name": "Wardown Park HH Sprint Champs 2025",
+      "date": "2025-09-02",
+      "imageSize": [
+        1906,
+        2750
+      ],
+      "upscale": 2.0,
+      "sourceSha256": "04ff2cca4ba0602eab5856cf4b1188a8747b1926261cbc6fc6a3e98a8cb596a4",
+      "worldFile": [
+        [
+          9.224614108677859e-06,
+          -2.0107349462545282e-07,
+          -0.4214218298794
+        ],
+        [
+          -1.2408266211927937e-07,
+          -5.707003668362632e-06,
+          51.8962319198
+        ]
+      ],
+      "referenceFeatures": 474,
+      "referenceSha256": "386cec00311360086c9ba1bd2550c5c70c918dd595789cfc7b82d1393ffa66ff",
+      "elapsedSec": 93.4,
+      "failures": [
+        "独立地物或覆盖范围不足，不能建立可核查的配准",
+        "道路匹配的独立核查证据不足，需补充同名点"
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 6.95,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.5894,
+            "metresPerPixel": 0.32332,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.3662,
+            "metresPerPixel": 0.27638,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.3646,
+            "metresPerPixel": 0.2457,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2146,
+            "metresPerPixel": 0.29893,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.1991,
+            "metresPerPixel": 0.28743,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2876,
+            "metresPerPixel": 0.40911,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.5894,
+            "metresPerPixel": 0.32332,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.3662,
+            "metresPerPixel": 0.27638,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.3646,
+            "metresPerPixel": 0.2457,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2905,
+            "metresPerPixel": 0.28743,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2765,
+            "metresPerPixel": 0.37824,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.1882,
+            "metresPerPixel": 0.27638,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.6442,
+            "metresPerPixel": 0.31089,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.3781,
+            "metresPerPixel": 0.25553,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.3687,
+            "metresPerPixel": 0.2457,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2994,
+            "metresPerPixel": 0.36369,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2988,
+            "metresPerPixel": 0.37824,
+            "rotationDeg": -4.5
+          },
+          {
+            "score": 0.2973,
+            "metresPerPixel": 0.28743,
+            "rotationDeg": -9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 12,
+        "pathEvidence": "expanded_paving",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.314924066985361,
+          "labels": 4,
+          "spanPx": 473.0,
+          "residualPx": 5.865784499054826,
+          "pixelBox": [
+            326,
+            2388,
+            799,
+            2459
+          ],
+          "used": true
+        }
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 3.04,
+          "p95": 5.25,
+          "max": 6.4
+        },
+        "insideHull": {
+          "median": 1.96,
+          "p95": 3.03,
+          "max": 3.32
+        },
+        "insideFraction": 0.32
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.6249,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.08
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.6056,
+          "agreesWithChosen": true,
+          "truthMedianM": 4.16
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2222,
+          "agreesWithChosen": false,
+          "truthMedianM": 45.42
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2222,
+          "agreesWithChosen": false,
+          "truthMedianM": 45.42
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2179,
+          "agreesWithChosen": false,
+          "truthMedianM": 671.87
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2092,
+          "agreesWithChosen": false,
+          "truthMedianM": 672.38
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.1929,
+          "agreesWithChosen": false,
+          "truthMedianM": 69.65
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.186,
+          "agreesWithChosen": false,
+          "truthMedianM": 718.38
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.134,
+          "agreesWithChosen": false,
+          "truthMedianM": 68.7
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.1014,
+          "agreesWithChosen": false,
+          "truthMedianM": 89.65
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.1014,
+          "agreesWithChosen": false,
+          "truthMedianM": 89.65
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0438,
+          "agreesWithChosen": false,
+          "truthMedianM": 144.31
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0354,
+          "agreesWithChosen": false,
+          "truthMedianM": 88.81
+        }
+      ],
+      "poseSupport": {
+        "value": 0.6249,
+        "layers": {
+          "building": 0.372,
+          "water": 0.9348,
+          "path": 0.5583
+        },
+        "margin": 0.2468
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 446,
+      "map": 456,
+      "name": "Highfield Park Saturday Series",
+      "date": "2026-05-23",
+      "imageSize": [
+        2906,
+        4096
+      ],
+      "upscale": 1.8028169014084507,
+      "sourceSha256": "da54a99beccfe9bce2eac0defce826669af12c9030d0fa1fe75495ad749ec366",
+      "worldFile": [
+        [
+          9.194086462655105e-06,
+          -2.1541535965669067e-07,
+          -0.30496961088266
+        ],
+        [
+          -1.331804435468256e-07,
+          -5.706798718311835e-06,
+          51.749261834048
+        ]
+      ],
+      "referenceFeatures": 3159,
+      "referenceSha256": "ba9372d73355a9bc59525a03518c1140f2e72ce67a2fd86b21a39dd8d415284e",
+      "elapsedSec": 87.1,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 5.63,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3803,
+            "metresPerPixel": 0.3573,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2611,
+            "metresPerPixel": 0.26108,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2472,
+            "metresPerPixel": 0.33035,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.243,
+            "metresPerPixel": 0.3573,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2404,
+            "metresPerPixel": 0.30543,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.236,
+            "metresPerPixel": 0.26108,
+            "rotationDeg": -7.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.3529790535028038,
+          "labels": 5,
+          "spanPx": 566.5,
+          "residualPx": 1.2000000000002728,
+          "pixelBox": [
+            2246,
+            133,
+            2813,
+            195
+          ],
+          "used": true
+        }
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 5.04,
+          "p95": 13.4,
+          "max": 16.78
+        },
+        "insideHull": {
+          "median": 2.54,
+          "p95": 8.48,
+          "max": 11.94
+        },
+        "insideFraction": 0.432
+      },
+      "alternatives": [
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.3779,
+          "agreesWithChosen": true,
+          "truthMedianM": 5.21
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3595,
+          "agreesWithChosen": true,
+          "truthMedianM": 1.4
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3579,
+          "agreesWithChosen": true,
+          "truthMedianM": 1.81
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.354,
+          "agreesWithChosen": true,
+          "truthMedianM": 4.41
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3494,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.7
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.2289,
+          "agreesWithChosen": false,
+          "truthMedianM": 96.27
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2154,
+          "agreesWithChosen": false,
+          "truthMedianM": 69.98
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2008,
+          "agreesWithChosen": false,
+          "truthMedianM": 1153.99
+        },
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.1011,
+          "agreesWithChosen": false,
+          "truthMedianM": 424.35
+        }
+      ],
+      "poseSupport": {
+        "value": 0.3779,
+        "layers": {
+          "building": 0.0038,
+          "water": 0.3527,
+          "path": 0.6336
+        },
+        "margin": 0.1168
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 343,
+      "map": 368,
+      "name": "Oaklands AGM Sprint",
+      "date": "2019-09-10",
+      "imageSize": [
+        2742,
+        1928
+      ],
+      "upscale": 2.0,
+      "sourceSha256": "3b7b7a2be9348d0acb293841ed0079f3939c15d157c8609ac93a884e690a6afc",
+      "worldFile": [
+        [
+          9.194426956644803e-06,
+          2.6497980377591157e-07,
+          -0.29483799651246
+        ],
+        [
+          1.649517644083519e-07,
+          -5.705974994818093e-06,
+          51.757382745715
+        ]
+      ],
+      "referenceFeatures": 795,
+      "referenceSha256": "9436e12b0d97ea5f03ffeb834a56b8b92294709f207cb7d5a91496bb0796de0a",
+      "elapsedSec": 19.6,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 11.02,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.5932,
+            "metresPerPixel": 0.31194,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.4399,
+            "metresPerPixel": 0.3947,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.4154,
+            "metresPerPixel": 0.35089,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.4119,
+            "metresPerPixel": 0.36492,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.4092,
+            "metresPerPixel": 0.44398,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.4068,
+            "metresPerPixel": 0.27731,
+            "rotationDeg": -13.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 0,
+        "pathEvidence": "paving",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.32048582363829414,
+          "labels": 4,
+          "spanPx": 468.5,
+          "residualPx": 2.2565705128195077,
+          "pixelBox": [
+            2192,
+            230,
+            2660,
+            283
+          ],
+          "used": true
+        }
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 1.77,
+          "p95": 3.03,
+          "max": 3.81
+        },
+        "insideHull": {
+          "median": 1.56,
+          "p95": 2.36,
+          "max": 2.73
+        },
+        "insideFraction": 0.637
+      },
+      "alternatives": [
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.5815,
+          "agreesWithChosen": true,
+          "truthMedianM": 1.47
+        }
+      ],
+      "poseSupport": {
+        "value": 0.5815,
+        "layers": {
+          "building": 0.6886,
+          "water": 0.4967,
+          "path": 0.5142
+        },
+        "margin": 0.1416
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 310,
+      "map": 332,
+      "name": "Habs AGM Sprint",
+      "date": "2018-09-04",
+      "imageSize": [
+        2592,
+        3664
+      ],
+      "upscale": 2.0,
+      "sourceSha256": "e71dcdc6c9d1ea0b7ae5ad14f604240923184ea8e9a9ccb2fcfff13cea89e236",
+      "worldFile": [
+        [
+          9.177927970779353e-06,
+          1.0765816720521309e-07,
+          -0.31882024146656
+        ],
+        [
+          6.742716589733278e-08,
+          -5.708073291486367e-06,
+          51.660030201076
+        ]
+      ],
+      "referenceFeatures": 477,
+      "referenceSha256": "9d369043362985d6c1a402ae1d9b62cfcc1eb8542af74cd32d4eab25e6529a0e",
+      "elapsedSec": 57.8,
+      "failures": [
+        "独立地物或覆盖范围不足，不能建立可核查的配准",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 4.29,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.5471,
+            "metresPerPixel": 0.31001,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.3485,
+            "metresPerPixel": 0.265,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.307,
+            "metresPerPixel": 0.20943,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.3058,
+            "metresPerPixel": 0.37717,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.2818,
+            "metresPerPixel": 0.06209,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": 0.279,
+            "metresPerPixel": 0.2756,
+            "rotationDeg": 10.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 5.1,
+          "p95": 10.65,
+          "max": 12.73
+        },
+        "insideHull": {
+          "median": 4.32,
+          "p95": 10.24,
+          "max": 11.55
+        },
+        "insideFraction": 0.599
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.5517,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.16
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.5486,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.61
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.5449,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.62
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.5435,
+          "agreesWithChosen": true,
+          "truthMedianM": 8.41
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.5399,
+          "agreesWithChosen": true,
+          "truthMedianM": 5.17
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.5336,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.52
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.5327,
+          "agreesWithChosen": true,
+          "truthMedianM": 4.74
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3016,
+          "agreesWithChosen": false,
+          "truthMedianM": 42.25
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.2967,
+          "agreesWithChosen": false,
+          "truthMedianM": 66.69
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.2044,
+          "agreesWithChosen": false,
+          "truthMedianM": 66.8
+        }
+      ],
+      "poseSupport": {
+        "value": 0.5399,
+        "layers": {
+          "building": 0.7148,
+          "water": -0.0171,
+          "path": 0.5456
+        },
+        "margin": 0.1914
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 274,
+      "map": 291,
+      "name": "De Havilland Campus AGM Sprint",
+      "date": "2017-09-05",
+      "imageSize": [
+        1399,
+        2261
+      ],
+      "upscale": 1.3,
+      "sourceSha256": "84354765cb58a37a50463283f2d70a79b0fef0842b32319e7c6bbc0713dda587",
+      "worldFile": [
+        [
+          6.130678369210065e-06,
+          1.7353931642322037e-07,
+          -0.25167018022954
+        ],
+        [
+          1.0786242007454896e-07,
+          -3.8040059758455037e-06,
+          51.764916720226
+        ]
+      ],
+      "referenceFeatures": 1627,
+      "referenceSha256": "45d002c39529f7406a0600d584ea2e296fa1a8250d336f332d5560f7ee943a60",
+      "elapsedSec": 57.9,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 6.98,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.6524,
+            "metresPerPixel": 0.32714,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.3477,
+            "metresPerPixel": 0.30245,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.3373,
+            "metresPerPixel": 0.39801,
+            "rotationDeg": -6.0
+          },
+          {
+            "score": 0.2787,
+            "metresPerPixel": 0.26888,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2619,
+            "metresPerPixel": 0.1049,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2578,
+            "metresPerPixel": 0.11799,
+            "rotationDeg": -9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 2.45,
+          "p95": 4.94,
+          "max": 5.6
+        },
+        "insideHull": {
+          "median": 2.54,
+          "p95": 4.65,
+          "max": 5.07
+        },
+        "insideFraction": 0.802
+      },
+      "alternatives": [
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.6752,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.45
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.6716,
+          "agreesWithChosen": true,
+          "truthMedianM": 1.95
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.654,
+          "agreesWithChosen": true,
+          "truthMedianM": 4.49
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.645,
+          "agreesWithChosen": true,
+          "truthMedianM": 5.32
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.6399,
+          "agreesWithChosen": true,
+          "truthMedianM": 4.05
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.5038,
+          "agreesWithChosen": false,
+          "truthMedianM": 15.32
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3233,
+          "agreesWithChosen": false,
+          "truthMedianM": 35.55
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2702,
+          "agreesWithChosen": false,
+          "truthMedianM": 77.97
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2451,
+          "agreesWithChosen": false,
+          "truthMedianM": 44.83
+        },
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": -0.0054,
+          "agreesWithChosen": false,
+          "truthMedianM": 303.63
+        }
+      ],
+      "poseSupport": {
+        "value": 0.6752,
+        "layers": {
+          "building": 0.8822,
+          "water": -0.0032,
+          "path": 0.5425
+        },
+        "margin": 0.1714
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 270,
+      "map": 287,
+      "name": "Park-O 2017 #3: Stanborough Park",
+      "date": "2017-08-15",
+      "imageSize": [
+        2075,
+        4096
+      ],
+      "upscale": 1.7746967071057191,
+      "sourceSha256": "7e5189f884079712a790ee7a45460acf8c4c5d93539fedbb0c5bd4780ca72bcd",
+      "worldFile": [
+        [
+          1.3808515443113771e-05,
+          1.4321970464038546e-07,
+          -0.22728162719909
+        ],
+        [
+          8.976105388785906e-08,
+          -8.561885780327516e-06,
+          51.796980582137
+        ]
+      ],
+      "referenceFeatures": 3845,
+      "referenceSha256": "e9af0905e4d13de9cc8c956a7aba01f8e26ac7a75132b3a62709346ec63cc721",
+      "elapsedSec": 89.9,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 13.69,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.5039,
+            "metresPerPixel": 0.52754,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.4096,
+            "metresPerPixel": 0.69421,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.3545,
+            "metresPerPixel": 0.41693,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.3573,
+            "metresPerPixel": 0.41693,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2871,
+            "metresPerPixel": 0.66751,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.5106,
+            "metresPerPixel": 0.52754,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.4251,
+            "metresPerPixel": 0.40089,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.4082,
+            "metresPerPixel": 0.69421,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.3624,
+            "metresPerPixel": 0.40089,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.362,
+            "metresPerPixel": 0.41693,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.3198,
+            "metresPerPixel": 0.66751,
+            "rotationDeg": 9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 8,
+        "pathEvidence": "text_filtered_paving",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.542004093183577,
+          "labels": 3,
+          "spanPx": 553.5,
+          "residualPx": 0.5000000000002274,
+          "pixelBox": [
+            1122,
+            2206,
+            1676,
+            2283
+          ],
+          "used": true
+        }
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 6.61,
+          "p95": 15.4,
+          "max": 17.48
+        },
+        "insideHull": {
+          "median": 8.33,
+          "p95": 14.71,
+          "max": 16.55
+        },
+        "insideFraction": 0.46
+      },
+      "alternatives": [
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4918,
+          "agreesWithChosen": true,
+          "truthMedianM": 6.52
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4692,
+          "agreesWithChosen": true,
+          "truthMedianM": 11.43
+        },
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.336,
+          "agreesWithChosen": false,
+          "truthMedianM": 481.06
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2486,
+          "agreesWithChosen": false,
+          "truthMedianM": 85.9
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2012,
+          "agreesWithChosen": false,
+          "truthMedianM": 94.74
+        }
+      ],
+      "poseSupport": {
+        "value": 0.4918,
+        "layers": {
+          "building": 0.5309,
+          "water": 0.8757,
+          "path": -0.0758
+        },
+        "margin": 0.0667
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 385,
+      "map": 399,
+      "name": "Cassiobury Park Saturday Series",
+      "date": "2022-04-02",
+      "imageSize": [
+        4096,
+        2883
+      ],
+      "upscale": 2.392523364485981,
+      "sourceSha256": "4c1bd4f569cb86f1821e099e16da9178c0738c71f28b0ac497382a69cb5463ea",
+      "worldFile": [
+        [
+          1.8356430667149534e-05,
+          -4.0205823146058627e-07,
+          -0.43109614010709
+        ],
+        [
+          -2.476550683406413e-07,
+          -1.1414387743567776e-05,
+          51.668330928366
+        ]
+      ],
+      "referenceFeatures": 10280,
+      "referenceSha256": "f642ac3db2634a8407e12d30b4617cfdc762ac49b26412fc9ee14042101af126",
+      "elapsedSec": 338.8,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "存在吻合度相近的不同位置（0.32 与 0.30），请补充同名点确定位置"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 418,
+      "map": 432,
+      "name": "Hatfield Urban Race",
+      "date": "2024-08-18",
+      "imageSize": [
+        4096,
+        2855
+      ],
+      "upscale": 1.5603809523809524,
+      "sourceSha256": "ff6f29641e17fdf09df74e2d8cedba778cac5cdbffaa0bfedf807e2a1ee1e182",
+      "worldFile": [
+        [
+          9.19489998469333e-06,
+          -2.2425007284152203e-07,
+          -0.24462921163133
+        ],
+        [
+          -1.3827486971454814e-07,
+          -5.706580514752459e-06,
+          51.754899817449
+        ]
+      ],
+      "referenceFeatures": 6382,
+      "referenceSha256": "e1c74d70a2cb556f38f2199b5bf1bed11e29cfde47302b68a4c2bdc7b00a6690",
+      "elapsedSec": 183.6,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 5.7,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.6511,
+            "metresPerPixel": 0.41076,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.5066,
+            "metresPerPixel": 0.49975,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.4418,
+            "metresPerPixel": 0.49975,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.4404,
+            "metresPerPixel": 0.58464,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.4295,
+            "metresPerPixel": 0.41076,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.3792,
+            "metresPerPixel": 0.33762,
+            "rotationDeg": 3.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 2.51,
+          "p95": 3.77,
+          "max": 4.48
+        },
+        "insideHull": {
+          "median": 2.37,
+          "p95": 3.36,
+          "max": 4.41
+        },
+        "insideFraction": 0.783
+      },
+      "alternatives": [
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.7009,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.69
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.6949,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.75
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.6865,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.47
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4539,
+          "agreesWithChosen": false,
+          "truthMedianM": 68.82
+        },
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.4271,
+          "agreesWithChosen": false,
+          "truthMedianM": 52.9
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3996,
+          "agreesWithChosen": false,
+          "truthMedianM": 89.97
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3825,
+          "agreesWithChosen": false,
+          "truthMedianM": 179.89
+        }
+      ],
+      "poseSupport": {
+        "value": 0.7009,
+        "layers": {
+          "building": 0.7444,
+          "water": 0.7011,
+          "path": 0.6591
+        },
+        "margin": 0.1943
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 434,
+      "map": 447,
+      "name": "St Albans City Race 2025",
+      "date": "2025-10-26",
+      "imageSize": [
+        4096,
+        2898
+      ],
+      "upscale": 1.4686267479383293,
+      "sourceSha256": "5414ccbe1e394ea15cf1320df9c576e995cd6eb9c4b383577a5c877e03156e28",
+      "worldFile": [
+        [
+          9.194192765062752e-06,
+          2.7014956512924175e-07,
+          -0.34908956053888
+        ],
+        [
+          1.686893313004826e-07,
+          -5.705931075517935e-06,
+          51.756547582128
+        ]
+      ],
+      "referenceFeatures": 7695,
+      "referenceSha256": "ceb794f5559a55863d5d9369476bcc34dcf17e266934ea776e051d7a4441dab4",
+      "elapsedSec": 64.7,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 4.93,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.6206,
+            "metresPerPixel": 0.43637,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.4849,
+            "metresPerPixel": 0.53091,
+            "rotationDeg": -6.0
+          },
+          {
+            "score": 0.4782,
+            "metresPerPixel": 0.78588,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": 0.4683,
+            "metresPerPixel": 0.67178,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.4601,
+            "metresPerPixel": 0.67178,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.4566,
+            "metresPerPixel": 0.51049,
+            "rotationDeg": -9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 0,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 3.13,
+          "p95": 4.25,
+          "max": 4.87
+        },
+        "insideHull": {
+          "median": 3.16,
+          "p95": 4.23,
+          "max": 4.64
+        },
+        "insideFraction": 0.917
+      },
+      "alternatives": [
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.6266,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.13
+        }
+      ],
+      "poseSupport": {
+        "value": 0.6266,
+        "layers": {
+          "building": 0.7005,
+          "water": 0.7182,
+          "path": 0.527
+        },
+        "margin": 0.1417
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 450,
+      "map": 461,
+      "name": "Welwyn Garden City Urban Race",
+      "date": "2026-10-25",
+      "imageSize": [
+        2940,
+        4096
+      ],
+      "upscale": 1.104936606420286,
+      "sourceSha256": "676880b7ddca58369cb8ac5923da0eb7a52643293fcc5fea3e4781e0d3cf705e",
+      "worldFile": [
+        [
+          9.210741247215333e-06,
+          1.2815758179118263e-08,
+          -0.21743437153014
+        ],
+        [
+          8.885624575014762e-09,
+          -5.708183538440739e-06,
+          51.819570062468
+        ]
+      ],
+      "referenceFeatures": 9355,
+      "referenceSha256": "b86ea4ed77717455b458db20f941b9cc5b1f79b5d17209d539a2e69361308897",
+      "elapsedSec": 122.8,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 6.51,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4632,
+            "metresPerPixel": 0.57943,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.3798,
+            "metresPerPixel": 0.85769,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.3594,
+            "metresPerPixel": 0.67785,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.3579,
+            "metresPerPixel": 0.67785,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.3525,
+            "metresPerPixel": 0.47625,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.347,
+            "metresPerPixel": 0.45793,
+            "rotationDeg": -7.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 2.26,
+          "p95": 5.97,
+          "max": 7.7
+        },
+        "insideHull": {
+          "median": 1.96,
+          "p95": 3.25,
+          "max": 3.94
+        },
+        "insideFraction": 0.675
+      },
+      "alternatives": [
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4549,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.86
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4538,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.86
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4522,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.67
+        },
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.1816,
+          "agreesWithChosen": false,
+          "truthMedianM": 1718.28
+        }
+      ],
+      "poseSupport": {
+        "value": 0.4549,
+        "layers": {
+          "building": 0.5714,
+          "path": 0.3496
+        },
+        "margin": 0.0751
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 387,
+      "map": 401,
+      "name": "Welwyn Garden City Race 2022",
+      "date": "2022-05-08",
+      "imageSize": [
+        3367,
+        4096
+      ],
+      "upscale": 1.228922892289229,
+      "sourceSha256": "f34abd13913ebc5a7b943ca748877b9f3f2ff0faf030a74ff35e58cc45e0d0c4",
+      "worldFile": [
+        [
+          9.210314701656934e-06,
+          1.2520357164710594e-08,
+          -0.21579756575005
+        ],
+        [
+          8.732939782510876e-09,
+          -5.708181879389528e-06,
+          51.817495717811
+        ]
+      ],
+      "referenceFeatures": 10379,
+      "referenceSha256": "9959fd8070d5aa9993646c8bc40c37659f787cef01e05410bd54ccf1bc3bb084",
+      "elapsedSec": 142.9,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 8.75,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4014,
+            "metresPerPixel": 0.51956,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.3287,
+            "metresPerPixel": 0.48036,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.3152,
+            "metresPerPixel": 0.60781,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": 0.3053,
+            "metresPerPixel": 0.60781,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2996,
+            "metresPerPixel": 0.60781,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.2873,
+            "metresPerPixel": 0.68371,
+            "rotationDeg": 12.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.5132709043833334,
+          "labels": 3,
+          "spanPx": 194.66666666666663,
+          "residualPx": 3.2444444444444116,
+          "pixelBox": [
+            168,
+            1465,
+            362,
+            1508
+          ],
+          "used": true
+        }
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 2.25,
+          "p95": 5.21,
+          "max": 6.49
+        },
+        "insideHull": {
+          "median": 1.9,
+          "p95": 3.12,
+          "max": 4.58
+        },
+        "insideFraction": 0.696
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3974,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.59
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3944,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.24
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.3914,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.53
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.3865,
+          "agreesWithChosen": true,
+          "truthMedianM": 1.92
+        }
+      ],
+      "poseSupport": {
+        "value": 0.3914,
+        "layers": {
+          "building": 0.4812,
+          "water": -0.0051,
+          "path": 0.3466
+        },
+        "margin": 0.0627
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 430,
+      "map": 443,
+      "name": "Moneyhole Park Saturday Series",
+      "date": "2025-06-07",
+      "imageSize": [
+        4096,
+        2909
+      ],
+      "upscale": 2.4222353636901244,
+      "sourceSha256": "b3d97e80e5d0cf768374ed6c1ead991d8e6f3ad4550db683fd3f090c6349ac31",
+      "worldFile": [
+        [
+          1.8413251663808406e-05,
+          1.737603247044083e-07,
+          -0.17419746742058
+        ],
+        [
+          1.1017175340285478e-07,
+          -1.1415773490427507e-05,
+          51.801797263838
+        ]
+      ],
+      "referenceFeatures": 5324,
+      "referenceSha256": "f54b206bff36c305f1c633d6cde0f5b168a40c8e777552ba8ebfaa88dd9fb731",
+      "elapsedSec": 217.6,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络",
+        "存在吻合度相近的不同位置（0.34 与 0.32），请补充同名点确定位置"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 406,
+      "map": 421,
+      "name": "Panshanger Park: Jack of Herts",
+      "date": "2023-10-15",
+      "imageSize": [
+        4096,
+        2877
+      ],
+      "upscale": 1.8028169014084507,
+      "sourceSha256": "a7fa587dd1a545fd5d8a035e02cf9fda7fbb364dd9311fb8184208e41c9213d2",
+      "worldFile": [
+        [
+          1.8409263865453338e-05,
+          -4.781119233396025e-07,
+          -0.14779955092327
+        ],
+        [
+          -2.9328230942094695e-07,
+          -1.1412339300125013e-05,
+          51.805558453217
+        ]
+      ],
+      "referenceFeatures": 1515,
+      "referenceSha256": "cff83d7ab802e5f2fd8822029d75f97fd882ca2c3ab682454829d1fddb828ee2",
+      "elapsedSec": 235.2,
+      "failures": [
+        "自动配准仅找到 6 组稳定地物，需补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络",
+        "存在吻合度相近的不同位置（0.23 与 0.22），请补充同名点确定位置"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 436,
+      "map": 448,
+      "name": "Panshanger Park West Saturday Series",
+      "date": "2025-12-06",
+      "imageSize": [
+        4096,
+        2877
+      ],
+      "upscale": 2.3995313415348565,
+      "sourceSha256": "2e21b0771ed4c274e3aa96450a7e066e546725878deb4247d0d5f5b1e8b1babd",
+      "worldFile": [
+        [
+          1.8409714904587e-05,
+          -4.7498565135946707e-07,
+          -0.15010088536325
+        ],
+        [
+          -2.92111616874038e-07,
+          -1.1412415733943615e-05,
+          51.806388685629
+        ]
+      ],
+      "referenceFeatures": 482,
+      "referenceSha256": "a6a20619c3c7dbba9ffded8f5a5f994f851ff970985c7b8340434a76fac6bfe3",
+      "elapsedSec": 122.5,
+      "failures": [
+        "自动配准仅找到 3 组稳定地物，需补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 8.19,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.2995,
+            "metresPerPixel": 0.5243,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.1895,
+            "metresPerPixel": 0.50413,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2554,
+            "metresPerPixel": 0.63789,
+            "rotationDeg": -4.5
+          },
+          {
+            "score": 0.2529,
+            "metresPerPixel": 0.50413,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.1712,
+            "metresPerPixel": 0.43094,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.3013,
+            "metresPerPixel": 0.50413,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.2021,
+            "metresPerPixel": 0.50413,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.2699,
+            "metresPerPixel": 0.63789,
+            "rotationDeg": -4.5
+          },
+          {
+            "score": 0.1772,
+            "metresPerPixel": 0.4661,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.5028,
+            "metresPerPixel": 0.5243,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2152,
+            "metresPerPixel": 0.54527,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.265,
+            "metresPerPixel": 0.68994,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.211,
+            "metresPerPixel": 0.63789,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2372,
+            "metresPerPixel": 0.68994,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.5002,
+            "metresPerPixel": 0.5243,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2916,
+            "metresPerPixel": 0.71754,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2689,
+            "metresPerPixel": 0.58977,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.2584,
+            "metresPerPixel": 0.61336,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.2534,
+            "metresPerPixel": 0.39842,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2478,
+            "metresPerPixel": 0.4661,
+            "rotationDeg": -12.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 16,
+        "pathEvidence": "linear_ink",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.5386705054679701,
+          "labels": 4,
+          "spanPx": 554.0,
+          "residualPx": 4.178879310344996,
+          "pixelBox": [
+            230,
+            2144,
+            784,
+            2215
+          ],
+          "used": true
+        }
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 3.27,
+          "p95": 6.04,
+          "max": 7.6
+        },
+        "insideHull": {
+          "median": 2.75,
+          "p95": 5.31,
+          "max": 6.65
+        },
+        "insideFraction": 0.427
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.5273,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.3
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.5165,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.83
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2475,
+          "agreesWithChosen": false,
+          "truthMedianM": 226.53
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2354,
+          "agreesWithChosen": false,
+          "truthMedianM": 563.22
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2268,
+          "agreesWithChosen": false,
+          "truthMedianM": 168.87
+        }
+      ],
+      "poseSupport": {
+        "value": 0.5273,
+        "layers": {
+          "building": 0.0396,
+          "water": 0.8042,
+          "path": 0.5455
+        },
+        "margin": 0.2357
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 365,
+      "map": 380,
+      "name": "Highfield Park",
+      "date": "2020-09-05",
+      "imageSize": [
+        2906,
+        4096
+      ],
+      "upscale": 1.8028169014084507,
+      "sourceSha256": "d8789e6763545adbcae9407c16ae29e5b030608523676dd1d3d23bf23b3d47d7",
+      "worldFile": [
+        [
+          9.194086460657565e-06,
+          -2.1541545079224537e-07,
+          -0.30496888686904
+        ],
+        [
+          -1.3318050000235511e-07,
+          -5.706798714346306e-06,
+          51.74926182277
+        ]
+      ],
+      "referenceFeatures": 3160,
+      "referenceSha256": "51fcf3264b9033e41d173dd5318cde19b484143dd6b5ef26dc9bf8f484b715b2",
+      "elapsedSec": 143.9,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 6.12,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.0519,
+            "metresPerPixel": 0.43487,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.0939,
+            "metresPerPixel": 0.35743,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.1097,
+            "metresPerPixel": 0.30554,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.1076,
+            "metresPerPixel": 0.27162,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.0541,
+            "metresPerPixel": 0.3866,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.1808,
+            "metresPerPixel": 0.30554,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.3172,
+            "metresPerPixel": 0.35743,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.1425,
+            "metresPerPixel": 0.28249,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.1695,
+            "metresPerPixel": 0.35743,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.187,
+            "metresPerPixel": 0.45227,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.1516,
+            "metresPerPixel": 0.27162,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.4209,
+            "metresPerPixel": 0.35743,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2612,
+            "metresPerPixel": 0.37173,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2423,
+            "metresPerPixel": 0.41815,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2379,
+            "metresPerPixel": 0.3866,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.2312,
+            "metresPerPixel": 0.30554,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2209,
+            "metresPerPixel": 0.35743,
+            "rotationDeg": -9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 12,
+        "pathEvidence": "expanded_paving",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.3531069924161798,
+          "labels": 5,
+          "spanPx": 566.5,
+          "residualPx": 0.30014124293802524,
+          "pixelBox": [
+            2246,
+            136,
+            2813,
+            195
+          ],
+          "used": true
+        }
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 3.03,
+          "p95": 5.55,
+          "max": 6.4
+        },
+        "insideHull": {
+          "median": 1.82,
+          "p95": 5.13,
+          "max": 6.24
+        },
+        "insideFraction": 0.229
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4186,
+          "agreesWithChosen": true,
+          "truthMedianM": 1.31
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.41,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.05
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4042,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.24
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3975,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.46
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.3243,
+          "agreesWithChosen": false,
+          "truthMedianM": 43.28
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2493,
+          "agreesWithChosen": false,
+          "truthMedianM": 68.98
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2205,
+          "agreesWithChosen": false,
+          "truthMedianM": 135.61
+        },
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.0632,
+          "agreesWithChosen": false,
+          "truthMedianM": 418.68
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.0576,
+          "agreesWithChosen": false,
+          "truthMedianM": 1335.41
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.0519,
+          "agreesWithChosen": false,
+          "truthMedianM": 1338.12
+        }
+      ],
+      "poseSupport": {
+        "value": 0.41,
+        "layers": {
+          "building": -0.0138,
+          "water": 0.4632,
+          "path": 0.5952
+        },
+        "margin": 0.0857
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 12,
+    "wrong": 0,
+    "refused": 3
+  },
+  "inputResolution": "classroom_scale",
+  "descriptionCorrection": "The existing cohort uses world-file information for viewport and resolution preparation, but not for matching. Numerical results and the recorded verifier hash are unchanged."
+}

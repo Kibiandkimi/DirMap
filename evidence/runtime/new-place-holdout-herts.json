@@ -1,0 +1,189 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-04T12:37:35Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "29c44c0dc88632671a09842a93f9a59fbaaac5ff19f255c47a939ad8448063c8",
+  "verifierSha256": "ef7392f5043f2f2295ef201afc4f5b7df10a6532e55d62481508bb078cf5fcad",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 378,
+      "map": 392,
+      "name": "British Schools Champs 2021: Stowe",
+      "date": "2021-11-21",
+      "imageSize": [
+        1594,
+        2354
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "84077170c9069ff2076d66f07ee57d3d8d40fab0888f13abcae8c1e6d8ba1ba2",
+      "worldFile": [
+        [
+          9.249921956273594e-06,
+          3.580677057774338e-07,
+          -1.0219121340498
+        ],
+        [
+          2.2145800439193153e-07,
+          -5.704460317756992e-06,
+          52.038290255395
+        ]
+      ],
+      "referenceFeatures": 592,
+      "referenceSha256": "159bca713a651dec91298e2d21191639546c138dde4ad14c214f518104368a81",
+      "elapsedSec": 31.4,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 11.91,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4449,
+            "metresPerPixel": 0.63845,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.3237,
+            "metresPerPixel": 0.63845,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.2914,
+            "metresPerPixel": 0.19685,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.2886,
+            "metresPerPixel": 0.1093,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.2807,
+            "metresPerPixel": 0.30304,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.2776,
+            "metresPerPixel": 0.36869,
+            "rotationDeg": -3.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 0,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 4.49,
+          "p95": 6.87,
+          "max": 7.69
+        },
+        "insideHull": {
+          "median": 4.54,
+          "p95": 6.07,
+          "max": 6.51
+        },
+        "insideFraction": 0.42
+      },
+      "alternatives": [
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.4698,
+          "agreesWithChosen": true,
+          "truthMedianM": 4.25
+        }
+      ],
+      "poseSupport": {
+        "value": 0.4698,
+        "layers": {
+          "building": 0.7305,
+          "water": 0.8505,
+          "path": 0.2057
+        },
+        "margin": 0.1461
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 437,
+      "map": 449,
+      "name": "Trent Park Boxing Day Score",
+      "date": "2025-12-26",
+      "imageSize": [
+        2292,
+        1651
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "2e2daf3776305ab8853b32183cb65ff66f58c1f5977ecea1828308c33e5172d3",
+      "worldFile": [
+        [
+          1.83571897385253e-05,
+          -3.141144238643168e-07,
+          -0.15417096867688
+        ],
+        [
+          -1.9215587521779725e-07,
+          -1.141478622895258e-05,
+          51.668562114339
+        ]
+      ],
+      "referenceFeatures": 4025,
+      "referenceSha256": "4a85aeff95ff00e4dd56a5278cfb071d309a094d0428db1df2262cc99b0d8bef",
+      "elapsedSec": 600.6,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "另一处位置与原图同样吻合（0.31，已选 0.35），请补充同名点确定位置"
+      ],
+      "outcome": "refused"
+    },
+    {
+      "event": 438,
+      "map": 450,
+      "name": "Sherrardspark Wood Saturday Series",
+      "date": "2026-01-03",
+      "imageSize": [
+        1217,
+        1728
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "d23a69f49532d84cc62fb2201ff3b6d7ea484b3d0a459ae44fa460a5bccc508f",
+      "worldFile": [
+        [
+          1.8420927756680348e-05,
+          1.8954184109954945e-07,
+          -0.22813149548057
+        ],
+        [
+          1.1923247740358775e-07,
+          -1.1415800732059065e-05,
+          51.820446956619
+        ]
+      ],
+      "referenceFeatures": 5754,
+      "referenceSha256": "5bcbeb4b7ceb30756675c274b1bb4f0674c2c361c3cdddc7f224156e87090d4a",
+      "elapsedSec": 431.0,
+      "failures": [
+        "独立地物或覆盖范围不足，不能建立可核查的配准",
+        "印刷道路不足以进行网络配准",
+        "存在吻合度相近的不同位置（0.24 与 0.20），请补充同名点确定位置"
+      ],
+      "outcome": "refused"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 2
+  }
+}

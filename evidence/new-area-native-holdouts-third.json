@@ -1,0 +1,51 @@
+{
+ "selectedAt": "2026-11-07T09:54:23.875853+00:00",
+ "nativeResolution": true,
+ "implementationSignatureAtSelection": "b2331eb1707c173e8be525fb414507d855fb1fe76c05c629808307b764713d60",
+ "selectionBasis": "Third cohort, selected from event names and world-file availability before downloading or viewing any image. Two regions never used before (Bristol, Oxford), from different clubs and mappers than Hertfordshire; per region one park, one urban/campus and one woodland map, imitating Dashahe-like new places. No outcome-based replacement is allowed.",
+ "referencePolicy": "World files frame a bounded teacher viewport only and measure the result afterwards. Preserve every result including refusals and wrong fits.",
+ "cases": [
+  {
+   "host": "https://www.bok.routegadget.co.uk",
+   "id": 320,
+   "mapid": 353,
+   "name": "Clifton Downs",
+   "date": "2026-09-12"
+  },
+  {
+   "host": "https://www.bok.routegadget.co.uk",
+   "id": 311,
+   "mapid": 343,
+   "name": "Frenchay urban",
+   "date": "2026-04-22"
+  },
+  {
+   "host": "https://www.bok.routegadget.co.uk",
+   "id": 309,
+   "mapid": 341,
+   "name": "Westridge Wood",
+   "date": "2026-04-11"
+  },
+  {
+   "host": "https://www.tvoc.routegadget.co.uk",
+   "id": 173,
+   "mapid": 177,
+   "name": "University Parks Saturday Series",
+   "date": "2026-06-13"
+  },
+  {
+   "host": "https://www.tvoc.routegadget.co.uk",
+   "id": 172,
+   "mapid": 176,
+   "name": "Cutteslowe Saturday Series",
+   "date": "2026-05-09"
+  },
+  {
+   "host": "https://www.tvoc.routegadget.co.uk",
+   "id": 178,
+   "mapid": 182,
+   "name": "Wittenham Clumps",
+   "date": "2026-10-10"
+  }
+ ]
+}

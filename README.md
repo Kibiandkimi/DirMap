@@ -25,6 +25,8 @@
 
 进度条下的“取消任务”可停止误点或过慢的处理：排队中的任务立即取消；运行中的任务在当前步骤结束后停止，不发布半成品。取消请求到达前已经提交的结果照常保留并显示为完成。再次提交完全相同的任务会撤回尚未生效的取消。
 
+首次使用新场地时，按地图视野添加场地并下载参照，再导入原图识别。主参照服务不可用时会自动尝试备用下载；已有参照不会被空下载结果覆盖。配准会搜索场地内的不同位置、比例和方向，结合建筑、水体与道路核查。若仍有多个可疑位置，“地理配准”页可逐个预览、调整透明度并采用吻合的一处；都不吻合时仍可录入同名点。教师选定的位置在重新识别时保留，选定后仍需核验目标和道路。
+
 安装脚本尝试把 Debian/Ubuntu 的 Tesseract 包解压到临时目录，不执行系统安装。其他系统可自行安装 Tesseract；没有 OCR 时仍能识别圈，编号保留待核验。可用 `DIRMAP_TESSERACT` 和 `TESSDATA_PREFIX` 指定已有 OCR。
 
 ## 从轨迹学习耗时
@@ -149,6 +151,12 @@ python3 -B tools/import_elevation.py --owner <原贡献者用户名> --data-dir 
 source tools/runtime-env.sh
 python3 -B tools/prepare_maps.py             # 保留现有校核，准备通行图缓存
 python3 -B tools/verify_inventory.py          # 编号及起终点清单
+python3 -B tools/verify_new_areas.py          # 真实异地地图，对照组织者世界文件，错误配准返回非零
+python3 -B tools/verify_new_areas.py --native-resolution  # 保留原始像素，不按世界文件调整分辨率
+python3 -B tools/verify_shenzhen_places.py    # 10 处深圳新场地的受损合成图
+python3 -B tools/verify_shenzhen_places.py --layout classroom  # 黑线森林图式、标题、尺条与参考照片拼版
+python3 -B tools/verify_dashahe_new_place.py   # 大沙河作为新场地，含无公园轮廓、裁剪与旋转
+python3 -B tools/verify_new_place_processing.py --event 403  # 空白工作台中的真实新图 HTTP/任务流程
 python3 -B tools/verify_dashahe_real.py       # 大沙河实图、照片、配准、自动路边到访与完整 32 点课程
 python3 -B tools/verify_contour_terrain.py    # 本地大沙河 KML 与相对等高线，临时重建对照
 python3 -B tools/verify_sheet_photos.py       # 大沙河与两种校园拼版编码，检查裁切、编号和关联
@@ -164,6 +172,8 @@ npm test
 npm run build
 DIRMAP_BROWSER_PATH=/usr/bin/google-chrome npm run test:browser
 ```
+
+异地实图默认 15 图是开发回归集：组织者世界文件用于框选参照及归一化图像分辨率；`--native-resolution` 保留原始像素，世界文件只用于视野和事后测量，拟合不读取其变换或同名点。报告同时保留整图误差、测量支持范围及拒绝结果，世界文件对照不等于现场 GPS 精度。深圳两种图式是受损合成图；大沙河变体测的是与既有配准的一致性。空白工作台检查运行真实 HTTP/任务流程，并回放已下载的真实 OSM 快照以便复现。
 
 浏览器检查使用已有 Chromium/Chrome，在临时副本和独立的 5174/8768 端口中发布测试课程，不复制正在使用的工作台任务队列，也不访问外部底图服务。覆盖手机尺寸、罗盘事件、离线重载、打点、偏航重规划、混合覆盖、课程失效，以及丢失提交响应/进度连接后的页面恢复。后端另用真实子进程中断和两个独立服务进程验证恢复及编辑冲突。它们仍不能代替真实手机传感器和校园试走。
 

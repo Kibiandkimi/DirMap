@@ -31,6 +31,68 @@ def map_footprint(image):
     return cv2.convexHull(contour).reshape(-1, 2).astype(float)
 
 
+def registration_footprint(image):
+    """Locate map ink when a forest sheet has little continuous colour.
+
+    Plain colour footprints remain unchanged when they describe the map.
+    Edge banners without extended map structures cannot replace the map;
+    on sparse sheets, connected linework supplies an exploratory footprint.
+    It only bounds registration searches: measured anchors and held-out
+    checks still determine the calibrated domain. Recognition and terrain
+    masks continue to use their existing conservative colour footprint.
+    """
+    height, width = image.shape[:2]
+    h, s, v = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
+    unit = max(1., max(height, width)/1400)
+    kernel = np.ones((max(3, round(5*unit)),)*2, np.uint8)
+    closing = np.ones((max(5, round(15*unit)),)*2, np.uint8)
+    colour = ((h >= 10) & (h <= 90) & (s >= 45) & (v > 100)).astype(np.uint8)
+    colour = cv2.morphologyEx(cv2.morphologyEx(colour, cv2.MORPH_OPEN, kernel), cv2.MORPH_CLOSE, closing)
+    contours, _ = cv2.findContours(colour, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Keep genuine narrow maps with extended two-dimensional linework.
+    structures = (((s < 100) & (v < 165)) | ((h > 78) & (h < 111) & (s > 45) & (v > 100))).astype(np.uint8)
+    bands, candidates = [], []
+    for contour in sorted(contours, key=cv2.contourArea, reverse=True):
+        x, y, w, hh = cv2.boundingRect(contour)
+        horizontal = w >= .75*width and w > 5*hh and hh < .25*height and (y < .06*height or y+hh > .94*height)
+        vertical = hh >= .75*height and hh > 5*w and w < .25*width and (x < .06*width or x+w > .94*width)
+        band = horizontal or vertical
+        if band:
+            margin = max(2, round(3*unit))
+            crop = structures[y+margin:y+hh-margin, x+margin:x+w-margin]
+            if crop.size:
+                _, _, stats, _ = cv2.connectedComponentsWithStats(crop, 8)
+                for row in stats[1:]:
+                    major, minor = (row[2], row[3]) if horizontal else (row[3], row[2])
+                    if major > .35*(w if horizontal else hh) and minor > .12*(hh if horizontal else w) and row[4] < .65*w*hh:
+                        band = False; break
+        if band:
+            bands.append((x, y, w, hh, cv2.contourArea(contour)))
+        elif cv2.contourArea(contour) >= height*width*.1:
+            candidates.append(contour)
+    if candidates and (not bands or cv2.contourArea(candidates[0]) >= max(b[-1] for b in bands)):
+        return cv2.convexHull(candidates[0]).reshape(-1, 2).astype(float)
+    # Terrain colours and neutral linework locate the map. Saturated
+    # dark-blue branding and purple page graphics are not map boundaries.
+    ink = (((h >= 5) & (h <= 115) & (s >= 45) & (v > 100)) | ((s < 100) & (v < 165))).astype(np.uint8)
+    for x, y, w, hh, _ in bands:
+        pad = max(3, round(5*unit))
+        top, bottom, left, right = max(0, y-pad), min(height, y+hh+pad), max(0, x-pad), min(width, x+w+pad)
+        ink[top:bottom, left:right] = structures[top:bottom, left:right]
+    margin = max(3, round(max(height, width)*.012))
+    ink[:margin] = ink[-margin:] = 0
+    ink[:, :margin] = ink[:, -margin:] = 0
+    size = max(9, round(max(height, width)*.015)) | 1
+    dense = (cv2.blur(ink.astype(np.float32), (size, size)) >= .035).astype(np.uint8)
+    outlines, _ = cv2.findContours(dense, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if outlines:
+        outline = max(outlines, key=cv2.contourArea)
+        if cv2.contourArea(outline) >= max(height*width*.1, cv2.contourArea(candidates[0]) if candidates else 0):
+            return cv2.convexHull(outline).reshape(-1, 2).astype(float)
+    return cv2.convexHull(candidates[0]).reshape(-1, 2).astype(float) if candidates else None
+
+
+
 def thin(mask):
     """Zhang-Suen thinning, with the two deletion rules in small lookup tables."""
     codes = np.arange(256, dtype=np.uint16)
@@ -60,7 +122,7 @@ def printed_paths(image, max_side=1400, *, diagnostics=None, crop_margins=True, 
     ratio = min(1., max_side/max(image.shape[:2]))
     h, s, v = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
     shape = tuple(round(size*ratio) for size in image.shape[1::-1])
-    footprint = map_footprint(cv2.resize(image, shape, interpolation=cv2.INTER_AREA))
+    footprint = registration_footprint(cv2.resize(image, shape, interpolation=cv2.INTER_AREA))
     if footprint is None:
         if crop_margins:
             # A wide blank border is not evidence that the printed map is a
@@ -319,6 +381,9 @@ PARK_PATHS = ('footway', 'path', 'pedestrian', 'cycleway', 'steps', 'service')
 # ways a map never draws as paths on the ground.
 NOT_PATHS = ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'proposed', 'construction', 'platform',
              'elevator', 'corridor', 'bus_stop', 'raceway')
+# On forest-style sheets paving can show only the surrounding streets;
+# small footpaths and private service drives need not be drawn as paving.
+STREET_TYPES = ('residential', 'unclassified', 'tertiary', 'secondary', 'primary', 'living_street', 'pedestrian')
 
 
 def _ways_within(reference, hull, types=None, excluded=()):
@@ -400,7 +465,7 @@ def oriented_support(matrix, pixels, tree, directions, roads, tolerance=8., degr
     return hits/max(1, total)
 
 
-def road_network_register(image, reference, *, exposure_image=None, seeds=None, paths=None):
+def road_network_register(image, reference, *, exposure_image=None, seeds=None, paths=None, streets_only=False):
     """Align printed paths to the place's ways.
 
     Without `seeds`, a park outline proposes scale and rotation. `seeds` are
@@ -408,7 +473,12 @@ def road_network_register(image, reference, *, exposure_image=None, seeds=None, 
     global search; each is fitted to the ways within its own projected
     sheet outline instead. `paths` reuses an earlier `printed_paths` result
     of the same image as (pixels, footprint, ratio, diagnostics).
+    `streets_only` is an additional fit of observed paving to major streets,
+    not to every minor path in the reference. It needs more independently
+    checked ways, including boundary ways, and may not omit failed checks.
     """
+    if streets_only and not seeds:
+        raise ValueError('铺装街道核查需要已搜索的位置')
     if paths is None:
         extraction = {}
         pixels, footprint, ratio = printed_paths(image, diagnostics=extraction, exposure_image=exposure_image)
@@ -424,11 +494,19 @@ def road_network_register(image, reference, *, exposure_image=None, seeds=None, 
         if np.linalg.det(seed[:, :2]) > 0:
             continue  # a sheet is never mirrored
         hull = affine_points(seed, footprint).astype(np.float32)
-        roads = _ways_within(reference, hull, excluded=NOT_PATHS)
-        if len(roads) < 8:
+        roads = _ways_within(reference, hull, types=STREET_TYPES if streets_only else None, excluded=NOT_PATHS)
+        if len(roads) < (9 if streets_only else 8):
             continue
-        fit, validation = _holdout(roads, hull)
-        if len(validation) < 2:
+        if streets_only:
+            # The useful streets may surround the sheet. Partition whole
+            # ways before looking at image residuals; held-out boundary
+            # ways validate the pose but never expand calibrated support.
+            validation = roads[1::3]
+            held = {key for key, _ in validation}
+            fit = [(key, points) for key, points in roads if key not in held]
+        else:
+            fit, validation = _holdout(roads, hull)
+        if len(validation) < (3 if streets_only else 2):
             continue
         score, matrix = _fit_roads(parameters_of(seed), pixels, tree, fit)
         # Rank searched poses by direction-aware support of training ways.
@@ -543,8 +621,15 @@ def road_network_register(image, reference, *, exposure_image=None, seeds=None, 
     checked_ways = len({p['referenceId'] for p in checks})
     # A searched pose on a small sheet may have one matched held-out way:
     # it is marked thin, and the common support check demands a wide margin.
-    thin = seeds is not None and checked_ways == 1
-    if (score > 9 if seeds is None else fitted_ways < 8) or len(observations) < 16 or (checked_ways < 2 and not thin) or not way_errors or np.percentile(way_errors, 95) > 18:
+    thin = not streets_only and seeds is not None and checked_ways == 1
+    if streets_only:
+        if (fitted_ways < 5 or checked_ways < 3 or omitted_ways or not way_errors
+                or np.median(way_errors) > 8 or np.percentile(way_errors, 95) > 12):
+            raise ValueError('铺装街道的完整留出核查未通过')
+        observed = np.asarray([p['pixel'] for p in observations], np.float32)*ratio
+        if cv2.contourArea(cv2.convexHull(observed)) < .25*cv2.contourArea(footprint.astype(np.float32)):
+            raise ValueError('铺装街道的测量范围不足')
+    elif (score > 9 if seeds is None else fitted_ways < 8) or len(observations) < 16 or (checked_ways < 2 and not thin) or not way_errors or np.percentile(way_errors, 95) > 18:
         raise ValueError('道路匹配的独立核查证据不足，需补充同名点')
     # Boundary ways are often only partly visible. They may add spatial
     # support after a stable fit, but cannot pull that fit or use held-out
@@ -574,7 +659,8 @@ def road_network_register(image, reference, *, exposure_image=None, seeds=None, 
     _, inside = reg.forward([p['pixel'] for p in checks])
     for check, valid in zip(checks, inside):
         check['insideHull'] = bool(valid)
-    quality = {'state': 'needs_review', 'method': 'park_outline_road_network' if park_id else 'global_search_road_network',
+    method = 'global_search_street_network' if streets_only else ('park_outline_road_network' if park_id else 'global_search_road_network')
+    quality = {'state': 'needs_review', 'method': method,
                **({'parkReferenceId': park_id} if park_id else {}),
                'fitCount': len(observations), 'fitObjectCount': len({p['referenceId'] for p in observations}),
                'validationCount': len(checks), 'validationObjectCount': len({p['referenceId'] for p in checks}),
@@ -585,6 +671,10 @@ def road_network_register(image, reference, *, exposure_image=None, seeds=None, 
                'foldedTriangles': 0, 'landmarks': observations+checks,
                'validationScope': f'{"公园轮廓" if park_id else "全局搜索"}提出位置，再按道路形状对齐；内部留出 {len(validation)} 条道路，其中 {len(validation)-len(omitted_ways)} 条能对应。'
                                   '误差统计仅针对能对应的路段与原图道路中心线，仍需现场核对。'}
+    if streets_only:
+        quality['referenceHighways'] = list(STREET_TYPES)
+        quality['validationScope'] = (f'全局搜索提出位置，原图铺装与主要街道单独对齐；整条留出 {len(validation)} 条街道，全部核查，'
+                                      '不把未印成铺装的小路和私人支路强行拉入拟合。边界只采用实测训练路段，仍需现场核对。')
     if refinement:
         quality['roadRefinement'] = refinement
     if extraction:

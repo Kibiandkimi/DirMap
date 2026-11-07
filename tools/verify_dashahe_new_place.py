@@ -7,7 +7,7 @@ not match a park outline as conveniently. This reruns recognition and the
 whole automatic registration chain on the supplied sheet under conditions a
 new place brings: no park outline in OSM, only part of the park printed
 (crops), a teacher's own viewport downloaded fresh from OSM instead of the
-built-in reference, and JPEG/exposure damage on top.
+built-in reference, JPEG/exposure damage, and a sideways (90°) image.
 
 The reviewed workbench registration of the unchanged sheet is the
 comparison baseline. It is itself an automatic road fit (internal road P95
@@ -40,6 +40,7 @@ CASES = [
     ('centre', (.2, .2, .8, .8), 'builtin'),
     ('jpeg-60-no-park', None, 'no-park'),
     ('dim-80-no-park', None, 'no-park'),
+    ('turned-90-no-park', None, 'no-park'),
 ]
 STABLE_M = 12.
 
@@ -66,7 +67,7 @@ def main():
     builtin = sites.reference('dashahe-park', frame)
     viewport_path = args.cache/'viewport-reference.json'
     if not viewport_path.exists():
-        data, host = sites.download(sites.overpass_query(VIEWPORT))
+        data, host = sites.download_reference(VIEWPORT)
         sites.save_reference(viewport_path, VIEWPORT, sites.compact(data['elements']), host)
     references = {'builtin': builtin,
                   'no-park': [f for f in builtin if f.get('tags', {}).get('leisure') not in ('park', 'recreation_ground')],
@@ -74,8 +75,11 @@ def main():
                                if f.get('tags', {}).get('leisure') not in ('park', 'recreation_ground')]}
     report = {'checkedAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'scope': __doc__.strip(),
               'implementationSignature': service.implementation_signature(), 'sourceSha256': SOURCE_SHA256,
+              'verifierSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              'baselineRegistrationStamp': service.registration_stamp(state),
               'baselineMethod': state['quality'].get('method'), 'stableWithinM': STABLE_M,
-              'viewportReferenceSha256': hashlib.sha256(viewport_path.read_bytes()).hexdigest(), 'cases': []}
+              'viewportReferenceSha256': hashlib.sha256(viewport_path.read_bytes()).hexdigest(), 'complete': False, 'cases': []}
+    partial = args.output.with_name(args.output.stem+'.partial.json')
     for name, crop, reference_kind in CASES:
         if args.only and name not in args.only:
             continue
@@ -90,31 +94,63 @@ def main():
             image = np.rint(image*.8).astype(np.uint8)
         inside = np.all((controls >= offset) & (controls < offset+image.shape[1::-1]), axis=1)
         points = controls[inside]-offset
+        original = controls[inside]
+        if name.startswith('turned-90'):
+            # Counter-clockwise quarter turn: pixel (x, y) moves to (y, w-1-x).
+            points = np.column_stack((points[:, 1], image.shape[1]-1-points[:, 0]))
+            image = np.ascontiguousarray(np.rot90(image))
         started = time.perf_counter()
-        result = analyze(image)
-        reg, quality, failures = service.geographic_registration(image, result, references[reference_kind])
+        result = {key: value for key, value in analyze(image).items()
+                  if key in ('features', 'controls', 'sheetPhotos', 'width', 'height')}
+        places = []
+        reg, quality, failures = service.geographic_registration(image, result, references[reference_kind], places)
         row = {'case': name, 'reference': reference_kind, 'imageSize': list(image.shape[1::-1]),
                'printedControls': int(inside.sum()), 'elapsedSec': round(time.perf_counter()-started, 1), 'failures': failures}
+
+        def against_baseline(fit):
+            predicted, calibrated = fit.forward(points, strict=False)
+            return np.linalg.norm(predicted-baseline.forward(original, strict=False)[0], axis=1), calibrated
+
         if reg is None:
             row['outcome'] = 'refused'
+            # A refusal can still offer the distinct places it fitted for the
+            # teacher to pick. Record whether the baseline place is offered.
+            row['offeredPlaces'] = []
+            for value, place, place_quality in places:
+                difference, _ = against_baseline(place)
+                row['offeredPlaces'].append({'support': round(float(value), 4), 'method': place_quality.get('method'),
+                                             'p95ErrorM': place_quality.get('p95ErrorM'),
+                                             'differenceFromBaselineM': {'median': round(float(np.median(difference)), 2),
+                                                                         'max': round(float(difference.max()), 2)}})
+            row['baselinePlaceOffered'] = next((index+1 for index, offered in enumerate(row['offeredPlaces'])
+                                                if offered['differenceFromBaselineM']['max'] <= STABLE_M), None)
         else:
-            predicted, calibrated = reg.forward(points, strict=False)
-            differences = np.linalg.norm(predicted-baseline.forward(points+offset, strict=False)[0], axis=1)
+            differences, calibrated = against_baseline(reg)
             row.update(method=quality.get('method'), reportedP95M=quality.get('p95ErrorM'),
+                       globalSearch=quality.get('globalSearch'),
+                       exposureCorrection=quality.get('exposureCorrection'),
                        poseSupport={k: v for k, v in (quality.get('poseSupport') or {}).items() if k != 'alternatives'},
                        calibratedControls=int(calibrated.sum()),
                        differenceFromBaselineM={'median': round(float(np.median(differences)), 2),
                                                 'max': round(float(differences.max()), 2)})
             row['outcome'] = 'consistent' if differences.max() <= STABLE_M else 'inconsistent'
         report['cases'].append(row)
+        store.atomic_json(partial, report)
         print(json.dumps({k: row.get(k) for k in ('case', 'outcome', 'method', 'differenceFromBaselineM', 'calibratedControls',
-                                                  'printedControls', 'elapsedSec', 'failures')}, ensure_ascii=False), flush=True)
+                                                  'printedControls', 'baselinePlaceOffered', 'elapsedSec', 'failures')},
+                         ensure_ascii=False), flush=True)
     outcomes = [row['outcome'] for row in report['cases']]
     report['summary'] = {key: outcomes.count(key) for key in ('consistent', 'inconsistent', 'refused')}
+    refused = [row for row in report['cases'] if row['outcome'] == 'refused']
+    report['summary']['refusedOfferingBaselinePlace'] = sum(bool(row.get('baselinePlaceOffered')) for row in refused)
+    report['summary']['refusedWithoutOffer'] = sum(not row.get('offeredPlaces') for row in refused)
+    report['complete'] = True
     print(json.dumps(report['summary']))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n')
+    partial.unlink(missing_ok=True)
+    return int(report['summary']['inconsistent'] > 0)
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

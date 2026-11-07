@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import tempfile
 import time
 import urllib.parse
 import urllib.request
@@ -179,6 +180,19 @@ def download(query, progress=lambda p, m: None, rounds=2):
     raise ValueError('OpenStreetMap 参照服务暂时不可用，请稍后重试（'+'；'.join(failures[-3:])[:300]+'）')
 
 
+def download_reference(bbox, progress=lambda p, m: None):
+    """Download the teacher's bounded viewport, with an independent fallback."""
+    from .osm_reference import download_map, validate_bbox
+    bbox = validate_bbox(bbox, MAX_SIDE_M)
+    try:
+        return download(overpass_query(bbox), progress, rounds=1)
+    except ValueError as primary:
+        try:
+            return download_map(bbox, progress)
+        except ValueError as fallback:
+            raise ValueError(f'OpenStreetMap 参照服务暂时不可用：{str(primary)[:160]}；{fallback}') from None
+
+
 def compact(elements):
     """Only the tags and geometry DirMap reads; ODbL attribution is kept."""
     result = []
@@ -209,11 +223,20 @@ def fetch_reference(site_id, progress=lambda p, m: None):
     target = store.workspace_root()/'sites'/site_id/'reference.json'
     update(site_id, status='fetching', error=None)
     try:
-        data, host = download(overpass_query(site['bbox']), progress)
+        data, host = download_reference(site['bbox'], progress)
         elements = compact(data['elements'])
         progress(80, '保存场地参照')
-        save_reference(target, site['bbox'], elements, host)
-        usable = len(load_reference(target, frame(site)))
+        # Validate before publishing. A partial/empty refresh must never
+        # replace a reference that already registered the teacher's maps.
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='.reference-', dir=target.parent) as temporary:
+            candidate = Path(temporary)/'reference.json'
+            save_reference(candidate, site['bbox'], elements, host)
+            usable = len(load_reference(candidate, frame(site)))
+            if not usable:
+                raise ValueError('场地范围内没有可比对的地物，请检查场地范围或录入同名点')
+            candidate.replace(target)
+            store.sync_directory(target.parent)
     except Exception as exc:
         # A failed refresh keeps a previously downloaded reference usable.
         update(site_id, status='ready' if target.exists() else 'failed', error=str(exc)[:300])

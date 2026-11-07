@@ -1,0 +1,317 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-05T11:34:15Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "9ff5d39f79a82cc0c528b80fcc854d092302eca9ef87aa27589733c78b6b2540",
+  "verifierSha256": "0ec4eb7e9de8a1b48d72f4cd4b56547e751f4d515b2091b4820e700cd021d1cb",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 403,
+      "map": 418,
+      "name": "Nomansland Common GLOSS and Saturday Series",
+      "date": "2023-07-01",
+      "imageSize": [
+        1299,
+        1193
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "3966129e1bcdc77287ea7c7ccfed3556d15a6e05a566a6c8e16a670285a7874d",
+      "worldFile": [
+        [
+          1.840756477957657e-05,
+          5.335560436043896e-07,
+          -0.31960816268569
+        ],
+        [
+          3.3272591762781e-07,
+          -1.1411845944677778e-05,
+          51.80342116498
+        ]
+      ],
+      "referenceFeatures": 859,
+      "referenceSha256": "d9ddb555ce78129fa6d8ddedccc7ccb2be1a4ff97cf1211edceea654cb221550",
+      "elapsedSec": 72.5,
+      "failures": [
+        "缺少可匹配水体。请补充建筑/路口同名点，或导入校园参考。",
+        "印刷道路不足以进行网络配准"
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 6.55,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": -0.0059,
+            "metresPerPixel": 0.70082,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": -0.004,
+            "metresPerPixel": 0.1642,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.0806,
+            "metresPerPixel": 0.15181,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": -0.0344,
+            "metresPerPixel": 1.31263,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": -0.0694,
+            "metresPerPixel": 0.1642,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.06,
+            "metresPerPixel": 0.23371,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.0211,
+            "metresPerPixel": 1.53559,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.1717,
+            "metresPerPixel": 0.34595,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.0581,
+            "metresPerPixel": 0.1847,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.0709,
+            "metresPerPixel": 0.99749,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1507,
+            "metresPerPixel": 0.15789,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.0698,
+            "metresPerPixel": 1.86828,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2516,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2171,
+            "metresPerPixel": 0.33264,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.3015,
+            "metresPerPixel": 0.13496,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2252,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.4991,
+            "metresPerPixel": 1.2136,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2803,
+            "metresPerPixel": 0.22472,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.6028,
+            "metresPerPixel": 1.26215,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.3438,
+            "metresPerPixel": 0.45524,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.3398,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.3332,
+            "metresPerPixel": 0.14597,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.3176,
+            "metresPerPixel": 0.95913,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.3111,
+            "metresPerPixel": 0.81987,
+            "rotationDeg": -4.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 16,
+        "pathEvidence": "linear_ink",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 6.81,
+          "p95": 12.82,
+          "max": 15.08
+        },
+        "insideHull": {
+          "median": 6.75,
+          "p95": 11.29,
+          "max": 12.99
+        },
+        "insideFraction": 0.376
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.5919,
+          "agreesWithChosen": true,
+          "truthMedianM": 6.8
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.5844,
+          "agreesWithChosen": true,
+          "truthMedianM": 5.56
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3061,
+          "agreesWithChosen": false,
+          "truthMedianM": 283.75
+        }
+      ],
+      "poseSupport": {
+        "value": 0.5919,
+        "layers": {
+          "building": 0.1398,
+          "path": 0.6801
+        },
+        "margin": 0.2481
+      },
+      "outcome": "correct"
+    },
+    {
+      "event": 404,
+      "map": 419,
+      "name": "Burnham Beeches Saturday Series",
+      "date": "2023-09-09",
+      "imageSize": [
+        2263,
+        1571
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "4520a790ad27da723d8cd53305c5944e2bb46c77b3e4e31792fac2dc75a55393",
+      "worldFile": [
+        [
+          1.8319694320791005e-05,
+          1.3163675283894537e-07,
+          -0.65197798293468
+        ],
+        [
+          8.528253380321204e-08,
+          -1.1417451282623217e-05,
+          51.565748378259
+        ]
+      ],
+      "referenceFeatures": 2306,
+      "referenceSha256": "a713029fdb7637c8321de94df34dbce57edc1f68a642dce3448323b259133603",
+      "elapsedSec": 200.1,
+      "failures": [
+        "印刷道路不足以进行网络配准",
+        "候选配准与参照的吻合度过低（-0.05），请补充同名点；仅 1 个图块与参照清晰吻合，不足以核查配准；自动配准仅找到 0 组稳定地物，需补充同名点；仅 0 个图块与参照清晰吻合，不足以核查配准；仅 2 个图块与参照清晰吻合，不足以核查配准"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [],
+      "correctPlaceOffered": null
+    },
+    {
+      "event": 414,
+      "map": 413,
+      "name": "Chipperfield Saturday Series",
+      "date": "2024-04-06",
+      "imageSize": [
+        1684,
+        1146
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "0d5367dffbe1b0e29865be055b14930e9e736ff1a7e36249ece2f3bdd1b13c47",
+      "worldFile": [
+        [
+          1.837261917578979e-05,
+          -3.841178121902594e-07,
+          -0.50415804504912
+        ],
+        [
+          -2.363229067701941e-07,
+          -1.1414712009600272e-05,
+          51.706756875392
+        ]
+      ],
+      "referenceFeatures": 341,
+      "referenceSha256": "543ef012ccbf3843c9c9a144568fe8d349abe4a590fa40584e042b0b077c6294",
+      "elapsedSec": 529.7,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "地图轮廓不足以提出道路配准范围",
+        "另一处位置与原图同样吻合（0.32，已选 0.32），请补充同名点确定位置"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.3204,
+          "method": "global_search_road_network",
+          "p95ErrorM": 11.29,
+          "truthErrorM": {
+            "median": 1823.07,
+            "p95": 3150.89,
+            "max": 3616.8
+          }
+        },
+        {
+          "support": 0.2583,
+          "method": "global_search_road_network",
+          "p95ErrorM": 10.44,
+          "truthErrorM": {
+            "median": 918.2,
+            "p95": 1474.5,
+            "max": 1731.61
+          }
+        }
+      ],
+      "correctPlaceOffered": null
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 2,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 1
+  }
+}

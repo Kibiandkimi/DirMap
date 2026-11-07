@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-11-05T15:41:20.027896+00:00",
+  "scope": "Same real photo-collage source, 3613 x 4096 working pixels, OCR enabled, one CPU and 1.5 GiB isolated process limit. Only scratch-array lifetimes changed. All arrays, recognition results and statistics were hashed and compared, not merely counts.",
+  "sourceHash": "068f178d909ed25fe54e051b107dd785a58642053ebcdda5ebbc6c509b07673e",
+  "workingSize": [
+    3613,
+    4096
+  ],
+  "outputsExactlyEqual": true,
+  "outputHash": "cd1dacaa539a7d2f11e478e4a5b970be9c8b2f3902b33446e5ad75e577418a96",
+  "before": {
+    "visionSha256": "cc5f085d8f6f16e9b49c72dc6644cc7b60b9811941fb7bddefa7276f0db3e976",
+    "peakRssBytes": 1360658432,
+    "elapsedSec": 71.01
+  },
+  "after": {
+    "visionSha256": "2d2f7415f2ddb73653d58955af34714da722504adf67a4e7eec25848431a56ad",
+    "peakRssBytes": 904060928,
+    "elapsedSec": 61.21
+  },
+  "reducedPeakBytes": 456597504,
+  "reducedPeakFraction": 0.3356,
+  "limits": {
+    "memoryMaxBytes": 1610612736,
+    "swapMaxBytes": 0,
+    "cpuQuotaPercent": 100
+  },
+  "browserVerification": {
+    "recognitionUpgrade": "passed with original calibration and teacher edits preserved",
+    "originalUpload": "passed with all 18 control/start symbols, 17 photos and correct working image frame",
+    "resourceLimitsUnchanged": true,
+    "additionalChange": "Release persisted masks, costs, blocked and semantics arrays before geographic matching; use real file input in browser test rather than base64 buffer transport."
+  }
+}

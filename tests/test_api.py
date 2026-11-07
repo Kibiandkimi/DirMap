@@ -297,7 +297,7 @@ def test_unknown_image_and_unreviewed_release_rejected(client):
 def test_uploaded_source_manifest_is_portable_and_original_download_is_exact(client):
     payload = cv2.imencode('.png', np.full((40, 60, 3), 255, np.uint8))[1].tobytes()
     response = client.post('/api/maps/upload', files={'file': ('course.png', payload, 'image/png')})
-    assert response.status_code == 200
+    assert response.status_code == 200, response.text
     asset_id = response.json()['id']
     manifest = store.read_json(store.DATA/'uploads.json')
     assert manifest[0]['path'] == f'projects/{asset_id}/source.img'

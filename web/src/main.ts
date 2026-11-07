@@ -45,6 +45,7 @@ let customMapTeam: string | null = null;
 let startPixel: Pixel | null = null, finishPixel: Pixel | null = null;
 let startSurfaceId: string | null = null, finishSurfaceId: string | null = null;
 let anchors: Anchor[] = [];
+let placePreview: { assetId: string; version: number; id: string } | null = null;
 let follow = false, northOnly = false;
 let lastPosition: GeolocationPosition | null = null;
 let locationFresh = false;
@@ -410,7 +411,7 @@ async function watchJob<T>(initial: Job<T>): Promise<T> {
       if (job.state === 'succeeded' && job.resultPruned) { rememberJob(null); throw new Error('这条记录的计算结果已按保留期限清理，请重新生成'); }
       if (job.state === 'succeeded') {
         rememberJob(null); $('job-status').classList.add('hidden');
-        if (['process', 'terrain', 'anchors', 'elevation_rebuild'].includes(job.kind)) {
+        if (['process', 'terrain', 'anchors', 'place', 'elevation_rebuild'].includes(job.kind)) {
           sharedTerrain = null; void renderElevationLayer();
         }
         return job.result as T;
@@ -435,7 +436,7 @@ $('cancel-job').onclick = async () => {
 async function renderJobs() {
   if (courseId) return;
   const jobs = await api<Job[]>('/api/jobs');
-  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线', site_reference: '下载场地参照', elevation_rebuild: '合并轨迹高程' };
+  const names: Record<string, string> = { process: '识别与配准', terrain: '通行识别', anchors: '同名点校准', place: '采用候选位置', plan: '路线规划', auto_teams: '分队收益比较', choose_teams: '采用分队方案', refine_plan: '继续优化路线', confirm_plan: '复核原路线', site_reference: '下载场地参照', elevation_rebuild: '合并轨迹高程' };
   const states: Record<string, string> = { queued: '排队中', running: '处理中', succeeded: '已完成', failed: '未完成' };
   const status = (job: Job) => job.cancelled ? '已取消' : job.cancelRequested ? '正在取消' : job.resultPruned ? '结果已清理' : states[job.state];
   $('job-history-list').innerHTML = jobs.length ? jobs.map(job => `<button class="job-history-row" data-resume-job="${e(job.id)}"><span>${e(job.kind === 'elevation_rebuild' ? '共享地形' : catalog?.maps.find(map => map.id === job.assetId)?.name ?? catalog?.sites?.find(site => site.id === job.assetId)?.name ?? job.assetId)} · ${e(names[job.kind] ?? job.kind)}<small>${e(new Date(job.createdAt * 1000).toLocaleString())}${job.recovered ? ' · 已接续' : ''}</small></span><b>${e(status(job))} ↗</b></button>`).join('') : '<p class="muted compact">尚无处理任务。</p>';
@@ -493,10 +494,15 @@ function syncTaskButtons() {
   // A place switch while another task runs would be ignored, leaving the
   // picker out of step with the listed maps.
   for (const id of ['process-current', 'process-all', 'upload-button', 'refresh-terrain', 'refresh-recognition', 'site-select', 'add-site']) $<HTMLButtonElement>(id).disabled = busy;
-  $<HTMLButtonElement>('plan-button').disabled = busy || needsRecognitionUpdate();
-  $<HTMLButtonElement>('recommend-teams').disabled = busy || needsRecognitionUpdate() || value('course-mode') === 'custom';
+  const needsRegistration = !state?.registration || !!state.registrationStale;
+  $<HTMLButtonElement>('plan-button').disabled = busy || needsRecognitionUpdate() || needsRegistration;
+  $<HTMLButtonElement>('recommend-teams').disabled = busy || needsRecognitionUpdate() || needsRegistration || value('course-mode') === 'custom';
   $('auto-team-hint').textContent = value('course-mode') === 'custom' ? '自定义点序已确定队数；切换其他访问方式后可自动比较。' : '';
   document.querySelectorAll<HTMLButtonElement>('[data-map], [data-delete-map], [data-site-action]').forEach(button => { button.disabled = busy; });
+  document.querySelectorAll<HTMLButtonElement>('[data-place-preview]').forEach(button => { button.disabled = busy; });
+  document.querySelectorAll<HTMLButtonElement>('[data-place-adopt]').forEach(button => {
+    button.disabled = busy || state?.quality?.chosenPlace?.id === button.dataset.placeAdopt;
+  });
   const refine = document.querySelector<HTMLButtonElement>('#refine-plan');
   if (refine) refine.disabled = busy || !canRefine(plan);
   for (const id of ['review-button', 'customize-plan']) {
@@ -719,6 +725,7 @@ function renderState() {
   renderCustomRoutes();
   groupPreview();
   campusMap.setControls(state?.controls ?? [], state?.surfaces ?? []);
+  if (placePreview && (placePreview.assetId !== state?.assetId || placePreview.version !== state?.version)) { campusMap.setPlacePreview(null); placePreview = null; }
   $('export-map').setAttribute('href', activeId ? `/api/maps/${activeId}/export` : '#');
   $('release-badge').textContent = state?.reviewed ? '已核验' : '备课草稿';
   $('map-title').textContent = state?.name ?? catalog.maps.find(map => map.id === activeId)?.name ?? currentSite()?.name ?? '定向场地';
@@ -743,12 +750,18 @@ function renderState() {
   const numbered = state.controls.filter(c => (c.role ?? 'control') === 'control').map(c => c.label);
   $('control-list').innerHTML = (value('course-mode') === 'fixed_order' ? state.controls : sortedControls(state.controls)).map((c, index) => `<div class="control-row" data-id="${e(c.id)}"><label class="control-toggle"><input type="checkbox" data-required="${e(c.id)}" ${c.role && c.role !== 'control' ? 'disabled' : ''} ${c.required ? 'checked' : ''}><span class="control-number ${c.calibrated ? '' : 'uncalibrated'}">${e(c.label)}</span></label>${['mixed_coverage', 'custom'].includes(value('course-mode')) && (c.role ?? 'control') === 'control' ? `<label class="every-team-toggle"><input type="checkbox" data-mandatory="${e(c.id)}" aria-label="${e(c.label)} 每队必到" ${mandatory.has(c.id) ? 'checked' : ''}>每队必到</label>` : ''}<span class="control-state">${(c.role ?? 'control') === 'control' && numbered.filter(label => label === c.label).length > 1 ? '<b class="danger">编号重复</b> · ' : ''}${!c.calibrated ? '待补配准' : c.state === 'accepted' ? '已确认' : '待核对'}</span>${referencePhotoButton(state!.sheetPhotos ?? [], c.id)}<button class="text-button" data-control-edit="${e(c.id)}" aria-label="编辑目标 ${e(c.label)}">↗</button>${value('course-mode') === 'fixed_order' ? `<button class="text-button" data-up="${index}" aria-label="上移 ${e(c.label)}">↑</button><button class="text-button" data-down="${index}" aria-label="下移 ${e(c.label)}">↓</button>` : ''}</div>`).join('');
   const q = state.quality;
-  const roads = q?.method === 'park_outline_road_network' || q?.method === 'global_search_road_network';
-  const label = q?.baseAssetId ? '共同地物对齐' : `${q?.method.startsWith('global_') ? '全局搜索 · ' : ''}${roads ? '道路网络对齐' : q?.method === 'global_search_layer_correlation' ? '图层分块对齐' : '标准地图地物匹配'}`;
+  const streets = q?.method === 'global_search_street_network';
+  const roads = streets || q?.method === 'park_outline_road_network' || q?.method === 'global_search_road_network';
+  const label = q?.baseAssetId ? '共同地物对齐' : `${q?.method.startsWith('global_') ? '全局搜索 · ' : ''}${streets ? '铺装街道对齐' : roads ? '道路网络对齐' : q?.method === 'global_search_layer_correlation' ? '图层分块对齐' : '标准地图地物匹配'}`;
   const support = q?.poseSupport ? `<p>整图与参照吻合度 ${q.poseSupport.value.toFixed(2)}，比其他位置高 ${q.poseSupport.margin.toFixed(2)}。</p>` : '';
   const refusal = state.failures?.length ? `<p class="muted">${e(state.failures[state.failures.length - 1])}</p>` : '';
   $('registration-quality').innerHTML = q ? `<span class="quality-label">${label}</span><div class="quality-values"><div><strong>${q.fitCount}</strong><span>拟合同名点</span></div><div><strong>${q.p95ErrorM?.toFixed(1) ?? '—'}<small> m</small></strong><span>${roads ? '已匹配道路留出 P95' : q.leaveOneOut ? '图块留一核查 P95' : '留出误差 P95'}</span></div></div><p>${e(q.validationScope)}</p>${support}${q.inheritedGeographicP95M ? `<p>基准图地理匹配 P95：${q.inheritedGeographicP95M.toFixed(1)} m</p>` : ''}` : `自动匹配证据不足，可添加同名点完成校准。${refusal}`;
   if (state.overlayScope === 'full-sheet') $('registration-quality').insertAdjacentHTML('beforeend', '<p class="muted">整张原图已显示。配准点包围范围外为外推位置，补同名点后才能用于路线。</p>');
+  const places = !q || q.chosenPlace ? state.registrationCandidates ?? [] : [];
+  if (places.length) $('registration-quality').insertAdjacentHTML('beforeend', `<div class="place-choices"><p>${q ? '其他吻合度相近的位置：' : `自动配准找到 ${places.length} 个吻合度相近的位置，不能自行确定是哪一处。逐个查看原图叠在标准地图上的效果，采用道路和建筑都对得上的一处；都不对时再添加同名点。`}</p>${places.map((p, i) => {
+    const chosen = q?.chosenPlace?.id === p.id, previewed = placePreview?.id === p.id;
+    return `<div class="place-choice"><span>候选 ${i + 1} · 吻合度 ${p.support.toFixed(2)}${p.p95ErrorM != null ? ` · 留出 P95 ${p.p95ErrorM.toFixed(1)} m` : ''}</span><button class="text-button" data-place-preview="${e(p.id)}" aria-pressed="${previewed}">${previewed ? '结束预览' : '查看'}</button><button class="soft-button" data-place-adopt="${e(p.id)}" ${chosen ? 'disabled' : ''}>${chosen ? '已采用' : '采用此位置'}</button></div>`;
+  }).join('')}</div>`);
   $('terrain-summary').innerHTML = `<strong>${Math.round(state.statistics.forbiddenPixelFraction * 100)}%</strong> 像素被识别为障碍候选<p>${state.edits.length} 处教师通行修正</p><p>${state.statistics.staircaseCandidates ?? 0} 处楼梯候选，可在原图中勾选查看；楼梯按较慢速度估计。</p><p>路线会检查每条边经过的工作图像素。未知层级及模糊的门洞仍需核验。</p>`;
 }
 async function saveEdits(controls: Control[], edits: TerrainEdit[], surfaces?: Surface[], portals?: Portal[]) {
@@ -1001,6 +1014,24 @@ $('control-list').onchange = event => {
   resetPlan(); persistRules(); renderState();
 };
 $('edit-controls').onclick = () => openEditor(); $('edit-terrain').onclick = () => openEditor('close'); $('add-anchor').onclick = () => openEditor('anchor');
+$('registration-quality').addEventListener('click', event => {
+  const target = event.target as HTMLElement;
+  const preview = target.closest<HTMLElement>('[data-place-preview]')?.dataset.placePreview;
+  const adopt = target.closest<HTMLElement>('[data-place-adopt]')?.dataset.placeAdopt;
+  const place = state?.registrationCandidates?.find(p => p.id === (preview ?? adopt));
+  if (!state || !place) return;
+  if (preview) {
+    const close = placePreview?.id === preview;
+    campusMap.setPlacePreview(close ? null : mapAssetUrl(state, place.preview), place.extent, number('overlay-opacity') / 100);
+    placePreview = close ? null : { assetId: state.assetId, version: state.version, id: preview };
+    renderState();
+  }
+  if (adopt) task(async () => {
+    state = await runJob<MapState>(`/api/maps/${activeId}/places/${place.id}`, { version: state!.version });
+    resetPlan(); renderState(); await updateOverlays(); if (state.extent) campusMap.fit(state.extent);
+    notify('已采用候选位置，请在原图校核中核对目标与道路');
+  });
+});
 $('fit-anchors').onclick = () => task(async () => { if (!state) return; state = await runJob<MapState>(`/api/maps/${activeId}/anchors`, { version: state.version, anchors }); resetPlan(); renderState(); await updateOverlays(); if (state.extent) campusMap.fit(state.extent); });
 $<HTMLInputElement>('standard-map').onchange = event => campusMap.setStandardMap((event.target as HTMLInputElement).checked);
 $<HTMLInputElement>('overlay-opacity').oninput = () => campusMap.setOpacity(number('overlay-opacity') / 100);

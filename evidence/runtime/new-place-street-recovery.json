@@ -1,0 +1,2795 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-05T17:04:21Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "670639493f4355ad9454ca56f286bcd043b674aab6fe99df547ef177a68d666a",
+  "verifierSha256": "3701ae89412f330855ef3d776a6aa6d92910e6a8409f01e58ea0e94e5092aa37",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 414,
+      "map": 413,
+      "name": "Chipperfield Saturday Series",
+      "date": "2024-04-06",
+      "imageSize": [
+        1684,
+        1146
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "0d5367dffbe1b0e29865be055b14930e9e736ff1a7e36249ece2f3bdd1b13c47",
+      "worldFile": [
+        [
+          1.837261917578979e-05,
+          -3.841178121902594e-07,
+          -0.50415804504912
+        ],
+        [
+          -2.363229067701941e-07,
+          -1.1414712009600272e-05,
+          51.706756875392
+        ]
+      ],
+      "referenceFeatures": 341,
+      "referenceSha256": "543ef012ccbf3843c9c9a144568fe8d349abe4a590fa40584e042b0b077c6294",
+      "elapsedSec": 84.6,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "registration": {
+        "affine": [
+          [
+            1.2708516555179883,
+            -0.03396236137154699,
+            -1048.2218743657722
+          ],
+          [
+            -0.03396236137154699,
+            -1.2708516555179883,
+            764.6131133980462
+          ]
+        ],
+        "source": [
+          [
+            1350.8085714285714,
+            714.4971428571429
+          ],
+          [
+            49.317142857142855,
+            552.1114285714286
+          ],
+          [
+            49.317142857142855,
+            550.9085714285715
+          ],
+          [
+            57.73714285714286,
+            537.6771428571428
+          ],
+          [
+            58.94,
+            536.4742857142858
+          ],
+          [
+            73.37428571428572,
+            529.2571428571429
+          ],
+          [
+            743.3657142857143,
+            232.15142857142857
+          ],
+          [
+            744.5685714285714,
+            232.15142857142857
+          ],
+          [
+            1325.5485714285714,
+            676.0057142857142
+          ],
+          [
+            1331.5628571428572,
+            680.8171428571428
+          ],
+          [
+            1335.1714285714286,
+            684.4257142857143
+          ],
+          [
+            1342.3885714285714,
+            694.0485714285714
+          ],
+          [
+            1344.7942857142857,
+            697.6571428571428
+          ],
+          [
+            1348.402857142857,
+            703.6714285714286
+          ],
+          [
+            1350.8085714285714,
+            712.0914285714285
+          ]
+        ],
+        "target": [
+          [
+            644.1894247574644,
+            -189.2834123114667
+          ],
+          [
+            -1004.298109574859,
+            61.28646374011805
+          ],
+          [
+            -1004.257257705895,
+            62.81511673146974
+          ],
+          [
+            -993.1073162078288,
+            79.34433655358941
+          ],
+          [
+            -991.5378113475132,
+            80.83213767597681
+          ],
+          [
+            -972.9488642375092,
+            89.51383319651802
+          ],
+          [
+            -111.39873642052419,
+            444.3366310473906
+          ],
+          [
+            -109.8700834291725,
+            444.2957791784265
+          ],
+          [
+            613.3949717459298,
+            -139.50862733996905
+          ],
+          [
+            620.8748292268319,
+            -145.82749865019582
+          ],
+          [
+            625.3382325939947,
+            -150.536013231143
+          ],
+          [
+            634.1833355903918,
+            -163.01034837574048
+          ],
+          [
+            637.1180859662031,
+            -167.67801108772346
+          ],
+          [
+            641.4997855954377,
+            -175.4438316513739
+          ],
+          [
+            644.2711284953923,
+            -186.22610632876342
+          ]
+        ],
+        "triangles": [
+          [
+            8,
+            0,
+            1
+          ],
+          [
+            12,
+            13,
+            0
+          ],
+          [
+            5,
+            8,
+            1
+          ],
+          [
+            8,
+            5,
+            6
+          ],
+          [
+            11,
+            12,
+            0
+          ],
+          [
+            8,
+            11,
+            0
+          ],
+          [
+            7,
+            8,
+            6
+          ],
+          [
+            13,
+            14,
+            0
+          ],
+          [
+            10,
+            11,
+            8
+          ],
+          [
+            2,
+            3,
+            1
+          ],
+          [
+            3,
+            5,
+            1
+          ],
+          [
+            5,
+            3,
+            4
+          ],
+          [
+            9,
+            10,
+            8
+          ]
+        ],
+        "model": "regularized_piecewise_affine",
+        "foldedTriangles": 0
+      },
+      "validationLandmarks": [
+        {
+          "pixel": [
+            406.5657142857143,
+            477.5342857142857
+          ],
+          "local": [
+            -546.7700337633179,
+            138.73642796622204
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 5.29
+        },
+        {
+          "pixel": [
+            394.53714285714284,
+            482.3457142857143
+          ],
+          "local": [
+            -561.39498384253,
+            133.45577905425176
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 5.1
+        },
+        {
+          "pixel": [
+            382.50857142857143,
+            487.15714285714284
+          ],
+          "local": [
+            -576.0199339217422,
+            128.1751301422815
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 5.08
+        },
+        {
+          "pixel": [
+            372.8857142857143,
+            490.7657142857143
+          ],
+          "local": [
+            -590.6448840009543,
+            122.89448123031123
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 5.38
+        },
+        {
+          "pixel": [
+            360.85714285714283,
+            495.57714285714286
+          ],
+          "local": [
+            -605.2698340801666,
+            117.61383231834097
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 5.08
+        },
+        {
+          "pixel": [
+            347.6257142857143,
+            500.3885714285714
+          ],
+          "local": [
+            -619.8947841593787,
+            112.3331834063707
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 5.77
+        },
+        {
+          "pixel": [
+            336.8,
+            503.9971428571429
+          ],
+          "local": [
+            -634.5197342385909,
+            107.05253449440043
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 6.27
+        },
+        {
+          "pixel": [
+            325.9742857142857,
+            506.40285714285716
+          ],
+          "local": [
+            -649.3763435270574,
+            102.81894326136046
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 7.38
+        },
+        {
+          "pixel": [
+            315.1485714285714,
+            507.60571428571427
+          ],
+          "local": [
+            -664.4646120247783,
+            99.63240970725077
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 9.2
+        },
+        {
+          "pixel": [
+            304.3228571428571,
+            508.80857142857144
+          ],
+          "local": [
+            -679.5528805224991,
+            96.4458761531411
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 11.24
+        },
+        {
+          "pixel": [
+            293.4971428571429,
+            510.01142857142855
+          ],
+          "local": [
+            -693.2326156462879,
+            94.93271776119795
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 11.58
+        },
+        {
+          "pixel": [
+            276.65714285714284,
+            511.2142857142857
+          ],
+          "local": [
+            -714.6694242920912,
+            94.16130367886034
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 11.4
+        },
+        {
+          "pixel": [
+            264.62857142857143,
+            512.4171428571428
+          ],
+          "local": [
+            -729.4190409912212,
+            94.03427996573465
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 10.39
+        },
+        {
+          "pixel": [
+            252.6,
+            513.62
+          ],
+          "local": [
+            -744.3213333055724,
+            93.79506742584931
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 9.51
+        },
+        {
+          "pixel": [
+            240.57142857142858,
+            513.62
+          ],
+          "local": [
+            -759.7405462039518,
+            93.54812838275814
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 10.16
+        },
+        {
+          "pixel": [
+            228.54285714285714,
+            513.62
+          ],
+          "local": [
+            -775.6766796863594,
+            93.29346283646112
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 10.83
+        },
+        {
+          "pixel": [
+            215.31142857142856,
+            514.8228571428572
+          ],
+          "local": [
+            -791.612813168767,
+            93.03879729016408
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 10.01
+        },
+        {
+          "pixel": [
+            203.28285714285715,
+            514.8228571428572
+          ],
+          "local": [
+            -807.5489466511747,
+            92.78413174386706
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 10.66
+        },
+        {
+          "pixel": [
+            191.25428571428571,
+            516.0257142857143
+          ],
+          "local": [
+            -823.4850801335823,
+            92.52946619757004
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 9.83
+        },
+        {
+          "pixel": [
+            178.02285714285713,
+            516.0257142857143
+          ],
+          "local": [
+            -839.4212136159899,
+            92.27480065127301
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 10.5
+        },
+        {
+          "pixel": [
+            165.99428571428572,
+            517.2285714285714
+          ],
+          "local": [
+            -855.3573470983976,
+            92.02013510497599
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 9.65
+        },
+        {
+          "pixel": [
+            152.76285714285714,
+            518.4314285714286
+          ],
+          "local": [
+            -871.2934805808052,
+            91.76546955867897
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 8.82
+        },
+        {
+          "pixel": [
+            140.7342857142857,
+            519.6342857142857
+          ],
+          "local": [
+            -887.2296140632128,
+            91.51080401238194
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 7.95
+        },
+        {
+          "pixel": [
+            128.7057142857143,
+            519.6342857142857
+          ],
+          "local": [
+            -903.1657475456204,
+            91.25613846608492
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 8.65
+        },
+        {
+          "pixel": [
+            116.67714285714285,
+            520.8371428571429
+          ],
+          "local": [
+            -919.1018810280281,
+            91.0014729197879
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 7.88
+        },
+        {
+          "pixel": [
+            101.04,
+            523.2428571428571
+          ],
+          "local": [
+            -935.0380145104357,
+            90.74680737349088
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 6.03
+        },
+        {
+          "pixel": [
+            90.21428571428571,
+            524.4457142857143
+          ],
+          "local": [
+            -950.9741479928433,
+            90.49214182719385
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 4.58
+        },
+        {
+          "pixel": [
+            78.18571428571428,
+            528.0542857142857
+          ],
+          "local": [
+            -966.9102814752509,
+            90.23747628089683
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "147426614",
+          "errorM": 0.65
+        },
+        {
+          "pixel": [
+            1349.6057142857144,
+            708.4828571428571
+          ],
+          "local": [
+            647.1486681886655,
+            -178.51503070687218
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 5.28
+        },
+        {
+          "pixel": [
+            1344.7942857142857,
+            698.86
+          ],
+          "local": [
+            636.5293589820596,
+            -168.73884070602344
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 0.72
+        },
+        {
+          "pixel": [
+            1338.78,
+            690.44
+          ],
+          "local": [
+            625.3381952339139,
+            -158.68184750219802
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 4.4
+        },
+        {
+          "pixel": [
+            1329.1571428571428,
+            679.6142857142858
+          ],
+          "local": [
+            613.5751769442282,
+            -148.3440510953959
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 5.95
+        },
+        {
+          "pixel": [
+            1318.3314285714287,
+            671.1942857142857
+          ],
+          "local": [
+            601.8121586545425,
+            -138.0062546885938
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 5.5
+        },
+        {
+          "pixel": [
+            1309.9114285714286,
+            665.18
+          ],
+          "local": [
+            590.0491403648568,
+            -127.66845828179169
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 4.56
+        },
+        {
+          "pixel": [
+            1350.8085714285714,
+            714.4971428571429
+          ],
+          "local": [
+            651.1184646381681,
+            -198.60888405486895
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "668696034",
+          "errorM": 11.62
+        },
+        {
+          "pixel": [
+            1350.8085714285714,
+            712.0914285714285
+          ],
+          "local": [
+            648.4719336718331,
+            -185.21298182287111
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "668696034",
+          "errorM": 4.32
+        },
+        {
+          "pixel": [
+            732.54,
+            239.36857142857144
+          ],
+          "local": [
+            -123.92656346037514,
+            432.7230763685266
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "7942576",
+          "errorM": 3.17
+        },
+        {
+          "pixel": [
+            742.1628571428571,
+            233.3542857142857
+          ],
+          "local": [
+            -111.50971493494076,
+            442.26932563320526
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "7942576",
+          "errorM": 1.57
+        },
+        {
+          "pixel": [
+            49.317142857142855,
+            552.1114285714286
+          ],
+          "local": [
+            -1001.853408791331,
+            53.74087470596425
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551186",
+          "errorM": 7.93
+        },
+        {
+          "pixel": [
+            52.925714285714285,
+            547.3
+          ],
+          "local": [
+            -995.3580695988815,
+            63.90462610851403
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551186",
+          "errorM": 5.38
+        },
+        {
+          "pixel": [
+            56.534285714285716,
+            541.2857142857143
+          ],
+          "local": [
+            -989.528165635031,
+            72.54131141374543
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551186",
+          "errorM": 5.7
+        },
+        {
+          "pixel": [
+            57.73714285714286,
+            538.88
+          ],
+          "local": [
+            -986.9459312674054,
+            76.09612101770193
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551187",
+          "errorM": 6.44
+        },
+        {
+          "pixel": [
+            68.56285714285714,
+            532.8657142857143
+          ],
+          "local": [
+            -979.0137128886847,
+            84.57425847680686
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551187",
+          "errorM": 0.54
+        },
+        {
+          "pixel": [
+            73.37428571428572,
+            529.2571428571429
+          ],
+          "local": [
+            -973.5058680527977,
+            90.13734079950721
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551187",
+          "errorM": 0.84
+        },
+        {
+          "pixel": [
+            49.317142857142855,
+            550.9085714285715
+          ],
+          "local": [
+            -998.4330157962765,
+            59.093023850256415
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551186",
+          "errorM": 6.91,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            57.73714285714286,
+            537.6771428571428
+          ],
+          "local": [
+            -987.52958462541,
+            75.2926398974641
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551186",
+          "errorM": 6.89,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            58.94,
+            536.4742857142858
+          ],
+          "local": [
+            -986.7265103948271,
+            76.33064309340598
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "800551187",
+          "errorM": 6.59,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            743.3657142857143,
+            232.15142857142857
+          ],
+          "local": [
+            -110.44103371452795,
+            443.090942913439
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "7942576",
+          "errorM": 1.57,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            744.5685714285714,
+            232.15142857142857
+          ],
+          "local": [
+            -109.50000625792494,
+            443.81441816943794
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "7942576",
+          "errorM": 0.61,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            1325.5485714285714,
+            676.0057142857142
+          ],
+          "local": [
+            609.0923805787576,
+            -144.4043958965238
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 6.52,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            1331.5628571428572,
+            680.8171428571428
+          ],
+          "local": [
+            616.4459342620858,
+            -150.86698389669658
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 6.71,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            1335.1714285714286,
+            684.4257142857143
+          ],
+          "local": [
+            621.2990342503709,
+            -155.13207627224253
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 6.12,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            1342.3885714285714,
+            694.0485714285714
+          ],
+          "local": [
+            632.405058048934,
+            -164.9419883158668
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 2.63,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            1344.7942857142857,
+            697.6571428571428
+          ],
+          "local": [
+            636.3194129618339,
+            -168.5455633332945
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 1.18,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            1348.402857142857,
+            703.6714285714286
+          ],
+          "local": [
+            642.5607487677063,
+            -174.2913687816708
+          ],
+          "purpose": "fit",
+          "kind": "road_centerline",
+          "referenceId": "303798777",
+          "errorM": 1.57,
+          "source": "mutual_road_boundary"
+        },
+        {
+          "pixel": [
+            1309.9114285714286,
+            665.18
+          ],
+          "local": [
+            590.0491403648568,
+            -127.66845828179169
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 4.56,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1299.0857142857144,
+            657.9628571428572
+          ],
+          "local": [
+            576.8791689555859,
+            -119.42174504725628
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 5.12,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1288.26,
+            651.9485714285714
+          ],
+          "local": [
+            563.709197546315,
+            -111.17503181272087
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 4.69,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1277.4342857142858,
+            645.9342857142857
+          ],
+          "local": [
+            550.539226137044,
+            -102.92831857818548
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 4.26,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1266.6085714285714,
+            639.92
+          ],
+          "local": [
+            537.3692547277731,
+            -94.68160534365008
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 3.84,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1255.7828571428572,
+            633.9057142857143
+          ],
+          "local": [
+            524.1992833185021,
+            -86.43489210911468
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 3.42,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1244.9571428571428,
+            627.8914285714286
+          ],
+          "local": [
+            511.02931190923124,
+            -78.18817887457928
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 3.01,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1235.3342857142857,
+            621.8771428571429
+          ],
+          "local": [
+            497.8593404999603,
+            -69.94146564004387
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 3.56,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1224.5085714285715,
+            615.8628571428571
+          ],
+          "local": [
+            485.3943271389322,
+            -62.30780407739073
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 3.13,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1216.0885714285714,
+            611.0514285714286
+          ],
+          "local": [
+            473.6342718261471,
+            -55.28719418661985
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 3.51,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1206.4657142857143,
+            606.24
+          ],
+          "local": [
+            461.87421651336194,
+            -48.26658429584897
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 2.94,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1198.0457142857142,
+            601.4285714285714
+          ],
+          "local": [
+            452.8000997596697,
+            -42.842579031380815
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "303798775",
+          "errorM": 2.67,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            956.2714285714286,
+            430.62285714285713
+          ],
+          "local": [
+            146.25742338482135,
+            178.9352608269901
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 8.57,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            945.4457142857143,
+            423.4057142857143
+          ],
+          "local": [
+            134.44090690112336,
+            187.9808326830078
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 7.84,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            937.0257142857143,
+            417.39142857142855
+          ],
+          "local": [
+            122.62439041742535,
+            197.02640453902555
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 7.87,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            924.9971428571429,
+            408.9714285714286
+          ],
+          "local": [
+            110.80787393372734,
+            206.07197639504327
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 7.83,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            915.3742857142857,
+            401.75428571428574
+          ],
+          "local": [
+            98.99135745002934,
+            215.11754825106098
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 8.21,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            908.1571428571428,
+            396.9428571428571
+          ],
+          "local": [
+            87.17484096633135,
+            224.16312010707873
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 7.36,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            898.5342857142857,
+            389.7257142857143
+          ],
+          "local": [
+            75.35832448263334,
+            233.20869196309644
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 7.57,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            890.1142857142858,
+            383.7114285714286
+          ],
+          "local": [
+            64.6671137032724,
+            240.65432134324732
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 8.06,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            879.2885714285715,
+            376.4942857142857
+          ],
+          "local": [
+            53.97590292391146,
+            248.0999507233982
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 8.54,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            872.0714285714286,
+            371.68285714285713
+          ],
+          "local": [
+            41.98977247371896,
+            255.9144124614765
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 8.65,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            861.2457142857143,
+            364.4657142857143
+          ],
+          "local": [
+            28.708722352694878,
+            264.0977065574823
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 9.62,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            845.6085714285714,
+            365.66857142857145
+          ],
+          "local": [
+            16.732270960373256,
+            272.23482707022714
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 2.93,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            837.1885714285714,
+            359.6542857142857
+          ],
+          "local": [
+            6.0604182967540865,
+            280.32577399971115
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 2.83,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            828.7685714285715,
+            353.64
+          ],
+          "local": [
+            -4.611434366865081,
+            288.4167209291951
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 2.75,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            822.7542857142857,
+            346.42285714285714
+          ],
+          "local": [
+            -11.642002414187953,
+            296.9393630466076
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 2.8,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            819.1457142857143,
+            334.39428571428573
+          ],
+          "local": [
+            -21.057190730939823,
+            308.35480797192963
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 4.27,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            807.1171428571429,
+            329.58285714285716
+          ],
+          "local": [
+            -30.47237904769169,
+            319.7702528972517
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 3.52,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            799.9,
+            321.16285714285715
+          ],
+          "local": [
+            -39.88756736444356,
+            331.1856978225738
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 3.29,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            792.6828571428572,
+            312.74285714285713
+          ],
+          "local": [
+            -49.30275568119543,
+            342.60114274789584
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 3.2,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            786.6685714285715,
+            305.5257142857143
+          ],
+          "local": [
+            -58.7179439979473,
+            354.0165876732179
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 4.4,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            778.2485714285714,
+            294.7
+          ],
+          "local": [
+            -67.90901603424348,
+            365.29295554030773
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 2.08,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            772.2342857142858,
+            288.6857142857143
+          ],
+          "local": [
+            -76.80568339364255,
+            376.34680011454225
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 4.84,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            769.8285714285714,
+            271.8457142857143
+          ],
+          "local": [
+            -85.63206235660022,
+            387.31719845415375
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 8.64,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            763.8142857142857,
+            264.62857142857143
+          ],
+          "local": [
+            -94.45844131955788,
+            398.28759679376515
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 8.93,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            757.8,
+            257.4114285714286
+          ],
+          "local": [
+            -102.88152620457356,
+            408.75731772405686
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 9.45,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            749.38,
+            246.5857142857143
+          ],
+          "local": [
+            -111.15020707117658,
+            418.4871487055388
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 10.05,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            734.9457142857143,
+            238.1657142857143
+          ],
+          "local": [
+            -119.66777799730895,
+            427.9777671475307
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "668696035",
+          "errorM": 9.38,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            732.54,
+            239.36857142857144
+          ],
+          "local": [
+            -123.92656346037514,
+            432.7230763685266
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 3.17,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            722.9171428571428,
+            246.5857142857143
+          ],
+          "local": [
+            -135.73501406251407,
+            423.0794731628614
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 4.2,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            713.2942857142857,
+            253.80285714285714
+          ],
+          "local": [
+            -147.54346466465302,
+            413.43586995719625
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 5.22,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            704.8742857142857,
+            259.81714285714287
+          ],
+          "local": [
+            -159.35191526679193,
+            403.79226675153103
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 6.96,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            694.0485714285714,
+            268.2371428571429
+          ],
+          "local": [
+            -171.16036586893088,
+            394.1486635458658
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 7.29,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            688.0342857142857,
+            273.04857142857145
+          ],
+          "local": [
+            -181.03300489694863,
+            386.093320343186
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 8.41,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            678.4114285714286,
+            281.4685714285714
+          ],
+          "local": [
+            -189.70728437908195,
+            378.6536249175815
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 7.88,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            672.3971428571429,
+            286.28000000000003
+          ],
+          "local": [
+            -198.26172790662721,
+            370.93948409736765
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 8.71,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            662.7742857142857,
+            294.7
+          ],
+          "local": [
+            -209.48745971859753,
+            361.3074044193352
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.0,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            654.3542857142858,
+            301.91714285714284
+          ],
+          "local": [
+            -220.71319153056788,
+            351.67532474130286
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.35,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            645.9342857142857,
+            309.13428571428574
+          ],
+          "local": [
+            -231.9389233425382,
+            342.04324506327043
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.75,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            637.5142857142857,
+            316.3514285714286
+          ],
+          "local": [
+            -242.62292421144429,
+            332.87409330721226
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 10.14,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            629.0942857142858,
+            324.7714285714286
+          ],
+          "local": [
+            -252.76519413728616,
+            324.1678694731283
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.45,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            620.6742857142857,
+            331.98857142857145
+          ],
+          "local": [
+            -263.68939366681764,
+            314.9682002369071
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.68,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            612.2542857142857,
+            340.4085714285714
+          ],
+          "local": [
+            -275.39552280003875,
+            305.2750855985486
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 8.66,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            603.8342857142857,
+            348.8285714285714
+          ],
+          "local": [
+            -287.10165193325986,
+            295.5819709601902
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 7.64,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            595.4142857142857,
+            357.24857142857144
+          ],
+          "local": [
+            -298.80778106648097,
+            285.8888563218318
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 6.62,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            590.6028571428571,
+            360.85714285714283
+          ],
+          "local": [
+            -310.5139101997021,
+            276.19574168347333
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.78,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            578.5742857142857,
+            372.8857142857143
+          ],
+          "local": [
+            -322.22003933292314,
+            266.5026270451149
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 5.69,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            568.9514285714286,
+            381.3057142857143
+          ],
+          "local": [
+            -333.92616846614425,
+            256.8095124067564
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 5.72,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            560.5314285714286,
+            388.52285714285716
+          ],
+          "local": [
+            -345.63229759936536,
+            247.11639776839797
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 5.82,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            555.72,
+            393.3342857142857
+          ],
+          "local": [
+            -351.89603076419996,
+            241.9316050443422
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 5.23,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            546.0971428571429,
+            400.5514285714286
+          ],
+          "local": [
+            -363.8289263961055,
+            231.66215507762027
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 6.68,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            540.0828571428572,
+            405.36285714285714
+          ],
+          "local": [
+            -370.8324161267632,
+            224.6637975158714
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 8.04,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            534.0685714285714,
+            410.1742857142857
+          ],
+          "local": [
+            -378.3544268147782,
+            218.27737901039697
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 8.59,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            525.6485714285715,
+            416.18857142857144
+          ],
+          "local": [
+            -388.03348468538337,
+            210.96378011732267
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.33,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            518.4314285714286,
+            421.0
+          ],
+          "local": [
+            -399.0883514961662,
+            202.60061302570986
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 10.44,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            510.01142857142855,
+            425.81142857142856
+          ],
+          "local": [
+            -410.9152383990109,
+            195.33151879173369
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 11.41,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            500.3885714285714,
+            431.8257142857143
+          ],
+          "local": [
+            -423.10163316562114,
+            188.84496480407907
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 10.71,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            489.5628571428571,
+            437.84000000000003
+          ],
+          "local": [
+            -435.64753579599676,
+            183.140951062746
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.94,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            479.94,
+            442.6514285714286
+          ],
+          "local": [
+            -448.1934384263725,
+            177.43693732141296
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.78,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            470.31714285714287,
+            447.46285714285716
+          ],
+          "local": [
+            -461.0827171573961,
+            171.5753029144172
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.6,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            460.69428571428574,
+            452.2742857142857
+          ],
+          "local": [
+            -474.0906795742155,
+            165.6617464059309
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 9.43,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            451.07142857142856,
+            457.0857142857143
+          ],
+          "local": [
+            -487.84761670721235,
+            160.0887741596014
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 8.73,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            439.04285714285714,
+            463.1
+          ],
+          "local": [
+            -502.57822097123875,
+            154.75068761125655
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 7.27,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            428.21714285714285,
+            467.9114285714286
+          ],
+          "local": [
+            -517.3088252352651,
+            149.41260106291173
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 6.55,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            417.39142857142855,
+            472.72285714285715
+          ],
+          "local": [
+            -532.0394294992915,
+            144.07451451456689
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 5.88,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            406.5657142857143,
+            477.5342857142857
+          ],
+          "local": [
+            -546.7700337633179,
+            138.73642796622204
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "7942665",
+          "errorM": 5.29,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1198.0457142857142,
+            601.4285714285714
+          ],
+          "local": [
+            452.8000997596697,
+            -42.842579031380815
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.67,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1187.22,
+            595.4142857142857
+          ],
+          "local": [
+            439.12922824198836,
+            -34.89165060466033
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.78,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1176.3942857142856,
+            589.4
+          ],
+          "local": [
+            425.45835672430707,
+            -26.940722177939833
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.88,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1165.5685714285714,
+            583.3857142857142
+          ],
+          "local": [
+            411.7874852066257,
+            -18.989793751219345
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.99,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1154.7428571428572,
+            577.3714285714286
+          ],
+          "local": [
+            398.11661368894437,
+            -11.038865324498854
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 3.1,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1142.7142857142858,
+            571.3571428571429
+          ],
+          "local": [
+            384.4457421712631,
+            -3.0879368977783628
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.79,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1131.8885714285714,
+            565.3428571428572
+          ],
+          "local": [
+            370.77487065358173,
+            4.862991528942125
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.85,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1124.6714285714286,
+            559.3285714285714
+          ],
+          "local": [
+            358.70583003184936,
+            12.315382193627759
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 4.7,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1117.4542857142858,
+            553.3142857142857
+          ],
+          "local": [
+            348.238620306066,
+            19.26923509627853
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 6.44,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1109.0342857142857,
+            546.0971428571429
+          ],
+          "local": [
+            337.40498910375254,
+            26.773833148548547
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 8.09,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1100.6142857142856,
+            538.88
+          ],
+          "local": [
+            327.7105676492253,
+            37.8554931344998
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 6.38,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1092.1942857142858,
+            530.46
+          ],
+          "local": [
+            318.0161461946981,
+            48.93715312045106
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 5.83,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1083.7742857142857,
+            523.2428571428571
+          ],
+          "local": [
+            308.32172474017085,
+            60.01881310640231
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 4.12,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1075.3542857142857,
+            514.8228571428572
+          ],
+          "local": [
+            298.6273032856436,
+            71.10047309235357
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 3.56,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1066.9342857142858,
+            507.60571428571427
+          ],
+          "local": [
+            289.1037248843243,
+            81.03391288708359
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.63,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1060.92,
+            501.5914285714286
+          ],
+          "local": [
+            279.75098953621296,
+            89.81913249059235
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 3.52,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1052.5,
+            494.3742857142857
+          ],
+          "local": [
+            270.39825418810165,
+            98.60435209410113
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.94,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1047.6885714285715,
+            490.7657142857143
+          ],
+          "local": [
+            264.36958385727036,
+            104.26756989792759
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 2.45,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1042.8771428571429,
+            485.95428571428573
+          ],
+          "local": [
+            256.9651045862551,
+            108.95168521345418
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 4.52,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1030.8485714285714,
+            477.5342857142857
+          ],
+          "local": [
+            243.5163993556866,
+            117.4548565429724
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 5.68,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1021.2257142857143,
+            471.52
+          ],
+          "local": [
+            230.06769412511807,
+            125.95802787249059
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 5.91,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            1009.1971428571429,
+            464.30285714285714
+          ],
+          "local": [
+            216.61898889454955,
+            134.4611992020088
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 6.13,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            999.5742857142857,
+            458.28857142857146
+          ],
+          "local": [
+            203.17028366398102,
+            142.964370531527
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 6.26,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            991.1542857142857,
+            453.47714285714284
+          ],
+          "local": [
+            190.52298137972332,
+            150.9579017082966
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 6.59,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            979.1257142857143,
+            446.26
+          ],
+          "local": [
+            177.8756790954656,
+            158.95143288506617
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 6.11,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            968.3,
+            439.04285714285714
+          ],
+          "local": [
+            165.2283768112079,
+            166.94496406183572
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 7.17,
+          "insideHull": true
+        },
+        {
+          "pixel": [
+            959.88,
+            433.0285714285714
+          ],
+          "local": [
+            152.5810745269502,
+            174.9384952386053
+          ],
+          "purpose": "validation",
+          "kind": "road_centerline",
+          "referenceId": "800551190",
+          "errorM": 8.04,
+          "insideHull": true
+        }
+      ],
+      "method": "global_search_street_network",
+      "reportedP95M": 9.92,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.1498,
+            "metresPerPixel": 0.22262,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.1348,
+            "metresPerPixel": 0.22262,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1076,
+            "metresPerPixel": 0.15641,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2377,
+            "metresPerPixel": 0.30467,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.1542,
+            "metresPerPixel": 0.69428,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.1345,
+            "metresPerPixel": 0.13905,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.1498,
+            "metresPerPixel": 0.22262,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.1348,
+            "metresPerPixel": 0.22262,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1076,
+            "metresPerPixel": 0.15641,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2377,
+            "metresPerPixel": 0.30467,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.1542,
+            "metresPerPixel": 0.69428,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.1345,
+            "metresPerPixel": 0.13905,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.2579,
+            "metresPerPixel": 0.14461,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2288,
+            "metresPerPixel": 0.12856,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2453,
+            "metresPerPixel": 0.13905,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2251,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2359,
+            "metresPerPixel": 0.17594,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2459,
+            "metresPerPixel": 0.1504,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.3975,
+            "metresPerPixel": 1.25036,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2668,
+            "metresPerPixel": 0.23153,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2653,
+            "metresPerPixel": 2.53299,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2645,
+            "metresPerPixel": 0.30467,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2595,
+            "metresPerPixel": 0.61721,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2543,
+            "metresPerPixel": 0.23153,
+            "rotationDeg": -1.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 17,
+        "pathEvidence": "linear_ink",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 8.54,
+          "p95": 13.62,
+          "max": 15.17
+        },
+        "insideHull": {
+          "median": 9.5,
+          "p95": 12.63,
+          "max": 13.8
+        },
+        "insideFraction": 0.163,
+        "wholeImage": {
+          "median": 8.54,
+          "p95": 13.62,
+          "max": 15.17
+        },
+        "evaluationSamples": 576
+      },
+      "alternatives": [
+        {
+          "method": "global_search_road_network",
+          "support": 0.3829,
+          "agreesWithChosen": true,
+          "truthMedianM": 14.22
+        },
+        {
+          "method": "global_search_street_network",
+          "support": 0.3825,
+          "agreesWithChosen": true,
+          "truthMedianM": 8.54
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3673,
+          "agreesWithChosen": true,
+          "truthMedianM": 14.08
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3611,
+          "agreesWithChosen": true,
+          "truthMedianM": 18.45
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2723,
+          "agreesWithChosen": false,
+          "truthMedianM": 731.87
+        }
+      ],
+      "poseSupport": {
+        "value": 0.3825,
+        "layers": {
+          "building": 0.0504,
+          "path": 0.4779
+        },
+        "margin": 0.1102
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

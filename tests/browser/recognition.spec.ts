@@ -1,8 +1,9 @@
 import { test, expect } from './fixtures';
 import fs from 'node:fs';
+import path from 'node:path';
 
 test('original photo collage imports, finds every control and opens in its working pixel frame', async ({ page }) => {
-  test.setTimeout(180000);
+  test.setTimeout(480000);
   const fixture = JSON.parse(fs.readFileSync('evidence/new-map-fixture.json', 'utf8'));
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -14,7 +15,12 @@ test('original photo collage imports, finds every control and opens in its worki
   const source = process.env.DIRMAP_RECOGNITION_SOURCE || fixture.sourceFile;
   // Workbench originals use source.img internally; upload them under their
   // actual image format so the browser exercises the JPEG import contract.
-  await page.locator('#upload-input').setInputFiles({ name: 'photo-collage.jpg', mimeType: 'image/jpeg', buffer: fs.readFileSync(source) });
+  const uploadFile = test.info().outputPath('photo-collage.jpg');
+  fs.mkdirSync(path.dirname(uploadFile), { recursive: true });
+  fs.symlinkSync(path.resolve(source), uploadFile);
+  // A real file selection avoids copying the entire large JPEG through
+  // Playwright's base64 transport and an extra browser File buffer.
+  await page.locator('#upload-input').setInputFiles(uploadFile);
   const asset = await (await imported).json();
   expect(asset.sha256).toBe(fixture.sourceHash);
   await expect(page.locator('#process-current')).toBeEnabled();
@@ -23,8 +29,10 @@ test('original photo collage imports, finds every control and opens in its worki
   const submitted = page.waitForResponse(response => response.url().endsWith(`/api/maps/${asset.id}/process`));
   await page.locator('#process-current').click();
   const job = await (await submitted).json();
+  // Completion and correctness, not a throughput gate: under a deliberately
+  // single-core validation quota, keep observing this same persisted job.
   await expect.poll(async () => (await (await page.request.get('/api/jobs/' + job.id)).json()).state,
-    { timeout: 120000, intervals: [500, 1000] }).toBe('succeeded');
+    { timeout: 420000, intervals: [500, 1000] }).toBe('succeeded');
   await expect(page.locator('.control-row')).toHaveCount(18, { timeout: 10000 });
   const state = await (await page.request.get('/api/maps/' + asset.id)).json();
   const controls = state.controls.filter((control: any) => control.role === 'control');

@@ -48,6 +48,7 @@ export class CampusMap {
   private referenceSource = new VectorSource({ attributions: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>' });
   private routes = new VectorSource();
   private controls = new VectorSource();
+  private controlsLayer = new VectorLayer({ source: this.controls, zIndex: 40 });
   private location = new VectorSource();
   private endpoints = new VectorSource();
   private approaches = new VectorSource();
@@ -64,6 +65,7 @@ export class CampusMap {
   private overlays: ImageLayer<ImageStatic>[] = [];
   private terrain: ImageLayer<ImageStatic> | null = null;
   private elevation: ImageLayer<ImageStatic>[] = [];
+  private placePreview: ImageLayer<ImageStatic> | null = null;
   private elevationKey = '';
   map: Map;
   onClick: (lnglat: Pixel, controlId: string | null) => void = () => {};
@@ -82,7 +84,7 @@ export class CampusMap {
       return new Style({ stroke: new Stroke({ color: ['footway', 'path', 'steps'].includes(highway) ? '#cbd3c4' : '#fcfcf7', width: ['primary', 'secondary'].includes(highway) ? 6 : 2.4 }), zIndex: 2 });
     }});
     this.map = new Map({ target, layers: [this.base, reference,
-      new VectorLayer({ source: this.routes, zIndex: 30 }), new VectorLayer({ source: this.controls, zIndex: 40 }),
+      new VectorLayer({ source: this.routes, zIndex: 30 }), this.controlsLayer,
       new VectorLayer({ source: this.endpoints, zIndex: 45 }), new VectorLayer({ source: this.approaches, zIndex: 46 }),
       new VectorLayer({ source: this.fieldChecks, zIndex: 47 }),
       new VectorLayer({ source: this.people, zIndex: 48 }),
@@ -121,7 +123,7 @@ export class CampusMap {
     for (const state of [...states].sort((a, b) => Number(a.assetId === activeId) - Number(b.assetId === activeId))) {
       if (!state.extent || !state.registration || state.registrationStale) continue;
       const layer = new ImageLayer({ source: new ImageStatic({ url: mapAssetUrl(state, 'overlay.png'), imageExtent: state.extent, projection: 'EPSG:3857' }),
-        opacity: state.assetId === activeId ? opacity : opacity * .6, zIndex: 10 });
+        opacity: state.assetId === activeId ? opacity : opacity * .6, zIndex: 10, visible: !this.placePreview });
       this.overlays.push(layer); this.map.addLayer(layer);
     }
   }
@@ -129,7 +131,15 @@ export class CampusMap {
     const layer = new ImageLayer({ source: new ImageStatic({ url: `/api/releases/${id}/overlay.png`, imageExtent: extent, projection: 'EPSG:3857' }), opacity, zIndex: 10 });
     this.overlays.push(layer); this.map.addLayer(layer); this.fit(extent);
   }
-  setOpacity(opacity: number) { for (const layer of this.overlays) layer.setOpacity(opacity); }
+  /** Compare one candidate with the reference without mixing in an older fit. */
+  setPlacePreview(url: string | null, extent: number[] = [], opacity = .6) {
+    if (this.placePreview) this.map.removeLayer(this.placePreview);
+    this.placePreview = url ? new ImageLayer({ source: new ImageStatic({ url, imageExtent: extent, projection: 'EPSG:3857' }), opacity, zIndex: 12 }) : null;
+    for (const layer of this.overlays) layer.setVisible(!url);
+    this.controlsLayer.setVisible(!url);
+    if (this.placePreview) { this.map.addLayer(this.placePreview); this.fit(extent); }
+  }
+  setOpacity(opacity: number) { for (const layer of this.overlays) layer.setOpacity(opacity); this.placePreview?.setOpacity(opacity); }
   /** Coloured relief above the course map; its own opacity blends the two. */
   setElevation(images: { url: string; extent: number[] }[], opacity: number) {
     const key = JSON.stringify(images);

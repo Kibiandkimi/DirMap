@@ -5,6 +5,7 @@ from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import threading
 import time
 import uuid
@@ -126,7 +127,7 @@ def execute_job(job, progress):
                 raise ValueError('等待期间场地范围已改变，请重新下载参照')
             return sites.fetch_reference(job['assetId'], progress)
         result = _execute_job(job, progress)
-        if job['kind'] in ('process', 'terrain', 'anchors'):
+        if job['kind'] in ('process', 'terrain', 'anchors', 'place'):
             # This also runs when recovering an already committed map job.
             # The derived contribution is content-addressed, so a restart
             # cannot give the same printed contours another vote.
@@ -187,6 +188,9 @@ def _execute_operation(job, progress):
     elif job['kind'] == 'anchors':
         progress(10, '校准同名点与生成地图叠层')
         result = apply_anchors(asset_id, payload['anchors'], payload['version'], operation_id=operation_id)
+    elif job['kind'] == 'place':
+        progress(10, '采用选定的候选位置并生成地图叠层')
+        result = adopt_place(asset_id, payload['placeId'], payload['version'], operation_id=operation_id)
     elif job['kind'] == 'plan':
         result = plan_course(payload, progress, operation_id=operation_id)
     elif job['kind'] == 'auto_teams':
@@ -307,7 +311,7 @@ def refresh_terrain(asset_id, expected_version=None, progress=lambda p, m: None,
     return state
 
 
-def geographic_registration(image, result, reference):
+def geographic_registration(image, result, reference, places=None):
     """Register a recognised sheet to its place's OSM reference, or refuse.
 
     Seeded fits (a lake, a large roof, a park outline) are fast but can lock
@@ -315,10 +319,21 @@ def geographic_registration(image, result, reference):
     poses, and every candidate is judged by how well the whole sheet agrees
     with the place at its final pose. A seeded result that agrees with the
     best-supported pose is kept, so maps that registered before keep their
-    measured anchors.
+    measured anchors. On a refusal that still fitted distinct places, these
+    are appended to `places` as (support, registration, quality) for the
+    teacher to choose from.
     """
     failures = []
     cartography = cartographic_image(image, result['sheetPhotos'])
+    from .registration_hints import correct_exposure, prepare_scale_hints
+    image, cartography, result, exposure = correct_exposure(image, cartography, result)
+    cartography, result, hints = prepare_scale_hints(cartography, result)
+
+    def finished(reg, quality):
+        if exposure is not None:
+            quality = {**quality, 'exposureCorrection': exposure}
+        return reg, quality, failures
+
     established = []
     try:
         reg, quality = auto_register(result['features'], reference, result['width'], result['height'])
@@ -333,21 +348,29 @@ def geographic_registration(image, result, reference):
     except ValueError as exc:
         failures.append(str(exc))
     try:
-        reg, quality = global_registration.register(image, cartography, result, reference, established=established)
+        reg, quality = global_registration.register(image, cartography, result, reference, established=established, prepared_hints=hints)
     except global_registration.NoEvidence as exc:
         # Nothing on the sheet can be compared with the place; only a
         # seeded result remains, as before the global check existed.
         failures.append(str(exc))
-        return (*established[0], failures) if established else (None, None, failures)
+        return finished(*established[0]) if established else (None, None, failures)
+    except global_registration.AmbiguousPlace as exc:
+        failures.append(str(exc))
+        if places is not None:
+            for value, reg, quality in exc.places:
+                if not any(reg is candidate for candidate, _ in established):
+                    reg, quality = recover_boundary_buildings(cartography, reg, quality, reference)
+                places.append((value, reg, finished(reg, quality)[1]))
+        return None, None, failures
     except ValueError as exc:
         failures.append(str(exc))
         return None, None, failures
     except Exception as exc:  # noqa: BLE001 - an unexpected fault must not cost the seeded result
         failures.append(f'全局核查出错，沿用原自动配准：{type(exc).__name__}: {exc}'[:300])
-        return (*established[0], failures) if established else (None, None, failures)
+        return finished(*established[0]) if established else (None, None, failures)
     if not any(reg is candidate for candidate, _ in established):
         reg, quality = recover_boundary_buildings(cartography, reg, quality, reference)
-    return reg, quality, failures
+    return finished(reg, quality)
 
 
 def _process_asset(asset_id, progress, directory, previous, operation_id=None, preserve_edits=True, preserve_registration=False):
@@ -366,22 +389,29 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
     result = analyze(image, labeler=label_controls)
     result['sheetPhotos'] = reconcile_photos(result['sheetPhotos'], previous.get('sheetPhotos', []) if keep else [], result['controls'])
     save_analysis(result, directory)
+    # Matching needs only the source image and observed features. These
+    # full-resolution terrain arrays are already saved in this immutable
+    # generation; keeping them through global search needlessly doubles
+    # the peak memory of a first-time large-map import.
+    for key in ('masks', 'blocked', 'costs', 'semantics'):
+        result.pop(key, None)
     save_photos(image, result['sheetPhotos'], directory)
     if image_info['resized'] or image_info['exifOrientation'] != 1:
         cv2.imwrite(str(directory/'working.jpg'), image, [cv2.IMWRITE_JPEG_QUALITY, 94])
     progress(35, f'匹配{site["name"]}参照与同一场地的其他原图')
     reg, quality = None, None
-    failures = []
+    failures, places = [], []
     # Local metres of a kept fit stay in the frame they were measured in.
     frame = Frame.of(previous) if keep and previous.get('registration') else sites.frame(site)
     keep_registration = (keep and previous.get('registration') and
         (preserve_registration or (previous.get('quality') or {}).get('method') == 'reviewed_landmarks_mesh'
-         or (previous.get('quality') or {}).get('method', '').startswith('manual')))
+         or (previous.get('quality') or {}).get('method', '').startswith('manual')
+         or (previous.get('quality') or {}).get('chosenPlace')))
     if keep_registration:
         reg, quality = Registration.from_dict(previous['registration']), copy.deepcopy(previous['quality'])
     else:
         try:
-            reg, quality, failures = geographic_registration(image, result, sites.reference(site['id'], frame))
+            reg, quality, failures = geographic_registration(image, result, sites.reference(site['id'], frame), places)
         except ValueError as exc:
             failures.append(str(exc))
     # Prefer direct geographic evidence. A low-resolution copy may inherit
@@ -458,6 +488,10 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
         # Keep the serialized registration stamp too, so unchanged transforms
         # do not invalidate dependent sheets through int/float round-tripping.
         state['registration'] = copy.deepcopy(previous['registration'])
+        if previous.get('registrationCandidates'):
+            state['registrationCandidates'] = copy.deepcopy(previous['registrationCandidates'])
+            for place in state['registrationCandidates']:
+                shutil.copyfile(store.artifact_path(previous, place['preview']), directory/place['preview'])
         state['frame'] = copy.deepcopy(previous['frame'])
     if reg is not None:
         progress(60, '生成统一坐标叠层与目标点')
@@ -466,6 +500,10 @@ def _process_asset(asset_id, progress, directory, previous, operation_id=None, p
         terrain = cv2.imread(str(directory/'terrain.png'), cv2.IMREAD_UNCHANGED)
         warp_overlay(terrain, reg, directory/'terrain-warp.png', frame=frame, max_side=1200, nearest=True)
         project_controls(state)
+    elif places:
+        progress(60, '生成候选位置的叠层预览')
+        state['registrationCandidates'] = offered_places(image, places, frame, directory)
+        state['warnings'].append(f'自动配准找到 {len(places)} 个吻合度相近的位置，请对照标准地图选定一处，或录入同名点。')
     else:
         state['warnings'].append('自动配准证据不足，请录入同名点后继续。')
     progress(90, '保存可复核结果')
@@ -909,6 +947,40 @@ def plan_course(request, progress=lambda p, m: None, operation_id=None, auto_tea
     return result
 
 
+def offered_places(image, places, frame, directory):
+    """Previews of the refused registration's distinct places, best first."""
+    offered = []
+    for index, (value, reg, quality) in enumerate(places[:len(store.PLACE_PREVIEWS)]):
+        offered.append({'id': f'place-{index+1}', 'support': round(float(value), 4), 'method': quality.get('method'),
+                        'p95ErrorM': quality.get('p95ErrorM'), 'thinValidation': bool(quality.get('thinValidation')),
+                        'extent': warp_overlay(image, reg, directory/store.PLACE_PREVIEWS[index], frame=frame, max_side=900),
+                        'preview': store.PLACE_PREVIEWS[index], 'registration': reg.as_dict(), 'quality': quality})
+    return offered
+
+
+def adopt_place(asset_id, place_id, expected_version=None, operation_id=None):
+    """Apply the place a teacher picked among the refused registration's candidates.
+
+    The fit and its held-out check are the automatic ones; only the choice
+    between places supported almost equally well comes from the teacher.
+    """
+    state = store.get_state(asset_id)
+    if not state:
+        raise ValueError('请先分析原图')
+    if expected_version is not None and state['version'] != expected_version:
+        raise ValueError('地图已更新，请刷新后重新选择')
+    offered = state.get('registrationCandidates') or []
+    place = next((p for p in offered if p['id'] == place_id), None)
+    if place is None:
+        raise ValueError('候选位置已失效，请重新识别与配准')
+    quality = copy.deepcopy(place['quality'])
+    quality.update(state='needs_review', chosenPlace={'id': place_id, 'support': place['support'], 'offered': len(offered)},
+                   validationScope=f'自动配准找到 {len(offered)} 个吻合度相近的位置，由教师对照标准地图选定此处；'
+                                   +quality.get('validationScope', ''))
+    return _apply_registration(asset_id, state, Registration.from_dict(place['registration']), quality, operation_id,
+                               '选择期间地图被修改，已保留最新修改')
+
+
 def apply_anchors(asset_id, anchors, expected_version=None, operation_id=None):
     state = store.get_state(asset_id)
     if not state:
@@ -919,11 +991,20 @@ def apply_anchors(asset_id, anchors, expected_version=None, operation_id=None):
         x, y = anchor['pixel']
         if not 0 <= x < state['width'] or not 0 <= y < state['height']:
             raise ValueError('同名点超出原图范围')
+    reg, quality = manual_register(anchors, Frame.of(state))
+    return _apply_registration(asset_id, state, reg, quality, operation_id, '校准期间地图被修改，已保留最新修改')
+
+
+def _apply_registration(asset_id, state, reg, quality, operation_id, conflict):
     frame = Frame.of(state)
-    reg, quality = manual_register(anchors, frame)
     image = read_image(store.get_asset(asset_id)['path'], (state['width'], state['height']))
     state['registration'] = reg.as_dict()
     state['quality'] = quality
+    if not quality.get('chosenPlace'):
+        state.pop('registrationCandidates', None)
+        if 'artifacts' in state:
+            for name in store.PLACE_PREVIEWS:
+                state['artifacts'].pop(name, None)
     initial_stamp = editing_stamp(state)
     with tempfile.TemporaryDirectory(prefix='.anchors-', dir=store.asset_dir(asset_id)) as temporary:
         directory = Path(temporary)
@@ -937,7 +1018,7 @@ def apply_anchors(asset_id, anchors, expected_version=None, operation_id=None):
         project_controls(state)
         with store.LOCK:
             if editing_stamp(store.get_state(asset_id)) != initial_stamp:
-                raise ValueError('校准期间地图被修改，已保留最新修改')
+                raise ValueError(conflict)
             store.stage_artifacts(state, directory)
             store.save_state(asset_id, state, operation_id)
     forget_graph(asset_id)

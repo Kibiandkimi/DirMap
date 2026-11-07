@@ -785,7 +785,7 @@ def label_sheet_photo(asset_id: str, photo_id: str, patch: PhotoLabelPatch):
 
 @app.get('/assets/maps/{asset_id}/{artifact}')
 def artifact(asset_id: str, artifact: str, v: int | None = None):
-    if artifact not in ('overlay.png', 'terrain.png', 'terrain-warp.png', 'blocked.png', 'working.jpg'):
+    if artifact not in ('overlay.png', 'terrain.png', 'terrain-warp.png', 'blocked.png', 'working.jpg', *store.PLACE_PREVIEWS):
         raise HTTPException(404)
     state = store.get_state(asset_id)
     if v is not None and (not state or state['version'] != v):
@@ -1020,6 +1020,13 @@ def patch_map(asset_id: str, patch: StatePatch):
         store.save_state(asset_id, state)
         service.forget_graph(asset_id)
         return state
+
+
+@app.post('/api/maps/{asset_id}/places/{place_id}')
+def adopt_place(asset_id: str, place_id: str, request: TerrainRequest, http_request: Request):
+    if not re.fullmatch(r'place-[1-9]', place_id):
+        raise ValueError('候选位置标识无效')
+    return submit_job(http_request, 'place', asset_id, {'placeId': place_id, 'version': request.version}, request.version)
 
 
 @app.post('/api/maps/{asset_id}/anchors')

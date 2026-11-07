@@ -46,7 +46,7 @@ def main():
         site = next((s for s in sites.builtin() if s['id'] == args.site), None)
         if site is None or len(site['reference']) != 1 or site['reference'][0].startswith('data/'):
             raise SystemExit('Only a built-in place with one shipped reference file can be regenerated')
-        data, host = sites.download(sites.overpass_query(site['bbox']), lambda percent, message: print(message))
+        data, host = sites.download_reference(site['bbox'], lambda percent, message: print(message))
         elements = sites.compact(data['elements'])
         sites.save_reference(store.ROOT/site['reference'][0], site['bbox'], elements, host)
         print(f'{site["reference"][0]}: {len(elements)} elements, {len(sites.reference(site["id"]))} usable features')
