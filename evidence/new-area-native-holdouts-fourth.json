@@ -1,0 +1,73 @@
+{
+ "selectedAt": "2026-11-07T12:21:43.630767+00:00",
+ "nativeResolution": true,
+ "implementationSignatureAtSelection": "b2331eb1707c173e8be525fb414507d855fb1fe76c05c629808307b764713d60",
+ "selectionBasis": "Fourth cohort, selected only from RouteGadget event-list metadata (rg2api.php?type=events: name, date, club, type, suffix and world-file coefficients A-F) before downloading or viewing any image. Five regions and six clubs never used before (Glasgow STAG, Edinburgh EUOC and ESOC, Leeds AIRE, Manchester MDOC, Newcastle/Northumberland NATO), all outside Hertfordshire, London, Bristol and Oxford. Weighted toward Dashahe-like first maps of new places: hilly urban parks, a campus sprint and a university/urban area, plus two woodland stress cases. Eligibility: suffix gif (the verifier fetches kartat/<mapid>.gif), non-zero world file A-F whose origin lies in the event's region (several servers carry placeholder world files near 49.78N 7.56W, which were excluded), map id not shared with another chosen event. Reasons come from the event name, club, date and world-file scale plus public knowledge of the named place, not from any image. No outcome-based replacement is allowed.",
+ "referencePolicy": "World files frame a bounded teacher viewport only and measure the result afterwards. Preserve every result including refusals and wrong fits.",
+ "cases": [
+  {
+   "host": "https://www.stag.routegadget.co.uk",
+   "id": 82,
+   "mapid": 83,
+   "name": "GPC19-2-Queens Park",
+   "date": "2019-12-01",
+   "reason": "Glasgow Victorian hilltop urban public park (flagpole hill, paved paths, housing on the edges); closest analogue of Dashahe. World file 0.34 m/px."
+  },
+  {
+   "host": "https://www.euoc.routegadget.co.uk",
+   "id": 36,
+   "mapid": 39,
+   "name": "BW2020 - FwtN - Calton Hill",
+   "date": "2020-01-24",
+   "reason": "Small steep city-centre hill park in Edinburgh with monuments, paved paths and buildings around the edges; hilly urban park. World file 0.63 m/px."
+  },
+  {
+   "host": "https://www.euoc.routegadget.co.uk",
+   "id": 57,
+   "mapid": 63,
+   "name": "BW2026 - Sprint - Pollock Halls",
+   "date": "2026-01-25",
+   "reason": "University residence campus sprint below Salisbury Crags (campus buildings in sloping parkland); campus/school-map analogue. World file 0.34 m/px."
+  },
+  {
+   "host": "https://www.aire.routegadget.co.uk",
+   "id": 267,
+   "mapid": 260,
+   "name": "Summer in the City - Little London/Leeds Uni",
+   "date": "2024-07-07",
+   "reason": "Leeds University campus plus adjoining urban area on a slope; campus/urban sprint by a new club and mapper. World file 0.51 m/px."
+  },
+  {
+   "host": "https://www.mdoc.routegadget.co.uk",
+   "id": 369,
+   "mapid": 343,
+   "name": "Philips Park (YBT)",
+   "date": "2023-04-23",
+   "reason": "Public park on a valley side in Greater Manchester (mixed open park and wooded slopes) used for a junior event; park map from a new region. World file 1.01 m/px."
+  },
+  {
+   "host": "https://www.nato.routegadget.co.uk",
+   "id": 177,
+   "mapid": 140,
+   "name": "Jesmond Dene",
+   "date": "2025-03-16",
+   "reason": "Steep wooded valley park inside Newcastle with paved paths and housing on both rims; hilly urban park leaning toward woodland. World file 1.41 m/px."
+  },
+  {
+   "host": "https://www.esoc.routegadget.co.uk",
+   "id": 82,
+   "mapid": 69,
+   "name": "Corstorphine Hill - SoSOL2",
+   "date": "2020-02-23",
+   "reason": "Stress case: wooded hill public park in west Edinburgh (woodland/park, few buildings), different club from EUOC. World file 0.42 m/px."
+  },
+  {
+   "host": "https://www.nato.routegadget.co.uk",
+   "id": 152,
+   "mapid": 117,
+   "name": "Broomley Woods",
+   "date": "2022-05-08",
+   "reason": "Stress case: rural Northumberland woodland with few paved features. World file 1.49 m/px."
+  }
+ ]
+}
