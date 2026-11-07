@@ -339,7 +339,7 @@ def sheet_evidence(image, cartography, result):
     return layers, footprint, extraction
 
 
-def expanded_paths(image, footprint, *, linear_ink=False):
+def expanded_paths(image, footprint, *, linear_ink=False, darker_than_fill=False):
     """Fallback for deeper paving and forest-style black path strokes.
 
     These are candidates for matching, not a traversability mask. Dark ink
@@ -351,11 +351,26 @@ def expanded_paths(image, footprint, *, linear_ink=False):
     small = cv2.resize(image, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_AREA)
     h, s, v = cv2.split(cv2.cvtColor(small, cv2.COLOR_BGR2HSV))
     paving = ((h >= 3) & (h <= 27) & (s >= 12) & (s <= 150) & (v > 135)).astype(np.uint8)
-    paving = cv2.morphologyEx(paving, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
-    # Pale open land can share paving's hue. Its broad filled areas are
-    # not observed ways, and thinning them invents lines through fields.
-    broad = cv2.morphologyEx(paving, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
-    paving[cv2.dilate(broad, np.ones((5, 5), np.uint8)) > 0] = 0
+    if darker_than_fill:
+        # Some sheets print paving in a tan of almost the same hue and
+        # saturation as their yellow open land, only darker (V about 226
+        # against 252). Paths crossing open land then join the fields'
+        # broad areas, and removing those erases the paths with them.
+        # Keep instead the tan that is darker than the fill on both sides
+        # within a printed road's width: a morphological closing restores
+        # the surrounding fill over strokes narrower than the kernel, while
+        # broad areas, including their edges, close to themselves. Open
+        # land as bright as the paper is never darker than its surroundings.
+        fill = cv2.morphologyEx(v, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21)))
+        paving &= (fill.astype(np.int16)-v >= 12).astype(np.uint8)
+        # Hairlines such as contour edges are not printed roads.
+        paving = cv2.morphologyEx(paving, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+    else:
+        paving = cv2.morphologyEx(paving, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+        # Pale open land can share paving's hue. Its broad filled areas are
+        # not observed ways, and thinning them invents lines through fields.
+        broad = cv2.morphologyEx(paving, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
+        paving[cv2.dilate(broad, np.ones((5, 5), np.uint8)) > 0] = 0
     if linear_ink:
         ink = ((v < 140) & (s < 100)).astype(np.uint8)
         wide = cv2.morphologyEx(ink, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
@@ -373,7 +388,7 @@ def expanded_paths(image, footprint, *, linear_ink=False):
     if len(xx) < 200:
         raise NoEvidence('备用道路提取没有足够的连续线段')
     return np.column_stack((xx, yy)).astype(float), footprint*ratio, ratio, {
-        'pathEvidence': 'linear_ink' if linear_ink else 'expanded_paving'}
+        'pathEvidence': 'linear_ink' if linear_ink else 'darker_paving' if darker_than_fill else 'expanded_paving'}
 
 
 def different_paths(first, second, ratio):
@@ -967,6 +982,18 @@ def register(image, cartography, result, reference, *, angles=NORTH_UP_DEG, atte
                     for style, paths, extra in variants[:1]+variants[1:][-1:]:
                         hypotheses.append((style+'_without_black_roofs', clean, unroofed,
                                            {**base, 'building': roofs, 'path': paths}, outline, extra))
+                # Paving printed in a tan close to the open land it
+                # crosses is lost by every reading above. Tried last, so
+                # sheets that any earlier reading places are unaffected.
+                try:
+                    extra = expanded_paths(clean, outline, darker_than_fill=True)
+                except NoEvidence:
+                    pass
+                else:
+                    paths = extra[0]/extra[2]
+                    if all(different_paths(paths, previous, extra[2]) for previous in previous_paths):
+                        hypotheses.append((extra[3]['pathEvidence'], clean, filtered,
+                                           {**base, 'path': paths}, outline, extra))
     detail = '；'+'；'.join(dict.fromkeys(failures))[:160] if failures and not fitted else ''
     if not searched:
         raise NoEvidence('参照与原图没有共同的建筑、水体或道路可供搜索'+detail)

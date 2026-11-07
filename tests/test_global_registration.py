@@ -279,6 +279,41 @@ def test_deep_paving_and_dashed_paths_supply_fallback_evidence_without_solid_roo
         G.expanded_paths(np.full_like(image, (120, 160, 210)), footprint)
 
 
+def test_tan_paving_across_similar_yellow_open_land_is_read_as_darker_than_its_fill():
+    # Paper, yellow open land, paler rough open land and tan paving share
+    # a hue; paving is only darker (V about 226 against 252).
+    image = np.full((700, 700, 3), 254, np.uint8)
+    footprint = np.array([[0, 0], [699, 0], [699, 699], [0, 699]], float)
+    image[60:380, 60:640] = (123, 204, 253)
+    image[380:560, 60:640] = (162, 216, 252)
+    tan = (131, 171, 226)
+    rows, cols = (130, 250, 470), (200, 450)
+    for y in rows:
+        cv2.line(image, (20, y), (680, y), tan, 6)
+    for x in cols:
+        cv2.line(image, (x-2, 20), (x-2, 680), (0, 0, 0), 1)
+        cv2.line(image, (x+3, 20), (x+3, 680), (0, 0, 0), 1)
+        cv2.line(image, (x, 20), (x, 680), tan, 4)
+    cv2.rectangle(image, (480, 600), (680, 690), tan, -1)  # a broad paved square
+    cv2.line(image, (20, 660), (450, 660), (60, 120, 200), 1)  # a brown hairline
+    centre = lambda p: ((np.min(np.abs(p[:, 1, None]-rows), axis=1) <= 3)
+                        | (np.min(np.abs(p[:, 0, None]-cols), axis=1) <= 3))
+    try:
+        usual, *_ = G.expanded_paths(image, footprint)
+    except G.NoEvidence:
+        usual = np.empty((0, 2))
+    assert np.count_nonzero(centre(usual)) < 600
+    pixels, _, ratio, diagnostics = G.expanded_paths(image, footprint, darker_than_fill=True)
+    assert ratio == 1 and diagnostics['pathEvidence'] == 'darker_paving'
+    assert np.count_nonzero(centre(pixels)) > 3000
+    assert np.mean(centre(pixels)) > .97
+    # Neither the open land's edges, the square's interior nor the hairline.
+    edges = (np.abs(pixels[:, 1]-60) <= 3) | (np.abs(pixels[:, 1]-380) <= 3) | (np.abs(pixels[:, 1]-560) <= 3)
+    assert not np.any(edges & ~centre(pixels))
+    assert not np.any((pixels[:, 0] > 500) & (pixels[:, 1] > 620))
+    assert not np.any((np.abs(pixels[:, 1]-660) <= 2) & (pixels[:, 0] < 180))
+
+
 def test_extra_road_coverage_does_not_override_a_checked_object_fit(monkeypatch):
     footprint = np.array([[0, 0], [500, 0], [500, 500], [0, 500]], float)
     matrix = np.array([[1, 0, 0], [0, -1, 0]], float)
