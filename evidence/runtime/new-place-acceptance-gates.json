@@ -1,0 +1,1233 @@
+{
+  "checkedAt": "2026-11-07T19:29:14Z",
+  "implementationSignature": "fd8d9086d649412516f0fbaddb3b03d3a5b79afb431103b2c499345028f7850d",
+  "scope": "Acceptance gates for first registrations of new places, judged on the cached inputs of 2026-11-07 (OSM references re-downloaded that day; sha256 per case in each batch file). \"before\" is the same inputs under commit f04840b (implementation 21ada95f...); \"after\" is this implementation. Dashahe outcomes are consistency with the reviewed workbench fit, not survey truth.",
+  "gates": {
+    "minimumPoseLayersForGlobalSearch": 2,
+    "extrapolationLimitM": 12.0,
+    "maximumAnisotropy": 0.08,
+    "reportedP95": "hypot(held-out P95, leave-one-landmark-out spread)"
+  },
+  "batches": [
+    {
+      "batch": "15-map set",
+      "resultFile": "new-area-registration-acceptance-gates.json",
+      "before": {
+        "correct": 14,
+        "wrong": 1,
+        "refused": 0
+      },
+      "after": {
+        "correct": 14,
+        "wrong": 0,
+        "refused": 1
+      },
+      "changed": [
+        {
+          "case": "Park-O 2017 #3: Stanboro",
+          "before": "wrong",
+          "beforeMethod": "water_seed_observed_outline_ransac_mesh",
+          "after": "refused",
+          "correctPlaceOffered": 1,
+          "reason": "同名点集中，去掉单个同名点后图幅位置变化 22.5 m，外推不可靠，请对照候选位置或补充同名点"
+        }
+      ]
+    },
+    {
+      "batch": "native 1 (final)",
+      "resultFile": "new-place-native-final-acceptance-gates.json",
+      "before": {
+        "correct": 2,
+        "wrong": 1,
+        "refused": 0
+      },
+      "after": {
+        "correct": 2,
+        "wrong": 1,
+        "refused": 0
+      },
+      "changed": []
+    },
+    {
+      "batch": "native 2",
+      "resultFile": "new-place-native-holdouts-second-acceptance-gates.json",
+      "before": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "after": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "changed": []
+    },
+    {
+      "batch": "native 3 bok",
+      "resultFile": "new-place-native-holdouts-third-bok-acceptance-gates.json",
+      "before": {
+        "correct": 2,
+        "wrong": 1,
+        "refused": 0
+      },
+      "after": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "changed": [
+        {
+          "case": "Westridge Wood",
+          "before": "wrong",
+          "beforeMethod": "global_search_layer_correlation",
+          "after": "refused",
+          "correctPlaceOffered": 1,
+          "reason": "存在吻合度相近的不同位置（0.21 与 0.17），请补充同名点确定位置"
+        }
+      ]
+    },
+    {
+      "batch": "native 3 tvoc",
+      "resultFile": "new-place-native-holdouts-third-tvoc-acceptance-gates.json",
+      "before": {
+        "correct": 2,
+        "wrong": 1,
+        "refused": 0
+      },
+      "after": {
+        "correct": 2,
+        "wrong": 1,
+        "refused": 0
+      },
+      "changed": []
+    },
+    {
+      "batch": "Dashahe",
+      "resultFile": "dashahe-as-new-place-acceptance-gates.json",
+      "before": {
+        "correct": 8,
+        "wrong": 0,
+        "refused": 3
+      },
+      "after": {
+        "correct": 8,
+        "wrong": 0,
+        "refused": 3
+      },
+      "changed": []
+    },
+    {
+      "batch": "Shenzhen",
+      "resultFile": "shenzhen-new-places-acceptance-gates.json",
+      "before": {
+        "correct": 10,
+        "wrong": 0,
+        "refused": 0
+      },
+      "after": {
+        "correct": 10,
+        "wrong": 0,
+        "refused": 0
+      },
+      "changed": []
+    }
+  ],
+  "signals": [
+    {
+      "batch": "15-map set",
+      "case": "Wardown Park HH Sprint C",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 2.82,
+        "p95": 5.8,
+        "max": 6.78
+      },
+      "heldOutP95M": 2.73,
+      "extrapolationSpreadM": 0.56,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.4249,
+        "water": 0.9396,
+        "path": 0.5702
+      },
+      "layerWeights": {
+        "building": 0.177,
+        "water": 0.3,
+        "path": 0.522
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Highfield Park Saturday ",
+      "outcome": "correct",
+      "method": "building_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.14,
+        "p95": 1.81,
+        "max": 2.18
+      },
+      "heldOutP95M": 3.37,
+      "extrapolationSpreadM": 1.08,
+      "anisotropyPercent": 0.38,
+      "poseLayers": {
+        "building": 0.1361,
+        "water": 0.1121,
+        "path": 0.6442
+      },
+      "layerWeights": {
+        "building": 0.171,
+        "water": 0.1,
+        "path": 0.729
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Oaklands AGM Sprint",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.26,
+        "p95": 1.92,
+        "max": 2.32
+      },
+      "heldOutP95M": 3.86,
+      "extrapolationSpreadM": 0.31,
+      "anisotropyPercent": 0.82,
+      "poseLayers": {
+        "building": 0.7905,
+        "water": 0.5121,
+        "path": 0.5328
+      },
+      "layerWeights": {
+        "building": 0.359,
+        "water": 0.174,
+        "path": 0.467
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Habs AGM Sprint",
+      "outcome": "correct",
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 4.02,
+        "p95": 7.91,
+        "max": 9.27
+      },
+      "heldOutP95M": 5.56,
+      "extrapolationSpreadM": 0.65,
+      "anisotropyPercent": 0.22,
+      "poseLayers": {
+        "building": 0.8547,
+        "water": -0.0149,
+        "path": 0.5173
+      },
+      "layerWeights": {
+        "building": 0.355,
+        "water": 0.152,
+        "path": 0.494
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "De Havilland Campus AGM ",
+      "outcome": "correct",
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.85,
+        "p95": 3.41,
+        "max": 4.29
+      },
+      "heldOutP95M": 5.44,
+      "extrapolationSpreadM": 0.36,
+      "anisotropyPercent": 1.25,
+      "poseLayers": {
+        "building": 0.874,
+        "water": -0.0016,
+        "path": 0.548
+      },
+      "layerWeights": {
+        "building": 0.431,
+        "water": 0.03,
+        "path": 0.539
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Park-O 2017 #3: Stanboro",
+      "outcome": "refused (first offered place)",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 2.23,
+        "p95": 4.72,
+        "max": 5.71
+      },
+      "heldOutP95M": 7.79,
+      "extrapolationSpreadM": 3.9,
+      "anisotropyPercent": null,
+      "poseLayers": null,
+      "layerWeights": null
+    },
+    {
+      "batch": "15-map set",
+      "case": "Cassiobury Park Saturday",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 5.37,
+        "p95": 13.25,
+        "max": 16.3
+      },
+      "heldOutP95M": 9.05,
+      "extrapolationSpreadM": 4.26,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.0024,
+        "water": 0.493,
+        "path": 0.3293
+      },
+      "layerWeights": {
+        "building": 0.08,
+        "water": 0.299,
+        "path": 0.621
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Hatfield Urban Race",
+      "outcome": "correct",
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.72,
+        "p95": 3.72,
+        "max": 4.33
+      },
+      "heldOutP95M": 9.33,
+      "extrapolationSpreadM": 0.09,
+      "anisotropyPercent": 0.14,
+      "poseLayers": {
+        "building": 0.7301,
+        "water": 0.7011,
+        "path": 0.6563
+      },
+      "layerWeights": {
+        "building": 0.459,
+        "water": 0.042,
+        "path": 0.499
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "St Albans City Race 2025",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.93,
+        "p95": 4.05,
+        "max": 4.51
+      },
+      "heldOutP95M": 4.9,
+      "extrapolationSpreadM": 0.04,
+      "anisotropyPercent": 0.1,
+      "poseLayers": {
+        "building": 0.6878,
+        "water": 0.7357,
+        "path": 0.5277
+      },
+      "layerWeights": {
+        "building": 0.496,
+        "water": 0.065,
+        "path": 0.439
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Welwyn Garden City Urban",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 2.88,
+        "p95": 4.54,
+        "max": 8.49
+      },
+      "heldOutP95M": 6.18,
+      "extrapolationSpreadM": 0.95,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.5469,
+        "path": 0.3585
+      },
+      "layerWeights": {
+        "building": 0.46,
+        "path": 0.54
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Welwyn Garden City Race ",
+      "outcome": "correct",
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.04,
+        "p95": 3.68,
+        "max": 4.59
+      },
+      "heldOutP95M": 7.65,
+      "extrapolationSpreadM": 0.11,
+      "anisotropyPercent": 0.48,
+      "poseLayers": {
+        "building": 0.4884,
+        "water": -0.0024,
+        "path": 0.4718
+      },
+      "layerWeights": {
+        "building": 0.438,
+        "water": 0.049,
+        "path": 0.513
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Moneyhole Park Saturday ",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 7.04,
+        "p95": 14.53,
+        "max": 17.44
+      },
+      "heldOutP95M": 8.13,
+      "extrapolationSpreadM": 5.35,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.3118,
+        "water": -0.0083,
+        "path": 0.3949
+      },
+      "layerWeights": {
+        "building": 0.303,
+        "water": 0.12,
+        "path": 0.577
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Panshanger Park: Jack of",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 8.99,
+        "p95": 15.5,
+        "max": 17.45
+      },
+      "heldOutP95M": 9.76,
+      "extrapolationSpreadM": 7.3,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "water": 0.9261,
+        "path": 0.0158
+      },
+      "layerWeights": {
+        "water": 0.704,
+        "path": 0.296
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Panshanger Park West Sat",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 6.3,
+        "p95": 10.07,
+        "max": 11.38
+      },
+      "heldOutP95M": 10.72,
+      "extrapolationSpreadM": 5.44,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.0003,
+        "water": 0.8068,
+        "path": 0.4636
+      },
+      "layerWeights": {
+        "building": 0.115,
+        "water": 0.275,
+        "path": 0.61
+      }
+    },
+    {
+      "batch": "15-map set",
+      "case": "Highfield Park",
+      "outcome": "correct",
+      "method": "building_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.7,
+        "p95": 4.47,
+        "max": 5.76
+      },
+      "heldOutP95M": 4.37,
+      "extrapolationSpreadM": 0.82,
+      "anisotropyPercent": 0.77,
+      "poseLayers": {
+        "building": 0.1327,
+        "water": 0.2912,
+        "path": 0.5857
+      },
+      "layerWeights": {
+        "building": 0.182,
+        "water": 0.063,
+        "path": 0.754
+      }
+    },
+    {
+      "batch": "native 1 (final)",
+      "case": "Nomansland Common GLOSS ",
+      "outcome": "correct",
+      "method": "global_search_street_network",
+      "truth": {
+        "median": 5.92,
+        "p95": 10.4,
+        "max": 11.95
+      },
+      "heldOutP95M": 5.62,
+      "extrapolationSpreadM": 2.67,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.5904,
+        "path": 0.4617
+      },
+      "layerWeights": {
+        "building": 0.218,
+        "path": 0.782
+      }
+    },
+    {
+      "batch": "native 1 (final)",
+      "case": "Burnham Beeches Saturday",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 5.88,
+        "p95": 8.66,
+        "max": 10.16
+      },
+      "heldOutP95M": 9.78,
+      "extrapolationSpreadM": 4.87,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": -0.0255,
+        "water": 0.3872,
+        "path": 0.4049
+      },
+      "layerWeights": {
+        "building": 0.092,
+        "water": 0.235,
+        "path": 0.673
+      }
+    },
+    {
+      "batch": "native 1 (final)",
+      "case": "Chipperfield Saturday Se",
+      "outcome": "wrong",
+      "method": "global_search_street_network",
+      "truth": {
+        "median": 10.24,
+        "p95": 16.13,
+        "max": 19.25
+      },
+      "heldOutP95M": 10.77,
+      "extrapolationSpreadM": 4.27,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.0994,
+        "path": 0.4585
+      },
+      "layerWeights": {
+        "building": 0.223,
+        "path": 0.777
+      }
+    },
+    {
+      "batch": "native 2",
+      "case": "Mardley Heath Saturday S",
+      "outcome": "refused (first offered place)",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 1.71,
+        "p95": 2.48,
+        "max": 2.79
+      },
+      "heldOutP95M": 5.03,
+      "extrapolationSpreadM": 1.88,
+      "anisotropyPercent": null,
+      "poseLayers": null,
+      "layerWeights": null
+    },
+    {
+      "batch": "native 2",
+      "case": "Haileybury Saturday Seri",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.74,
+        "p95": 4.98,
+        "max": 5.41
+      },
+      "heldOutP95M": 7.98,
+      "extrapolationSpreadM": 0.51,
+      "anisotropyPercent": 0.64,
+      "poseLayers": {
+        "building": 0.8556,
+        "water": 0.3765,
+        "path": 0.2138
+      },
+      "layerWeights": {
+        "building": 0.365,
+        "water": 0.189,
+        "path": 0.446
+      }
+    },
+    {
+      "batch": "native 2",
+      "case": "Fairlands Valley Saturda",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.06,
+        "p95": 5.38,
+        "max": 6.49
+      },
+      "heldOutP95M": 8.08,
+      "extrapolationSpreadM": 2.55,
+      "anisotropyPercent": 0.44,
+      "poseLayers": {
+        "building": 0.2003,
+        "water": 0.9564,
+        "path": 0.2983
+      },
+      "layerWeights": {
+        "building": 0.252,
+        "water": 0.258,
+        "path": 0.49
+      }
+    },
+    {
+      "batch": "native 3 bok",
+      "case": "Frenchay urban",
+      "outcome": "correct",
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.4,
+        "p95": 4.24,
+        "max": 5.79
+      },
+      "heldOutP95M": 5.46,
+      "extrapolationSpreadM": 0.31,
+      "anisotropyPercent": 0.25,
+      "poseLayers": {
+        "building": 0.5935,
+        "water": 0.7631,
+        "path": 0.4982
+      },
+      "layerWeights": {
+        "building": 0.354,
+        "water": 0.173,
+        "path": 0.473
+      }
+    },
+    {
+      "batch": "native 3 bok",
+      "case": "Westridge Wood",
+      "outcome": "refused (first offered place)",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 6.36,
+        "p95": 12.54,
+        "max": 13.95
+      },
+      "heldOutP95M": 6.34,
+      "extrapolationSpreadM": 3.08,
+      "anisotropyPercent": null,
+      "poseLayers": null,
+      "layerWeights": null
+    },
+    {
+      "batch": "native 3 bok",
+      "case": "Clifton Downs",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 8.62,
+        "p95": 12.73,
+        "max": 13.56
+      },
+      "heldOutP95M": 7.81,
+      "extrapolationSpreadM": 2.01,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.2733,
+        "path": 0.4527
+      },
+      "layerWeights": {
+        "building": 0.213,
+        "path": 0.787
+      }
+    },
+    {
+      "batch": "native 3 tvoc",
+      "case": "University Parks Saturda",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.89,
+        "p95": 4.6,
+        "max": 5.03
+      },
+      "heldOutP95M": 7.57,
+      "extrapolationSpreadM": 0.3,
+      "anisotropyPercent": 0.97,
+      "poseLayers": {
+        "building": 0.8752,
+        "water": 0.6482,
+        "path": 0.6912
+      },
+      "layerWeights": {
+        "building": 0.337,
+        "water": 0.256,
+        "path": 0.407
+      }
+    },
+    {
+      "batch": "native 3 tvoc",
+      "case": "Cutteslowe Saturday Seri",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.57,
+        "p95": 2.64,
+        "max": 3.27
+      },
+      "heldOutP95M": 4.19,
+      "extrapolationSpreadM": 0.54,
+      "anisotropyPercent": 0.19,
+      "poseLayers": {
+        "building": 0.6715,
+        "water": 0.5365,
+        "path": 0.5187
+      },
+      "layerWeights": {
+        "building": 0.289,
+        "water": 0.266,
+        "path": 0.444
+      }
+    },
+    {
+      "batch": "native 3 tvoc",
+      "case": "Wittenham Clumps",
+      "outcome": "wrong",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 15.21,
+        "p95": 23.9,
+        "max": 27.19
+      },
+      "heldOutP95M": 11.27,
+      "extrapolationSpreadM": 0.6,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "water": 0.5607,
+        "path": 0.4421
+      },
+      "layerWeights": {
+        "water": 0.311,
+        "path": 0.689
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "original",
+      "outcome": "consistent",
+      "method": "park_outline_road_network",
+      "truth": {
+        "median": 0.0,
+        "max": 0.0
+      },
+      "heldOutP95M": 10.52,
+      "extrapolationSpreadM": 0.6,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.4912,
+        "path": 0.3294
+      },
+      "layerWeights": {
+        "building": 0.209,
+        "path": 0.791
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "no-park-outline",
+      "outcome": "consistent",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 3.12,
+        "max": 4.82
+      },
+      "heldOutP95M": 7.65,
+      "extrapolationSpreadM": 0.59,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.4603,
+        "path": 0.4049
+      },
+      "layerWeights": {
+        "building": 0.211,
+        "path": 0.789
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "fresh-viewport",
+      "outcome": "consistent",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 2.98,
+        "max": 4.76
+      },
+      "heldOutP95M": 7.68,
+      "extrapolationSpreadM": 0.65,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.5437,
+        "path": 0.362
+      },
+      "layerWeights": {
+        "building": 0.2,
+        "path": 0.8
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "left-half",
+      "outcome": "consistent",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 2.53,
+        "max": 3.17
+      },
+      "heldOutP95M": 8.57,
+      "extrapolationSpreadM": 0.38,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.2048,
+        "path": 0.4834
+      },
+      "layerWeights": {
+        "building": 0.122,
+        "path": 0.878
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "right-half",
+      "outcome": "consistent",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 8.06,
+        "max": 11.82
+      },
+      "heldOutP95M": 7.25,
+      "extrapolationSpreadM": 1.97,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.6617,
+        "water": 0.0047,
+        "path": 0.3871
+      },
+      "layerWeights": {
+        "building": 0.264,
+        "water": 0.031,
+        "path": 0.705
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "top-half",
+      "outcome": "refused (first offered place)",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 213.45,
+        "max": 307.48
+      },
+      "heldOutP95M": 17.98,
+      "extrapolationSpreadM": 0.99,
+      "anisotropyPercent": null,
+      "poseLayers": null,
+      "layerWeights": null
+    },
+    {
+      "batch": "Dashahe",
+      "case": "centre",
+      "outcome": "refused (first offered place)",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 98.25,
+        "max": 168.32
+      },
+      "heldOutP95M": 16.74,
+      "extrapolationSpreadM": 0.67,
+      "anisotropyPercent": null,
+      "poseLayers": null,
+      "layerWeights": null
+    },
+    {
+      "batch": "Dashahe",
+      "case": "jpeg-60-no-park",
+      "outcome": "consistent",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 4.81,
+        "max": 7.03
+      },
+      "heldOutP95M": 9.99,
+      "extrapolationSpreadM": 0.57,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.5912,
+        "path": 0.3806
+      },
+      "layerWeights": {
+        "building": 0.202,
+        "path": 0.798
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "dim-80-no-park",
+      "outcome": "consistent",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 5.66,
+        "max": 8.11
+      },
+      "heldOutP95M": 9.71,
+      "extrapolationSpreadM": 0.61,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.5142,
+        "water": 0.2816,
+        "path": 0.4311
+      },
+      "layerWeights": {
+        "building": 0.215,
+        "water": 0.03,
+        "path": 0.755
+      }
+    },
+    {
+      "batch": "Dashahe",
+      "case": "turned-90-no-park",
+      "outcome": "consistent",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 3.67,
+        "max": 5.53
+      },
+      "heldOutP95M": 7.86,
+      "extrapolationSpreadM": 0.59,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.5193,
+        "water": 0.0489,
+        "path": 0.3711
+      },
+      "layerWeights": {
+        "building": 0.204,
+        "water": 0.042,
+        "path": 0.754
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "莲花山公园",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.35,
+        "p95": 5.19,
+        "max": 5.86
+      },
+      "heldOutP95M": 2.3,
+      "extrapolationSpreadM": 0.66,
+      "anisotropyPercent": 0.69,
+      "poseLayers": {
+        "building": 0.8402,
+        "water": 0.9415,
+        "path": 0.7426
+      },
+      "layerWeights": {
+        "building": 0.308,
+        "water": 0.13,
+        "path": 0.562
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "荔枝公园",
+      "outcome": "correct",
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.69,
+        "p95": 3.39,
+        "max": 4.4
+      },
+      "heldOutP95M": 4.82,
+      "extrapolationSpreadM": 0.53,
+      "anisotropyPercent": 1.2,
+      "poseLayers": {
+        "building": 0.8036,
+        "path": 0.7444
+      },
+      "layerWeights": {
+        "building": 0.503,
+        "path": 0.497
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "中山公园（南山）",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.91,
+        "p95": 3.54,
+        "max": 5.03
+      },
+      "heldOutP95M": 2.77,
+      "extrapolationSpreadM": 0.17,
+      "anisotropyPercent": 0.47,
+      "poseLayers": {
+        "building": 0.8588,
+        "path": 0.7322
+      },
+      "layerWeights": {
+        "building": 0.393,
+        "path": 0.607
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "人才公园",
+      "outcome": "correct",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 9.14,
+        "p95": 15.02,
+        "max": 17.44
+      },
+      "heldOutP95M": 1.27,
+      "extrapolationSpreadM": 2.76,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.832,
+        "path": 0.6025
+      },
+      "layerWeights": {
+        "building": 0.207,
+        "path": 0.793
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "香蜜公园",
+      "outcome": "correct",
+      "method": "global_search_layer_correlation",
+      "truth": {
+        "median": 3.82,
+        "p95": 6.83,
+        "max": 8.55
+      },
+      "heldOutP95M": 9.44,
+      "extrapolationSpreadM": 5.24,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.8525,
+        "path": 0.8034
+      },
+      "layerWeights": {
+        "building": 0.324,
+        "path": 0.676
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "洪湖公园",
+      "outcome": "correct",
+      "method": "building_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 2.89,
+        "p95": 4.69,
+        "max": 5.14
+      },
+      "heldOutP95M": 1.71,
+      "extrapolationSpreadM": 1.28,
+      "anisotropyPercent": 0.78,
+      "poseLayers": {
+        "building": 0.9042,
+        "path": 0.769
+      },
+      "layerWeights": {
+        "building": 0.351,
+        "path": 0.649
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "南方科技大学",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.43,
+        "p95": 2.09,
+        "max": 2.48
+      },
+      "heldOutP95M": 2.01,
+      "extrapolationSpreadM": 0.25,
+      "anisotropyPercent": 0.09,
+      "poseLayers": {
+        "building": 0.8926,
+        "water": 0.8724,
+        "path": 0.7104
+      },
+      "layerWeights": {
+        "building": 0.324,
+        "water": 0.267,
+        "path": 0.408
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "深圳湾公园（红树林段）",
+      "outcome": "correct",
+      "method": "global_search_road_network",
+      "truth": {
+        "median": 2.48,
+        "p95": 3.39,
+        "max": 3.71
+      },
+      "heldOutP95M": 3.13,
+      "extrapolationSpreadM": 1.88,
+      "anisotropyPercent": 0.0,
+      "poseLayers": {
+        "building": 0.3021,
+        "path": 0.7521
+      },
+      "layerWeights": {
+        "building": 0.135,
+        "path": 0.865
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "笔架山公园",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 1.45,
+        "p95": 2.97,
+        "max": 3.43
+      },
+      "heldOutP95M": 3.17,
+      "extrapolationSpreadM": 0.22,
+      "anisotropyPercent": 0.57,
+      "poseLayers": {
+        "building": 0.7105,
+        "path": 0.7292
+      },
+      "layerWeights": {
+        "building": 0.13,
+        "path": 0.87
+      }
+    },
+    {
+      "batch": "Shenzhen",
+      "case": "东湖公园",
+      "outcome": "correct",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truth": {
+        "median": 3.27,
+        "p95": 7.39,
+        "max": 8.77
+      },
+      "heldOutP95M": 2.8,
+      "extrapolationSpreadM": 0.39,
+      "anisotropyPercent": 0.78,
+      "poseLayers": {
+        "building": 0.9118,
+        "path": 0.5385
+      },
+      "layerWeights": {
+        "building": 0.33,
+        "path": 0.67
+      }
+    }
+  ],
+  "refusedWrongFits": [
+    {
+      "case": "Park-O 2017 #3: Stanborough Park",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truthBefore": {
+        "median": 14.4,
+        "p95": 35.25
+      },
+      "gate": "extrapolation spread 22.5 m > 12 m",
+      "correctPlaceOffered": 1
+    },
+    {
+      "case": "Westridge Wood",
+      "method": "global_search_layer_correlation",
+      "truthBefore": {
+        "median": 15.61,
+        "p95": 28.33
+      },
+      "gate": "pose support from the path layer only",
+      "correctPlaceOffered": 1
+    },
+    {
+      "case": "荔枝公园 (Shenzhen synthetic, evidence of 2026-11-05)",
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "truthBefore": {
+        "median": 33.59,
+        "p95": 82.86
+      },
+      "gate": "affine anisotropy 15.2% > 8% (spread 8.1 m and held-out P95 11.12 m were blind to it)",
+      "note": "Reproduced bit-for-bit on the current reference: the seeded fit is unchanged; since commit bee37d4 the global search also finds the true place (support 0.774 against 0.475), so it was already correct before this change. choose() given only the water fit, as in the 2026-11-05 run, now refuses it."
+    }
+  ],
+  "unresolved": [
+    {
+      "case": "Chipperfield Saturday Series",
+      "truth": {
+        "median": 10.24,
+        "p95": 16.13
+      },
+      "note": "Marginal (verifier limit median 10 m). Two layers, spread 4.3 m, anisotropy 0. Same-place fits disagree by up to 24 m, but Burnham Beeches (correct) has same-place fits 34 m apart, so a cross-method consistency gate would refuse a correct case."
+    },
+    {
+      "case": "Wittenham Clumps",
+      "truth": {
+        "median": 15.21,
+        "p95": 23.9
+      },
+      "note": "Road-network validation rework is out of scope here."
+    }
+  ],
+  "verifierSha256": {
+    "verify_new_areas.py": "f8b95786f5488d63d5b7dd50b4526bbd760259e05f2d8786325fb5d4aca180e7",
+    "verify_shenzhen_places.py": "7244cd19b9d8f6a6cbb0f61f364929815415e15fde094fad67400525420208a7",
+    "verify_dashahe_new_place.py": "3ec063d3640a3322a2c8b11e0ca58194b7c0d8a48cbfcfb5609c0065913d7631"
+  }
+}

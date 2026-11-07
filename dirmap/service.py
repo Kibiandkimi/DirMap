@@ -334,6 +334,16 @@ def geographic_registration(image, result, reference, places=None):
             quality = {**quality, 'exposureCorrection': exposure}
         return reg, quality, failures
 
+    def unchecked(reg, quality):
+        # Without the global comparison only the seeded fit's own checks
+        # remain; its extrapolation across the sheet must still hold.
+        sheet = np.array([[0, 0], [result['width'], 0], [result['width'], result['height']], [0, result['height']]], float)
+        reason = global_registration.acceptance_refusal(quality, sheet, matrix=reg.affine)
+        if reason is not None:
+            failures.append(reason)
+            return None, None, failures
+        return finished(reg, quality)
+
     established = []
     try:
         reg, quality = auto_register(result['features'], reference, result['width'], result['height'])
@@ -353,7 +363,7 @@ def geographic_registration(image, result, reference, places=None):
         # Nothing on the sheet can be compared with the place; only a
         # seeded result remains, as before the global check existed.
         failures.append(str(exc))
-        return finished(*established[0]) if established else (None, None, failures)
+        return unchecked(*established[0]) if established else (None, None, failures)
     except global_registration.AmbiguousPlace as exc:
         failures.append(str(exc))
         if places is not None:
@@ -367,9 +377,15 @@ def geographic_registration(image, result, reference, places=None):
         return None, None, failures
     except Exception as exc:  # noqa: BLE001 - an unexpected fault must not cost the seeded result
         failures.append(f'全局核查出错，沿用原自动配准：{type(exc).__name__}: {exc}'[:300])
-        return finished(*established[0]) if established else (None, None, failures)
+        return unchecked(*established[0]) if established else (None, None, failures)
     if not any(reg is candidate for candidate, _ in established):
+        chosen = quality
         reg, quality = recover_boundary_buildings(cartography, reg, quality, reference)
+        if 'extrapolationSpreadM' in quality and quality.get('p95ErrorM') != chosen.get('p95ErrorM'):
+            # Recovered roofs re-measured the held-out error; the reported
+            # P95 again includes the extrapolation estimate.
+            quality = {**quality, 'heldOutP95ErrorM': quality['p95ErrorM'],
+                       'p95ErrorM': round(float(np.hypot(quality['p95ErrorM'], quality['extrapolationSpreadM'])), 2)}
     return finished(reg, quality)
 
 

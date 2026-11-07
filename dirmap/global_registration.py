@@ -622,10 +622,11 @@ def layer_correlation_register(layers, footprint, reference, seed, blocks=5, cel
     # of the sheet, since a cluster in one corner would tilt it elsewhere.
     keep = [float(np.linalg.norm(affine_points(pose, [p['pixel']])[0]-p['local'])) <= 10 for p in pairs]
     fitting = [p for p, accepted in zip(pairs, keep) if accepted]
-    matrix = pose
+    matrix, hull_fraction = pose, None
     if len(fitting) >= 6:
         spread = cv2.contourArea(cv2.convexHull(np.array([p['pixel'] for p in fitting], np.float32)))
         sheet = cv2.contourArea(footprint.astype(np.float32))
+        hull_fraction = spread/max(sheet, 1e-9)
         if spread < .1*sheet:
             raise BlockFitError('吻合的图块集中在一条带上，不足以核查配准', len(pairs))
         if spread >= .35*sheet:
@@ -659,6 +660,8 @@ def layer_correlation_register(layers, footprint, reference, seed, blocks=5, cel
                'rejectedObjectIds': sorted(p['referenceId'] for p, accepted in zip(pairs, keep) if not accepted),
                'medianErrorM': round(float(np.median(errors)), 2), 'p95ErrorM': round(float(np.percentile(errors, 95)), 2),
                'maxErrorM': round(float(errors.max()), 2), 'foldedTriangles': reg.folded, 'cellM': cell,
+               'blockHullFraction': None if hull_fraction is None else round(float(hull_fraction), 3),
+               'poseSource': 'search_refinement' if matrix is pose else 'block_similarity',
                'landmarks': fitting,
                'validationScope': '全局搜索提出位置，原图分块与参照的建筑、水体、道路图层逐块比对；每个图块都用其余图块拟合的相似变换预测并核对（留一法）。'
                                   '图块位置来自图层相关，不是逐个地物的同名点，仍需现场核对。'}
@@ -675,6 +678,99 @@ AMBIGUITY_MARGIN = .05
 METHOD_ORDER = ('global_seed', 'global_search_street', 'global_search_layer', 'global_search_road')
 MINIMUM_SUPPORT = .2
 OFFERED_PLACES = 3
+# A searched pose stands on the agreement of the sheet with the place. One
+# layer alone (say, only path ink) can align a self-consistent pattern at a
+# slightly wrong scale: blocks of that one layer share the bias, so their
+# held-out check cannot see it. Such a fit is offered, not applied.
+MINIMUM_POSE_LAYERS = 2
+# Leave-one-landmark-out spread of predicted positions across the sheet.
+# A fit resting on a few landmarks in one part of the sheet extrapolates
+# the rest; when dropping one landmark moves the far sheet by more than
+# this, the held-out error says little about the controls there.
+EXTRAPOLATION_LIMIT_M = 12.
+MINIMUM_SPREAD_GROUPS = 4
+# A map sheet is drawn conformally: equal scale in every direction. Print,
+# scan and a roughly flat photo keep that within a few per cent; an affine
+# fit stretched more than this has extrapolated a local cluster of
+# landmarks (held out in the same cluster) across the sheet.
+MAXIMUM_ANISOTROPY = .08
+
+
+def anisotropy(matrix):
+    """Relative difference of the largest and smallest scale of an affine."""
+    singular = np.linalg.svd(np.asarray(matrix, float)[:, :2], compute_uv=False)
+    return float(singular[0]/singular[1]-1)
+
+
+def sheet_points(footprint, count=16):
+    """The footprint's corners and a grid of points inside it."""
+    footprint = np.asarray(footprint, float).reshape(-1, 2)
+    low, high = footprint.min(axis=0), footprint.max(axis=0)
+    xs, ys = np.meshgrid(np.linspace(low[0], high[0], count), np.linspace(low[1], high[1], count))
+    grid = np.column_stack((xs.ravel(), ys.ravel()))
+    outline = footprint.astype(np.float32).reshape(-1, 1, 2)
+    inside = [cv2.pointPolygonTest(outline, (float(x), float(y)), True) >= -1. for x, y in grid]
+    return np.vstack((footprint, grid[inside]))
+
+
+def extrapolation_spread(quality, footprint):
+    """How far leaving out one fitted landmark moves the sheet, in metres.
+
+    Landmarks are grouped by the reference object they measure (a roof's
+    corners, a way's samples, a layer block). A similarity fitted to all
+    groups is compared, over the whole sheet, with each fit that leaves one
+    group out; the 95th percentile over the sheet of the largest movement
+    is returned. None when fewer than four groups allow no such estimate.
+    """
+    groups = {}
+    for index, landmark in enumerate(quality.get('landmarks') or []):
+        if landmark.get('purpose', 'fit') != 'fit' or 'pixel' not in landmark or 'local' not in landmark:
+            continue
+        groups.setdefault(landmark.get('referenceId', index), []).append(landmark)
+    if len(groups) < MINIMUM_SPREAD_GROUPS:
+        return None
+    keys = [key for key, members in groups.items() for _ in members]
+    pixels = np.array([p['pixel'] for members in groups.values() for p in members], float)
+    local = np.array([p['local'] for members in groups.values() for p in members], float)
+    points = sheet_points(footprint)
+    base = affine_points(_similarity(pixels, local), points)
+    worst = np.zeros(len(points))
+    for key in groups:
+        keep = np.array([k != key for k in keys])
+        moved = np.linalg.norm(affine_points(_similarity(pixels[keep], local[keep]), points)-base, axis=1)
+        worst = np.maximum(worst, moved)
+    return round(float(np.percentile(worst, 95)), 2)
+
+
+def layer_weights(layers, footprint, matrix, kinds, cells=128):
+    """Each compared layer's share of the evidence weight at one pose."""
+    kinds = [kind for kind in kinds if kind in layers]
+    if not kinds:
+        return {}
+    matrix = np.asarray(matrix, float)
+    ground = math.sqrt(abs(np.linalg.det(matrix[:, :2])))*float(np.hypot(*np.ptp(footprint, axis=0)))
+    cell = _cell(ground, cells)
+    drawn, *_ = _draw(layers, footprint, np.diag([1., -1.]) @ matrix[:, :2]/cell, cell, kinds)
+    total = sum(weight for _, weight in drawn.values())
+    return {kind: round(weight/total, 3) for kind, (_, weight) in drawn.items()} if total else {}
+
+
+def acceptance_refusal(quality, footprint, layers_support=None, matrix=None):
+    """Why a fit that the place supports still cannot be applied, or None.
+
+    `layers_support` holds the per-layer agreement at the fit's pose; it is
+    None where no whole-sheet comparison was made (a seeded fallback).
+    `matrix` is the fit's global affine.
+    """
+    if (layers_support is not None and quality.get('method', '').startswith('global_search')
+            and len(layers_support) < MINIMUM_POSE_LAYERS):
+        return f'位置仅由 {len(layers_support)} 类图层支撑（{"、".join(sorted(layers_support)) or "无"}），比例或旋转偏差无法独立核查'
+    if matrix is not None and anisotropy(matrix) > MAXIMUM_ANISOTROPY:
+        return f'拟合在不同方向的比例相差 {100*anisotropy(matrix):.0f}%，地图不会如此变形，外推不可靠'
+    spread = extrapolation_spread(quality, footprint)
+    if spread is not None and spread > EXTRAPOLATION_LIMIT_M:
+        return f'同名点集中，去掉单个同名点后图幅位置变化 {spread:.1f} m，外推不可靠'
+    return None
 
 
 class AmbiguousPlace(ValueError):
@@ -717,7 +813,9 @@ def distinct_places(attempts, evidence, reference, limit=OFFERED_PLACES):
         # its own landmarks agree; it cannot represent the place.
         poses = [{'score': value, 'matrix': reg.affine} for value, reg, _ in members]
         members = [item for item in members if not outdone(item[1].affine, item[0], poses, footprint)]
-        chosen.append(min(members, key=lambda item: (bool(item[2].get('thinValidation')), item[2].get('p95ErrorM', np.inf))))
+        value, reg, quality = min(members, key=lambda item: (bool(item[2].get('thinValidation')), item[2].get('p95ErrorM', np.inf)))
+        spread = extrapolation_spread(quality, footprint)
+        chosen.append((value, reg, quality if spread is None else {**quality, 'extrapolationSpreadM': spread}))
     return sorted(chosen, key=lambda item: -item[0])
 
 
@@ -774,6 +872,7 @@ def choose(attempts, layers, footprint, reference, preferred=(), searched=(), co
                           -int(item[0].forward(controls)[1].sum()) if len(controls) else 0,
                           next((i for i, prefix in enumerate(METHOD_ORDER) if item[1].get('method', '').startswith(prefix)),
                                len(METHOD_ORDER)))
+    unsafe = []
     for best, best_quality in sorted(same_place, key=order):
         chosen_value, chosen_layers = score(best.affine)
         rivals = [value for value, reg, *_ in scored if not poses_agree(best.affine, reg.affine, footprint)]
@@ -783,15 +882,39 @@ def choose(attempts, layers, footprint, reference, preferred=(), searched=(), co
         chosen_margin = chosen_value-max(rivals, default=0.)
         if (chosen_value >= MINIMUM_SUPPORT and chosen_margin >= required_margin
                 and not outdone(best.affine, chosen_value, searched, footprint)):
-            break
+            # The place is settled; this fit must also be checkable on its
+            # own. Another fit of the same place may still qualify.
+            reason = acceptance_refusal(best_quality, footprint, chosen_layers, best.affine)
+            if reason is None:
+                break
+            unsafe.append(reason)
     else:
+        if unsafe:
+            raise ValueError(f'{unsafe[0]}，请对照候选位置或补充同名点')
         raise ValueError('候选拟合未通过最终位置核查，请补充同名点')
     best_quality = dict(best_quality)
+    points = sheet_points(footprint)
+    chosen_points = affine_points(best.affine, points)
     alternatives = [{'method': quality.get('method'), 'support': round(value, 4),
                      'agreesWithChosen': bool(poses_agree(best.affine, reg.affine, footprint)),
-                     'affine': np.round(reg.affine, 6).tolist()} for value, reg, quality, _ in scored]
+                     'sheetP95DistanceM': round(float(np.percentile(
+                         np.linalg.norm(affine_points(reg.affine, points)-chosen_points, axis=1), 95)), 2),
+                     'p95ErrorM': quality.get('p95ErrorM'), 'extrapolationSpreadM': extrapolation_spread(quality, footprint),
+                     'layerCount': len(layers_support), 'anisotropyPercent': round(100*anisotropy(reg.affine), 2),
+                     'affine': np.round(reg.affine, 6).tolist()} for value, reg, quality, layers_support in scored]
     best_quality['poseSupport'] = {'value': round(chosen_value, 4), 'layers': chosen_layers,
+                                   'layerWeights': layer_weights(layers, footprint, best.affine, chosen_layers),
                                    'margin': round(chosen_margin, 4), 'alternatives': alternatives}
+    # The held-out error measures the fit where it was checked; leaving out
+    # single landmarks estimates how far that fit may wander elsewhere on
+    # the sheet. The reported P95 combines both.
+    best_quality['anisotropyPercent'] = round(100*anisotropy(best.affine), 2)
+    spread = extrapolation_spread(best_quality, footprint)
+    if spread is not None:
+        best_quality['extrapolationSpreadM'] = spread
+        if best_quality.get('p95ErrorM') is not None:
+            best_quality['heldOutP95ErrorM'] = best_quality['p95ErrorM']
+            best_quality['p95ErrorM'] = round(math.hypot(best_quality['p95ErrorM'], spread), 2)
     return best, best_quality
 
 

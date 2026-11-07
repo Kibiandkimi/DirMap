@@ -26,6 +26,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from verify_new_areas import acceptance_log  # noqa: E402  (same tools directory)
 SOURCE_SHA256 = '21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8'
 # A teacher's viewport: off-centre and larger than the park, about 2.6 km.
 VIEWPORT = [113.9440, 22.5470, 113.9690, 22.5700]
@@ -119,7 +120,7 @@ def main():
             for value, place, place_quality in places:
                 difference, _ = against_baseline(place)
                 row['offeredPlaces'].append({'support': round(float(value), 4), 'method': place_quality.get('method'),
-                                             'p95ErrorM': place_quality.get('p95ErrorM'),
+                                             'p95ErrorM': place_quality.get('p95ErrorM'), 'acceptance': acceptance_log(place_quality),
                                              'differenceFromBaselineM': {'median': round(float(np.median(difference)), 2),
                                                                          'max': round(float(difference.max()), 2)}})
             row['baselinePlaceOffered'] = next((index+1 for index, offered in enumerate(row['offeredPlaces'])
@@ -130,6 +131,9 @@ def main():
                        globalSearch=quality.get('globalSearch'),
                        exposureCorrection=quality.get('exposureCorrection'),
                        poseSupport={k: v for k, v in (quality.get('poseSupport') or {}).items() if k != 'alternatives'},
+                       acceptance=acceptance_log(quality),
+                       alternatives=[{**a, 'differenceFromBaselineMaxM': round(float(against_baseline(Registration(np.array(a['affine'])))[0].max()), 2)}
+                                     for a in (quality.get('poseSupport') or {}).get('alternatives', [])],
                        calibratedControls=int(calibrated.sum()),
                        differenceFromBaselineM={'median': round(float(np.median(differences)), 2),
                                                 'max': round(float(differences.max()), 2)})

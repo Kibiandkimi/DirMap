@@ -92,6 +92,24 @@ def load_case(event, cache, *, native_resolution=False):
             'world': transform, 'metresPerSourcePixel': m_per_px, 'bbox': bbox}
 
 
+ACCEPTANCE_KEYS = ('method', 'p95ErrorM', 'heldOutP95ErrorM', 'medianErrorM', 'extrapolationSpreadM', 'anisotropyPercent', 'thinValidation',
+                   'fitCount', 'fitObjectCount', 'validationCount', 'validationObjectCount',
+                   # block layer correlation
+                   'cellM', 'blockHullFraction', 'poseSource', 'fineBlockRefinement', 'polished',
+                   # road networks
+                   'validationWays', 'validationOmittedWayIds', 'validationTotalWays', 'validationInsideHull',
+                   'orientedPathSupport')
+
+
+def acceptance_log(quality):
+    """What the acceptance checks saw, so a later diagnosis needs no rerun."""
+    log = {key: quality[key] for key in ACCEPTANCE_KEYS if key in quality}
+    pose = quality.get('poseSupport') or {}
+    log['poseSupport'] = {key: pose[key] for key in ('value', 'layers', 'layerWeights', 'margin', 'resolutionCells') if key in pose}
+    log['poseLayerCount'] = len(pose.get('layers') or {})
+    return log
+
+
 def truth_error(reg, case, image):
     from dirmap.network_registration import map_footprint
     h, w = image.shape[:2]
@@ -185,6 +203,7 @@ def main():
             # A refusal can still offer the distinct places it fitted; the
             # teacher picks one. Record whether the true place is offered.
             row['offeredPlaces'] = [{'support': round(float(value), 4), 'method': q.get('method'), 'p95ErrorM': q.get('p95ErrorM'),
+                                     'acceptance': acceptance_log(q), 'affine': np.round(place.affine, 6).tolist(),
                                      'truthErrorM': truth_error(place, case, image)['all']} for value, place, q in places]
             row['correctPlaceOffered'] = next((index+1 for index, offered in enumerate(row['offeredPlaces'])
                                                if offered['truthErrorM']['median'] <= CORRECT_MEDIAN_M
@@ -196,11 +215,12 @@ def main():
             row['reportedP95M'] = quality.get('p95ErrorM')
             row['globalSearch'] = quality.get('globalSearch')
             row['exposureCorrection'] = quality.get('exposureCorrection')
+            row['acceptance'] = acceptance_log(quality)
             row['truthErrorM'] = truth_error(reg, case, image)
             alternatives = (quality.get('poseSupport') or {}).get('alternatives', [])
             for alternative in alternatives:
                 from dirmap.geometry import Registration
-                alternative['truthMedianM'] = truth_error(Registration(np.array(alternative.pop('affine'))), case, image)['all']['median']
+                alternative['truthMedianM'] = truth_error(Registration(np.array(alternative['affine'])), case, image)['all']['median']
             row['alternatives'] = alternatives
             row['poseSupport'] = {k: v for k, v in (quality.get('poseSupport') or {}).items() if k != 'alternatives'}
             error = row['truthErrorM']['all']

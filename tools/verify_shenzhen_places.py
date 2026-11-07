@@ -38,6 +38,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from verify_new_areas import acceptance_log  # noqa: E402  (same tools directory)
 
 # Centre (lng, lat) and sheet half-extent (east, north metres).
 PLACES = [
@@ -300,26 +301,43 @@ def main():
         started = time.perf_counter()
         result = {key: value for key, value in analyze(image).items()
                   if key in ('features', 'controls', 'sheetPhotos', 'width', 'height')}
-        reg, quality, failures = service.geographic_registration(image, result, reference)
+        places = []
+        reg, quality, failures = service.geographic_registration(image, result, reference, places)
         row = {'place': name, 'imageSize': list(image.shape[1::-1]), **{k: v for k, v in info.items() if k != 'window'},
                'referenceSha256': hashlib.sha256(path.read_bytes()).hexdigest(),
                'referenceFeatures': len(reference), 'detectedControls': len(result['controls']),
                'elapsedSec': round(time.perf_counter()-started, 1), 'failures': failures}
+        h, w = image.shape[:2]
+        xs, ys = np.meshgrid(np.linspace(.05, .95, 20)*w, np.linspace(.05, .95, 20)*h)
+        grid = np.column_stack((xs.ravel(), ys.ravel()))
+        local = affine_points(truth, grid)
+        outline = info['window'].astype(np.float32).reshape(-1, 1, 2)
+        grid = grid[[cv2.pointPolygonTest(outline, (float(x), float(y)), False) >= 0 for x, y in local]]
+
+        def truth_error(fit):
+            errors = np.linalg.norm(fit.forward(grid, strict=False)[0]-affine_points(truth, grid), axis=1)
+            return {'median': round(float(np.median(errors)), 2), 'p95': round(float(np.percentile(errors, 95)), 2),
+                    'max': round(float(errors.max()), 2)}
+
         if reg is None:
             row['outcome'] = 'refused'
+            row['offeredPlaces'] = [{'support': round(float(value), 4), 'method': q.get('method'), 'p95ErrorM': q.get('p95ErrorM'),
+                                     'acceptance': acceptance_log(q), 'truthErrorM': truth_error(place)}
+                                    for value, place, q in places]
+            row['correctPlaceOffered'] = next((index+1 for index, offered in enumerate(row['offeredPlaces'])
+                                               if offered['truthErrorM']['median'] <= CORRECT_MEDIAN_M
+                                               and offered['truthErrorM']['p95'] <= CORRECT_P95_M), None)
         else:
-            h, w = image.shape[:2]
-            xs, ys = np.meshgrid(np.linspace(.05, .95, 20)*w, np.linspace(.05, .95, 20)*h)
-            grid = np.column_stack((xs.ravel(), ys.ravel()))
-            local = affine_points(truth, grid)
-            outline = info['window'].astype(np.float32).reshape(-1, 1, 2)
-            grid = grid[[cv2.pointPolygonTest(outline, (float(x), float(y)), False) >= 0 for x, y in local]]
-            errors = np.linalg.norm(reg.forward(grid, strict=False)[0]-affine_points(truth, grid), axis=1)
+            from dirmap.geometry import Registration
+            alternatives = (quality.get('poseSupport') or {}).get('alternatives', [])
+            for alternative in alternatives:
+                alternative['truthMedianM'] = truth_error(Registration(np.array(alternative['affine'])))['median']
             row.update(method=quality.get('method'), reportedP95M=quality.get('p95ErrorM'),
                        exposureCorrection=quality.get('exposureCorrection'),
                        poseSupport={k: v for k, v in (quality.get('poseSupport') or {}).items() if k != 'alternatives'},
-                       truthErrorM={'median': round(float(np.median(errors)), 2), 'p95': round(float(np.percentile(errors, 95)), 2),
-                                    'max': round(float(errors.max()), 2)})
+                       acceptance=acceptance_log(quality), alternatives=alternatives,
+                       registration=reg.as_dict(), validationLandmarks=quality.get('landmarks', []),
+                       truthTransform=np.asarray(truth).tolist(), truthErrorM=truth_error(reg))
             row['outcome'] = ('correct' if row['truthErrorM']['median'] <= CORRECT_MEDIAN_M
                               and row['truthErrorM']['p95'] <= CORRECT_P95_M else 'wrong')
         report['cases'].append(row)

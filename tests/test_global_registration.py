@@ -320,7 +320,7 @@ def test_extra_road_coverage_does_not_override_a_checked_object_fit(monkeypatch)
     small = footprint*.6
     objects = Registration(matrix, small, affine_points(matrix, small))
     roads = Registration(matrix, footprint, affine_points(matrix, footprint))
-    monkeypatch.setattr(G, 'support', lambda *args: (.6, {}))
+    monkeypatch.setattr(G, 'support', lambda *args: (.6, {'building': .6, 'path': .6}))
     controls = [[100, 100], [450, 450]]
     assert objects.forward(controls)[1].sum() < roads.forward(controls)[1].sum()
     chosen, _ = G.choose([(roads, {'method': 'global_search_road_network', 'p95ErrorM': 17}),
@@ -458,3 +458,89 @@ def test_black_road_rims_cannot_be_closed_into_grey_roof_landmarks():
     grey = [f for f in registration_features(image, [], masks) if f['kind'] == 'building' and f.get('ink') != 'black']
     assert len(grey) == 1 and np.allclose(grey[0]['center'], [105, 90], atol=1)
     assert np.array_equal(masks['building'], before)
+
+
+def exact_landmarks(matrix, pixels):
+    """Fitted landmarks, one reference object each, exactly under `matrix`."""
+    return [{'pixel': [float(x), float(y)], 'local': affine_points(matrix, [[x, y]])[0].tolist(), 'purpose': 'fit',
+             'referenceId': f'g{i}'} for i, (x, y) in enumerate(pixels)]
+
+
+SQUARE = np.array([[0, 0], [1000, 0], [1000, 1000], [0, 1000]], float)
+POSE = np.array([[.5, 0, 0], [0, -.5, 0]])
+SPREAD_OUT = [[x, y] for x in (100, 500, 900) for y in (100, 500, 900)]
+
+
+def test_a_searched_fit_supported_by_one_layer_is_offered_not_applied(monkeypatch):
+    # Blocks of a single layer share any scale bias of that layer, so their
+    # held-out check cannot reveal it; a second layer must agree as well.
+    fit = (Registration(POSE), {'method': 'global_search_layer_correlation', 'p95ErrorM': 6.,
+                                'landmarks': exact_landmarks(POSE, SPREAD_OUT)})
+    layers = {'path': .7}
+    monkeypatch.setattr(G, 'support', lambda *args, **kwargs: (.7, dict(layers)))
+    with pytest.raises(ValueError, match='仅由 1 类图层支撑'):
+        G.choose([fit], {}, SQUARE, [])
+    # An object fit of the same place does not rest on one layer's scale.
+    seeded = (Registration(POSE), {'method': 'global_seed_observed_outline_ransac_mesh', 'p95ErrorM': 4.,
+                                   'landmarks': exact_landmarks(POSE, SPREAD_OUT)})
+    reg, _ = G.choose([fit, seeded], {}, SQUARE, [])
+    assert reg is seeded[0]
+    layers['building'] = .5
+    reg, quality = G.choose([fit], {}, SQUARE, [])
+    assert reg is fit[0] and quality['extrapolationSpreadM'] == pytest.approx(0, abs=1e-6)
+    assert quality['poseSupport']['alternatives'][0]['sheetP95DistanceM'] == 0
+    assert quality['poseSupport']['alternatives'][0]['layerCount'] == 2
+
+
+def test_landmarks_clustered_in_one_corner_cannot_place_the_whole_sheet(monkeypatch):
+    rng = np.random.default_rng(4)
+    noisy = lambda pixels: [{**p, 'local': (np.asarray(p['local'])+rng.normal(0, 2., 2)).tolist()}
+                            for p in exact_landmarks(POSE, pixels)]
+    monkeypatch.setattr(G, 'support', lambda *args, **kwargs: (.6, {'building': .6, 'path': .6}))
+    wide = (Registration(POSE), {'method': 'water_seed_observed_outline_ransac_mesh', 'p95ErrorM': 5.,
+                                 'landmarks': noisy(SPREAD_OUT)})
+    _, quality = G.choose([wide], {}, SQUARE, [])
+    assert quality['extrapolationSpreadM'] < G.EXTRAPOLATION_LIMIT_M
+    # The reported P95 includes the extrapolation estimate.
+    assert quality['heldOutP95ErrorM'] == 5.
+    assert quality['p95ErrorM'] == pytest.approx(math.hypot(5., quality['extrapolationSpreadM']), abs=.01)
+    corner = rng.uniform(0, 120, (6, 2))
+    clustered = (Registration(POSE), {'method': 'water_seed_observed_outline_ransac_mesh', 'p95ErrorM': 5.,
+                                      'landmarks': noisy(corner)})
+    assert G.extrapolation_spread(clustered[1], SQUARE) > G.EXTRAPOLATION_LIMIT_M
+    with pytest.raises(ValueError, match='外推不可靠'):
+        G.choose([clustered], {}, SQUARE, [])
+    # Too few landmark groups give no estimate and no veto.
+    assert G.extrapolation_spread({'landmarks': exact_landmarks(POSE, corner[:3])}, SQUARE) is None
+
+
+def test_a_strongly_stretched_affine_is_not_applied(monkeypatch):
+    stretched = np.array([[.5, 0, 0], [0, -.58, 0]])  # 16% more scale north-south
+    monkeypatch.setattr(G, 'support', lambda *args, **kwargs: (.6, {'building': .6, 'path': .6}))
+    fit = (Registration(stretched), {'method': 'water_seed_observed_outline_ransac_mesh', 'p95ErrorM': 5.,
+                                     'landmarks': exact_landmarks(stretched, SPREAD_OUT)})
+    assert G.anisotropy(stretched) == pytest.approx(.16)
+    with pytest.raises(ValueError, match='比例相差 16%'):
+        G.choose([fit], {}, SQUARE, [])
+    assert G.anisotropy(np.array([[.5, .01, 0], [.01, -.5, 0]])) < G.MAXIMUM_ANISOTROPY
+
+
+def test_a_seeded_fallback_must_also_extrapolate_reliably(monkeypatch):
+    from dirmap import service
+    corner = [[x, y] for x in (2, 8, 14) for y in (2, 9)]
+    rng = np.random.default_rng(1)
+    landmarks = [{**p, 'local': (np.asarray(p['local'])+rng.normal(0, 1., 2)).tolist()} for p in exact_landmarks(POSE, corner)]
+    seeded = (Registration(POSE), {'method': 'water_seed_observed_outline_ransac_mesh', 'p95ErrorM': 3., 'landmarks': landmarks})
+    monkeypatch.setattr(service, 'auto_register', lambda *args, **kwargs: seeded)
+
+    def no_park(*args, **kwargs):
+        raise ValueError('场地缺少可核对的公园轮廓与道路网络')
+
+    def nothing(*args, **kwargs):
+        raise G.NoEvidence('参照与原图没有共同的建筑、水体或道路可供搜索')
+    monkeypatch.setattr(service, 'road_network_register', no_park)
+    monkeypatch.setattr(service.global_registration, 'register', nothing)
+    image = np.full((400, 400, 3), 255, np.uint8)
+    result = {'features': [], 'controls': [], 'sheetPhotos': [], 'width': 400, 'height': 400}
+    reg, quality, failures = service.geographic_registration(image, result, [])
+    assert reg is None and any('外推不可靠' in failure for failure in failures)
