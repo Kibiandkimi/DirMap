@@ -344,22 +344,14 @@ def boundary_path_matches(matrix, pixels, tree, observed, roads, trusted_ids=())
             length = math.sqrt(squared)
             segments.append((key, a, delta, squared, length, start))
             start += length
-    # Balls every 12 m along a segment, of radius sqrt(6**2+12**2) m, cover
-    # all points within 12 m of it.
-    centres, owners = [], []
-    for index, (_, a, delta, _, length, _) in enumerate(segments):
-        count = max(1, math.ceil(length/12))
-        centres.append(a+delta*((np.arange(count)+.5)/count)[:, None])
-        owners.append(np.full(count, index))
-    reach = [[] for _ in segments]
-    if segments:
-        balls = cKDTree(world).query_ball_point(np.vstack(centres), math.hypot(6, 12)+1e-6)
-        for owner, ball in zip(np.concatenate(owners), balls):
-            reach[owner].append(ball)
-    for (key, a, delta, squared, length, start), parts in zip(segments, reach):
-        near = np.unique(np.concatenate([np.asarray(part, int) for part in parts])) if parts else []
-        if not len(near):
+    # A point within 12 m of a segment lies within half its length plus
+    # 12 m of its midpoint.
+    reach = cKDTree(world).query_ball_point([a+delta/2 for _, a, delta, *_ in segments],
+                                            [length/2+12+1e-6 for *_, length, _ in segments]) if segments else []
+    for (key, a, delta, squared, length, start), near in zip(segments, reach):
+        if not near:
             continue
+        near = np.asarray(near)
         points = world[near]
         fraction = np.clip((points-a) @ delta/squared, 0, 1)
         projected = a+fraction[:, None]*delta
