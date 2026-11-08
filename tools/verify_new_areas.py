@@ -98,7 +98,9 @@ ACCEPTANCE_KEYS = ('method', 'p95ErrorM', 'heldOutP95ErrorM', 'medianErrorM', 'e
                    'cellM', 'blockHullFraction', 'poseSource', 'fineBlockRefinement', 'polished',
                    # road networks
                    'validationWays', 'validationOmittedWayIds', 'validationTotalWays', 'validationInsideHull',
-                   'orientedPathSupport')
+                   'orientedPathSupport',
+                   # final whole-sheet linework refinement
+                   'denseRefinement')
 
 
 def acceptance_log(quality):
@@ -217,6 +219,10 @@ def main():
             row['exposureCorrection'] = quality.get('exposureCorrection')
             row['acceptance'] = acceptance_log(quality)
             row['truthErrorM'] = truth_error(reg, case, image)
+            refinement = quality.get('denseRefinement') or {}
+            if refinement.get('originalAffine'):
+                from dirmap.pose_refinement import unrefined
+                row['truthErrorBeforeRefinementM'] = truth_error(unrefined(reg, refinement), case, image)['all']
             alternatives = (quality.get('poseSupport') or {}).get('alternatives', [])
             for alternative in alternatives:
                 from dirmap.geometry import Registration

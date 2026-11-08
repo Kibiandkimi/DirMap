@@ -219,7 +219,8 @@ def test_an_unexpected_fault_in_the_global_check_keeps_the_seeded_result(monkeyp
     image = np.full((50, 50, 3), 255, np.uint8)
     result = {'features': [], 'controls': [], 'sheetPhotos': [], 'width': 50, 'height': 50}
     reg, quality, failures = service.geographic_registration(image, result, [])
-    assert reg is seeded[0] and quality is seeded[1]
+    assert reg is seeded[0] and {k: v for k, v in quality.items() if k != 'denseRefinement'} == seeded[1]
+    assert quality['denseRefinement']['decision'] == 'keep'
     assert any('全局核查出错' in failure for failure in failures)
 
 

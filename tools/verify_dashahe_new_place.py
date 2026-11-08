@@ -138,6 +138,10 @@ def main():
                        differenceFromBaselineM={'median': round(float(np.median(differences)), 2),
                                                 'max': round(float(differences.max()), 2)})
             row['outcome'] = 'consistent' if differences.max() <= STABLE_M else 'inconsistent'
+            if (quality.get('denseRefinement') or {}).get('originalAffine'):
+                from dirmap.pose_refinement import unrefined
+                before, _ = against_baseline(unrefined(reg, quality['denseRefinement']))
+                row['differenceBeforeRefinementM'] = {'median': round(float(np.median(before)), 2), 'max': round(float(before.max()), 2)}
         report['cases'].append(row)
         store.atomic_json(partial, report)
         print(json.dumps({k: row.get(k) for k in ('case', 'outcome', 'method', 'differenceFromBaselineM', 'calibratedControls',

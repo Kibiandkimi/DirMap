@@ -338,6 +338,9 @@ def main():
                        acceptance=acceptance_log(quality), alternatives=alternatives,
                        registration=reg.as_dict(), validationLandmarks=quality.get('landmarks', []),
                        truthTransform=np.asarray(truth).tolist(), truthErrorM=truth_error(reg))
+            if (quality.get('denseRefinement') or {}).get('originalAffine'):
+                from dirmap.pose_refinement import unrefined
+                row['truthErrorBeforeRefinementM'] = truth_error(unrefined(reg, quality['denseRefinement']))
             row['outcome'] = ('correct' if row['truthErrorM']['median'] <= CORRECT_MEDIAN_M
                               and row['truthErrorM']['p95'] <= CORRECT_P95_M else 'wrong')
         report['cases'].append(row)

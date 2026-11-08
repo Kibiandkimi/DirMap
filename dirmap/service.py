@@ -334,6 +334,22 @@ def geographic_registration(image, result, reference, places=None):
             quality = {**quality, 'exposureCorrection': exposure}
         return reg, quality, failures
 
+    def accepted(reg, quality):
+        # Every accepted fit ends with the whole sheet's linework: a
+        # confirmed dense correction refines it, an unconfirmed one that
+        # moves the sheet far refuses it (still offered for a choice).
+        try:
+            reg, quality = global_registration.dense_refinement(image, cartography, result, reference, reg, quality)
+        except global_registration.UnreliablePose as exc:
+            failures.append(str(exc))
+            if places is not None:
+                value, place, place_quality = exc.place
+                places.append((value, place, finished(place, place_quality)[1]))
+            return None, None, failures
+        except Exception as exc:  # noqa: BLE001 - an unexpected fault must not cost the checked fit
+            failures.append(f'整图线划核查出错，沿用已核查的配准：{type(exc).__name__}: {exc}'[:300])
+        return finished(reg, quality)
+
     def unchecked(reg, quality):
         # Without the global comparison only the seeded fit's own checks
         # remain; its extrapolation across the sheet must still hold.
@@ -342,7 +358,7 @@ def geographic_registration(image, result, reference, places=None):
         if reason is not None:
             failures.append(reason)
             return None, None, failures
-        return finished(reg, quality)
+        return accepted(reg, quality)
 
     established = []
     try:
@@ -386,7 +402,7 @@ def geographic_registration(image, result, reference, places=None):
             # P95 again includes the extrapolation estimate.
             quality = {**quality, 'heldOutP95ErrorM': quality['p95ErrorM'],
                        'p95ErrorM': round(float(np.hypot(quality['p95ErrorM'], quality['extrapolationSpreadM'])), 2)}
-    return finished(reg, quality)
+    return accepted(reg, quality)
 
 
 def _process_asset(asset_id, progress, directory, previous, operation_id=None, preserve_edits=True, preserve_registration=False):

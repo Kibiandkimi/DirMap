@@ -773,6 +773,70 @@ def acceptance_refusal(quality, footprint, layers_support=None, matrix=None):
     return None
 
 
+class UnreliablePose(ValueError):
+    """The whole sheet's linework moves an accepted fit far, unconfirmed.
+
+    `place` is (support, registration, quality) of the accepted fit, still
+    offered for a teacher's choice.
+    """
+
+    def __init__(self, message, place):
+        super().__init__(message)
+        self.place = place
+
+
+# A refined pose may lose at most this much whole-sheet support, and its
+# held-out objects may not drift beyond the object-fit gate.
+REFINED_SUPPORT_LOSS = AMBIGUITY_MARGIN/2
+REFINED_OBJECT_P95_M = 18.
+REFINEMENT_LOG_KEYS = ('decision', 'reason', 'pairs', 'scoreBeforeM', 'scoreAfterM', 'gainPercent', 'moveP95M', 'moveMaxM',
+                       'scalePercent', 'rotationDeg', 'halfAgreementM', 'layerGainsM', 'correction')
+
+
+def dense_refinement(image, cartography, result, reference, reg, quality):
+    """Final whole-sheet linework check of an accepted fit (`pose_refinement`).
+
+    Returns the registration and quality to apply: the accepted fit, or its
+    refined pose when the dense correction is confirmed by its own held-out
+    fits and still passes the acceptance checks (whole-sheet support,
+    supporting layers, extrapolation, held-out objects). Raises
+    UnreliablePose when the correction shows the accepted pose to be
+    unreliable. Matching uses only the sheet and the place's reference.
+    """
+    from .pose_refinement import refine, reference_linework, sheet_linework
+    layers, footprint, _ = sheet_evidence(image, cartography, result)
+    sheet = sheet_linework(cartography, footprint, layers, reg.affine)
+    refined, report = refine(reg, footprint, sheet, reference_linework(reference))
+    del sheet
+    log = {key: report[key] for key in REFINEMENT_LOG_KEYS if key in report}
+    if report['decision'] == 'keep':
+        return reg, {**quality, 'denseRefinement': log}
+    value, _ = support(layers, footprint, reference, reg.affine)
+    if report['decision'] == 'unreliable':
+        raise UnreliablePose(f'整幅原图线划与参照对齐后图幅移动 {report["moveP95M"]:.0f} m（P95），且未通过分半、分图层核查，'
+                             '原配准不可靠', (value, reg, {**quality, 'denseRefinement': log}))
+    refined_value, refined_layers = support(layers, footprint, reference, refined.affine)
+    log['supportBefore'], log['supportAfter'] = round(value, 4), round(refined_value, 4)
+    checks = [p for p in quality.get('landmarks') or [] if p.get('purpose') == 'validation'
+              and p.get('kind') != 'road_centerline' and 'pixel' in p and 'local' in p]
+    if checks:
+        # Road samples were paired at the accepted pose; held-out objects
+        # (roof corners, outlines) are measured independently of it.
+        errors = np.linalg.norm(refined.forward([p['pixel'] for p in checks], strict=False)[0]
+                                - np.array([p['local'] for p in checks], float), axis=1)
+        log['heldOutObjectP95M'] = round(float(np.percentile(errors, 95)), 2)
+    if refined_value < max(MINIMUM_SUPPORT, value-REFINED_SUPPORT_LOSS):
+        reason = 'support'
+    elif log.get('heldOutObjectP95M', 0) > max(REFINED_OBJECT_P95_M, quality.get('heldOutP95ErrorM', quality.get('p95ErrorM', 0))):
+        reason = 'held_out_objects'
+    else:
+        reason = acceptance_refusal(quality, footprint, refined_layers, refined.affine)
+    if reason:
+        log.update(decision='keep', reason=f'refined_pose_failed:{reason}')
+        return reg, {**quality, 'denseRefinement': log}
+    return refined, {**quality, 'denseRefinement': {**log, 'originalAffine': np.round(reg.affine, 8).tolist()}}
+
+
 class AmbiguousPlace(ValueError):
     """A refusal that still found fitted places a teacher can tell apart.
 
