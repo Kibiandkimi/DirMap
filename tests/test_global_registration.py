@@ -402,6 +402,16 @@ def test_offered_places_report_the_selected_fits_own_support(monkeypatch):
     assert offered[0][0] == .35
 
 
+def test_support_compares_poses_of_different_scale_on_the_same_ground_cell():
+    # A sheet 1.3 km and one 2.7 km across (the same sheet at twice the
+    # scale) are compared on 4 m cells; small sheets keep 128 cells and very
+    # large ones at most 768.
+    assert G.support_cell(1300.) == G.support_cell(2700.) == 4.
+    assert G.support_cell(300.) == G._cell(300., 128) < 4.
+    assert G.support_cell(9000.) == G._cell(9000., 768) > 4.
+    assert G.support_cell(2700., cells=256) == 2.
+
+
 def test_sweep_peaks_at_scales_beyond_the_refinement_window_stay_distinct():
     footprint = np.array([[0, 0], [1000, 0], [1000, 1000], [0, 1000]], float)
     # Scaled about the sheet centre: outlines within a tenth of the sheet.

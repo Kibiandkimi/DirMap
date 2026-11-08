@@ -527,11 +527,25 @@ def different_paths(first, second, ratio):
     return float(np.isinf(new).mean()) > .1 or float(np.isinf(lost).mean()) > .25
 
 
+# Whole-sheet support compares poses at a fixed ground cell, not at a
+# fixed number of cells across the sheet: a pose at twice the scale would
+# otherwise be judged on cells twice as coarse, where any built-up quarter
+# blurs into agreement with any other (a sheet's true place scored 0.33
+# against 0.49 at twice its scale; at 4 m 0.42 against 0.12). Small sheets
+# keep their 128 cells; very large ones are capped at 768 cells.
+SUPPORT_CELL_M = 4.
+
+
+def support_cell(ground, cells=128):
+    """Cell size (m) at which `support` compares a sheet `ground` metres across."""
+    return min(_cell(ground, cells), max(SUPPORT_CELL_M*128/cells, _cell(ground, 6*cells)))
+
+
 def support(layers, footprint, reference, matrix, *, cells=128):
     """Evidence-weighted agreement of all sheet layers at one final pose.
 
     The same yardstick for every candidate, whichever seed and fit produced
-    it, at about 128 cells across the sheet.
+    it (see `support_cell`; `cells` = 256 halves the cell).
     """
     matrix = np.asarray(matrix, float)
     memo = _memo(reference)
@@ -540,7 +554,7 @@ def support(layers, footprint, reference, matrix, *, cells=128):
         value, values = memo.values[key][1]
         return value, dict(values)
     ground = math.sqrt(abs(np.linalg.det(matrix[:, :2])))*float(np.hypot(*np.ptp(footprint, axis=0)))
-    values, weights = pose_support(layers, footprint, reference, matrix, _cell(ground, cells), weighted=True)
+    values, weights = pose_support(layers, footprint, reference, matrix, support_cell(ground, cells), weighted=True)
     result = (0., {}) if not values else (sum(values[k]*weights[k] for k in values)/sum(weights[k] for k in values), values)
     if memo is not None:
         memo.values[key] = (layers, result)
@@ -939,7 +953,7 @@ def layer_weights(layers, footprint, matrix, kinds, cells=128):
         return {}
     matrix = np.asarray(matrix, float)
     ground = math.sqrt(abs(np.linalg.det(matrix[:, :2])))*float(np.hypot(*np.ptp(footprint, axis=0)))
-    cell = _cell(ground, cells)
+    cell = support_cell(ground, cells)
     drawn, *_ = _draw(layers, footprint, np.diag([1., -1.]) @ matrix[:, :2]/cell, cell, kinds)
     total = sum(weight for _, weight in drawn.values())
     return {kind: round(weight/total, 3) for kind, (_, weight) in drawn.items()} if total else {}
