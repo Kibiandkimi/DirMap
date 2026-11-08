@@ -3,11 +3,13 @@ import { test, expect } from './fixtures';
 test('ambiguous places can be compared, chosen, restored and cleared when switching maps', async ({ page }) => {
   const original = await (await page.request.get('/api/maps/szu-1')).json();
   const overlay = await (await page.request.get(`/assets/maps/szu-1/overlay.png?v=${original.version}`)).body();
+  // As a refusal offers them: the best unconfirmed search pose (support,
+  // no fit check) and a refused seeded fit (held-out P95, no whole-sheet support).
   const candidates = [0, 1].map(index => ({
-    id: `place-${index + 1}`, preview: `place-${index + 1}.png`, support: .35 - index * .02,
+    id: `place-${index + 1}`, preview: `place-${index + 1}.png`, support: index === 0 ? .35 : null,
     extent: original.extent.map((v: number, axis: number) => v + (axis % 2 === 0 ? index * 300 : 0)),
-    p95ErrorM: 4, method: 'global_search_layer_correlation', thinValidation: false,
-    registration: original.registration, quality: original.quality,
+    p95ErrorM: index === 0 ? null : 4, method: index === 0 ? 'global_search_unconfirmed' : 'park_outline_road_network',
+    approximate: index === 0, thinValidation: false, registration: original.registration, quality: original.quality,
   }));
   // The API/job transaction is checked with real state in test_offered_places.
   // Here controlled responses exercise the browser's refusal and preview UI.
@@ -23,7 +25,7 @@ test('ambiguous places can be compared, chosen, restored and cleared when switch
   await page.route('**/api/maps/szu-1/places/place-2', route => {
     submitted = route.request().postDataJSON();
     current = { ...current, version: current.version + 1, registration: original.registration,
-      quality: { ...original.quality, state: 'needs_review', chosenPlace: { id: 'place-2', support: .33, offered: 2 } },
+      quality: { ...original.quality, state: 'needs_review', chosenPlace: { id: 'place-2', support: null, offered: 2 } },
       extent: candidates[1].extent, controls: original.controls };
     return route.fulfill({ json: { id: 'place-browser-choice', kind: 'place', assetId: 'szu-1', state: 'succeeded',
       progress: 100, result: current } });
@@ -34,6 +36,14 @@ test('ambiguous places can be compared, chosen, restored and cleared when switch
   await page.goto('/');
   await page.locator('[data-tab="registration"]').click();
   await expect(page.locator('.place-choice')).toHaveCount(2);
+  await expect(page.locator('.place-choice').nth(0)).toContainText('候选 1 · 近似位置，未经拟合核查 · 吻合度 0.35');
+  await expect(page.locator('.place-choice').nth(0)).not.toContainText('留出 P95');
+  await expect(page.locator('.place-choice').nth(1)).toContainText('候选 2 · 未作整图比对 · 留出 P95 4.0 m');
+  await expect(page.locator('.place-choice').nth(1)).not.toContainText('近似位置');
+  for (const id of ['place-1', 'place-2']) {
+    await expect(page.locator(`[data-place-preview="${id}"]`)).toHaveText('查看');
+    await expect(page.locator(`[data-place-adopt="${id}"]`)).toHaveText('采用此位置');
+  }
   await expect(page.locator('#registration-quality')).toContainText('不能自行确定');
   await expect(page.locator('#plan-button')).toBeDisabled();
   await page.locator('[data-place-preview="place-1"]').click();
