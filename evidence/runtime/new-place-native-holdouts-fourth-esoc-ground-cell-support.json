@@ -1,0 +1,88 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-08T20:26:18Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "6c0e5b077157ba4999ee28e4a389f5426a2fc26fffeb020a711ef7bf754faba6",
+  "verifierSha256": "6e5a785b2dd5d0df3bddda7a53ba94f2cc352f54c2b85059c79efbeb038ce247",
+  "source": "https://www.esoc.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 82,
+      "map": 69,
+      "name": "Corstorphine Hill - SoSOL2",
+      "date": "2020-02-23",
+      "imageSize": [
+        3614,
+        5688
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "c85537a6ec6cfcb381b923eb4c5d9c7abe55ff37f96d06fd55dededbb585183c",
+      "worldFile": [
+        [
+          6.776243644410691e-06,
+          2.4159387649437556e-07,
+          -3.2829629877515
+        ],
+        [
+          1.362664994485247e-07,
+          -3.8008383298176275e-06,
+          55.963387144077
+        ]
+      ],
+      "referenceFeatures": 12684,
+      "referenceSha256": "fd5834a4492d60a6f479136ce264cefb459cda698e740aa04ed91075dcc40a5f",
+      "elapsedSec": 522.8,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "候选配准与参照的吻合度过低（0.10），请补充同名点"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.4354,
+          "method": "global_search_unconfirmed",
+          "p95ErrorM": null,
+          "acceptance": {
+            "method": "global_search_unconfirmed",
+            "approximate": true,
+            "p95ErrorM": null,
+            "medianErrorM": null,
+            "anisotropyPercent": 0.0,
+            "fitCount": 0,
+            "validationCount": 0,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "affine": [
+            [
+              -0.033254,
+              0.001743,
+              -157.62149
+            ],
+            [
+              0.001743,
+              0.033254,
+              660.819078
+            ]
+          ],
+          "truthErrorM": {
+            "median": 941.31,
+            "p95": 1934.09,
+            "max": 2146.63
+          }
+        }
+      ],
+      "correctPlaceOffered": null
+    }
+  ],
+  "summary": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

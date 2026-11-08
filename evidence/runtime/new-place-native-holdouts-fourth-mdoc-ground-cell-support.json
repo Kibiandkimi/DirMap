@@ -1,0 +1,530 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-08T20:22:46Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "6c0e5b077157ba4999ee28e4a389f5426a2fc26fffeb020a711ef7bf754faba6",
+  "verifierSha256": "6e5a785b2dd5d0df3bddda7a53ba94f2cc352f54c2b85059c79efbeb038ce247",
+  "source": "https://www.mdoc.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 369,
+      "map": 343,
+      "name": "Philips Park (YBT)",
+      "date": "2023-04-23",
+      "imageSize": [
+        1926,
+        2689
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "8c9cc6c2f8547dfdf016606bc5e591e75d216ed293b1e1fcf22db56648ce643c",
+      "worldFile": [
+        [
+          1.5327941210643655e-05,
+          2.7597148162893e-07,
+          -2.3178366277643
+        ],
+        [
+          1.6638363603462956e-07,
+          -9.130656291186903e-06,
+          53.53931121724
+        ]
+      ],
+      "referenceFeatures": 3524,
+      "referenceSha256": "e311152c1977c8dcd2ce7560c5fc1e379acd0b883c0db6f933d0ead9f791877a",
+      "elapsedSec": 207.4,
+      "failures": [
+        "自动配准仅找到 7 组稳定地物，需补充同名点"
+      ],
+      "registration": {
+        "affine": [
+          [
+            1.015618554749163,
+            0.013295175166330386,
+            -988.6811468019306
+          ],
+          [
+            0.013295175166330386,
+            -1.015618554749163,
+            1349.0761684167528
+          ]
+        ],
+        "source": [
+          [
+            131.9881840638089,
+            1105.1325971248993
+          ],
+          [
+            462.7643687100854,
+            1109.4626945765049
+          ],
+          [
+            1449.3710081592933,
+            1559.5500880710442
+          ],
+          [
+            1112.8213602442092,
+            1996.254903481141
+          ],
+          [
+            1107.0994457545876,
+            2433.352004620863
+          ],
+          [
+            1437.875630400864,
+            2437.682102072469
+          ]
+        ],
+        "target": [
+          [
+            -843.741580531351,
+            230.6604702598865
+          ],
+          [
+            -507.73921748424453,
+            231.52152849834349
+          ],
+          [
+            501.53238992111375,
+            -212.11530477149924
+          ],
+          [
+            164.72212767229962,
+            -660.5733002248736
+          ],
+          [
+            164.42719227441364,
+            -1104.4125580776579
+          ],
+          [
+            500.0437385087994,
+            -1104.0109263639226
+          ]
+        ],
+        "triangles": [
+          [
+            5,
+            3,
+            2
+          ],
+          [
+            1,
+            3,
+            0
+          ],
+          [
+            3,
+            1,
+            2
+          ],
+          [
+            3,
+            4,
+            0
+          ],
+          [
+            4,
+            3,
+            5
+          ]
+        ],
+        "model": "regularized_piecewise_affine",
+        "foldedTriangles": 0
+      },
+      "validationLandmarks": [
+        {
+          "pixel": [
+            131.9881840638089,
+            1105.1325971248993
+          ],
+          "local": [
+            -844.6938466161341,
+            226.82908113565736
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-0",
+          "correlation": 0.6,
+          "purpose": "fit",
+          "errorM": 5.02,
+          "leaveOneOutErrorM": 7.25
+        },
+        {
+          "pixel": [
+            462.7643687100854,
+            1109.4626945765049
+          ],
+          "local": [
+            -510.3351017564387,
+            232.4106088456183
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-1",
+          "correlation": 0.458,
+          "purpose": "fit",
+          "errorM": 7.53,
+          "leaveOneOutErrorM": 4.16
+        },
+        {
+          "pixel": [
+            1449.3710081592933,
+            1559.5500880710442
+          ],
+          "local": [
+            506.888171520844,
+            -211.04012910756774
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-3-4",
+          "correlation": 0.339,
+          "purpose": "fit",
+          "errorM": 5.33,
+          "leaveOneOutErrorM": 9.04
+        },
+        {
+          "pixel": [
+            1112.8213602442092,
+            1996.254903481141
+          ],
+          "local": [
+            166.3543011814504,
+            -661.3378662291498
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-4-3",
+          "correlation": 0.704,
+          "purpose": "fit",
+          "errorM": 2.8,
+          "leaveOneOutErrorM": 2.33
+        },
+        {
+          "pixel": [
+            1107.0994457545876,
+            2433.352004620863
+          ],
+          "local": [
+            164.81312903465323,
+            -1103.3834349337549
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-5-3",
+          "correlation": 0.645,
+          "purpose": "fit",
+          "errorM": 5.29,
+          "leaveOneOutErrorM": 1.45
+        },
+        {
+          "pixel": [
+            1437.875630400864,
+            2437.682102072469
+          ],
+          "local": [
+            496.217996996656,
+            -1102.4083503905267
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-5-4",
+          "correlation": 0.686,
+          "purpose": "fit",
+          "errorM": 9.39,
+          "leaveOneOutErrorM": 8.46
+        }
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 9.89,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3295,
+            "metresPerPixel": 1.01267,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.0848,
+            "metresPerPixel": 0.80033,
+            "rotationDeg": -4.5
+          },
+          {
+            "score": 0.1164,
+            "metresPerPixel": 0.39506,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.1166,
+            "metresPerPixel": 0.83234,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.0762,
+            "metresPerPixel": 0.5623,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.1052,
+            "metresPerPixel": 0.54067,
+            "rotationDeg": 12.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "acceptance": {
+        "method": "global_search_layer_correlation",
+        "p95ErrorM": 9.89,
+        "heldOutP95ErrorM": 8.89,
+        "medianErrorM": 5.7,
+        "extrapolationSpreadM": 4.34,
+        "anisotropyPercent": 0.0,
+        "fitCount": 6,
+        "fitObjectCount": 6,
+        "validationCount": 6,
+        "validationObjectCount": 6,
+        "cellM": 8.0,
+        "blockHullFraction": 0.254,
+        "poseSource": "search_refinement",
+        "fineBlockRefinement": true,
+        "validationInsideHull": 6,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "small_gain",
+          "pairs": {
+            "ink": [
+              37077,
+              60000
+            ],
+            "paving": [
+              9798,
+              55816
+            ],
+            "roof": [
+              679,
+              14071
+            ],
+            "water": [
+              19107,
+              11706
+            ]
+          },
+          "scoreBeforeM": 3.544,
+          "scoreAfterM": 3.449,
+          "gainPercent": 2.69,
+          "moveP95M": 13.18,
+          "moveMaxM": 14.95,
+          "scalePercent": 0.289,
+          "rotationDeg": 0.28,
+          "sensitivityM": {
+            "scale": [
+              0.2134,
+              0.2556
+            ],
+            "rotationDeg": [
+              0.2766,
+              0.2666
+            ],
+            "stretchX": [
+              0.1504,
+              0.196
+            ],
+            "stretchY": [
+              0.1923,
+              0.1758
+            ]
+          },
+          "correction": [
+            [
+              1.00288277,
+              -0.00489369,
+              -4.88673416
+            ],
+            [
+              0.00489369,
+              1.00288277,
+              3.82110973
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.4041,
+          "layers": {
+            "building": 0.0364,
+            "water": 0.7522,
+            "path": 0.1175
+          },
+          "layerWeights": {
+            "building": 0.084,
+            "water": 0.462,
+            "path": 0.454
+          },
+          "margin": 0.2737
+        },
+        "poseLayerCount": 3
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 8.98,
+          "p95": 13.47,
+          "max": 15.35
+        },
+        "insideHull": {
+          "median": 2.54,
+          "p95": 4.87,
+          "max": 5.44
+        },
+        "insideFraction": 0.245,
+        "wholeImage": {
+          "median": 8.58,
+          "p95": 13.89,
+          "max": 15.35
+        },
+        "evaluationSamples": 425
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4041,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 8.89,
+          "extrapolationSpreadM": 4.34,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              1.015619,
+              0.013295,
+              -988.681147
+            ],
+            [
+              0.013295,
+              -1.015619,
+              1349.076168
+            ]
+          ],
+          "truthMedianM": 8.98
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3846,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 15.1,
+          "p95ErrorM": 5.24,
+          "extrapolationSpreadM": 2.09,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              1.00858,
+              0.013203,
+              -988.592832
+            ],
+            [
+              0.013203,
+              -1.00858,
+              1340.766794
+            ]
+          ],
+          "truthMedianM": 7.55
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.1305,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 204.5,
+          "p95ErrorM": 14.9,
+          "extrapolationSpreadM": 0.86,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.881119,
+              0.031579,
+              -883.521612
+            ],
+            [
+              0.031579,
+              -0.881119,
+              1102.399611
+            ]
+          ],
+          "truthMedianM": 104.79
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.1089,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 1810.4,
+          "p95ErrorM": 17.02,
+          "extrapolationSpreadM": 0.47,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.40727,
+              -0.08384,
+              1019.337667
+            ],
+            [
+              -0.08384,
+              -0.40727,
+              1142.181087
+            ]
+          ],
+          "truthMedianM": 1359.17
+        },
+        {
+          "method": "park_outline_road_network",
+          "support": 0.0877,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2026.73,
+          "p95ErrorM": 1.67,
+          "extrapolationSpreadM": 1.04,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.053811,
+              0.08006,
+              1137.803693
+            ],
+            [
+              0.08006,
+              -0.053811,
+              181.376612
+            ]
+          ],
+          "truthMedianM": 1332.22
+        }
+      ],
+      "poseSupport": {
+        "value": 0.4041,
+        "layers": {
+          "building": 0.0364,
+          "water": 0.7522,
+          "path": 0.1175
+        },
+        "layerWeights": {
+          "building": 0.084,
+          "water": 0.462,
+          "path": 0.454
+        },
+        "margin": 0.2737
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

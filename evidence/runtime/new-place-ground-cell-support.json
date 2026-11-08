@@ -1,0 +1,4912 @@
+{
+ "scope": "Whole-sheet support on a fixed 4 m ground cell (search proposals still ranked on 128 cells), refusals always offering checked seeded fits plus the best unconfirmed search pose (approximate), sweep peaks beyond the +-8% refine window kept apart, anisotropy gate 2.5%, and exact per-registration reuse of place rasters/spectra/scores/seeded road fits. Same cached inputs and OSM references as the 2799f2e records (\"before\"); world files only score results. The fourth batch was used to diagnose and change this implementation, so its rows here are a training/seen result, not an independent test; its independent first result at frozen 2799f2e was 3 correct / 2 wrong / 3 refused.",
+ "implementationSignature": "6c0e5b077157ba4999ee28e4a389f5426a2fc26fffeb020a711ef7bf754faba6",
+ "batches": [
+  {
+   "batch": "15-map set",
+   "resultFile": "new-area-registration-ground-cell-support.json",
+   "before": {
+    "correct": 14,
+    "wrong": 0,
+    "refused": 1
+   },
+   "after": {
+    "correct": 14,
+    "wrong": 0,
+    "refused": 1
+   },
+   "refusedOfferingCorrectPlace": [
+    1,
+    1
+   ],
+   "elapsedSec": [
+    3077,
+    2725
+   ],
+   "changed": [
+    {
+     "case": "Park-O 2017 #3: Stanborough Park",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.756,
+       "approximate": false,
+       "truthMedianM": 2.23
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.4758,
+       "approximate": false,
+       "truthMedianM": 836.4
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.3346,
+       "approximate": false,
+       "truthMedianM": 93.76
+      }
+     ],
+     "afterOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.7359,
+       "approximate": false,
+       "truthMedianM": 2.23
+      }
+     ],
+     "correctPlaceOffered": [
+      1,
+      1
+     ]
+    },
+    {
+     "case": "Cassiobury Park Saturday Series",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 5.37,
+      "p95": 13.25,
+      "max": 16.3
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "correct",
+     "afterTruth": {
+      "median": 2.71,
+      "p95": 7.39,
+      "max": 8.91
+     },
+     "afterMethod": "global_search_layer_correlation",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "Hatfield Urban Race",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 2.72,
+      "p95": 3.72,
+      "max": 4.33
+     },
+     "beforeMethod": "global_seed_observed_outline_ransac_mesh",
+     "after": "correct",
+     "afterTruth": {
+      "median": 2.11,
+      "p95": 3.31,
+      "max": 3.64
+     },
+     "afterMethod": "global_seed_observed_outline_ransac_mesh",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "Welwyn Garden City Urban Race",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 1.43,
+      "p95": 2.2,
+      "max": 5.67
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "correct",
+     "afterTruth": {
+      "median": 2.14,
+      "p95": 4.69,
+      "max": 5.55
+     },
+     "afterMethod": "global_seed_observed_outline_ransac_mesh",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "Welwyn Garden City Race 2022",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 2.04,
+      "p95": 3.68,
+      "max": 4.59
+     },
+     "beforeMethod": "global_seed_observed_outline_ransac_mesh",
+     "after": "correct",
+     "afterTruth": {
+      "median": 1.71,
+      "p95": 3.11,
+      "max": 3.73
+     },
+     "afterMethod": "global_seed_observed_outline_ransac_mesh",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "Moneyhole Park Saturday Series",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 7.04,
+      "p95": 14.53,
+      "max": 17.44
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "correct",
+     "afterTruth": {
+      "median": 2.33,
+      "p95": 3.13,
+      "max": 3.6
+     },
+     "afterMethod": "global_search_layer_correlation",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 14,
+    "medianOfCaseMediansM": [
+     2.08,
+     2.12
+    ],
+    "medianOfCaseP95M": [
+     3.7,
+     3.52
+    ]
+   }
+  },
+  {
+   "batch": "native 1 (final)",
+   "resultFile": "new-place-native-final-ground-cell-support.json",
+   "before": {
+    "correct": 2,
+    "wrong": 0,
+    "refused": 1
+   },
+   "after": {
+    "correct": 2,
+    "wrong": 0,
+    "refused": 1
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    398,
+    874
+   ],
+   "changed": [
+    {
+     "case": "Burnham Beeches Saturday Series",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 5.88,
+      "p95": 8.66,
+      "max": 10.16
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "correct",
+     "afterTruth": {
+      "median": 6.54,
+      "p95": 11.1,
+      "max": 13.46
+     },
+     "afterMethod": "global_search_layer_correlation",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "Chipperfield Saturday Series",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [
+      {
+       "method": "global_search_street_network",
+       "support": 0.01,
+       "approximate": false,
+       "truthMedianM": 10.24
+      }
+     ],
+     "afterOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.3333,
+       "approximate": false,
+       "truthMedianM": 17.46
+      },
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.3844,
+       "approximate": true,
+       "truthMedianM": 1948.97
+      }
+     ],
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 2,
+    "medianOfCaseMediansM": [
+     5.9,
+     6.23
+    ],
+    "medianOfCaseP95M": [
+     9.53,
+     10.75
+    ]
+   }
+  },
+  {
+   "batch": "native 2",
+   "resultFile": "new-place-native-holdouts-second-ground-cell-support.json",
+   "before": {
+    "correct": 2,
+    "wrong": 0,
+    "refused": 1
+   },
+   "after": {
+    "correct": 2,
+    "wrong": 0,
+    "refused": 1
+   },
+   "refusedOfferingCorrectPlace": [
+    1,
+    1
+   ],
+   "elapsedSec": [
+    791,
+    492
+   ],
+   "changed": [
+    {
+     "case": "Mardley Heath Saturday Series",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.363,
+       "approximate": false,
+       "truthMedianM": 1.71
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.3127,
+       "approximate": false,
+       "truthMedianM": 798.07
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.31,
+       "approximate": false,
+       "truthMedianM": 799.79
+      }
+     ],
+     "afterOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.2887,
+       "approximate": false,
+       "truthMedianM": 1.71
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.2069,
+       "approximate": false,
+       "truthMedianM": 883.81
+      },
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.4498,
+       "approximate": true,
+       "truthMedianM": 336.01
+      }
+     ],
+     "correctPlaceOffered": [
+      1,
+      1
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 2,
+    "medianOfCaseMediansM": [
+     2.4,
+     2.4
+    ],
+    "medianOfCaseP95M": [
+     5.18,
+     5.18
+    ]
+   }
+  },
+  {
+   "batch": "native 3 bok (incl. Clifton Downs)",
+   "resultFile": "new-place-native-holdouts-third-bok-ground-cell-support.json",
+   "before": {
+    "correct": 2,
+    "wrong": 0,
+    "refused": 1
+   },
+   "after": {
+    "correct": 2,
+    "wrong": 0,
+    "refused": 1
+   },
+   "refusedOfferingCorrectPlace": [
+    1,
+    1
+   ],
+   "elapsedSec": [
+    1049,
+    827
+   ],
+   "changed": [
+    {
+     "case": "Westridge Wood",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.6792,
+       "approximate": false,
+       "truthMedianM": 6.36
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.4335,
+       "approximate": false,
+       "truthMedianM": 2087.93
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.4034,
+       "approximate": false,
+       "truthMedianM": 230.28
+      }
+     ],
+     "afterOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.3955,
+       "approximate": false,
+       "truthMedianM": 6.36
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.3217,
+       "approximate": false,
+       "truthMedianM": 2087.93
+      },
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.7597,
+       "approximate": true,
+       "truthMedianM": 1115.8
+      }
+     ],
+     "correctPlaceOffered": [
+      1,
+      1
+     ]
+    },
+    {
+     "case": "Clifton Downs",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 8.62,
+      "p95": 12.73,
+      "max": 13.56
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "correct",
+     "afterTruth": {
+      "median": 8.22,
+      "p95": 12.49,
+      "max": 13.81
+     },
+     "afterMethod": "global_search_layer_correlation",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 2,
+    "medianOfCaseMediansM": [
+     5.51,
+     5.31
+    ],
+    "medianOfCaseP95M": [
+     8.48,
+     8.37
+    ]
+   }
+  },
+  {
+   "batch": "native 3 tvoc",
+   "resultFile": "new-place-native-holdouts-third-tvoc-ground-cell-support.json",
+   "before": {
+    "correct": 3,
+    "wrong": 0,
+    "refused": 0
+   },
+   "after": {
+    "correct": 3,
+    "wrong": 0,
+    "refused": 0
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    346,
+    331
+   ],
+   "changed": [],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 3,
+    "medianOfCaseMediansM": [
+     1.89,
+     1.89
+    ],
+    "medianOfCaseP95M": [
+     4.6,
+     4.6
+    ]
+   }
+  },
+  {
+   "batch": "Dashahe variants",
+   "resultFile": "dashahe-as-new-place-ground-cell-support.json",
+   "before": {
+    "correct": 8,
+    "wrong": 0,
+    "refused": 3
+   },
+   "after": {
+    "correct": 8,
+    "wrong": 0,
+    "refused": 3
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    2348,
+    2104
+   ],
+   "changed": [
+    {
+     "case": "fresh-viewport",
+     "before": "consistent",
+     "beforeTruth": {
+      "median": 2.98,
+      "max": 4.76
+     },
+     "beforeMethod": "global_search_road_network",
+     "after": "consistent",
+     "afterTruth": {
+      "median": 1.5,
+      "max": 2.41
+     },
+     "afterMethod": "global_search_road_network",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "top-half",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.2658,
+       "approximate": false,
+       "truthMedianM": null
+      }
+     ],
+     "afterOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.2423,
+       "approximate": false,
+       "truthMedianM": null
+      },
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.5988,
+       "approximate": true,
+       "truthMedianM": null
+      }
+     ],
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "bottom-half",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [],
+     "afterOffers": [
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.2865,
+       "approximate": true,
+       "truthMedianM": null
+      }
+     ],
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "centre",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.3199,
+       "approximate": false,
+       "truthMedianM": null
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.2902,
+       "approximate": false,
+       "truthMedianM": null
+      }
+     ],
+     "afterOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.3199,
+       "approximate": false,
+       "truthMedianM": null
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.2544,
+       "approximate": false,
+       "truthMedianM": null
+      },
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.3922,
+       "approximate": true,
+       "truthMedianM": null
+      }
+     ],
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "turned-90-no-park",
+     "before": "consistent",
+     "beforeTruth": {
+      "median": 3.67,
+      "max": 5.53
+     },
+     "beforeMethod": "global_search_road_network",
+     "after": "consistent",
+     "afterTruth": {
+      "median": 1.48,
+      "max": 2.44
+     },
+     "afterMethod": "global_search_road_network",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 8,
+    "medianOfCaseMediansM": [
+     3.4,
+     2.83
+    ],
+    "medianOfCaseP95M": [
+     5.18,
+     4.0
+    ]
+   }
+  },
+  {
+   "batch": "Shenzhen synthetic",
+   "resultFile": "shenzhen-new-places-ground-cell-support.json",
+   "before": {
+    "correct": 10,
+    "wrong": 0,
+    "refused": 0
+   },
+   "after": {
+    "correct": 10,
+    "wrong": 0,
+    "refused": 0
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    570,
+    539
+   ],
+   "changed": [
+    {
+     "case": "香蜜公园",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 1.66,
+      "p95": 2.93,
+      "max": 3.37
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "correct",
+     "afterTruth": {
+      "median": 2.3,
+      "p95": 3.61,
+      "max": 4.27
+     },
+     "afterMethod": "global_search_layer_correlation",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "深圳湾公园（红树林段）",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 2.48,
+      "p95": 3.39,
+      "max": 3.71
+     },
+     "beforeMethod": "global_search_road_network",
+     "after": "correct",
+     "afterTruth": {
+      "median": 2.71,
+      "p95": 4.07,
+      "max": 4.5
+     },
+     "afterMethod": "global_search_road_network",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 10,
+    "medianOfCaseMediansM": [
+     1.9,
+     2.1
+    ],
+    "medianOfCaseP95M": [
+     3.28,
+     3.58
+    ]
+   }
+  }
+ ],
+ "fourthBatchSeen": [
+  {
+   "batch": "fourth batch stag (Queens Park), seen",
+   "resultFile": "new-place-native-holdouts-fourth-stag-ground-cell-support.json",
+   "before": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0
+   },
+   "after": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    234,
+    205
+   ],
+   "changed": [],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 1,
+    "medianOfCaseMediansM": [
+     4.77,
+     4.77
+    ],
+    "medianOfCaseP95M": [
+     6.96,
+     6.96
+    ]
+   }
+  },
+  {
+   "batch": "fourth batch euoc (Calton Hill, Pollock Halls), seen",
+   "resultFile": "new-place-native-holdouts-fourth-euoc-ground-cell-support.json",
+   "before": {
+    "correct": 1,
+    "wrong": 1,
+    "refused": 0
+   },
+   "after": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 1
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    1
+   ],
+   "elapsedSec": [
+    145,
+    543
+   ],
+   "changed": [
+    {
+     "case": "BW2020 - FwtN - Calton Hill",
+     "before": "wrong",
+     "beforeTruth": {
+      "median": 8.55,
+      "p95": 27.12,
+      "max": 31.81
+     },
+     "beforeMethod": "building_seed_observed_outline_ransac_mesh",
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": null,
+     "afterOffers": [
+      {
+       "method": "global_search_layer_correlation",
+       "support": 0.5913,
+       "approximate": false,
+       "truthMedianM": 0.91
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.3884,
+       "approximate": false,
+       "truthMedianM": 960.86
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.3766,
+       "approximate": false,
+       "truthMedianM": 918.81
+      }
+     ],
+     "correctPlaceOffered": [
+      null,
+      1
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 1,
+    "medianOfCaseMediansM": [
+     3.13,
+     3.13
+    ],
+    "medianOfCaseP95M": [
+     5.81,
+     5.81
+    ]
+   }
+  },
+  {
+   "batch": "fourth batch nato (Jesmond Dene, Broomley Woods), seen",
+   "resultFile": "new-place-native-holdouts-fourth-nato-ground-cell-support.json",
+   "before": {
+    "correct": 1,
+    "wrong": 1,
+    "refused": 0
+   },
+   "after": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 1
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    252,
+    1442
+   ],
+   "changed": [
+    {
+     "case": "Jesmond Dene",
+     "before": "correct",
+     "beforeTruth": {
+      "median": 5.09,
+      "p95": 7.65,
+      "max": 8.35
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "correct",
+     "afterTruth": {
+      "median": 2.58,
+      "p95": 3.45,
+      "max": 3.78
+     },
+     "afterMethod": "global_search_layer_correlation",
+     "beforeOffers": null,
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    },
+    {
+     "case": "Broomley Woods",
+     "before": "wrong",
+     "beforeTruth": {
+      "median": 21.5,
+      "p95": 33.31,
+      "max": 39.87
+     },
+     "beforeMethod": "global_search_layer_correlation",
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": null,
+     "afterOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.3332,
+       "approximate": false,
+       "truthMedianM": 717.31
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.3025,
+       "approximate": false,
+       "truthMedianM": 630.76
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.2931,
+       "approximate": false,
+       "truthMedianM": 734.79
+      },
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.2743,
+       "approximate": true,
+       "truthMedianM": 2847.03
+      }
+     ],
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 1,
+    "medianOfCaseMediansM": [
+     5.09,
+     2.58
+    ],
+    "medianOfCaseP95M": [
+     7.65,
+     3.45
+    ]
+   }
+  },
+  {
+   "batch": "fourth batch mdoc (Philips Park), seen",
+   "resultFile": "new-place-native-holdouts-fourth-mdoc-ground-cell-support.json",
+   "before": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1
+   },
+   "after": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    1448,
+    207
+   ],
+   "changed": [
+    {
+     "case": "Philips Park (YBT)",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "correct",
+     "afterTruth": {
+      "median": 8.98,
+      "p95": 13.47,
+      "max": 15.35
+     },
+     "afterMethod": "global_search_layer_correlation",
+     "beforeOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.3712,
+       "approximate": false,
+       "truthMedianM": 1748.31
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.3132,
+       "approximate": false,
+       "truthMedianM": 104.79
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.2945,
+       "approximate": false,
+       "truthMedianM": 1055.81
+      }
+     ],
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 0,
+    "medianOfCaseMediansM": [
+     null,
+     null
+    ],
+    "medianOfCaseP95M": [
+     null,
+     null
+    ]
+   }
+  },
+  {
+   "batch": "fourth batch esoc (Corstorphine Hill), seen",
+   "resultFile": "new-place-native-holdouts-fourth-esoc-ground-cell-support.json",
+   "before": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1
+   },
+   "after": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    732,
+    523
+   ],
+   "changed": [
+    {
+     "case": "Corstorphine Hill - SoSOL2",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "refused",
+     "afterTruth": null,
+     "afterMethod": null,
+     "beforeOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.2276,
+       "approximate": false,
+       "truthMedianM": 1019.92
+      }
+     ],
+     "afterOffers": [
+      {
+       "method": "global_search_unconfirmed",
+       "support": 0.4354,
+       "approximate": true,
+       "truthMedianM": 941.31
+      }
+     ],
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 0,
+    "medianOfCaseMediansM": [
+     null,
+     null
+    ],
+    "medianOfCaseP95M": [
+     null,
+     null
+    ]
+   }
+  },
+  {
+   "batch": "fourth batch aire (Leeds Uni), seen",
+   "resultFile": "new-place-native-holdouts-fourth-aire-ground-cell-support.json",
+   "before": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1
+   },
+   "after": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0
+   },
+   "refusedOfferingCorrectPlace": [
+    0,
+    0
+   ],
+   "elapsedSec": [
+    4609,
+    170
+   ],
+   "changed": [
+    {
+     "case": "Summer in the City - Little London/Leeds Uni",
+     "before": "refused",
+     "beforeTruth": null,
+     "beforeMethod": null,
+     "after": "correct",
+     "afterTruth": {
+      "median": 1.4,
+      "p95": 2.83,
+      "max": 3.43
+     },
+     "afterMethod": "water_seed_observed_outline_ransac_mesh",
+     "beforeOffers": [
+      {
+       "method": "global_search_road_network",
+       "support": 0.4386,
+       "approximate": false,
+       "truthMedianM": 1529.23
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.4077,
+       "approximate": false,
+       "truthMedianM": 964.64
+      },
+      {
+       "method": "global_search_road_network",
+       "support": 0.4044,
+       "approximate": false,
+       "truthMedianM": 1216.48
+      }
+     ],
+     "afterOffers": null,
+     "correctPlaceOffered": [
+      null,
+      null
+     ]
+    }
+   ],
+   "accuracyOnCasesCorrectBeforeAndAfter": {
+    "cases": 0,
+    "medianOfCaseMediansM": [
+     null,
+     null
+    ],
+    "medianOfCaseP95M": [
+     null,
+     null
+    ]
+   }
+  }
+ ],
+ "verifierSha256": {
+  "verify_new_areas.py": "6e5a785b2dd5d0df3bddda7a53ba94f2cc352f54c2b85059c79efbeb038ce247",
+  "verify_shenzhen_places.py": "176e771e8daa8050441d1285d917e2a7611e2e69d6c2aab422880ada2722e048",
+  "verify_dashahe_new_place.py": "43e10c893890afff7372f5a99fd990b0866b142a223ebf649cbc658f6ac06d35"
+ },
+ "peakRssMiBPerVerifierRun": {
+  "15": 1337,
+  "bok": 1339,
+  "dashahe": 1334,
+  "final": 691,
+  "fourth-aire": 1219,
+  "fourth-esoc": 1404,
+  "fourth-euoc": 943,
+  "fourth-mdoc": 645,
+  "fourth-nato": 729,
+  "fourth-stag": 861,
+  "second": 701,
+  "sz": 1331,
+  "tvoc": 526
+ },
+ "offlineSupportCalibration": [
+  {
+   "batch": "15",
+   "event": 433,
+   "name": "Wardown Park HH Sprint Champs ",
+   "outcome": "correct",
+   "reading": "expanded_paving",
+   "sec": 21.5,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.6405,
+     "fix4": 0.6878,
+     "fix6": 0.6957,
+     "fix8": 0.6405
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 155.4,
+     "nat128": 0.0155,
+     "fix4": 0.0155,
+     "fix6": 0.0155,
+     "fix8": 0.0155
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 90.2,
+     "nat128": 0.2115,
+     "fix4": 0.178,
+     "fix6": 0.2115,
+     "fix8": 0.2115
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 127.5,
+     "nat128": 0.1611,
+     "fix4": 0.146,
+     "fix6": 0.1582,
+     "fix8": 0.1383
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 310.9,
+     "nat128": 0.1104,
+     "fix4": 0.0524,
+     "fix6": 0.0595,
+     "fix8": 0.0673
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 2.9,
+     "nat128": 0.641,
+     "fix4": 0.6797,
+     "fix6": 0.6902,
+     "fix8": 0.641
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 3.0,
+     "nat128": 0.6268,
+     "fix4": 0.6755,
+     "fix6": 0.6681,
+     "fix8": 0.6268
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 44.6,
+     "nat128": 0.2624,
+     "fix4": 0.1584,
+     "fix6": 0.1818,
+     "fix8": 0.2624
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 44.6,
+     "nat128": 0.2624,
+     "fix4": 0.1584,
+     "fix6": 0.1818,
+     "fix8": 0.2624
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 706.3,
+     "nat128": 0.2238,
+     "fix4": 0.1252,
+     "fix6": 0.1601,
+     "fix8": 0.2238
+    },
+    {
+     "label": "alt5:global_search_road_network",
+     "median": 706.3,
+     "nat128": 0.2238,
+     "fix4": 0.1252,
+     "fix6": 0.1601,
+     "fix8": 0.2238
+    },
+    {
+     "label": "alt6:global_search_road_network",
+     "median": 62.1,
+     "nat128": 0.1979,
+     "fix4": 0.131,
+     "fix6": 0.1533,
+     "fix8": 0.1979
+    },
+    {
+     "label": "alt7:global_search_road_network",
+     "median": 62.1,
+     "nat128": 0.1979,
+     "fix4": 0.131,
+     "fix6": 0.1533,
+     "fix8": 0.1979
+    },
+    {
+     "label": "alt8:global_search_road_network",
+     "median": 99.2,
+     "nat128": 0.1796,
+     "fix4": 0.1519,
+     "fix6": 0.1493,
+     "fix8": 0.1796
+    },
+    {
+     "label": "alt9:global_search_road_network",
+     "median": 99.2,
+     "nat128": 0.1796,
+     "fix4": 0.1519,
+     "fix6": 0.1493,
+     "fix8": 0.1796
+    },
+    {
+     "label": "alt10:global_search_road_network",
+     "median": 85.8,
+     "nat128": 0.119,
+     "fix4": 0.0871,
+     "fix6": 0.1008,
+     "fix8": 0.119
+    },
+    {
+     "label": "alt11:global_search_road_network",
+     "median": 84.5,
+     "nat128": 0.0591,
+     "fix4": 0.0599,
+     "fix6": 0.0638,
+     "fix8": 0.0591
+    },
+    {
+     "label": "alt12:global_search_road_network",
+     "median": 84.5,
+     "nat128": 0.0591,
+     "fix4": 0.0599,
+     "fix6": 0.0638,
+     "fix8": 0.0591
+    },
+    {
+     "label": "alt13:global_search_road_network",
+     "median": 156.0,
+     "nat128": 0.0845,
+     "fix4": 0.0558,
+     "fix6": 0.0558,
+     "fix8": 0.0845
+    },
+    {
+     "label": "alt14:global_search_road_network",
+     "median": 98.1,
+     "nat128": 0.0055,
+     "fix4": -0.0077,
+     "fix6": 0.0037,
+     "fix8": 0.0055
+    },
+    {
+     "label": "accepted",
+     "median": 2.1,
+     "nat128": 0.6334,
+     "fix4": 0.6979,
+     "fix6": 0.6881,
+     "fix8": 0.6334
+    }
+   ],
+   "nat128": [
+    0.641,
+    0.2624
+   ],
+   "fix4": [
+    0.6979,
+    0.178
+   ],
+   "fix6": [
+    0.6957,
+    0.2115
+   ],
+   "fix8": [
+    0.641,
+    0.2624
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 446,
+   "name": "Highfield Park Saturday Series",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 25.2,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.5006,
+     "fix4": 0.4427,
+     "fix6": 0.4626,
+     "fix8": 0.4728
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 279.8,
+     "nat128": -0.0128,
+     "fix4": -0.0072,
+     "fix6": -0.0153,
+     "fix8": -0.0128
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 162.3,
+     "nat128": 0.1515,
+     "fix4": 0.0416,
+     "fix6": 0.0669,
+     "fix8": 0.107
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 229.5,
+     "nat128": 0.2313,
+     "fix4": 0.0489,
+     "fix6": 0.0699,
+     "fix8": 0.096
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 559.7,
+     "nat128": 0.2544,
+     "fix4": 0.0516,
+     "fix6": 0.0705,
+     "fix8": 0.0881
+    },
+    {
+     "label": "alt0:building_seed_observed_outline_ransac_mesh",
+     "median": 1.1,
+     "nat128": 0.5041,
+     "fix4": 0.4474,
+     "fix6": 0.4608,
+     "fix8": 0.4702
+    },
+    {
+     "label": "accepted",
+     "median": 1.2,
+     "nat128": 0.5041,
+     "fix4": 0.4473,
+     "fix6": 0.4608,
+     "fix8": 0.4613
+    }
+   ],
+   "nat128": [
+    0.5041,
+    0.2544
+   ],
+   "fix4": [
+    0.4474,
+    0.0516
+   ],
+   "fix6": [
+    0.4626,
+    0.0705
+   ],
+   "fix8": [
+    0.4728,
+    0.107
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 343,
+   "name": "Oaklands AGM Sprint",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 23.9,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.6069,
+     "fix4": 0.6163,
+     "fix6": 0.6155,
+     "fix8": 0.6069
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 158.1,
+     "nat128": 0.1301,
+     "fix4": 0.1301,
+     "fix6": 0.1301,
+     "fix8": 0.1301
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 91.7,
+     "nat128": 0.2631,
+     "fix4": 0.2174,
+     "fix6": 0.2631,
+     "fix8": 0.2631
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 129.7,
+     "nat128": 0.1692,
+     "fix4": 0.0844,
+     "fix6": 0.1144,
+     "fix8": 0.1387
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 316.2,
+     "nat128": 0.0359,
+     "fix4": 0.0006,
+     "fix6": 0.0054,
+     "fix8": 0.015
+    },
+    {
+     "label": "alt0:water_seed_observed_outline_ransac_mesh",
+     "median": 1.3,
+     "nat128": 0.6224,
+     "fix4": 0.6108,
+     "fix6": 0.6164,
+     "fix8": 0.6224
+    },
+    {
+     "label": "accepted",
+     "median": 1.4,
+     "nat128": 0.6218,
+     "fix4": 0.6108,
+     "fix6": 0.6164,
+     "fix8": 0.6218
+    }
+   ],
+   "nat128": [
+    0.6224,
+    0.2631
+   ],
+   "fix4": [
+    0.6163,
+    0.2174
+   ],
+   "fix6": [
+    0.6164,
+    0.2631
+   ],
+   "fix8": [
+    0.6224,
+    0.2631
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 310,
+   "name": "Habs AGM Sprint",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 21.9,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.5675,
+     "fix4": 0.5432,
+     "fix6": 0.5595,
+     "fix8": 0.5675
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 169.1,
+     "nat128": 0.0145,
+     "fix4": 0.0145,
+     "fix6": 0.0145,
+     "fix8": 0.0145
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 98.1,
+     "nat128": 0.1975,
+     "fix4": 0.1601,
+     "fix6": 0.1975,
+     "fix8": 0.1975
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 138.7,
+     "nat128": 0.1572,
+     "fix4": 0.0831,
+     "fix6": 0.0972,
+     "fix8": 0.1217
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 338.2,
+     "nat128": 0.0983,
+     "fix4": 0.0615,
+     "fix6": 0.067,
+     "fix8": 0.0713
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 2.9,
+     "nat128": 0.5891,
+     "fix4": 0.5674,
+     "fix6": 0.5721,
+     "fix8": 0.5891
+    },
+    {
+     "label": "alt1:global_search_road_network",
+     "median": 3.8,
+     "nat128": 0.585,
+     "fix4": 0.5724,
+     "fix6": 0.5732,
+     "fix8": 0.585
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 4.1,
+     "nat128": 0.5835,
+     "fix4": 0.568,
+     "fix6": 0.5669,
+     "fix8": 0.5835
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 2.8,
+     "nat128": 0.5798,
+     "fix4": 0.5663,
+     "fix6": 0.5598,
+     "fix8": 0.5798
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 8.1,
+     "nat128": 0.5651,
+     "fix4": 0.5265,
+     "fix6": 0.5397,
+     "fix8": 0.5651
+    },
+    {
+     "label": "alt5:global_search_layer_correlation",
+     "median": 3.0,
+     "nat128": 0.5792,
+     "fix4": 0.566,
+     "fix6": 0.5692,
+     "fix8": 0.5792
+    },
+    {
+     "label": "alt6:global_seed_observed_outline_ransac_mesh",
+     "median": 3.9,
+     "nat128": 0.5793,
+     "fix4": 0.5743,
+     "fix6": 0.5655,
+     "fix8": 0.5793
+    },
+    {
+     "label": "alt7:global_seed_observed_outline_ransac_mesh",
+     "median": 3.9,
+     "nat128": 0.5793,
+     "fix4": 0.5743,
+     "fix6": 0.5655,
+     "fix8": 0.5793
+    },
+    {
+     "label": "alt8:global_seed_observed_outline_ransac_mesh",
+     "median": 3.9,
+     "nat128": 0.5793,
+     "fix4": 0.5743,
+     "fix6": 0.5655,
+     "fix8": 0.5793
+    },
+    {
+     "label": "alt9:global_seed_observed_outline_ransac_mesh",
+     "median": 92.0,
+     "nat128": 0.2817,
+     "fix4": 0.1628,
+     "fix6": 0.1921,
+     "fix8": 0.2291
+    },
+    {
+     "label": "accepted",
+     "median": 5.3,
+     "nat128": 0.5564,
+     "fix4": 0.5743,
+     "fix6": 0.5655,
+     "fix8": 0.5564
+    }
+   ],
+   "nat128": [
+    0.5891,
+    0.2817
+   ],
+   "fix4": [
+    0.5743,
+    0.1628
+   ],
+   "fix6": [
+    0.5732,
+    0.1975
+   ],
+   "fix8": [
+    0.5891,
+    0.2291
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 274,
+   "name": "De Havilland Campus AGM Sprint",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 21.3,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.6678,
+     "fix4": 0.6941,
+     "fix6": 0.6678,
+     "fix8": 0.6678
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 110.1,
+     "nat128": -0.043,
+     "fix4": -0.043,
+     "fix6": -0.043,
+     "fix8": -0.043
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 63.8,
+     "nat128": -0.0047,
+     "fix4": -0.0047,
+     "fix6": -0.0047,
+     "fix8": -0.0047
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 90.2,
+     "nat128": 0.0262,
+     "fix4": 0.0186,
+     "fix6": 0.0195,
+     "fix8": 0.0262
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 220.1,
+     "nat128": -0.0027,
+     "fix4": -0.0228,
+     "fix6": -0.0176,
+     "fix8": -0.016
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 1.7,
+     "nat128": 0.6777,
+     "fix4": 0.706,
+     "fix6": 0.6777,
+     "fix8": 0.6777
+    },
+    {
+     "label": "alt1:global_seed_observed_outline_ransac_mesh",
+     "median": 1.8,
+     "nat128": 0.6724,
+     "fix4": 0.6915,
+     "fix6": 0.6724,
+     "fix8": 0.6724
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 4.2,
+     "nat128": 0.6643,
+     "fix4": 0.6605,
+     "fix6": 0.6643,
+     "fix8": 0.6643
+    },
+    {
+     "label": "alt3:global_seed_observed_outline_ransac_mesh",
+     "median": 2.1,
+     "nat128": 0.6637,
+     "fix4": 0.6907,
+     "fix6": 0.6637,
+     "fix8": 0.6637
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 5.3,
+     "nat128": 0.6439,
+     "fix4": 0.6394,
+     "fix6": 0.6439,
+     "fix8": 0.6439
+    },
+    {
+     "label": "alt5:global_search_street_network",
+     "median": 6.4,
+     "nat128": 0.5995,
+     "fix4": 0.6186,
+     "fix6": 0.5995,
+     "fix8": 0.5995
+    },
+    {
+     "label": "alt6:global_search_street_network",
+     "median": 7.4,
+     "nat128": 0.5918,
+     "fix4": 0.5997,
+     "fix6": 0.5918,
+     "fix8": 0.5918
+    },
+    {
+     "label": "alt7:global_search_road_network",
+     "median": 33.0,
+     "nat128": 0.3102,
+     "fix4": 0.2859,
+     "fix6": 0.3102,
+     "fix8": 0.3102
+    },
+    {
+     "label": "alt8:global_search_street_network",
+     "median": 36.0,
+     "nat128": 0.2936,
+     "fix4": 0.2762,
+     "fix6": 0.2936,
+     "fix8": 0.2936
+    },
+    {
+     "label": "alt9:global_seed_observed_outline_ransac_mesh",
+     "median": 61.7,
+     "nat128": 0.2686,
+     "fix4": 0.2268,
+     "fix6": 0.2686,
+     "fix8": 0.2686
+    },
+    {
+     "label": "alt10:global_search_road_network",
+     "median": 78.0,
+     "nat128": 0.2648,
+     "fix4": 0.2166,
+     "fix6": 0.2648,
+     "fix8": 0.2648
+    },
+    {
+     "label": "alt11:global_search_street_network",
+     "median": 39.5,
+     "nat128": 0.2464,
+     "fix4": 0.2464,
+     "fix6": 0.2464,
+     "fix8": 0.2464
+    },
+    {
+     "label": "alt12:global_search_road_network",
+     "median": 44.8,
+     "nat128": 0.2324,
+     "fix4": 0.2324,
+     "fix6": 0.2324,
+     "fix8": 0.2324
+    },
+    {
+     "label": "accepted",
+     "median": 1.9,
+     "nat128": 0.6724,
+     "fix4": 0.6915,
+     "fix6": 0.6724,
+     "fix8": 0.6724
+    }
+   ],
+   "nat128": [
+    0.6777,
+    0.2686
+   ],
+   "fix4": [
+    0.706,
+    0.2324
+   ],
+   "fix6": [
+    0.6777,
+    0.2686
+   ],
+   "fix8": [
+    0.6777,
+    0.2686
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 270,
+   "name": "Park-O 2017 #3: Stanborough Pa",
+   "outcome": "refused",
+   "reading": "all",
+   "sec": 34.6,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.762,
+     "fix4": 0.7359,
+     "fix6": 0.7406,
+     "fix8": 0.7421
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 250.4,
+     "nat128": 0.3173,
+     "fix4": 0.2621,
+     "fix6": 0.2838,
+     "fix8": 0.3173
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 145.2,
+     "nat128": 0.4488,
+     "fix4": 0.3562,
+     "fix6": 0.3755,
+     "fix8": 0.4051
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 205.3,
+     "nat128": 0.4566,
+     "fix4": 0.3412,
+     "fix6": 0.3463,
+     "fix8": 0.3645
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 500.7,
+     "nat128": 0.3016,
+     "fix4": 0.1815,
+     "fix6": 0.1815,
+     "fix8": 0.1943
+    },
+    {
+     "label": "offer0:global_search_layer_correlation",
+     "median": 2.2,
+     "nat128": 0.7556,
+     "fix4": 0.7359,
+     "fix6": 0.7371,
+     "fix8": 0.7435
+    },
+    {
+     "label": "offer1:global_search_road_network",
+     "median": 836.4,
+     "nat128": 0.4758,
+     "fix4": 0.4132,
+     "fix6": 0.4088,
+     "fix8": 0.4065
+    },
+    {
+     "label": "offer2:global_search_road_network",
+     "median": 93.8,
+     "nat128": 0.3346,
+     "fix4": 0.2288,
+     "fix6": 0.2477,
+     "fix8": 0.2732
+    }
+   ],
+   "nat128": [
+    0.762,
+    0.4758
+   ],
+   "fix4": [
+    0.7359,
+    0.4132
+   ],
+   "fix6": [
+    0.7406,
+    0.4088
+   ],
+   "fix8": [
+    0.7435,
+    0.4065
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 385,
+   "name": "Cassiobury Park Saturday Serie",
+   "outcome": "correct",
+   "reading": "linear_ink_without_black_roofs",
+   "sec": 45.5,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.3883,
+     "fix4": 0.2529,
+     "fix6": 0.2817,
+     "fix8": 0.3146
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 349.5,
+     "nat128": 0.0138,
+     "fix4": 0.0331,
+     "fix6": 0.0409,
+     "fix8": 0.0274
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 202.7,
+     "nat128": 0.065,
+     "fix4": 0.0236,
+     "fix6": 0.0267,
+     "fix8": 0.0377
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 286.5,
+     "nat128": 0.2023,
+     "fix4": 0.0744,
+     "fix6": 0.0852,
+     "fix8": 0.1041
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 698.9,
+     "nat128": 0.3867,
+     "fix4": 0.0961,
+     "fix6": 0.0961,
+     "fix8": 0.1233
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 5.5,
+     "nat128": 0.4262,
+     "fix4": 0.2367,
+     "fix6": 0.273,
+     "fix8": 0.2855
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 3.1,
+     "nat128": 0.3825,
+     "fix4": 0.2459,
+     "fix6": 0.2765,
+     "fix8": 0.2896
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 920.0,
+     "nat128": 0.2824,
+     "fix4": 0.1473,
+     "fix6": 0.1654,
+     "fix8": 0.2121
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 209.0,
+     "nat128": 0.2541,
+     "fix4": 0.1296,
+     "fix6": 0.1382,
+     "fix8": 0.1632
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 820.6,
+     "nat128": 0.3128,
+     "fix4": 0.1167,
+     "fix6": 0.1404,
+     "fix8": 0.1893
+    },
+    {
+     "label": "alt5:global_search_road_network",
+     "median": 653.9,
+     "nat128": 0.3254,
+     "fix4": 0.0819,
+     "fix6": 0.1054,
+     "fix8": 0.1408
+    },
+    {
+     "label": "alt6:global_search_road_network",
+     "median": 821.3,
+     "nat128": 0.2777,
+     "fix4": 0.1403,
+     "fix6": 0.1627,
+     "fix8": 0.1873
+    },
+    {
+     "label": "alt7:global_search_road_network",
+     "median": 811.8,
+     "nat128": 0.299,
+     "fix4": 0.1224,
+     "fix6": 0.1398,
+     "fix8": 0.1827
+    },
+    {
+     "label": "alt8:global_search_road_network",
+     "median": 780.7,
+     "nat128": 0.3008,
+     "fix4": 0.1319,
+     "fix6": 0.1608,
+     "fix8": 0.1841
+    },
+    {
+     "label": "alt9:global_search_road_network",
+     "median": 780.7,
+     "nat128": 0.3008,
+     "fix4": 0.1319,
+     "fix6": 0.1608,
+     "fix8": 0.1841
+    },
+    {
+     "label": "alt10:global_search_road_network",
+     "median": 1068.9,
+     "nat128": 0.2458,
+     "fix4": 0.1259,
+     "fix6": 0.1441,
+     "fix8": 0.1767
+    },
+    {
+     "label": "alt11:global_search_road_network",
+     "median": 806.0,
+     "nat128": 0.2276,
+     "fix4": 0.0781,
+     "fix6": 0.1008,
+     "fix8": 0.1342
+    },
+    {
+     "label": "alt12:global_search_road_network",
+     "median": 429.6,
+     "nat128": 0.2109,
+     "fix4": 0.049,
+     "fix6": 0.065,
+     "fix8": 0.0904
+    },
+    {
+     "label": "alt13:global_search_road_network",
+     "median": 429.6,
+     "nat128": 0.2109,
+     "fix4": 0.049,
+     "fix6": 0.065,
+     "fix8": 0.0904
+    },
+    {
+     "label": "alt14:global_search_road_network",
+     "median": 881.1,
+     "nat128": 0.2093,
+     "fix4": 0.0832,
+     "fix6": 0.1071,
+     "fix8": 0.1239
+    },
+    {
+     "label": "alt15:global_search_road_network",
+     "median": 1111.0,
+     "nat128": 0.1781,
+     "fix4": 0.0709,
+     "fix6": 0.0992,
+     "fix8": 0.1305
+    },
+    {
+     "label": "accepted",
+     "median": 7.4,
+     "nat128": 0.4262,
+     "fix4": 0.2367,
+     "fix6": 0.273,
+     "fix8": 0.2933
+    }
+   ],
+   "nat128": [
+    0.4262,
+    0.3867
+   ],
+   "fix4": [
+    0.2529,
+    0.1473
+   ],
+   "fix6": [
+    0.2817,
+    0.1654
+   ],
+   "fix8": [
+    0.3146,
+    0.2121
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 418,
+   "name": "Hatfield Urban Race",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 29.2,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.685,
+     "fix4": 0.7116,
+     "fix6": 0.6933,
+     "fix8": 0.6797
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 318.2,
+     "nat128": 0.0362,
+     "fix4": 0.0115,
+     "fix6": 0.0191,
+     "fix8": 0.0362
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 184.6,
+     "nat128": 0.0948,
+     "fix4": 0.0442,
+     "fix6": 0.0511,
+     "fix8": 0.0633
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 260.9,
+     "nat128": 0.3247,
+     "fix4": 0.0619,
+     "fix6": 0.09,
+     "fix8": 0.123
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 636.4,
+     "nat128": 0.3455,
+     "fix4": 0.0853,
+     "fix6": 0.0853,
+     "fix8": 0.1161
+    },
+    {
+     "label": "alt0:global_seed_observed_outline_ransac_mesh",
+     "median": 2.7,
+     "nat128": 0.692,
+     "fix4": 0.715,
+     "fix6": 0.7035,
+     "fix8": 0.6828
+    },
+    {
+     "label": "alt1:global_seed_observed_outline_ransac_mesh",
+     "median": 2.3,
+     "nat128": 0.6827,
+     "fix4": 0.7198,
+     "fix6": 0.7027,
+     "fix8": 0.6843
+    },
+    {
+     "label": "alt2:water_seed_observed_outline_ransac_mesh",
+     "median": 60.2,
+     "nat128": 0.4129,
+     "fix4": 0.1499,
+     "fix6": 0.1906,
+     "fix8": 0.2508
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 90.0,
+     "nat128": 0.4008,
+     "fix4": 0.1226,
+     "fix6": 0.1615,
+     "fix8": 0.2275
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 179.9,
+     "nat128": 0.3697,
+     "fix4": 0.0788,
+     "fix6": 0.1078,
+     "fix8": 0.1486
+    },
+    {
+     "label": "accepted",
+     "median": 2.7,
+     "nat128": 0.692,
+     "fix4": 0.7151,
+     "fix6": 0.7035,
+     "fix8": 0.683
+    }
+   ],
+   "nat128": [
+    0.692,
+    0.4129
+   ],
+   "fix4": [
+    0.7198,
+    0.1499
+   ],
+   "fix6": [
+    0.7035,
+    0.1906
+   ],
+   "fix8": [
+    0.6843,
+    0.2508
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 434,
+   "name": "St Albans City Race 2025",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 28.7,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.619,
+     "fix4": 0.6468,
+     "fix6": 0.6676,
+     "fix8": 0.6506
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 343.4,
+     "nat128": 0.0807,
+     "fix4": 0.078,
+     "fix6": 0.0893,
+     "fix8": 0.0807
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 199.2,
+     "nat128": 0.2458,
+     "fix4": 0.1139,
+     "fix6": 0.1383,
+     "fix8": 0.1827
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 281.6,
+     "nat128": 0.2661,
+     "fix4": 0.0978,
+     "fix6": 0.1204,
+     "fix8": 0.1485
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 686.9,
+     "nat128": 0.4552,
+     "fix4": 0.1693,
+     "fix6": 0.1693,
+     "fix8": 0.2071
+    },
+    {
+     "label": "alt0:water_seed_observed_outline_ransac_mesh",
+     "median": 2.9,
+     "nat128": 0.6206,
+     "fix4": 0.6727,
+     "fix6": 0.6562,
+     "fix8": 0.6318
+    },
+    {
+     "label": "accepted",
+     "median": 3.2,
+     "nat128": 0.6206,
+     "fix4": 0.6727,
+     "fix6": 0.6562,
+     "fix8": 0.6319
+    }
+   ],
+   "nat128": [
+    0.6206,
+    0.4552
+   ],
+   "fix4": [
+    0.6727,
+    0.1693
+   ],
+   "fix6": [
+    0.6676,
+    0.1693
+   ],
+   "fix8": [
+    0.6506,
+    0.2071
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 450,
+   "name": "Welwyn Garden City Urban Race",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 33.9,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4431,
+     "fix4": 0.5238,
+     "fix6": 0.5125,
+     "fix8": 0.4706
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 449.4,
+     "nat128": -0.0007,
+     "fix4": 0.0083,
+     "fix6": 0.0064,
+     "fix8": 0.0018
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 260.7,
+     "nat128": 0.0332,
+     "fix4": 0.0155,
+     "fix6": 0.0195,
+     "fix8": 0.0166
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 368.5,
+     "nat128": 0.2213,
+     "fix4": 0.0533,
+     "fix6": 0.0533,
+     "fix8": 0.0738
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 898.9,
+     "nat128": 0.2834,
+     "fix4": 0.0837,
+     "fix6": 0.0837,
+     "fix8": 0.0837
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 2.9,
+     "nat128": 0.4452,
+     "fix4": 0.5201,
+     "fix6": 0.5004,
+     "fix8": 0.4746
+    },
+    {
+     "label": "alt1:global_seed_observed_outline_ransac_mesh",
+     "median": 2.2,
+     "nat128": 0.4417,
+     "fix4": 0.5204,
+     "fix6": 0.5065,
+     "fix8": 0.4811
+    },
+    {
+     "label": "alt2:global_seed_observed_outline_ransac_mesh",
+     "median": 2.6,
+     "nat128": 0.4389,
+     "fix4": 0.522,
+     "fix6": 0.4929,
+     "fix8": 0.4702
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 1587.6,
+     "nat128": 0.3467,
+     "fix4": 0.136,
+     "fix6": 0.136,
+     "fix8": 0.1688
+    },
+    {
+     "label": "alt4:water_seed_observed_outline_ransac_mesh",
+     "median": 1730.2,
+     "nat128": 0.1783,
+     "fix4": 0.0646,
+     "fix6": 0.0646,
+     "fix8": 0.0859
+    },
+    {
+     "label": "accepted",
+     "median": 1.4,
+     "nat128": 0.4452,
+     "fix4": 0.5305,
+     "fix6": 0.5149,
+     "fix8": 0.4886
+    }
+   ],
+   "nat128": [
+    0.4452,
+    0.3467
+   ],
+   "fix4": [
+    0.5305,
+    0.136
+   ],
+   "fix6": [
+    0.5149,
+    0.136
+   ],
+   "fix8": [
+    0.4886,
+    0.1688
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 387,
+   "name": "Welwyn Garden City Race 2022",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 39.6,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.3869,
+     "fix4": 0.4921,
+     "fix6": 0.4851,
+     "fix8": 0.4619
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 456.0,
+     "nat128": 0.0112,
+     "fix4": -0.0,
+     "fix6": 0.0043,
+     "fix8": -0.0023
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 264.5,
+     "nat128": 0.0484,
+     "fix4": 0.0195,
+     "fix6": 0.0217,
+     "fix8": 0.0261
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 373.9,
+     "nat128": 0.117,
+     "fix4": 0.0345,
+     "fix6": 0.0345,
+     "fix8": 0.0501
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 912.0,
+     "nat128": 0.1998,
+     "fix4": 0.069,
+     "fix6": 0.069,
+     "fix8": 0.069
+    },
+    {
+     "label": "alt0:global_seed_observed_outline_ransac_mesh",
+     "median": 2.4,
+     "nat128": 0.3804,
+     "fix4": 0.4922,
+     "fix6": 0.4788,
+     "fix8": 0.4603
+    },
+    {
+     "label": "alt1:global_seed_observed_outline_ransac_mesh",
+     "median": 2.0,
+     "nat128": 0.3818,
+     "fix4": 0.4948,
+     "fix6": 0.4816,
+     "fix8": 0.4621
+    },
+    {
+     "label": "alt2:global_search_layer_correlation",
+     "median": 1.9,
+     "nat128": 0.3882,
+     "fix4": 0.4891,
+     "fix6": 0.4896,
+     "fix8": 0.4546
+    },
+    {
+     "label": "alt3:global_search_layer_correlation",
+     "median": 2.9,
+     "nat128": 0.3889,
+     "fix4": 0.4839,
+     "fix6": 0.4846,
+     "fix8": 0.4673
+    },
+    {
+     "label": "accepted",
+     "median": 2.6,
+     "nat128": 0.3804,
+     "fix4": 0.4923,
+     "fix6": 0.4788,
+     "fix8": 0.4584
+    }
+   ],
+   "nat128": [
+    0.3889,
+    0.1998
+   ],
+   "fix4": [
+    0.4948,
+    0.069
+   ],
+   "fix6": [
+    0.4896,
+    0.069
+   ],
+   "fix8": [
+    0.4673,
+    0.069
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 430,
+   "name": "Moneyhole Park Saturday Series",
+   "outcome": "correct",
+   "reading": "expanded_paving",
+   "sec": 25.2,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.3633,
+     "fix4": 0.2694,
+     "fix6": 0.267,
+     "fix8": 0.2699
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 327.7,
+     "nat128": -0.0247,
+     "fix4": -0.0194,
+     "fix6": -0.0192,
+     "fix8": -0.0204
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 190.1,
+     "nat128": 0.1148,
+     "fix4": 0.0501,
+     "fix6": 0.0519,
+     "fix8": 0.0781
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 268.7,
+     "nat128": 0.2101,
+     "fix4": 0.0362,
+     "fix6": 0.0468,
+     "fix8": 0.06
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 655.4,
+     "nat128": 0.2222,
+     "fix4": 0.0452,
+     "fix6": 0.0452,
+     "fix8": 0.0631
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 7.2,
+     "nat128": 0.3788,
+     "fix4": 0.2682,
+     "fix6": 0.2803,
+     "fix8": 0.2891
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 6.6,
+     "nat128": 0.3759,
+     "fix4": 0.2733,
+     "fix6": 0.2728,
+     "fix8": 0.2905
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 1020.4,
+     "nat128": 0.351,
+     "fix4": 0.1006,
+     "fix6": 0.1397,
+     "fix8": 0.1956
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 623.4,
+     "nat128": 0.2623,
+     "fix4": 0.0611,
+     "fix6": 0.0822,
+     "fix8": 0.115
+    },
+    {
+     "label": "accepted",
+     "median": 8.0,
+     "nat128": 0.3788,
+     "fix4": 0.2682,
+     "fix6": 0.2802,
+     "fix8": 0.2891
+    }
+   ],
+   "nat128": [
+    0.3788,
+    0.351
+   ],
+   "fix4": [
+    0.2733,
+    0.1006
+   ],
+   "fix6": [
+    0.2803,
+    0.1397
+   ],
+   "fix8": [
+    0.2905,
+    0.1956
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 406,
+   "name": "Panshanger Park: Jack of Herts",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 21.8,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.6497,
+     "fix4": 0.7386,
+     "fix6": 0.7241,
+     "fix8": 0.7118
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 360.4,
+     "nat128": 0.147,
+     "fix4": 0.157,
+     "fix6": 0.1521,
+     "fix8": 0.1323
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 209.0,
+     "nat128": 0.3692,
+     "fix4": 0.2776,
+     "fix6": 0.3043,
+     "fix8": 0.333
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 295.5,
+     "nat128": 0.4047,
+     "fix4": 0.208,
+     "fix6": 0.208,
+     "fix8": 0.2358
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 720.8,
+     "nat128": 0.202,
+     "fix4": 0.1377,
+     "fix6": 0.1377,
+     "fix8": 0.1377
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 9.2,
+     "nat128": 0.6569,
+     "fix4": 0.7358,
+     "fix6": 0.7226,
+     "fix8": 0.6944
+    },
+    {
+     "label": "accepted",
+     "median": 2.2,
+     "nat128": 0.6529,
+     "fix4": 0.7429,
+     "fix6": 0.7298,
+     "fix8": 0.704
+    }
+   ],
+   "nat128": [
+    0.6569,
+    0.4047
+   ],
+   "fix4": [
+    0.7429,
+    0.2776
+   ],
+   "fix6": [
+    0.7298,
+    0.3043
+   ],
+   "fix8": [
+    0.7118,
+    0.333
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 436,
+   "name": "Panshanger Park West Saturday ",
+   "outcome": "correct",
+   "reading": "expanded_paving",
+   "sec": 20.9,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4886,
+     "fix4": 0.3925,
+     "fix6": 0.4156,
+     "fix8": 0.4436
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 241.6,
+     "nat128": -0.0688,
+     "fix4": -0.0354,
+     "fix6": -0.0521,
+     "fix8": -0.0688
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 140.1,
+     "nat128": 0.0042,
+     "fix4": -0.008,
+     "fix6": -0.0086,
+     "fix8": -0.0199
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 198.1,
+     "nat128": 0.1302,
+     "fix4": 0.0822,
+     "fix6": 0.0954,
+     "fix8": 0.0944
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 483.2,
+     "nat128": -0.0351,
+     "fix4": -0.018,
+     "fix6": -0.018,
+     "fix8": -0.0205
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 7.0,
+     "nat128": 0.5049,
+     "fix4": 0.367,
+     "fix6": 0.4226,
+     "fix8": 0.4677
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 7.0,
+     "nat128": 0.5049,
+     "fix4": 0.367,
+     "fix6": 0.4226,
+     "fix8": 0.4677
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 142.6,
+     "nat128": 0.2692,
+     "fix4": 0.1816,
+     "fix6": 0.2007,
+     "fix8": 0.2183
+    },
+    {
+     "label": "accepted",
+     "median": 7.7,
+     "nat128": 0.5049,
+     "fix4": 0.367,
+     "fix6": 0.4226,
+     "fix8": 0.477
+    }
+   ],
+   "nat128": [
+    0.5049,
+    0.2692
+   ],
+   "fix4": [
+    0.3925,
+    0.1816
+   ],
+   "fix6": [
+    0.4226,
+    0.2007
+   ],
+   "fix8": [
+    0.477,
+    0.2183
+   ]
+  },
+  {
+   "batch": "15",
+   "event": 365,
+   "name": "Highfield Park",
+   "outcome": "correct",
+   "reading": "expanded_paving",
+   "sec": 23.5,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4924,
+     "fix4": 0.4297,
+     "fix6": 0.4397,
+     "fix8": 0.4463
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 279.8,
+     "nat128": 0.0032,
+     "fix4": 0.0013,
+     "fix6": -0.0045,
+     "fix8": 0.0032
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 162.3,
+     "nat128": 0.12,
+     "fix4": 0.0279,
+     "fix6": 0.0418,
+     "fix8": 0.0996
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 229.5,
+     "nat128": 0.2294,
+     "fix4": 0.0476,
+     "fix6": 0.0673,
+     "fix8": 0.0889
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 559.7,
+     "nat128": 0.2186,
+     "fix4": 0.0352,
+     "fix6": 0.0472,
+     "fix8": 0.0587
+    },
+    {
+     "label": "alt0:building_seed_observed_outline_ransac_mesh",
+     "median": 1.8,
+     "nat128": 0.4845,
+     "fix4": 0.4124,
+     "fix6": 0.4218,
+     "fix8": 0.4455
+    },
+    {
+     "label": "accepted",
+     "median": 2.1,
+     "nat128": 0.4845,
+     "fix4": 0.4123,
+     "fix6": 0.4218,
+     "fix8": 0.4385
+    }
+   ],
+   "nat128": [
+    0.4924,
+    0.2294
+   ],
+   "fix4": [
+    0.4297,
+    0.0476
+   ],
+   "fix6": [
+    0.4397,
+    0.0673
+   ],
+   "fix8": [
+    0.4463,
+    0.0996
+   ]
+  },
+  {
+   "batch": "final",
+   "event": 403,
+   "name": "Nomansland Common GLOSS and Sa",
+   "outcome": "correct",
+   "reading": "expanded_paving",
+   "sec": 11.9,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.5223,
+     "fix4": 0.3428,
+     "fix6": 0.3772,
+     "fix8": 0.4142
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 201.5,
+     "nat128": -0.0559,
+     "fix4": -0.0194,
+     "fix6": -0.0117,
+     "fix8": -0.0559
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 116.9,
+     "nat128": 0.0868,
+     "fix4": 0.0168,
+     "fix6": 0.0196,
+     "fix8": 0.0593
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 165.2,
+     "nat128": 0.2027,
+     "fix4": 0.0567,
+     "fix6": 0.0726,
+     "fix8": 0.0952
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 403.0,
+     "nat128": 0.0088,
+     "fix4": -0.009,
+     "fix6": -0.0121,
+     "fix8": -0.0168
+    },
+    {
+     "label": "alt0:global_search_road_network",
+     "median": 11.4,
+     "nat128": 0.5054,
+     "fix4": 0.2877,
+     "fix6": 0.3571,
+     "fix8": 0.4175
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 3.9,
+     "nat128": 0.5004,
+     "fix4": 0.3647,
+     "fix6": 0.4021,
+     "fix8": 0.4417
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 8.5,
+     "nat128": 0.4936,
+     "fix4": 0.303,
+     "fix6": 0.3509,
+     "fix8": 0.3832
+    },
+    {
+     "label": "alt3:global_search_street_network",
+     "median": 5.9,
+     "nat128": 0.4898,
+     "fix4": 0.3537,
+     "fix6": 0.3961,
+     "fix8": 0.4218
+    },
+    {
+     "label": "accepted",
+     "median": 5.3,
+     "nat128": 0.4898,
+     "fix4": 0.3537,
+     "fix6": 0.3961,
+     "fix8": 0.436
+    }
+   ],
+   "nat128": [
+    0.5223,
+    0.2027
+   ],
+   "fix4": [
+    0.3647,
+    0.0567
+   ],
+   "fix6": [
+    0.4021,
+    0.0726
+   ],
+   "fix8": [
+    0.4417,
+    0.0952
+   ]
+  },
+  {
+   "batch": "final",
+   "event": 404,
+   "name": "Burnham Beeches Saturday Serie",
+   "outcome": "correct",
+   "reading": "linear_ink",
+   "sec": 17.1,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.3505,
+     "fix4": 0.2673,
+     "fix6": 0.2765,
+     "fix8": 0.2965
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 410.7,
+     "nat128": 0.0356,
+     "fix4": 0.024,
+     "fix6": 0.031,
+     "fix8": 0.0356
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 238.2,
+     "nat128": 0.0166,
+     "fix4": 0.0006,
+     "fix6": 0.0021,
+     "fix8": 0.0055
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 336.8,
+     "nat128": 0.0534,
+     "fix4": 0.0099,
+     "fix6": 0.0171,
+     "fix8": 0.022
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 821.5,
+     "nat128": 0.0149,
+     "fix4": -0.0036,
+     "fix6": -0.0036,
+     "fix8": 0.0006
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 5.6,
+     "nat128": 0.3612,
+     "fix4": 0.2858,
+     "fix6": 0.3075,
+     "fix8": 0.3187
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 6.6,
+     "nat128": 0.3596,
+     "fix4": 0.2931,
+     "fix6": 0.3044,
+     "fix8": 0.3095
+    },
+    {
+     "label": "alt2:global_search_layer_correlation",
+     "median": 8.2,
+     "nat128": 0.3543,
+     "fix4": 0.2872,
+     "fix6": 0.2955,
+     "fix8": 0.3141
+    },
+    {
+     "label": "alt3:global_search_layer_correlation",
+     "median": 5.8,
+     "nat128": 0.352,
+     "fix4": 0.2891,
+     "fix6": 0.2934,
+     "fix8": 0.3176
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 10.8,
+     "nat128": 0.3461,
+     "fix4": 0.2453,
+     "fix6": 0.2584,
+     "fix8": 0.3064
+    },
+    {
+     "label": "alt5:global_search_road_network",
+     "median": 27.7,
+     "nat128": 0.3146,
+     "fix4": 0.1593,
+     "fix6": 0.1821,
+     "fix8": 0.224
+    },
+    {
+     "label": "alt6:global_search_road_network",
+     "median": 23.4,
+     "nat128": 0.3136,
+     "fix4": 0.1786,
+     "fix6": 0.2008,
+     "fix8": 0.2406
+    },
+    {
+     "label": "alt7:global_search_road_network",
+     "median": 2238.3,
+     "nat128": 0.2688,
+     "fix4": 0.1605,
+     "fix6": 0.188,
+     "fix8": 0.2437
+    },
+    {
+     "label": "alt8:global_search_road_network",
+     "median": 2165.0,
+     "nat128": 0.2268,
+     "fix4": 0.0968,
+     "fix6": 0.1238,
+     "fix8": 0.189
+    },
+    {
+     "label": "accepted",
+     "median": 4.7,
+     "nat128": 0.3612,
+     "fix4": 0.2858,
+     "fix6": 0.3075,
+     "fix8": 0.3043
+    }
+   ],
+   "nat128": [
+    0.3612,
+    0.2688
+   ],
+   "fix4": [
+    0.2931,
+    0.1605
+   ],
+   "fix6": [
+    0.3075,
+    0.188
+   ],
+   "fix8": [
+    0.3187,
+    0.2437
+   ]
+  },
+  {
+   "batch": "final",
+   "event": 414,
+   "name": "Chipperfield Saturday Series",
+   "outcome": "refused",
+   "reading": "all",
+   "sec": 16.2,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4379,
+     "fix4": 0.279,
+     "fix6": 0.3134,
+     "fix8": 0.3532
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 242.5,
+     "nat128": 0.0411,
+     "fix4": 0.016,
+     "fix6": 0.0176,
+     "fix8": 0.0411
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 140.7,
+     "nat128": -0.0219,
+     "fix4": -0.0164,
+     "fix6": -0.0237,
+     "fix8": -0.0243
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 198.9,
+     "nat128": 0.0748,
+     "fix4": 0.0094,
+     "fix6": 0.0115,
+     "fix8": 0.0275
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 485.1,
+     "nat128": 0.1061,
+     "fix4": 0.0104,
+     "fix6": 0.0104,
+     "fix8": 0.0217
+    },
+    {
+     "label": "offer0:global_search_street_network",
+     "median": 10.2,
+     "nat128": 0.4585,
+     "fix4": 0.2037,
+     "fix6": 0.2798,
+     "fix8": 0.35
+    }
+   ],
+   "nat128": [
+    0.4379,
+    0.1061
+   ],
+   "fix4": [
+    0.279,
+    0.016
+   ],
+   "fix6": [
+    0.3134,
+    0.0176
+   ],
+   "fix8": [
+    0.3532,
+    0.0411
+   ]
+  },
+  {
+   "batch": "second",
+   "event": 425,
+   "name": "Mardley Heath Saturday Series",
+   "outcome": "refused",
+   "reading": "all",
+   "sec": 24.6,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.3681,
+     "fix4": 0.2916,
+     "fix6": 0.3157,
+     "fix8": 0.3278
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 229.7,
+     "nat128": 0.0386,
+     "fix4": 0.0439,
+     "fix6": 0.0386,
+     "fix8": 0.0386
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 133.2,
+     "nat128": 0.1072,
+     "fix4": 0.0238,
+     "fix6": 0.0534,
+     "fix8": 0.1072
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 188.4,
+     "nat128": 0.2083,
+     "fix4": 0.0804,
+     "fix6": 0.1071,
+     "fix8": 0.1352
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 459.4,
+     "nat128": 0.205,
+     "fix4": 0.0486,
+     "fix6": 0.0665,
+     "fix8": 0.0871
+    },
+    {
+     "label": "offer0:global_search_layer_correlation",
+     "median": 1.7,
+     "nat128": 0.363,
+     "fix4": 0.2887,
+     "fix6": 0.3047,
+     "fix8": 0.3449
+    },
+    {
+     "label": "offer1:global_search_road_network",
+     "median": 798.1,
+     "nat128": 0.3127,
+     "fix4": 0.1088,
+     "fix6": 0.1403,
+     "fix8": 0.1958
+    },
+    {
+     "label": "offer2:global_search_road_network",
+     "median": 799.8,
+     "nat128": 0.31,
+     "fix4": 0.1296,
+     "fix6": 0.1854,
+     "fix8": 0.2446
+    }
+   ],
+   "nat128": [
+    0.3681,
+    0.3127
+   ],
+   "fix4": [
+    0.2916,
+    0.1296
+   ],
+   "fix6": [
+    0.3157,
+    0.1854
+   ],
+   "fix8": [
+    0.3449,
+    0.2446
+   ]
+  },
+  {
+   "batch": "second",
+   "event": 431,
+   "name": "Haileybury Saturday Series and",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 24.2,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4815,
+     "fix4": 0.5387,
+     "fix6": 0.5234,
+     "fix8": 0.5098
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 283.2,
+     "nat128": 0.0769,
+     "fix4": 0.0405,
+     "fix6": 0.0562,
+     "fix8": 0.0769
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 164.3,
+     "nat128": 0.206,
+     "fix4": 0.1246,
+     "fix6": 0.1451,
+     "fix8": 0.1822
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 232.2,
+     "nat128": 0.08,
+     "fix4": 0.0506,
+     "fix6": 0.0575,
+     "fix8": 0.0636
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 566.4,
+     "nat128": 0.0224,
+     "fix4": 0.0003,
+     "fix6": 0.0003,
+     "fix8": -0.0
+    },
+    {
+     "label": "alt0:water_seed_observed_outline_ransac_mesh",
+     "median": 2.7,
+     "nat128": 0.4788,
+     "fix4": 0.549,
+     "fix6": 0.5242,
+     "fix8": 0.5194
+    },
+    {
+     "label": "accepted",
+     "median": 3.0,
+     "nat128": 0.4788,
+     "fix4": 0.5489,
+     "fix6": 0.5242,
+     "fix8": 0.5195
+    }
+   ],
+   "nat128": [
+    0.4815,
+    0.206
+   ],
+   "fix4": [
+    0.549,
+    0.1246
+   ],
+   "fix6": [
+    0.5242,
+    0.1451
+   ],
+   "fix8": [
+    0.5195,
+    0.1822
+   ]
+  },
+  {
+   "batch": "second",
+   "event": 435,
+   "name": "Fairlands Valley Saturday Seri",
+   "outcome": "correct",
+   "reading": "expanded_paving",
+   "sec": 32.6,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4098,
+     "fix4": 0.4931,
+     "fix6": 0.4836,
+     "fix8": 0.4852
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 485.7,
+     "nat128": 0.0041,
+     "fix4": -0.005,
+     "fix6": 0.0032,
+     "fix8": -0.0002
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 281.7,
+     "nat128": 0.1443,
+     "fix4": 0.121,
+     "fix6": 0.1237,
+     "fix8": 0.1022
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 398.3,
+     "nat128": 0.2201,
+     "fix4": 0.1482,
+     "fix6": 0.1482,
+     "fix8": 0.1631
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 971.5,
+     "nat128": 0.1692,
+     "fix4": 0.0423,
+     "fix6": 0.0423,
+     "fix8": 0.0423
+    },
+    {
+     "label": "alt0:water_seed_observed_outline_ransac_mesh",
+     "median": 2.1,
+     "nat128": 0.3766,
+     "fix4": 0.4944,
+     "fix6": 0.4814,
+     "fix8": 0.4813
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 1556.2,
+     "nat128": 0.3191,
+     "fix4": 0.3191,
+     "fix6": 0.3191,
+     "fix8": 0.3191
+    },
+    {
+     "label": "alt2:global_search_layer_correlation",
+     "median": 1556.2,
+     "nat128": 0.3191,
+     "fix4": 0.3191,
+     "fix6": 0.3191,
+     "fix8": 0.3191
+    },
+    {
+     "label": "accepted",
+     "median": 1.9,
+     "nat128": 0.3766,
+     "fix4": 0.4944,
+     "fix6": 0.4814,
+     "fix8": 0.4841
+    }
+   ],
+   "nat128": [
+    0.4098,
+    0.3191
+   ],
+   "fix4": [
+    0.4944,
+    0.3191
+   ],
+   "fix6": [
+    0.4836,
+    0.3191
+   ],
+   "fix8": [
+    0.4852,
+    0.3191
+   ]
+  },
+  {
+   "batch": "bok",
+   "event": 311,
+   "name": "Frenchay urban",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 33.1,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.5874,
+     "fix4": 0.5727,
+     "fix6": 0.5828,
+     "fix8": 0.5561
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 387.0,
+     "nat128": 0.0025,
+     "fix4": -0.0019,
+     "fix6": 0.0022,
+     "fix8": 0.0132
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 224.5,
+     "nat128": 0.1048,
+     "fix4": 0.0291,
+     "fix6": 0.0445,
+     "fix8": 0.0588
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 317.3,
+     "nat128": 0.1233,
+     "fix4": 0.0293,
+     "fix6": 0.0293,
+     "fix8": 0.0534
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 774.0,
+     "nat128": -0.0996,
+     "fix4": -0.0322,
+     "fix6": -0.0322,
+     "fix8": -0.0322
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 1.6,
+     "nat128": 0.5787,
+     "fix4": 0.584,
+     "fix6": 0.581,
+     "fix8": 0.5668
+    },
+    {
+     "label": "alt1:global_seed_observed_outline_ransac_mesh",
+     "median": 2.2,
+     "nat128": 0.5778,
+     "fix4": 0.5757,
+     "fix6": 0.5665,
+     "fix8": 0.5718
+    },
+    {
+     "label": "alt2:global_seed_observed_outline_ransac_mesh",
+     "median": 2.6,
+     "nat128": 0.577,
+     "fix4": 0.577,
+     "fix6": 0.5717,
+     "fix8": 0.5782
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 1.7,
+     "nat128": 0.5766,
+     "fix4": 0.584,
+     "fix6": 0.5772,
+     "fix8": 0.5711
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 2.1,
+     "nat128": 0.5758,
+     "fix4": 0.5762,
+     "fix6": 0.5721,
+     "fix8": 0.5594
+    },
+    {
+     "label": "alt5:global_search_road_network",
+     "median": 1658.0,
+     "nat128": 0.2541,
+     "fix4": 0.0757,
+     "fix6": 0.1146,
+     "fix8": 0.155
+    },
+    {
+     "label": "alt6:global_search_road_network",
+     "median": 1541.2,
+     "nat128": 0.2405,
+     "fix4": 0.1073,
+     "fix6": 0.1425,
+     "fix8": 0.1863
+    },
+    {
+     "label": "alt7:water_seed_observed_outline_ransac_mesh",
+     "median": 977.3,
+     "nat128": 0.0488,
+     "fix4": 0.0136,
+     "fix6": 0.0131,
+     "fix8": 0.0187
+    },
+    {
+     "label": "alt8:park_outline_road_network",
+     "median": 1050.3,
+     "nat128": 0.0184,
+     "fix4": 0.0184,
+     "fix6": 0.0184,
+     "fix8": 0.0184
+    },
+    {
+     "label": "accepted",
+     "median": 2.3,
+     "nat128": 0.5778,
+     "fix4": 0.5757,
+     "fix6": 0.5664,
+     "fix8": 0.5612
+    }
+   ],
+   "nat128": [
+    0.5874,
+    0.2541
+   ],
+   "fix4": [
+    0.584,
+    0.1073
+   ],
+   "fix6": [
+    0.5828,
+    0.1425
+   ],
+   "fix8": [
+    0.5782,
+    0.1863
+   ]
+  },
+  {
+   "batch": "bok",
+   "event": 309,
+   "name": "Westridge Wood",
+   "outcome": "refused",
+   "reading": "all",
+   "sec": 30.0,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.6758,
+     "fix4": 0.3996,
+     "fix6": 0.4764,
+     "fix8": 0.5354
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 469.8,
+     "nat128": 0.2315,
+     "fix4": 0.0922,
+     "fix6": 0.1268,
+     "fix8": 0.1814
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 272.5,
+     "nat128": 0.2868,
+     "fix4": 0.0783,
+     "fix6": 0.1141,
+     "fix8": 0.1634
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 385.2,
+     "nat128": 0.1978,
+     "fix4": 0.0379,
+     "fix6": 0.0379,
+     "fix8": 0.0529
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 939.5,
+     "nat128": 0.1647,
+     "fix4": 0.0444,
+     "fix6": 0.0444,
+     "fix8": 0.0444
+    },
+    {
+     "label": "offer0:global_search_layer_correlation",
+     "median": 6.4,
+     "nat128": 0.6792,
+     "fix4": 0.3954,
+     "fix6": 0.4557,
+     "fix8": 0.5103
+    },
+    {
+     "label": "offer1:global_search_road_network",
+     "median": 2087.9,
+     "nat128": 0.4335,
+     "fix4": 0.3217,
+     "fix6": 0.4335,
+     "fix8": 0.4335
+    },
+    {
+     "label": "offer2:global_search_road_network",
+     "median": 230.3,
+     "nat128": 0.4034,
+     "fix4": 0.1117,
+     "fix6": 0.1513,
+     "fix8": 0.1788
+    }
+   ],
+   "nat128": [
+    0.6792,
+    0.4335
+   ],
+   "fix4": [
+    0.3996,
+    0.3217
+   ],
+   "fix6": [
+    0.4764,
+    0.4335
+   ],
+   "fix8": [
+    0.5354,
+    0.4335
+   ]
+  },
+  {
+   "batch": "bok",
+   "event": 320,
+   "name": "Clifton Downs",
+   "outcome": "correct",
+   "reading": "darker_paving",
+   "sec": 41.8,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.387,
+     "fix4": 0.3127,
+     "fix6": 0.3253,
+     "fix8": 0.4217
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 309.4,
+     "nat128": -0.0789,
+     "fix4": -0.0434,
+     "fix6": -0.0555,
+     "fix8": -0.0789
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 179.5,
+     "nat128": 0.0087,
+     "fix4": 0.0021,
+     "fix6": -0.0031,
+     "fix8": -0.0041
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 253.7,
+     "nat128": -0.0137,
+     "fix4": -0.0033,
+     "fix6": -0.0035,
+     "fix8": -0.0111
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 618.8,
+     "nat128": 0.0188,
+     "fix4": -0.001,
+     "fix6": -0.001,
+     "fix8": -0.0011
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 8.3,
+     "nat128": 0.4144,
+     "fix4": 0.4382,
+     "fix6": 0.4511,
+     "fix8": 0.4496
+    },
+    {
+     "label": "alt1:global_seed_observed_outline_ransac_mesh",
+     "median": 6.8,
+     "nat128": 0.4131,
+     "fix4": 0.3752,
+     "fix6": 0.3883,
+     "fix8": 0.3834
+    },
+    {
+     "label": "alt2:global_seed_observed_outline_ransac_mesh",
+     "median": 6.8,
+     "nat128": 0.4131,
+     "fix4": 0.3752,
+     "fix6": 0.3883,
+     "fix8": 0.3834
+    },
+    {
+     "label": "alt3:global_search_layer_correlation",
+     "median": 7.8,
+     "nat128": 0.413,
+     "fix4": 0.4431,
+     "fix6": 0.4518,
+     "fix8": 0.4501
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 159.2,
+     "nat128": 0.1633,
+     "fix4": 0.0697,
+     "fix6": 0.0833,
+     "fix8": 0.0988
+    },
+    {
+     "label": "alt5:global_search_road_network",
+     "median": 536.4,
+     "nat128": 0.135,
+     "fix4": 0.0565,
+     "fix6": 0.074,
+     "fix8": 0.0983
+    },
+    {
+     "label": "alt6:global_search_road_network",
+     "median": 526.0,
+     "nat128": 0.0823,
+     "fix4": 0.0203,
+     "fix6": 0.0212,
+     "fix8": 0.0433
+    },
+    {
+     "label": "alt7:global_search_road_network",
+     "median": 1284.3,
+     "nat128": 0.0451,
+     "fix4": 0.0069,
+     "fix6": 0.012,
+     "fix8": 0.0056
+    },
+    {
+     "label": "alt8:global_search_road_network",
+     "median": 1298.8,
+     "nat128": -0.0307,
+     "fix4": -0.0022,
+     "fix6": -0.0028,
+     "fix8": -0.0004
+    },
+    {
+     "label": "alt9:global_search_road_network",
+     "median": 1298.8,
+     "nat128": -0.0307,
+     "fix4": -0.0022,
+     "fix6": -0.0028,
+     "fix8": -0.0004
+    },
+    {
+     "label": "accepted",
+     "median": 8.0,
+     "nat128": 0.4144,
+     "fix4": 0.4382,
+     "fix6": 0.4511,
+     "fix8": 0.4488
+    }
+   ],
+   "nat128": [
+    0.4144,
+    0.1633
+   ],
+   "fix4": [
+    0.4431,
+    0.0697
+   ],
+   "fix6": [
+    0.4518,
+    0.0833
+   ],
+   "fix8": [
+    0.4501,
+    0.0988
+   ]
+  },
+  {
+   "batch": "tvoc",
+   "event": 173,
+   "name": "University Parks Saturday Seri",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 20.8,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.7381,
+     "fix4": 0.7262,
+     "fix6": 0.7296,
+     "fix8": 0.7416
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 177.5,
+     "nat128": 0.1528,
+     "fix4": 0.1286,
+     "fix6": 0.1528,
+     "fix8": 0.1528
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 103.0,
+     "nat128": 0.2633,
+     "fix4": 0.2164,
+     "fix6": 0.2373,
+     "fix8": 0.2633
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 145.6,
+     "nat128": 0.3842,
+     "fix4": 0.158,
+     "fix6": 0.192,
+     "fix8": 0.2394
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 355.0,
+     "nat128": 0.1673,
+     "fix4": 0.0796,
+     "fix6": 0.0885,
+     "fix8": 0.1078
+    },
+    {
+     "label": "alt0:water_seed_observed_outline_ransac_mesh",
+     "median": 1.9,
+     "nat128": 0.7421,
+     "fix4": 0.72,
+     "fix6": 0.7434,
+     "fix8": 0.7289
+    },
+    {
+     "label": "accepted",
+     "median": 2.0,
+     "nat128": 0.7421,
+     "fix4": 0.72,
+     "fix6": 0.7434,
+     "fix8": 0.7289
+    }
+   ],
+   "nat128": [
+    0.7421,
+    0.3842
+   ],
+   "fix4": [
+    0.7262,
+    0.2164
+   ],
+   "fix6": [
+    0.7434,
+    0.2373
+   ],
+   "fix8": [
+    0.7416,
+    0.2633
+   ]
+  },
+  {
+   "batch": "tvoc",
+   "event": 172,
+   "name": "Cutteslowe Saturday Series",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 19.4,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.5664,
+     "fix4": 0.5795,
+     "fix6": 0.5773,
+     "fix8": 0.5884
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 199.7,
+     "nat128": -0.0186,
+     "fix4": -0.0201,
+     "fix6": -0.0186,
+     "fix8": -0.0186
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 115.8,
+     "nat128": 0.1167,
+     "fix4": 0.0637,
+     "fix6": 0.063,
+     "fix8": 0.1167
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 163.7,
+     "nat128": 0.3018,
+     "fix4": 0.1013,
+     "fix6": 0.1335,
+     "fix8": 0.1704
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 399.3,
+     "nat128": 0.1791,
+     "fix4": 0.0432,
+     "fix6": 0.0582,
+     "fix8": 0.0773
+    },
+    {
+     "label": "alt0:water_seed_observed_outline_ransac_mesh",
+     "median": 1.6,
+     "nat128": 0.5677,
+     "fix4": 0.5856,
+     "fix6": 0.5879,
+     "fix8": 0.5609
+    },
+    {
+     "label": "accepted",
+     "median": 2.0,
+     "nat128": 0.5677,
+     "fix4": 0.5856,
+     "fix6": 0.5879,
+     "fix8": 0.5683
+    }
+   ],
+   "nat128": [
+    0.5677,
+    0.3018
+   ],
+   "fix4": [
+    0.5856,
+    0.1013
+   ],
+   "fix6": [
+    0.5879,
+    0.1335
+   ],
+   "fix8": [
+    0.5884,
+    0.1704
+   ]
+  },
+  {
+   "batch": "tvoc",
+   "event": 178,
+   "name": "Wittenham Clumps",
+   "outcome": "correct",
+   "reading": "linear_ink",
+   "sec": 23.9,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4982,
+     "fix4": 0.3563,
+     "fix6": 0.3921,
+     "fix8": 0.4151
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 237.7,
+     "nat128": 0.0738,
+     "fix4": 0.0285,
+     "fix6": 0.0416,
+     "fix8": 0.0738
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 137.9,
+     "nat128": 0.1319,
+     "fix4": 0.0586,
+     "fix6": 0.08,
+     "fix8": 0.0876
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 194.9,
+     "nat128": 0.0838,
+     "fix4": 0.0462,
+     "fix6": 0.0586,
+     "fix8": 0.0658
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 475.4,
+     "nat128": 0.1572,
+     "fix4": 0.0282,
+     "fix6": 0.0431,
+     "fix8": 0.0633
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 7.2,
+     "nat128": 0.4821,
+     "fix4": 0.3618,
+     "fix6": 0.3879,
+     "fix8": 0.4241
+    },
+    {
+     "label": "alt1:global_search_road_network",
+     "median": 15.2,
+     "nat128": 0.479,
+     "fix4": 0.3106,
+     "fix6": 0.3655,
+     "fix8": 0.409
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 15.6,
+     "nat128": 0.4603,
+     "fix4": 0.2891,
+     "fix6": 0.3451,
+     "fix8": 0.3772
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 406.8,
+     "nat128": 0.2755,
+     "fix4": 0.0502,
+     "fix6": 0.0786,
+     "fix8": 0.1156
+    },
+    {
+     "label": "alt4:global_search_road_network",
+     "median": 406.8,
+     "nat128": 0.2755,
+     "fix4": 0.0502,
+     "fix6": 0.0786,
+     "fix8": 0.1156
+    },
+    {
+     "label": "alt5:global_search_road_network",
+     "median": 1792.2,
+     "nat128": 0.2223,
+     "fix4": 0.0942,
+     "fix6": 0.1198,
+     "fix8": 0.1476
+    },
+    {
+     "label": "alt6:global_search_road_network",
+     "median": 1802.9,
+     "nat128": 0.1915,
+     "fix4": 0.0859,
+     "fix6": 0.1108,
+     "fix8": 0.1408
+    },
+    {
+     "label": "accepted",
+     "median": 3.5,
+     "nat128": 0.4824,
+     "fix4": 0.3589,
+     "fix6": 0.3981,
+     "fix8": 0.4366
+    }
+   ],
+   "nat128": [
+    0.4982,
+    0.2755
+   ],
+   "fix4": [
+    0.3618,
+    0.0942
+   ],
+   "fix6": [
+    0.3981,
+    0.1198
+   ],
+   "fix8": [
+    0.4366,
+    0.1476
+   ]
+  },
+  {
+   "batch": "stag",
+   "event": 82,
+   "name": "GPC19-2-Queens Park",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 24.4,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4131,
+     "fix4": 0.3739,
+     "fix6": 0.389,
+     "fix8": 0.362
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 213.6,
+     "nat128": -0.0316,
+     "fix4": -0.0209,
+     "fix6": -0.0316,
+     "fix8": -0.0316
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 123.9,
+     "nat128": -0.0486,
+     "fix4": -0.0167,
+     "fix6": -0.0333,
+     "fix8": -0.0486
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 175.2,
+     "nat128": 0.044,
+     "fix4": 0.0044,
+     "fix6": 0.0051,
+     "fix8": 0.0184
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 427.3,
+     "nat128": 0.1699,
+     "fix4": 0.0337,
+     "fix6": 0.0465,
+     "fix8": 0.069
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 4.9,
+     "nat128": 0.4213,
+     "fix4": 0.4228,
+     "fix6": 0.4326,
+     "fix8": 0.43
+    },
+    {
+     "label": "alt1:global_seed_observed_outline_ransac_mesh",
+     "median": 4.3,
+     "nat128": 0.4203,
+     "fix4": 0.4294,
+     "fix6": 0.4233,
+     "fix8": 0.4161
+    },
+    {
+     "label": "alt2:global_seed_observed_outline_ransac_mesh",
+     "median": 4.3,
+     "nat128": 0.4203,
+     "fix4": 0.4294,
+     "fix6": 0.4233,
+     "fix8": 0.4161
+    },
+    {
+     "label": "accepted",
+     "median": 4.5,
+     "nat128": 0.4213,
+     "fix4": 0.4228,
+     "fix6": 0.4326,
+     "fix8": 0.4248
+    }
+   ],
+   "nat128": [
+    0.4213,
+    0.1699
+   ],
+   "fix4": [
+    0.4294,
+    0.0337
+   ],
+   "fix6": [
+    0.4326,
+    0.0465
+   ],
+   "fix8": [
+    0.43,
+    0.069
+   ]
+  },
+  {
+   "batch": "euoc",
+   "event": 36,
+   "name": "BW2020 - FwtN - Calton Hill",
+   "outcome": "wrong",
+   "reading": "paving",
+   "sec": 10.6,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.5711,
+     "fix4": 0.5882,
+     "fix6": 0.5771,
+     "fix8": 0.5711
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 135.9,
+     "nat128": -0.0403,
+     "fix4": -0.0403,
+     "fix6": -0.0403,
+     "fix8": -0.0403
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 78.8,
+     "nat128": 0.0018,
+     "fix4": -0.0182,
+     "fix6": 0.0018,
+     "fix8": 0.0018
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 111.4,
+     "nat128": 0.114,
+     "fix4": 0.0404,
+     "fix6": 0.0657,
+     "fix8": 0.0976
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 271.8,
+     "nat128": 0.0938,
+     "fix4": 0.0651,
+     "fix6": 0.065,
+     "fix8": 0.1005
+    },
+    {
+     "label": "alt0:building_seed_observed_outline_ransac_mesh",
+     "median": 10.2,
+     "nat128": 0.5,
+     "fix4": 0.4753,
+     "fix6": 0.5032,
+     "fix8": 0.5
+    },
+    {
+     "label": "accepted",
+     "median": 10.2,
+     "nat128": 0.4879,
+     "fix4": 0.4755,
+     "fix6": 0.5032,
+     "fix8": 0.4879
+    }
+   ],
+   "nat128": [
+    0.5711,
+    0.114
+   ],
+   "fix4": [
+    0.5882,
+    0.0651
+   ],
+   "fix6": [
+    0.5771,
+    0.0657
+   ],
+   "fix8": [
+    0.5711,
+    0.1005
+   ]
+  },
+  {
+   "batch": "euoc",
+   "event": 57,
+   "name": "BW2026 - Sprint - Pollock Hall",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 25.3,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.6373,
+     "fix4": 0.6747,
+     "fix6": 0.6913,
+     "fix8": 0.6373
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 139.6,
+     "nat128": 0.0121,
+     "fix4": 0.0121,
+     "fix6": 0.0121,
+     "fix8": 0.0121
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 81.0,
+     "nat128": 0.1064,
+     "fix4": 0.0825,
+     "fix6": 0.1064,
+     "fix8": 0.1064
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 114.5,
+     "nat128": 0.2348,
+     "fix4": 0.1109,
+     "fix6": 0.1293,
+     "fix8": 0.175
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 279.3,
+     "nat128": 0.1416,
+     "fix4": 0.0556,
+     "fix6": 0.071,
+     "fix8": 0.0852
+    },
+    {
+     "label": "alt0:building_seed_observed_outline_ransac_mesh",
+     "median": 3.1,
+     "nat128": 0.6646,
+     "fix4": 0.7133,
+     "fix6": 0.7052,
+     "fix8": 0.6646
+    },
+    {
+     "label": "accepted",
+     "median": 3.2,
+     "nat128": 0.6509,
+     "fix4": 0.7133,
+     "fix6": 0.7052,
+     "fix8": 0.6509
+    }
+   ],
+   "nat128": [
+    0.6646,
+    0.2348
+   ],
+   "fix4": [
+    0.7133,
+    0.1109
+   ],
+   "fix6": [
+    0.7052,
+    0.1293
+   ],
+   "fix8": [
+    0.6646,
+    0.175
+   ]
+  },
+  {
+   "batch": "aire",
+   "event": 267,
+   "name": "Summer in the City - Little Lo",
+   "outcome": "refused",
+   "reading": "all",
+   "sec": 97.7,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.3324,
+     "fix4": 0.4245,
+     "fix6": 0.3945,
+     "fix8": 0.3658
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 453.8,
+     "nat128": 0.0956,
+     "fix4": 0.0576,
+     "fix6": 0.0677,
+     "fix8": 0.0812
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 263.2,
+     "nat128": 0.1023,
+     "fix4": 0.0359,
+     "fix6": 0.0463,
+     "fix8": 0.0789
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 372.1,
+     "nat128": 0.1616,
+     "fix4": 0.0325,
+     "fix6": 0.0398,
+     "fix8": 0.0522
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 907.7,
+     "nat128": 0.4907,
+     "fix4": 0.1227,
+     "fix6": 0.1227,
+     "fix8": 0.1616
+    },
+    {
+     "label": "offer0:global_search_road_network",
+     "median": 1529.2,
+     "nat128": 0.4385,
+     "fix4": 0.1652,
+     "fix6": 0.2175,
+     "fix8": 0.2878
+    },
+    {
+     "label": "offer1:global_search_road_network",
+     "median": 964.6,
+     "nat128": 0.4077,
+     "fix4": 0.1941,
+     "fix6": 0.1941,
+     "fix8": 0.2304
+    },
+    {
+     "label": "offer2:global_search_road_network",
+     "median": 1216.5,
+     "nat128": 0.4044,
+     "fix4": 0.1675,
+     "fix6": 0.2026,
+     "fix8": 0.2478
+    }
+   ],
+   "nat128": [
+    0.3324,
+    0.4907
+   ],
+   "fix4": [
+    0.4245,
+    0.1941
+   ],
+   "fix6": [
+    0.3945,
+    0.2175
+   ],
+   "fix8": [
+    0.3658,
+    0.2878
+   ]
+  },
+  {
+   "batch": "mdoc",
+   "event": 369,
+   "name": "Philips Park (YBT)",
+   "outcome": "refused",
+   "reading": "all",
+   "sec": 46.4,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.5409,
+     "fix4": 0.5841,
+     "fix6": 0.5851,
+     "fix8": 0.5568
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 471.1,
+     "nat128": 0.0941,
+     "fix4": 0.0086,
+     "fix6": 0.0293,
+     "fix8": 0.0578
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 273.2,
+     "nat128": 0.0954,
+     "fix4": 0.0244,
+     "fix6": 0.0347,
+     "fix8": 0.0439
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 386.3,
+     "nat128": 0.1133,
+     "fix4": 0.0449,
+     "fix6": 0.0449,
+     "fix8": 0.0449
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 942.2,
+     "nat128": 0.1025,
+     "fix4": 0.0669,
+     "fix6": 0.0669,
+     "fix8": 0.0669
+    },
+    {
+     "label": "offer0:global_search_road_network",
+     "median": 1748.3,
+     "nat128": 0.3712,
+     "fix4": 0.1651,
+     "fix6": 0.2035,
+     "fix8": 0.255
+    },
+    {
+     "label": "offer1:global_search_road_network",
+     "median": 104.8,
+     "nat128": 0.3132,
+     "fix4": 0.199,
+     "fix6": 0.2087,
+     "fix8": 0.2174
+    },
+    {
+     "label": "offer2:global_search_road_network",
+     "median": 1055.8,
+     "nat128": 0.2945,
+     "fix4": 0.1744,
+     "fix6": 0.2137,
+     "fix8": 0.2945
+    }
+   ],
+   "nat128": [
+    0.5409,
+    0.3712
+   ],
+   "fix4": [
+    0.5841,
+    0.199
+   ],
+   "fix6": [
+    0.5851,
+    0.2137
+   ],
+   "fix8": [
+    0.5568,
+    0.2945
+   ]
+  },
+  {
+   "batch": "nato",
+   "event": 177,
+   "name": "Jesmond Dene",
+   "outcome": "correct",
+   "reading": "paving",
+   "sec": 20.1,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.4198,
+     "fix4": 0.424,
+     "fix6": 0.4428,
+     "fix8": 0.4292
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 312.4,
+     "nat128": 0.0292,
+     "fix4": -0.003,
+     "fix6": 0.0075,
+     "fix8": 0.0292
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 181.2,
+     "nat128": 0.1145,
+     "fix4": 0.0324,
+     "fix6": 0.054,
+     "fix8": 0.0876
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 256.2,
+     "nat128": 0.1469,
+     "fix4": 0.0236,
+     "fix6": 0.0374,
+     "fix8": 0.0553
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 624.8,
+     "nat128": 0.0242,
+     "fix4": 0.0019,
+     "fix6": 0.0019,
+     "fix8": 0.0031
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 5.6,
+     "nat128": 0.4433,
+     "fix4": 0.4036,
+     "fix6": 0.4346,
+     "fix8": 0.42
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 5.6,
+     "nat128": 0.4433,
+     "fix4": 0.4036,
+     "fix6": 0.4346,
+     "fix8": 0.42
+    },
+    {
+     "label": "accepted",
+     "median": 6.3,
+     "nat128": 0.4433,
+     "fix4": 0.4036,
+     "fix6": 0.4346,
+     "fix8": 0.42
+    }
+   ],
+   "nat128": [
+    0.4433,
+    0.1469
+   ],
+   "fix4": [
+    0.424,
+    0.0324
+   ],
+   "fix6": [
+    0.4428,
+    0.054
+   ],
+   "fix8": [
+    0.4292,
+    0.0876
+   ]
+  },
+  {
+   "batch": "nato",
+   "event": 152,
+   "name": "Broomley Woods",
+   "outcome": "wrong",
+   "reading": "expanded_paving",
+   "sec": 19.2,
+   "poses": [
+    {
+     "label": "truth",
+     "median": 0.0,
+     "nat128": 0.3533,
+     "fix4": 0.1249,
+     "fix6": 0.1494,
+     "fix8": 0.2115
+    },
+    {
+     "label": "truth_x0.5",
+     "median": 399.5,
+     "nat128": 0.0118,
+     "fix4": -0.0099,
+     "fix6": -0.0052,
+     "fix8": -0.0101
+    },
+    {
+     "label": "truth_x0.71",
+     "median": 231.7,
+     "nat128": 0.0489,
+     "fix4": -0.0086,
+     "fix6": 0.0007,
+     "fix8": 0.0042
+    },
+    {
+     "label": "truth_x1.41",
+     "median": 327.6,
+     "nat128": 0.0494,
+     "fix4": 0.011,
+     "fix6": 0.011,
+     "fix8": 0.0147
+    },
+    {
+     "label": "truth_x2.0",
+     "median": 799.0,
+     "nat128": 0.0637,
+     "fix4": 0.0117,
+     "fix6": 0.0117,
+     "fix8": 0.0117
+    },
+    {
+     "label": "alt0:global_search_layer_correlation",
+     "median": 21.4,
+     "nat128": 0.4231,
+     "fix4": 0.2881,
+     "fix6": 0.3131,
+     "fix8": 0.321
+    },
+    {
+     "label": "alt1:global_search_layer_correlation",
+     "median": 23.0,
+     "nat128": 0.4191,
+     "fix4": 0.2748,
+     "fix6": 0.3005,
+     "fix8": 0.318
+    },
+    {
+     "label": "alt2:global_search_road_network",
+     "median": 630.8,
+     "nat128": 0.3025,
+     "fix4": 0.3025,
+     "fix6": 0.3025,
+     "fix8": 0.3025
+    },
+    {
+     "label": "alt3:global_search_road_network",
+     "median": 331.2,
+     "nat128": 0.148,
+     "fix4": 0.0294,
+     "fix6": 0.0451,
+     "fix8": 0.0709
+    },
+    {
+     "label": "accepted",
+     "median": 22.6,
+     "nat128": 0.4231,
+     "fix4": 0.288,
+     "fix6": 0.3131,
+     "fix8": 0.321
+    }
+   ],
+   "nat128": [
+    0.3533,
+    0.3025
+   ],
+   "fix4": [
+    0.1249,
+    0.3025
+   ],
+   "fix6": [
+    0.1494,
+    0.3025
+   ],
+   "fix8": [
+    0.2115,
+    0.3025
+   ]
+  }
+ ]
+}
