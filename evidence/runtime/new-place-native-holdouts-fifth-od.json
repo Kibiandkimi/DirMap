@@ -1,0 +1,127 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-08T23:05:00Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "6c0e5b077157ba4999ee28e4a389f5426a2fc26fffeb020a711ef7bf754faba6",
+  "verifierSha256": "6e5a785b2dd5d0df3bddda7a53ba94f2cc352f54c2b85059c79efbeb038ce247",
+  "source": "https://www.od.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 127,
+      "map": 138,
+      "name": "Sutton Park CompassSport Cup Heat",
+      "date": "2026-02-22",
+      "imageSize": [
+        2265,
+        2526
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "8390d04415bc586d512b3102d82a7a2224a2d7a1cb95c3d4c42651205f618f26",
+      "worldFile": [
+        [
+          1.8746298263796907e-05,
+          -1.0945682272371263e-07,
+          -1.8725088671685
+        ],
+        [
+          -6.335009404023002e-08,
+          -1.1416846709025444e-05,
+          52.590580865842
+        ]
+      ],
+      "referenceFeatures": 2951,
+      "referenceSha256": "014ba6823509f08042e23d97e4b46a00b59fa8bdd91966e98fd3f0a864f11130",
+      "elapsedSec": 476.7,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络",
+        "另一处位置与原图同样吻合（0.33，已选 0.36），请补充同名点确定位置"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.3545,
+          "method": "global_search_layer_correlation",
+          "p95ErrorM": 7.41,
+          "acceptance": {
+            "method": "global_search_layer_correlation",
+            "p95ErrorM": 7.41,
+            "medianErrorM": 4.54,
+            "extrapolationSpreadM": 3.63,
+            "fitCount": 8,
+            "fitObjectCount": 8,
+            "validationCount": 8,
+            "validationObjectCount": 8,
+            "cellM": 8.0,
+            "blockHullFraction": 0.333,
+            "poseSource": "search_refinement",
+            "fineBlockRefinement": true,
+            "validationInsideHull": 8,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "affine": [
+            [
+              1.277281,
+              -0.005573,
+              -1438.630145
+            ],
+            [
+              -0.005573,
+              -1.277281,
+              1626.943622
+            ]
+          ],
+          "truthErrorM": {
+            "median": 4.27,
+            "p95": 8.85,
+            "max": 10.39
+          }
+        },
+        {
+          "support": 0.3329,
+          "method": "global_search_unconfirmed",
+          "p95ErrorM": null,
+          "acceptance": {
+            "method": "global_search_unconfirmed",
+            "approximate": true,
+            "p95ErrorM": null,
+            "medianErrorM": null,
+            "anisotropyPercent": 0.0,
+            "fitCount": 0,
+            "validationCount": 0,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "affine": [
+            [
+              0.444563,
+              -0.070412,
+              -1532.706322
+            ],
+            [
+              -0.070412,
+              -0.444563,
+              1035.517647
+            ]
+          ],
+          "truthErrorM": {
+            "median": 1261.24,
+            "p95": 1783.15,
+            "max": 1903.84
+          }
+        }
+      ],
+      "correctPlaceOffered": 1
+    }
+  ],
+  "summary": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1,
+    "refusedOfferingCorrectPlace": 1,
+    "refusedWithoutOffer": 0
+  }
+}
