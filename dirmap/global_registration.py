@@ -1288,7 +1288,8 @@ def _register(image, cartography, result, reference, *, angles, attempts, establ
                 found = []
                 failures.append(str(exc))
             candidates += found
-            unconfirmed += [(candidate['score'], candidate['matrix'], layers, footprint) for candidate in found[:attempts]]
+            unconfirmed += [(candidate['score'], candidate['matrix'], layers, footprint, candidate['proposal'])
+                            for candidate in found[:attempts]]
             established_support = [(reg.affine, support(layers, footprint, reference, reg.affine)[0]) for reg, _ in preferred]
             floor = max([value for _, value in established_support], default=-np.inf)
             seeds = [candidate['matrix'] for candidate in found[:attempts]
@@ -1408,7 +1409,7 @@ def _register(image, cartography, result, reference, *, angles, attempts, establ
     if not searched:
         raise NoEvidence('参照与原图没有共同的建筑、水体或道路可供搜索'+detail)
     offered, tried = list(fitted), []
-    for score, matrix, layers, footprint in sorted(unconfirmed, key=lambda item: -item[0]):
+    for score, matrix, layers, footprint, _ in sorted(unconfirmed, key=lambda item: -item[4]):
         if len(tried) > OFFERED_PLACES:
             break
         if (not compatible(matrix) or any(poses_agree(other, matrix, footprint, coarse=True) for other in tried)
@@ -1443,7 +1444,8 @@ def unconfirmed_place(unconfirmed, places, evidence, reference, compatible=lambd
     marked as unchecked, after the fitted places, never applied by itself.
     """
     from .geometry import Registration
-    for score, matrix, layers, footprint in sorted(unconfirmed, key=lambda item: -item[0]):
+    # As the search ranks its proposals (`proposal`, 128 cells across).
+    for score, matrix, layers, footprint, _ in sorted(unconfirmed, key=lambda item: -item[4]):
         if not compatible(matrix):
             continue
         # A fit within a search pose's coarse error accounts for it unless

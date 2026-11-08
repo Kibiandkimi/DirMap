@@ -441,16 +441,17 @@ def test_the_best_unconfirmed_search_pose_is_offered_as_an_approximate_place(mon
     monkeypatch.setattr(G, 'support', lambda layers, footprint, reference, matrix: (.52, {}))
     searched = np.array([[1, 0, 0], [0, -1, 0]], float)
     elsewhere = (.35, Registration(np.array([[1, 0, 105], [0, -1, 0]], float)), {'method': 'global_search_road_network'})
-    value, reg, quality = G.unconfirmed_place([(.52, searched, {}, footprint), (.3, searched+1, {}, footprint)],
+    # Ranked as the search ranks its proposals (last item), not by support.
+    value, reg, quality = G.unconfirmed_place([(.6, searched+1, {}, footprint, .3), (.52, searched, {}, footprint, .5)],
                                               [elsewhere], [({}, footprint)], [])
     assert value == .52 and np.array_equal(reg.affine, searched)
     assert quality['approximate'] and quality['p95ErrorM'] is None and not quality['landmarks']
     # A nearby fit about as well supported already offers the place.
     same = (.5, Registration(np.array([[1, 0, 30], [0, -1, 0]], float)), {})
-    assert G.unconfirmed_place([(.52, searched, {}, footprint)], [same], [({}, footprint)], []) is None
+    assert G.unconfirmed_place([(.52, searched, {}, footprint, .5)], [same], [({}, footprint)], []) is None
     # One clearly less supported has misaligned it: the pose is offered too.
     weaker = (.4, Registration(np.array([[1, 0, 30], [0, -1, 0]], float)), {})
-    assert G.unconfirmed_place([(.52, searched, {}, footprint)], [weaker], [({}, footprint)], []) is not None
+    assert G.unconfirmed_place([(.52, searched, {}, footprint, .5)], [weaker], [({}, footprint)], []) is not None
 
 
 def test_dim_paving_is_not_used_as_building_evidence():
