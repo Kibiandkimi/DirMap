@@ -392,6 +392,40 @@ def _held_out(problem, correction, footprint, points, tolerances):
     return report
 
 
+# How much the whole-sheet agreement worsens when the final pose is
+# perturbed by these amounts about the sheet centre (logged, not gated): a
+# flat score means the linework hardly determines that degree of freedom.
+SENSITIVITY_STEPS = {'scale': .02, 'rotationDeg': 1., 'stretchX': .02, 'stretchY': .02}
+
+
+def _perturbation(name, amount, centre):
+    if name == 'scale':
+        linear = np.eye(2)*(1+amount)
+    elif name == 'rotationDeg':
+        angle = math.radians(amount)
+        linear = np.array([[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]])
+    else:
+        linear = np.diag([1+amount, 1.] if name == 'stretchX' else [1., 1+amount])
+    return np.column_stack((linear, centre-linear @ centre))
+
+
+def sensitivity(problem, correction, score=None):
+    """Score increase (m) at `correction` under each perturbation, [minus, plus].
+
+    Perturbations are applied in the accepted local frame about the sheet
+    centre; x is east, y north. None where a perturbed pose has no pairs.
+    """
+    score = problem.score(correction) if score is None else score
+    result = {}
+    for name, step in SENSITIVITY_STEPS.items():
+        values = []
+        for amount in (-step, step):
+            moved = problem.score(_compose(_perturbation(name, amount, problem.centre), correction))
+            values.append(None if moved is None or score is None else round(moved-score, 4))
+        result[name] = values
+    return result
+
+
 def refine(reg, footprint, sheet, osm, *, tolerances=TOLERANCES_M):
     """Dense correction of an accepted registration, with its adoption decision.
 
@@ -417,7 +451,8 @@ def refine(reg, footprint, sheet, osm, *, tolerances=TOLERANCES_M):
         'moveP95M': round(float(np.percentile(movement, 95)), 2), 'moveMaxM': round(float(movement.max()), 2),
         'scalePercent': round(100*(metres_per_pixel(correction)-1), 3),
         'rotationDeg': round(math.degrees(math.atan2(correction[1, 0], correction[0, 0])), 3),
-        'matches': int(len(found[0])), 'correction': np.round(correction, 8).tolist()})
+        'matches': int(len(found[0])), 'correction': np.round(correction, 8).tolist(),
+        'sensitivityM': sensitivity(problem, correction, after)})
     refined = corrected(reg, correction)
     if report['gainPercent'] < ADOPT_GAIN_PERCENT:
         report['reason'] = 'small_gain'

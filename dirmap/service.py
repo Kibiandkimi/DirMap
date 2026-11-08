@@ -352,11 +352,15 @@ def geographic_registration(image, result, reference, places=None):
 
     def unchecked(reg, quality):
         # Without the global comparison only the seeded fit's own checks
-        # remain; its extrapolation across the sheet must still hold.
+        # remain; its extrapolation across the sheet must still hold. A
+        # refused seeded fit is still a fitted place a teacher can adopt;
+        # no whole-sheet agreement was measured for it (support None).
         sheet = np.array([[0, 0], [result['width'], 0], [result['width'], result['height']], [0, result['height']]], float)
         reason = global_registration.acceptance_refusal(quality, sheet, matrix=reg.affine)
         if reason is not None:
             failures.append(reason)
+            if places is not None:
+                places.append((None, reg, finished(reg, quality)[1]))
             return None, None, failures
         return accepted(reg, quality)
 
@@ -983,7 +987,7 @@ def offered_places(image, places, frame, directory):
     """Previews of the refused registration's distinct places, best first."""
     offered = []
     for index, (value, reg, quality) in enumerate(places[:len(store.PLACE_PREVIEWS)]):
-        offered.append({'id': f'place-{index+1}', 'support': round(float(value), 4), 'method': quality.get('method'),
+        offered.append({'id': f'place-{index+1}', 'support': None if value is None else round(float(value), 4), 'method': quality.get('method'),
                         'p95ErrorM': quality.get('p95ErrorM'), 'thinValidation': bool(quality.get('thinValidation')),
                         'extent': warp_overlay(image, reg, directory/store.PLACE_PREVIEWS[index], frame=frame, max_side=900),
                         'preview': store.PLACE_PREVIEWS[index], 'registration': reg.as_dict(), 'quality': quality})

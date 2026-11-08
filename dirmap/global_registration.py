@@ -690,10 +690,12 @@ MINIMUM_POSE_LAYERS = 2
 EXTRAPOLATION_LIMIT_M = 12.
 MINIMUM_SPREAD_GROUPS = 4
 # A map sheet is drawn conformally: equal scale in every direction. Print,
-# scan and a roughly flat photo keep that within a few per cent; an affine
+# scan and a roughly flat photo keep that within about one per cent (every
+# recorded correct fit, campus photos included, is within 1.25%); an affine
 # fit stretched more than this has extrapolated a local cluster of
-# landmarks (held out in the same cluster) across the sheet.
-MAXIMUM_ANISOTROPY = .08
+# landmarks (held out in the same cluster) across the sheet, or bent an
+# under-determined scale to fit look-alike ink in one direction.
+MAXIMUM_ANISOTROPY = .025
 
 
 def anisotropy(matrix):
@@ -790,7 +792,7 @@ class UnreliablePose(ValueError):
 REFINED_SUPPORT_LOSS = AMBIGUITY_MARGIN/2
 REFINED_OBJECT_P95_M = 18.
 REFINEMENT_LOG_KEYS = ('decision', 'reason', 'pairs', 'scoreBeforeM', 'scoreAfterM', 'gainPercent', 'moveP95M', 'moveMaxM',
-                       'scalePercent', 'rotationDeg', 'halfAgreementM', 'layerGainsM', 'correction')
+                       'scalePercent', 'rotationDeg', 'halfAgreementM', 'layerGainsM', 'sensitivityM', 'correction')
 
 
 def dense_refinement(image, cartography, result, reference, reg, quality):

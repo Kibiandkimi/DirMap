@@ -321,7 +321,7 @@ def main():
 
         if reg is None:
             row['outcome'] = 'refused'
-            row['offeredPlaces'] = [{'support': round(float(value), 4), 'method': q.get('method'), 'p95ErrorM': q.get('p95ErrorM'),
+            row['offeredPlaces'] = [{'support': None if value is None else round(float(value), 4), 'method': q.get('method'), 'p95ErrorM': q.get('p95ErrorM'),
                                      'acceptance': acceptance_log(q), 'truthErrorM': truth_error(place)}
                                     for value, place, q in places]
             row['correctPlaceOffered'] = next((index+1 for index, offered in enumerate(row['offeredPlaces'])

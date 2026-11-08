@@ -526,6 +526,23 @@ def test_a_strongly_stretched_affine_is_not_applied(monkeypatch):
     assert G.anisotropy(np.array([[.5, .01, 0], [.01, -.5, 0]])) < G.MAXIMUM_ANISOTROPY
 
 
+def test_a_few_per_cent_of_stretch_is_already_refused(monkeypatch):
+    # Under-determined scale bends an affine a few per cent in one
+    # direction (x 0.603 against y 0.631 m/px); every correct fit on
+    # record is within 1.25%.
+    monkeypatch.setattr(G, 'support', lambda *args, **kwargs: (.6, {'building': .6, 'path': .6}))
+    bent = np.array([[.603, 0, 0], [0, -.631, 0]])
+    fit = (Registration(bent), {'method': 'building_seed_observed_outline_ransac_mesh', 'p95ErrorM': 5.,
+                                'landmarks': exact_landmarks(bent, SPREAD_OUT)})
+    with pytest.raises(ValueError, match='比例相差 5%'):
+        G.choose([fit], {}, SQUARE, [])
+    printed = np.array([[.5, 0, 0], [0, -.50625, 0]])  # 1.25%
+    fit = (Registration(printed), {'method': 'building_seed_observed_outline_ransac_mesh', 'p95ErrorM': 5.,
+                                   'landmarks': exact_landmarks(printed, SPREAD_OUT)})
+    reg, _ = G.choose([fit], {}, SQUARE, [])
+    assert reg is fit[0]
+
+
 def test_a_seeded_fallback_must_also_extrapolate_reliably(monkeypatch):
     from dirmap import service
     corner = [[x, y] for x in (2, 8, 14) for y in (2, 9)]
@@ -543,5 +560,10 @@ def test_a_seeded_fallback_must_also_extrapolate_reliably(monkeypatch):
     monkeypatch.setattr(service.global_registration, 'register', nothing)
     image = np.full((400, 400, 3), 255, np.uint8)
     result = {'features': [], 'controls': [], 'sheetPhotos': [], 'width': 400, 'height': 400}
-    reg, quality, failures = service.geographic_registration(image, result, [])
+    places = []
+    reg, quality, failures = service.geographic_registration(image, result, [], places)
     assert reg is None and any('外推不可靠' in failure for failure in failures)
+    # The refused seeded fit is still offered for a one-click adoption,
+    # without a whole-sheet support it never measured.
+    assert len(places) == 1 and places[0][0] is None and places[0][1] is seeded[0]
+    assert places[0][2]['method'] == seeded[1]['method']

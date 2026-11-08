@@ -67,3 +67,31 @@ def test_a_refused_registration_offers_its_places_and_the_teacher_adopts_one(cli
     done = wait_job(client, client.post('/api/maps/szu-1/places/place-1',
                     json={'version': anchored['version']}).json()['id'])
     assert done['state'] == 'failed' and '已失效' in done['message']
+
+
+def test_a_refused_seeded_fit_without_whole_sheet_support_can_be_adopted(client, monkeypatch):
+    state = store.get_state('szu-1')
+    state['quality']['method'] = 'automatic_reference_fit'
+    store.save_state('szu-1', state)
+    source = store.DATA/'source.png'; cv2.imwrite(str(source), np.full((41, 41, 3), 245, np.uint8))
+    monkeypatch.setattr(store, 'get_asset', lambda asset_id: {'id': asset_id, 'path': str(source),
+        'sha256': 'fixture', 'name': 'test', 'filename': 'source.png'})
+    pixels = [[0, 0], [40, 0], [40, 40], [0, 40]]
+    affine = [[1, 0, 2], [0, -1, 42]]
+    def seeded_refusal(image, result, reference, places=None):
+        places.append((None, Registration(affine, pixels, affine_points(affine, pixels)),
+                       {'method': 'water_seed_observed_outline_ransac_mesh', 'p95ErrorM': 6.1, 'landmarks': [],
+                        'validationScope': '留出地物核查。'}))
+        return None, None, ['同名点集中，去掉单个同名点后图幅位置变化 14.0 m，外推不可靠']
+    monkeypatch.setattr(service, 'geographic_registration', seeded_refusal)
+    done = wait_job(client, client.post('/api/maps/szu-1/process').json()['id'])
+    assert done['state'] == 'succeeded', done
+    refused = client.get('/api/maps/szu-1').json()
+    assert refused['registration'] is None
+    assert [(p['id'], p['support']) for p in refused['registrationCandidates']] == [('place-1', None)]
+    done = wait_job(client, client.post('/api/maps/szu-1/places/place-1', json={'version': refused['version']}).json()['id'])
+    assert done['state'] == 'succeeded', done
+    adopted = client.get('/api/maps/szu-1').json()
+    assert np.allclose(adopted['registration']['affine'], affine)
+    assert adopted['quality']['chosenPlace'] == {'id': 'place-1', 'support': None, 'offered': 1}
+    assert adopted['quality']['state'] == 'needs_review'

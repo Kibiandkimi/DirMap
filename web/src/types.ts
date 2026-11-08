@@ -24,7 +24,7 @@ export interface ContourReport { assetId: string; version: number; revision: num
   contours: (MapContour & { calibrated: boolean; automaticallyUsed?: boolean; suggestedHeightM: number | null; suggestionSpreadM: number | null;
     referenceCoverage: number; referenceSamples: number })[] }
 /** A distinct place a refused registration still fitted, for the teacher to choose. */
-export interface OfferedPlace { id: string; support: number; method: string; p95ErrorM: number | null; thinValidation: boolean; extent: number[]; preview: string }
+export interface OfferedPlace { id: string; support: number | null; method: string; p95ErrorM: number | null; thinValidation: boolean; extent: number[]; preview: string }
 export interface MapState {
   assetId: string; processed?: boolean; name: string; width: number; height: number; version: number;
   sourceHash: string;
@@ -40,7 +40,7 @@ export interface MapState {
   surfaces?: Surface[]; portals?: Portal[];
   terrainFeatures?: { kind: 'stairs' | 'lower_level'; polygon: Pixel[]; visibleTreadCells?: number; traversableTreadLines?: number }[];
   registration: { affine: number[][]; source: Pixel[]; target: Pixel[]; triangles: number[][] } | null;
-  quality: { state: string; method: string; fitCount: number; validationCount: number; medianErrorM: number | null; p95ErrorM: number | null; inheritedGeographicP95M?: number; validationScope: string; baseAssetId?: string; leaveOneOut?: boolean; poseSupport?: { value: number; margin: number }; chosenPlace?: { id: string; support: number; offered: number } } | null;
+  quality: { state: string; method: string; fitCount: number; validationCount: number; medianErrorM: number | null; p95ErrorM: number | null; inheritedGeographicP95M?: number; validationScope: string; baseAssetId?: string; leaveOneOut?: boolean; poseSupport?: { value: number; margin: number }; chosenPlace?: { id: string; support: number | null; offered: number } } | null;
   failures?: string[];
   registrationCandidates?: OfferedPlace[];
   warnings: string[]; statistics: { buildingCandidates: number; waterCandidates: number; controlCandidates: number; forbiddenPixelFraction: number; staircaseCandidates?: number; lowerLevelHatchingPixels?: number };

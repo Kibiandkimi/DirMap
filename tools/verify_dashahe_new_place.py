@@ -119,7 +119,7 @@ def main():
             row['offeredPlaces'] = []
             for value, place, place_quality in places:
                 difference, _ = against_baseline(place)
-                row['offeredPlaces'].append({'support': round(float(value), 4), 'method': place_quality.get('method'),
+                row['offeredPlaces'].append({'support': None if value is None else round(float(value), 4), 'method': place_quality.get('method'),
                                              'p95ErrorM': place_quality.get('p95ErrorM'), 'acceptance': acceptance_log(place_quality),
                                              'differenceFromBaselineM': {'median': round(float(np.median(difference)), 2),
                                                                          'max': round(float(difference.max()), 2)}})

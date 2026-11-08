@@ -88,6 +88,22 @@ def test_an_already_aligned_sheet_is_left_unchanged():
     assert report['moveP95M'] < 1.
 
 
+def test_the_final_pose_logs_how_sharply_each_freedom_is_determined():
+    reference, truth = place(), pose()
+    _, report = R.refine(Registration(truth), FOOTPRINT, printed(reference, truth, clutter=15),
+                         R.reference_linework(reference))
+    sensitivity = report['sensitivityM']
+    assert set(sensitivity) == set(R.SENSITIVITY_STEPS)
+    assert all(value > .1 for values in sensitivity.values() for value in values), sensitivity
+    # Only east-west lines: an east-west stretch slides along them unseen.
+    rows = [{'id': f'r{i}', 'kind': 'road', 'tags': {'highway': 'footway'},
+             'points': [[-600., y], [600., y]]} for i, y in enumerate(np.arange(-400., 401., 23.))]
+    lines = printed(rows, truth, kinds=('road',))
+    _, report = R.refine(Registration(truth), FOOTPRINT, {'ink': lines['ink']}, R.reference_linework(rows))
+    sensitivity = report['sensitivityM']
+    assert max(abs(v) for v in sensitivity['stretchX']) < .1 and min(sensitivity['stretchY']) > 1., sensitivity
+
+
 def test_linework_kinds_that_disagree_do_not_refine_the_pose():
     reference, truth = place(), pose()
     centre = affine_points(truth, FOOTPRINT).mean(axis=0)
