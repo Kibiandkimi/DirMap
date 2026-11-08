@@ -323,6 +323,11 @@ def geographic_registration(image, result, reference, places=None):
     are appended to `places` as (support, registration, quality) for the
     teacher to choose from.
     """
+    with global_registration.memoised(reference):
+        return _geographic_registration(image, result, reference, places)
+
+
+def _geographic_registration(image, result, reference, places):
     failures = []
     cartography = cartographic_image(image, result['sheetPhotos'])
     from .registration_hints import correct_exposure, prepare_scale_hints

@@ -16,7 +16,11 @@ Priors are generic: a map is normally drawn north up and a control circle
 is 5-6 mm at print scales from 1:3000 to 1:15000, which bounds the ground
 size of a circle. Neither is required.
 """
+import contextlib
+import copy
 import math
+import threading
+from collections import OrderedDict
 
 import cv2
 import numpy as np
@@ -54,28 +58,86 @@ def _rotation(angle):
     return np.array([[c, -s], [s, c]])
 
 
-def reference_rasters(reference, cell, bounds=None):
-    """Building, water and path rasters of the place (rows run southwards).
+class _Memo:
+    """Pure computations on one place's reference within one registration.
 
-    OSM returns whole ways, so a river or avenue can reach far beyond the
-    downloaded place; robust bounds keep the raster to the place itself.
+    The search compares every reading of the sheet (palettes, text-free,
+    without black roofs, north up and turned) with the same place, and
+    re-scores the same poses under each. Their rasters, spectra and
+    scores, and fits from a seed under the same path evidence, are reused
+    unchanged: outcomes are exactly those of recomputing them. Large
+    arrays are kept within a byte budget, least recently used dropped.
     """
-    if bounds is None:
-        points = np.concatenate([np.asarray(f['points'], float) for f in reference])
-        bounds = np.percentile(points, 1, axis=0)-150, np.percentile(points, 99, axis=0)+150
-    lower, upper = bounds
-    shape = tuple(np.ceil((np.asarray(upper)-lower)/cell).astype(int)[::-1]+1)
-    origin = np.array([lower[0], upper[1]])
-    to_cells = lambda p: np.rint((np.asarray(p, float)-origin)*[1/cell, -1/cell]*16).astype(np.int32)
-    rasters = {kind: np.zeros(shape, np.float32) for kind in CHANNELS}
+    BUDGET = 64 << 20
+
+    def __init__(self, reference):
+        self.reference = reference
+        self.arrays = OrderedDict()  # key -> (value, bytes)
+        self.size = 0
+        self.values = {}
+        self.table = None
+
+    def get(self, key):
+        if key in self.arrays:
+            self.arrays.move_to_end(key)
+            return self.arrays[key][0]
+        return None
+
+    def put(self, key, value, size):
+        if size > self.BUDGET//2:
+            return
+        self.arrays[key] = (value, size)
+        self.size += size
+        while self.size > self.BUDGET:
+            _, (_, dropped) = self.arrays.popitem(last=False)
+            self.size -= dropped
+
+
+_LOCAL = threading.local()
+
+
+@contextlib.contextmanager
+def memoised(reference):
+    """Reuse pure place computations for `reference` within this block."""
+    previous = getattr(_LOCAL, 'memo', None)
+    if previous is not None and previous.reference is reference:
+        yield previous
+        return
+    _LOCAL.memo = _Memo(reference)
+    try:
+        yield _LOCAL.memo
+    finally:
+        _LOCAL.memo = previous
+
+
+def _memo(reference):
+    memo = getattr(_LOCAL, 'memo', None)
+    return memo if memo is not None and memo.reference is reference else None
+
+
+def _reference_table(reference):
+    """Drawable reference features: (layer, polygon?, points), their boxes, robust bounds, channels."""
+    memo = _memo(reference)
+    if memo is not None and memo.table is not None:
+        return memo.table
+    drawn, boxes = [], []
     for feature in reference:
         kind = feature['kind']
         if kind in ('building', 'water'):
-            cv2.fillPoly(rasters[kind], [to_cells(feature['points'])], 1., cv2.LINE_8, 4)
+            item = (kind, True)
         elif kind == 'waterway':
-            cv2.polylines(rasters['water'], [to_cells(feature['points'])], False, 1., 1, cv2.LINE_8, 4)
+            item = ('water', False)
         elif kind == 'road' and feature.get('tags', {}).get('highway') not in UNPRINTED_WAYS:
-            cv2.polylines(rasters['path'], [to_cells(feature['points'])], False, 1., 1, cv2.LINE_8, 4)
+            item = ('path', False)
+        else:
+            continue
+        points = np.asarray(feature['points'], float)
+        if not len(points):
+            continue
+        drawn.append((*item, points))
+        boxes.append(np.concatenate((points.min(axis=0), points.max(axis=0))))
+    points = np.concatenate([np.asarray(f['points'], float) for f in reference])
+    bounds = np.percentile(points, 1, axis=0)-150, np.percentile(points, 99, axis=0)+150
     # A layer present in the place stays in every local comparison, even
     # if this window has none of it. Dropping an empty local layer would
     # reward a wrong pose for moving printed evidence away from its kind.
@@ -85,12 +147,50 @@ def reference_rasters(reference, cell, bounds=None):
         channels.add('water')
     if any(f['kind'] == 'road' and f.get('tags', {}).get('highway') not in UNPRINTED_WAYS for f in reference):
         channels.add('path')
+    table = (drawn, np.array(boxes).reshape(-1, 4), bounds, channels)
+    if memo is not None:
+        memo.table = table
+    return table
+
+
+def reference_rasters(reference, cell, bounds=None):
+    """Building, water and path rasters of the place (rows run southwards).
+
+    OSM returns whole ways, so a river or avenue can reach far beyond the
+    downloaded place; robust bounds keep the raster to the place itself.
+    Returned arrays may be shared and must not be modified.
+    """
+    memo = _memo(reference)
+    key = ('rasters', float(cell), None if bounds is None else np.asarray(bounds, float).tobytes())
+    cached = memo.get(key) if memo is not None else None
+    if cached is not None:
+        return dict(cached[0]), cached[1].copy()
+    drawn, boxes, robust, channels = _reference_table(reference)
+    lower, upper = robust if bounds is None else bounds
+    shape = tuple(np.ceil((np.asarray(upper)-lower)/cell).astype(int)[::-1]+1)
+    origin = np.array([lower[0], upper[1]])
+    to_cells = lambda p: np.rint((np.asarray(p, float)-origin)*[1/cell, -1/cell]*16).astype(np.int32)
+    rasters = {kind: np.zeros(shape, np.float32) for kind in CHANNELS}
+    # A feature wholly beyond the raster draws nothing; skipping it leaves
+    # every raster value unchanged.
+    columns = np.column_stack(((boxes[:, 0]-origin[0])/cell, (boxes[:, 2]-origin[0])/cell))
+    rows = np.column_stack(((origin[1]-boxes[:, 3])/cell, (origin[1]-boxes[:, 1])/cell))
+    visible = ((columns[:, 1] >= -2) & (columns[:, 0] <= shape[1]+1)
+               & (rows[:, 1] >= -2) & (rows[:, 0] <= shape[0]+1))
+    for index in np.flatnonzero(visible):
+        kind, polygon, points = drawn[index]
+        if polygon:
+            cv2.fillPoly(rasters[kind], [to_cells(points)], 1., cv2.LINE_8, 4)
+        else:
+            cv2.polylines(rasters[kind], [to_cells(points)], False, 1., 1, cv2.LINE_8, 4)
     result = {}
     for kind, raster in rasters.items():
         raster = cv2.GaussianBlur(raster, (0, 0), 1.)
         if kind in channels:
             result[kind] = raster
-    return result, origin
+    if memo is not None:
+        memo.put(key, (result, origin), sum(raster.nbytes for raster in result.values()))
+    return dict(result), origin.copy()
 
 
 def sheet_layers(features, paths, footprint):
@@ -157,6 +257,19 @@ def _peaks(score, count, separation):
     return result
 
 
+def _spectra(raster, shape):
+    """Spectra of a place raster and of its square, reused within a registration."""
+    memo = getattr(_LOCAL, 'memo', None)
+    key = ('spectra', id(raster), shape)
+    cached = memo.get(key) if memo is not None else None
+    if cached is not None and cached[0] is raster:
+        return cached[1]
+    spectra = fft.rfft2(raster, shape), fft.rfft2(raster**2, shape)
+    if memo is not None:
+        memo.put(key, (raster, spectra), sum(part.nbytes for part in spectra))
+    return spectra
+
+
 def _correlate(layers, footprint, rasters, origin, cell, poses, peaks=2):
     """Masked normalised cross-correlation of every pose and translation.
 
@@ -169,7 +282,7 @@ def _correlate(layers, footprint, rasters, origin, cell, poses, peaks=2):
     reference_shape = next(iter(rasters.values())).shape
     largest = max(math.ceil(scale/cell*float(np.hypot(*np.ptp(footprint, axis=0))))+12 for scale, _ in poses)
     shape = tuple(fft.next_fast_len(size+largest, real=True) for size in reference_shape)
-    spectra = {kind: (fft.rfft2(rasters[kind], shape), fft.rfft2(rasters[kind]**2, shape)) for kind in channels}
+    spectra = {kind: _spectra(rasters[kind], shape) for kind in channels}
     floors = {kind: .1*float(rasters[kind].var()) for kind in channels}
     signed = lambda size: np.where(np.arange(size) > size/2, np.arange(size)-size, np.arange(size))
     shift_rows, shift_cols = signed(shape[0]), signed(shape[1])
@@ -410,11 +523,17 @@ def support(layers, footprint, reference, matrix, *, cells=128):
     it, at about 128 cells across the sheet.
     """
     matrix = np.asarray(matrix, float)
+    memo = _memo(reference)
+    key = ('support', id(layers), np.asarray(footprint, float).tobytes(), matrix.tobytes(), cells)
+    if memo is not None and key in memo.values and memo.values[key][0] is layers:
+        value, values = memo.values[key][1]
+        return value, dict(values)
     ground = math.sqrt(abs(np.linalg.det(matrix[:, :2])))*float(np.hypot(*np.ptp(footprint, axis=0)))
     values, weights = pose_support(layers, footprint, reference, matrix, _cell(ground, cells), weighted=True)
-    if not values:
-        return 0., {}
-    return sum(values[k]*weights[k] for k in values)/sum(weights[k] for k in values), values
+    result = (0., {}) if not values else (sum(values[k]*weights[k] for k in values)/sum(weights[k] for k in values), values)
+    if memo is not None:
+        memo.values[key] = (layers, result)
+    return result[0], dict(result[1])
 
 
 def poses_agree(first, second, footprint, coarse=False):
@@ -442,11 +561,71 @@ def covered(candidate, fits, footprint):
                and not outdone(matrix, value, [candidate], footprint) for matrix, value in fits)
 
 
+def _content(memo, value):
+    """A digest of a path extraction's content, computed once per object."""
+    import hashlib
+    import pickle
+    key = ('content', id(value))
+    if key not in memo.values or memo.values[key][0] is not value:
+        pixels, outline, ratio, diagnostics = value
+        digest = hashlib.sha256()
+        for part in (pixels, outline):
+            part = np.ascontiguousarray(part)
+            digest.update(repr((part.dtype.str, part.shape)).encode())
+            digest.update(part.tobytes())
+        digest.update(pickle.dumps((float(ratio), sorted(diagnostics.items()))))
+        memo.values[key] = (value, digest.hexdigest())
+    return memo.values[key][1]
+
+
+def road_fit(cartography, reference, image, seed, paths, streets_only=False):
+    """`road_network_register` from one searched pose under given path evidence.
+
+    With `paths` given the fit depends only on them, the seed and the
+    place, so a seed met again under the same evidence (another reading
+    of the sheet with unchanged paths) reuses the earlier outcome.
+    """
+    from .network_registration import road_network_register
+    memo = _memo(reference)
+    if memo is None:
+        return road_network_register(cartography, reference, exposure_image=image, seeds=[seed], paths=paths,
+                                     streets_only=streets_only)
+    key = ('road', np.asarray(seed, float).tobytes(), _content(memo, paths), bool(streets_only))
+    if key not in memo.values:
+        try:
+            memo.values[key] = (None, ('fit', road_network_register(cartography, reference, exposure_image=image, seeds=[seed],
+                                                                    paths=paths, streets_only=streets_only)))
+        except ValueError as exc:
+            memo.values[key] = (None, ('error', type(exc), exc.args))
+    outcome = memo.values[key][1]
+    if outcome[0] == 'error':
+        raise outcome[1](*outcome[2])
+    reg, quality = outcome[1]
+    return copy.copy(reg), copy.deepcopy(quality)
+
+
+def street_paving(cartography, footprint):
+    """`expanded_paths` of the plain palette, reused for one image and outline."""
+    memo = getattr(_LOCAL, 'memo', None)
+    if memo is None:
+        return expanded_paths(cartography, footprint)
+    key = ('paving', id(cartography), np.asarray(footprint, float).tobytes())
+    if key not in memo.values or memo.values[key][0] is not cartography:
+        try:
+            memo.values[key] = (cartography, ('paths', expanded_paths(cartography, footprint)))
+        except NoEvidence as exc:
+            memo.values[key] = (cartography, ('error', exc.args))
+    outcome = memo.values[key][1]
+    if outcome[0] == 'error':
+        raise NoEvidence(*outcome[1])
+    return outcome[1]
+
+
 def refine(image, cartography, result, reference, seeds, extraction, layers, footprint):
     """Fit layer blocks, printed ways and objects from each searched pose.
 
     Each fit keeps its own held-out check; what fails it is reported."""
-    from .network_registration import road_network_register, STREET_TYPES
+    from .network_registration import STREET_TYPES
     from .registration import auto_register
     attempts, failures = [], []
     street_paths = None
@@ -455,7 +634,7 @@ def refine(image, cartography, result, reference, seeds, extraction, layers, foo
             street_paths = extraction
         else:
             try:
-                street_paths = expanded_paths(cartography, footprint)
+                street_paths = street_paving(cartography, footprint)
             except NoEvidence:
                 pass
     for seed in seeds:
@@ -480,14 +659,12 @@ def refine(image, cartography, result, reference, seeds, extraction, layers, foo
             failures.append(str(exc))
         if extraction is not None:
             try:
-                attempts.append(road_network_register(cartography, reference, exposure_image=image,
-                                                      seeds=[seed], paths=extraction))
+                attempts.append(road_fit(cartography, reference, image, seed, extraction))
             except ValueError as exc:
                 failures.append(str(exc))
         if street_paths is not None:
             try:
-                attempts.append(road_network_register(cartography, reference, exposure_image=image,
-                                                      seeds=[seed], paths=street_paths, streets_only=True))
+                attempts.append(road_fit(cartography, reference, image, seed, street_paths, streets_only=True))
             except ValueError as exc:
                 failures.append(str(exc))
         try:
@@ -1028,9 +1205,15 @@ def detailed_choose(attempts, layers, footprint, reference, *, preferred=(), sea
 
 def register(image, cartography, result, reference, *, angles=NORTH_UP_DEG, attempts=4, established=(), prepared_hints=None):
     """Search and validate poses, expanding image evidence only on refusal."""
-    from .registration_hints import prepare_scale_hints, printed_words, scale_bar, without_text
     if not reference:
         raise NoEvidence('场地没有可比对的地理参照')
+    with memoised(reference):
+        return _register(image, cartography, result, reference, angles=angles, attempts=attempts, established=established,
+                         prepared_hints=prepared_hints)
+
+
+def _register(image, cartography, result, reference, *, angles, attempts, established, prepared_hints):
+    from .registration_hints import prepare_scale_hints, printed_words, scale_bar, without_text
     if prepared_hints is None:
         cartography, result, prepared_hints = prepare_scale_hints(cartography, result)
     ruler, hint = prepared_hints['ruler'], prepared_hints['scaleBar']
@@ -1102,12 +1285,11 @@ def register(image, cartography, result, reference, *, angles=NORTH_UP_DEG, atte
                 # Block centres can select a better position than the
                 # highest-scoring seed. Refit paving at that selected pose,
                 # not just at the earlier coarse poses or the NCC leader.
-                from .network_registration import road_network_register, STREET_TYPES
+                from .network_registration import STREET_TYPES
                 if sum(f['kind'] == 'road' and f.get('tags', {}).get('highway') in STREET_TYPES for f in reference) >= 9:
                     try:
-                        paved = expanded_paths(carto, footprint)
-                        street = road_network_register(carto, reference, exposure_image=image,
-                                                       seeds=[chosen[0].affine], paths=paved, streets_only=True)
+                        paved = street_paving(carto, footprint)
+                        street = road_fit(carto, reference, image, chosen[0].affine, paved, streets_only=True)
                     except ValueError:
                         pass
                     else:

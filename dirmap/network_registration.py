@@ -329,6 +329,11 @@ def boundary_path_matches(matrix, pixels, tree, observed, roads, trusted_ids=())
     nearest_world = np.zeros_like(world)
     reference_ids = np.empty(len(candidates), object)
     along_way = np.zeros(len(candidates))
+    # Only pixels within 12 m of some segment can become eligible, and a
+    # segment farther than that from a pixel can never be its nearest
+    # one then; each segment is therefore measured against the pixels
+    # within its reach only, in the same order as before.
+    segments = []
     for key, line in roads:
         line = np.asarray(line, float)
         start = 0.
@@ -336,14 +341,33 @@ def boundary_path_matches(matrix, pixels, tree, observed, roads, trusted_ids=())
             delta = b-a; squared = float(delta @ delta)
             if squared <= 1e-12:
                 continue
-            fraction = np.clip((world-a) @ delta/squared, 0, 1)
-            projected = a+fraction[:, None]*delta
-            distances = np.sum((world-projected)**2, axis=1)
-            take = distances < best
-            best[take], nearest_world[take], reference_ids[take] = distances[take], projected[take], key
             length = math.sqrt(squared)
-            along_way[take] = start+fraction[take]*length
+            segments.append((key, a, delta, squared, length, start))
             start += length
+    # Balls every 12 m along a segment, of radius sqrt(6**2+12**2) m, cover
+    # all points within 12 m of it.
+    centres, owners = [], []
+    for index, (_, a, delta, _, length, _) in enumerate(segments):
+        count = max(1, math.ceil(length/12))
+        centres.append(a+delta*((np.arange(count)+.5)/count)[:, None])
+        owners.append(np.full(count, index))
+    reach = [[] for _ in segments]
+    if segments:
+        balls = cKDTree(world).query_ball_point(np.vstack(centres), math.hypot(6, 12)+1e-6)
+        for owner, ball in zip(np.concatenate(owners), balls):
+            reach[owner].append(ball)
+    for (key, a, delta, squared, length, start), parts in zip(segments, reach):
+        near = np.unique(np.concatenate([np.asarray(part, int) for part in parts])) if parts else []
+        if not len(near):
+            continue
+        points = world[near]
+        fraction = np.clip((points-a) @ delta/squared, 0, 1)
+        projected = a+fraction[:, None]*delta
+        distances = np.sum((points-projected)**2, axis=1)
+        take = distances < best[near]
+        chosen = near[take]
+        best[chosen], nearest_world[chosen], reference_ids[chosen] = distances[take], projected[take], key
+        along_way[chosen] = start+fraction[take]*length
     eligible = np.flatnonzero(best <= 12**2)
     if not len(eligible):
         return []
