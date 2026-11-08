@@ -1,0 +1,1909 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-08T04:32:29Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "3b61bfe35a1c3e1358b27fc63f9a42ae4088282a5004fb2c7e642c6b6c0aaea6",
+  "verifierSha256": "451848e31af153fd10f24fef47b8dde08964a243826d73c3a70f3ff71d2dd10b",
+  "source": "https://www.stag.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 82,
+      "map": 83,
+      "name": "GPC19-2-Queens Park",
+      "date": "2019-12-01",
+      "imageSize": [
+        3614,
+        2566
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "debec61f15ffa63efd1e040962225ff61c09ea25b7fd477cf4203bbd02bf826a",
+      "worldFile": [
+        [
+          5.401385671223115e-06,
+          2.1429850019466714e-07,
+          -4.2819394965184
+        ],
+        [
+          1.210565439943927e-07,
+          -3.0397529879171426e-06,
+          55.835031304219
+        ]
+      ],
+      "referenceFeatures": 3145,
+      "referenceSha256": "d55cd3bbe9883796d2dd98903ac88cf4f49e4d364d80a40a8545284828b54b66",
+      "elapsedSec": 234.2,
+      "failures": [
+        "自动配准仅找到 6 组稳定地物，需补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "registration": {
+        "affine": [
+          [
+            0.34039614122661466,
+            0.01275936982699168,
+            -630.1813938129517
+          ],
+          [
+            0.01275936982699168,
+            -0.3403961412266146,
+            417.894887495601
+          ]
+        ],
+        "source": [
+          [
+            1864.3037028994363,
+            203.13662613960986
+          ],
+          [
+            1128.3034468211335,
+            712.0049144925315
+          ],
+          [
+            1842.1189976153194,
+            741.4237628040779
+          ],
+          [
+            2555.934548409505,
+            770.8426111156244
+          ],
+          [
+            3281.451993479006,
+            800.7437356289995
+          ],
+          [
+            380.1190202656873,
+            1232.092820918939
+          ],
+          [
+            1105.6364653351877,
+            1261.9939454323141
+          ],
+          [
+            1819.4520161293735,
+            1291.4127937438607
+          ],
+          [
+            2533.2675669235596,
+            1320.831642055407
+          ],
+          [
+            3258.78501199306,
+            1350.7327665687822
+          ],
+          [
+            1082.9694838492421,
+            1811.9829763720968
+          ],
+          [
+            1796.785034643428,
+            1841.4018246836433
+          ],
+          [
+            2510.600585437614,
+            1870.8206729951896
+          ],
+          [
+            2488.415880153497,
+            2409.107809659658
+          ],
+          [
+            2062.0,
+            2029.0
+          ],
+          [
+            1901.0,
+            2043.0
+          ],
+          [
+            1903.0,
+            2067.0
+          ],
+          [
+            1974.0,
+            2066.0
+          ],
+          [
+            1974.0,
+            2081.0
+          ],
+          [
+            1905.0,
+            2094.0
+          ],
+          [
+            1974.0,
+            2089.0
+          ],
+          [
+            1975.0,
+            2108.0
+          ],
+          [
+            1907.0,
+            2120.0
+          ],
+          [
+            1978.0,
+            2122.0
+          ],
+          [
+            1911.0,
+            2168.0
+          ],
+          [
+            1982.0,
+            2170.0
+          ],
+          [
+            1913.0,
+            2184.0
+          ],
+          [
+            1982.0,
+            2179.0
+          ],
+          [
+            1985.0,
+            2194.0
+          ],
+          [
+            1914.0,
+            2204.0
+          ],
+          [
+            1916.0,
+            2221.0
+          ],
+          [
+            2089.0,
+            2152.0
+          ],
+          [
+            2086.0,
+            2122.0
+          ],
+          [
+            2078.0,
+            2189.0
+          ],
+          [
+            2005.0,
+            2194.0
+          ],
+          [
+            2005.0,
+            2177.0
+          ],
+          [
+            2074.0,
+            2171.0
+          ],
+          [
+            2004.0,
+            2169.0
+          ],
+          [
+            1998.0,
+            2117.0
+          ],
+          [
+            2069.0,
+            2107.0
+          ],
+          [
+            1997.0,
+            2104.0
+          ],
+          [
+            1997.0,
+            2087.0
+          ],
+          [
+            2067.0,
+            2081.0
+          ],
+          [
+            1994.0,
+            2069.0
+          ],
+          [
+            2063.0,
+            2054.0
+          ],
+          [
+            2135.0,
+            2269.0
+          ],
+          [
+            2107.0,
+            2271.0
+          ],
+          [
+            2112.0,
+            2344.0
+          ],
+          [
+            2140.0,
+            2342.0
+          ]
+        ],
+        "target": [
+          [
+            6.492586672087755,
+            372.7382233496126
+          ],
+          [
+            -237.77338813401758,
+            190.33157668028232
+          ],
+          [
+            6.27293108772656,
+            188.63502882839109
+          ],
+          [
+            248.99303524223814,
+            187.66759129541205
+          ],
+          [
+            496.2453935744457,
+            188.20771531064793
+          ],
+          [
+            -485.3247822673682,
+            4.0539629904020735
+          ],
+          [
+            -237.39151979451677,
+            2.7690895917608684
+          ],
+          [
+            6.133139460450831,
+            1.3767645375456776
+          ],
+          [
+            248.94874566040846,
+            -0.07988947193628781
+          ],
+          [
+            496.19239109362525,
+            -0.8440214470648908
+          ],
+          [
+            -237.63202491408202,
+            -184.35617339094276
+          ],
+          [
+            5.686377302065429,
+            -186.21762678568157
+          ],
+          [
+            248.83246396865692,
+            -187.4222840839112
+          ],
+          [
+            247.90790966793594,
+            -370.8378938178367
+          ],
+          [
+            99.78319549560547,
+            -245.1178741455078
+          ],
+          [
+            43.491939544677734,
+            -251.76480102539062
+          ],
+          [
+            44.720157623291016,
+            -261.80755615234375
+          ],
+          [
+            68.43856048583984,
+            -257.9775085449219
+          ],
+          [
+            69.07146453857422,
+            -263.19927978515625
+          ],
+          [
+            45.772918701171875,
+            -270.8927917480469
+          ],
+          [
+            69.64171600341797,
+            -268.1761474609375
+          ],
+          [
+            70.25582122802734,
+            -272.7521667480469
+          ],
+          [
+            47.48365020751953,
+            -280.6126708984375
+          ],
+          [
+            71.13938903808594,
+            -277.80694580078125
+          ],
+          [
+            49.44504165649414,
+            -297.54730224609375
+          ],
+          [
+            73.05064392089844,
+            -294.7972412109375
+          ],
+          [
+            51.35629653930664,
+            -302.3682556152344
+          ],
+          [
+            73.72115325927734,
+            -299.8297424316406
+          ],
+          [
+            74.17233276367188,
+            -303.1587829589844
+          ],
+          [
+            51.744815826416016,
+            -305.730712890625
+          ],
+          [
+            52.653446197509766,
+            -313.6134948730469
+          ],
+          [
+            104.98432159423828,
+            -289.4195861816406
+          ],
+          [
+            103.72476959228516,
+            -277.5285949707031
+          ],
+          [
+            106.16240692138672,
+            -299.4845886230469
+          ],
+          [
+            83.15837860107422,
+            -301.44415283203125
+          ],
+          [
+            82.50667572021484,
+            -296.0442199707031
+          ],
+          [
+            105.36030578613281,
+            -293.5057067871094
+          ],
+          [
+            81.20325469970703,
+            -292.2586975097656
+          ],
+          [
+            79.34839630126953,
+            -276.2815856933594
+          ],
+          [
+            103.13572692871094,
+            -273.5760803222656
+          ],
+          [
+            78.69668579101562,
+            -271.3270263671875
+          ],
+          [
+            77.75045776367188,
+            -266.7510070800781
+          ],
+          [
+            101.97017669677734,
+            -263.98980712890625
+          ],
+          [
+            77.53113555908203,
+            -261.7407531738281
+          ],
+          [
+            100.9424819946289,
+            -254.89341735839844
+          ],
+          [
+            128.4833984375,
+            -328.22113037109375
+          ],
+          [
+            118.031005859375,
+            -328.96710205078125
+          ],
+          [
+            119.96733093261719,
+            -355.6661376953125
+          ],
+          [
+            130.4134521484375,
+            -354.9090270996094
+          ]
+        ],
+        "triangles": [
+          [
+            3,
+            0,
+            4
+          ],
+          [
+            6,
+            10,
+            5
+          ],
+          [
+            1,
+            6,
+            5
+          ],
+          [
+            3,
+            2,
+            0
+          ],
+          [
+            2,
+            1,
+            0
+          ],
+          [
+            30,
+            47,
+            10
+          ],
+          [
+            9,
+            12,
+            8
+          ],
+          [
+            12,
+            9,
+            13
+          ],
+          [
+            45,
+            12,
+            13
+          ],
+          [
+            11,
+            14,
+            15
+          ],
+          [
+            12,
+            14,
+            11
+          ],
+          [
+            14,
+            12,
+            32
+          ],
+          [
+            11,
+            22,
+            10
+          ],
+          [
+            47,
+            48,
+            13
+          ],
+          [
+            48,
+            45,
+            13
+          ],
+          [
+            46,
+            48,
+            47
+          ],
+          [
+            48,
+            46,
+            45
+          ],
+          [
+            22,
+            24,
+            10
+          ],
+          [
+            19,
+            22,
+            11
+          ],
+          [
+            46,
+            33,
+            45
+          ],
+          [
+            34,
+            33,
+            46
+          ],
+          [
+            29,
+            30,
+            10
+          ],
+          [
+            24,
+            29,
+            10
+          ],
+          [
+            16,
+            11,
+            15
+          ],
+          [
+            16,
+            19,
+            11
+          ],
+          [
+            29,
+            28,
+            30
+          ],
+          [
+            30,
+            28,
+            47
+          ],
+          [
+            28,
+            46,
+            47
+          ],
+          [
+            28,
+            34,
+            46
+          ],
+          [
+            33,
+            31,
+            45
+          ],
+          [
+            12,
+            31,
+            32
+          ],
+          [
+            31,
+            12,
+            45
+          ],
+          [
+            39,
+            42,
+            32
+          ],
+          [
+            31,
+            39,
+            32
+          ],
+          [
+            26,
+            29,
+            24
+          ],
+          [
+            36,
+            33,
+            34
+          ],
+          [
+            36,
+            31,
+            33
+          ],
+          [
+            36,
+            39,
+            31
+          ],
+          [
+            16,
+            18,
+            19
+          ],
+          [
+            44,
+            43,
+            14
+          ],
+          [
+            44,
+            14,
+            32
+          ],
+          [
+            42,
+            44,
+            32
+          ],
+          [
+            19,
+            21,
+            22
+          ],
+          [
+            17,
+            16,
+            15
+          ],
+          [
+            17,
+            18,
+            16
+          ],
+          [
+            18,
+            17,
+            43
+          ],
+          [
+            14,
+            17,
+            15
+          ],
+          [
+            43,
+            17,
+            14
+          ],
+          [
+            18,
+            20,
+            19
+          ],
+          [
+            20,
+            21,
+            19
+          ],
+          [
+            23,
+            24,
+            22
+          ],
+          [
+            21,
+            23,
+            22
+          ],
+          [
+            23,
+            25,
+            24
+          ],
+          [
+            25,
+            26,
+            24
+          ],
+          [
+            41,
+            18,
+            43
+          ],
+          [
+            41,
+            20,
+            18
+          ],
+          [
+            41,
+            44,
+            42
+          ],
+          [
+            44,
+            41,
+            43
+          ],
+          [
+            25,
+            27,
+            26
+          ],
+          [
+            27,
+            28,
+            29
+          ],
+          [
+            26,
+            27,
+            29
+          ],
+          [
+            38,
+            23,
+            21
+          ],
+          [
+            35,
+            27,
+            25
+          ],
+          [
+            28,
+            35,
+            34
+          ],
+          [
+            27,
+            35,
+            28
+          ],
+          [
+            35,
+            36,
+            34
+          ],
+          [
+            38,
+            40,
+            39
+          ],
+          [
+            39,
+            40,
+            42
+          ],
+          [
+            40,
+            41,
+            42
+          ],
+          [
+            40,
+            38,
+            21
+          ],
+          [
+            20,
+            40,
+            21
+          ],
+          [
+            41,
+            40,
+            20
+          ],
+          [
+            37,
+            35,
+            25
+          ],
+          [
+            37,
+            25,
+            23
+          ],
+          [
+            38,
+            37,
+            23
+          ],
+          [
+            35,
+            37,
+            36
+          ],
+          [
+            36,
+            37,
+            39
+          ],
+          [
+            37,
+            38,
+            39
+          ],
+          [
+            3,
+            9,
+            8
+          ],
+          [
+            9,
+            3,
+            4
+          ],
+          [
+            6,
+            11,
+            10
+          ],
+          [
+            11,
+            6,
+            7
+          ],
+          [
+            2,
+            3,
+            8
+          ],
+          [
+            2,
+            8,
+            7
+          ],
+          [
+            6,
+            2,
+            7
+          ],
+          [
+            2,
+            6,
+            1
+          ],
+          [
+            12,
+            11,
+            7
+          ],
+          [
+            8,
+            12,
+            7
+          ]
+        ],
+        "model": "regularized_piecewise_affine",
+        "foldedTriangles": 0
+      },
+      "validationLandmarks": [
+        {
+          "pixel": [
+            1864.3037028994363,
+            203.13662613960986
+          ],
+          "local": [
+            6.791273315446006,
+            373.08017119151987
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-0-2",
+          "correlation": 0.448,
+          "purpose": "fit",
+          "errorM": 0.59,
+          "leaveOneOutErrorM": 0.69
+        },
+        {
+          "pixel": [
+            1128.3034468211335,
+            712.0049144925315
+          ],
+          "local": [
+            -241.5081963939503,
+            191.45033493024744
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-1-1",
+          "correlation": 0.427,
+          "purpose": "fit",
+          "errorM": 4.73,
+          "leaveOneOutErrorM": 5.53
+        },
+        {
+          "pixel": [
+            1842.1189976153194,
+            741.4237628040779
+          ],
+          "local": [
+            7.508409221665488,
+            185.65102376920618
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-1-2",
+          "correlation": 0.844,
+          "purpose": "fit",
+          "errorM": 3.57,
+          "leaveOneOutErrorM": 3.93
+        },
+        {
+          "pixel": [
+            2555.934548409505,
+            770.8426111156244
+          ],
+          "local": [
+            246.11138339807235,
+            184.90518250448144
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-1-3",
+          "correlation": 0.68,
+          "purpose": "fit",
+          "errorM": 4.8,
+          "leaveOneOutErrorM": 5.41
+        },
+        {
+          "pixel": [
+            3281.451993479006,
+            800.7437356289995
+          ],
+          "local": [
+            494.74264879991256,
+            193.93817939741052
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-1-4",
+          "correlation": 0.599,
+          "purpose": "fit",
+          "errorM": 7.12,
+          "leaveOneOutErrorM": 9.0
+        },
+        {
+          "pixel": [
+            380.1190202656873,
+            1232.092820918939
+          ],
+          "local": [
+            -487.03904130588325,
+            5.035188102549682
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-0",
+          "correlation": 0.465,
+          "purpose": "fit",
+          "errorM": 2.6,
+          "leaveOneOutErrorM": 3.48
+        },
+        {
+          "pixel": [
+            1105.6364653351877,
+            1261.9939454323141
+          ],
+          "local": [
+            -235.87645153234752,
+            4.259203338450561
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-1",
+          "correlation": 0.654,
+          "purpose": "fit",
+          "errorM": 2.6,
+          "leaveOneOutErrorM": 2.98
+        },
+        {
+          "pixel": [
+            1819.4520161293735,
+            1291.4127937438607
+          ],
+          "local": [
+            7.593966205613242,
+            2.5616423128310544
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-2",
+          "correlation": 0.518,
+          "purpose": "fit",
+          "errorM": 2.22,
+          "leaveOneOutErrorM": 2.4
+        },
+        {
+          "pixel": [
+            2533.2675669235596,
+            1320.831642055407
+          ],
+          "local": [
+            248.42676850129806,
+            -2.206584310704102
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-3",
+          "correlation": 0.892,
+          "purpose": "fit",
+          "errorM": 2.87,
+          "leaveOneOutErrorM": 3.17
+        },
+        {
+          "pixel": [
+            3258.78501199306,
+            1350.7327665687822
+          ],
+          "local": [
+            496.14977778960906,
+            -3.221439695530762
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-4",
+          "correlation": 0.692,
+          "purpose": "fit",
+          "errorM": 2.92,
+          "leaveOneOutErrorM": 3.6
+        },
+        {
+          "pixel": [
+            1082.9694838492421,
+            1811.9829763720968
+          ],
+          "local": [
+            -234.58938292692454,
+            -180.60171482580267
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-3-1",
+          "correlation": 0.695,
+          "purpose": "fit",
+          "errorM": 5.89,
+          "leaveOneOutErrorM": 6.94
+        },
+        {
+          "pixel": [
+            1796.785034643428,
+            1841.4018246836433
+          ],
+          "local": [
+            7.628898103730307,
+            -187.90489176529013
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-3-2",
+          "correlation": 0.71,
+          "purpose": "fit",
+          "errorM": 3.31,
+          "leaveOneOutErrorM": 3.67
+        },
+        {
+          "pixel": [
+            2510.600585437614,
+            1870.8206729951896
+          ],
+          "local": [
+            250.84111424257003,
+            -188.35412917154395
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-3-3",
+          "correlation": 0.842,
+          "purpose": "fit",
+          "errorM": 2.94,
+          "leaveOneOutErrorM": 3.34
+        },
+        {
+          "pixel": [
+            2488.415880153497,
+            2409.107809659658
+          ],
+          "local": [
+            246.80209120084487,
+            -372.57010219114386
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-4-3",
+          "correlation": 0.471,
+          "purpose": "fit",
+          "errorM": 2.31,
+          "leaveOneOutErrorM": 2.83
+        },
+        {
+          "pixel": [
+            2062.0,
+            2029.0
+          ],
+          "local": [
+            99.78319549560547,
+            -245.1178741455078
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.559,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1901.0,
+            2043.0
+          ],
+          "local": [
+            43.491939544677734,
+            -251.76480102539062
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.599,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1903.0,
+            2067.0
+          ],
+          "local": [
+            44.720157623291016,
+            -261.80755615234375
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 0.847,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1974.0,
+            2066.0
+          ],
+          "local": [
+            68.43856048583984,
+            -257.9775085449219
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.222,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1974.0,
+            2081.0
+          ],
+          "local": [
+            69.07146453857422,
+            -263.19927978515625
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.217,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1905.0,
+            2094.0
+          ],
+          "local": [
+            45.772918701171875,
+            -270.8927917480469
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 0.839,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1974.0,
+            2089.0
+          ],
+          "local": [
+            69.64171600341797,
+            -268.1761474609375
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.239,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1975.0,
+            2108.0
+          ],
+          "local": [
+            70.25582122802734,
+            -272.7521667480469
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.122,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1907.0,
+            2120.0
+          ],
+          "local": [
+            47.48365020751953,
+            -280.6126708984375
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.905,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1978.0,
+            2122.0
+          ],
+          "local": [
+            71.13938903808594,
+            -277.80694580078125
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.671,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1911.0,
+            2168.0
+          ],
+          "local": [
+            49.44504165649414,
+            -297.54730224609375
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.358,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1982.0,
+            2170.0
+          ],
+          "local": [
+            73.05064392089844,
+            -294.7972412109375
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.11,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1913.0,
+            2184.0
+          ],
+          "local": [
+            51.35629653930664,
+            -302.3682556152344
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.788,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1982.0,
+            2179.0
+          ],
+          "local": [
+            73.72115325927734,
+            -299.8297424316406
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.93,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1985.0,
+            2194.0
+          ],
+          "local": [
+            74.17233276367188,
+            -303.1587829589844
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 0.809,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1914.0,
+            2204.0
+          ],
+          "local": [
+            51.744815826416016,
+            -305.730712890625
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 3.163,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1916.0,
+            2221.0
+          ],
+          "local": [
+            52.653446197509766,
+            -313.6134948730469
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.298,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2089.0,
+            2152.0
+          ],
+          "local": [
+            104.98432159423828,
+            -289.4195861816406
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 3.673,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2086.0,
+            2122.0
+          ],
+          "local": [
+            103.72476959228516,
+            -277.5285949707031
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 3.248,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2078.0,
+            2189.0
+          ],
+          "local": [
+            106.16240692138672,
+            -299.4845886230469
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.633,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2005.0,
+            2194.0
+          ],
+          "local": [
+            83.15837860107422,
+            -301.44415283203125
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 3.431,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2005.0,
+            2177.0
+          ],
+          "local": [
+            82.50667572021484,
+            -296.0442199707031
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.855,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2074.0,
+            2171.0
+          ],
+          "local": [
+            105.36030578613281,
+            -293.5057067871094
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.179,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2004.0,
+            2169.0
+          ],
+          "local": [
+            81.20325469970703,
+            -292.2586975097656
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 3.026,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1998.0,
+            2117.0
+          ],
+          "local": [
+            79.34839630126953,
+            -276.2815856933594
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.587,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2069.0,
+            2107.0
+          ],
+          "local": [
+            103.13572692871094,
+            -273.5760803222656
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.251,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1997.0,
+            2104.0
+          ],
+          "local": [
+            78.69668579101562,
+            -271.3270263671875
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.709,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1997.0,
+            2087.0
+          ],
+          "local": [
+            77.75045776367188,
+            -266.7510070800781
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 1.557,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2067.0,
+            2081.0
+          ],
+          "local": [
+            101.97017669677734,
+            -263.98980712890625
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.003,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1994.0,
+            2069.0
+          ],
+          "local": [
+            77.53113555908203,
+            -261.7407531738281
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.685,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2063.0,
+            2054.0
+          ],
+          "local": [
+            100.9424819946289,
+            -254.89341735839844
+          ],
+          "referenceId": "59614107",
+          "kind": "building_corner",
+          "outlineIoU": 0.595,
+          "errorM": 2.68,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2135.0,
+            2269.0
+          ],
+          "local": [
+            128.4833984375,
+            -328.22113037109375
+          ],
+          "referenceId": "1022317301",
+          "kind": "building_corner",
+          "outlineIoU": 0.643,
+          "errorM": 3.131,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2107.0,
+            2271.0
+          ],
+          "local": [
+            118.031005859375,
+            -328.96710205078125
+          ],
+          "referenceId": "1022317301",
+          "kind": "building_corner",
+          "outlineIoU": 0.643,
+          "errorM": 2.141,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2112.0,
+            2344.0
+          ],
+          "local": [
+            119.96733093261719,
+            -355.6661376953125
+          ],
+          "referenceId": "1022317301",
+          "kind": "building_corner",
+          "outlineIoU": 0.643,
+          "errorM": 2.936,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            2140.0,
+            2342.0
+          ],
+          "local": [
+            130.4134521484375,
+            -354.9090270996094
+          ],
+          "referenceId": "1022317301",
+          "kind": "building_corner",
+          "outlineIoU": 0.643,
+          "errorM": 3.68,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        }
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 7.89,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4213,
+            "metresPerPixel": 0.34888,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.3214,
+            "metresPerPixel": 0.70677,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.3104,
+            "metresPerPixel": 0.65345,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.3,
+            "metresPerPixel": 0.62832,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2962,
+            "metresPerPixel": 0.60415,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2751,
+            "metresPerPixel": 0.121,
+            "rotationDeg": -7.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "acceptance": {
+        "method": "global_search_layer_correlation",
+        "p95ErrorM": 7.89,
+        "heldOutP95ErrorM": 7.66,
+        "medianErrorM": 3.54,
+        "extrapolationSpreadM": 1.89,
+        "anisotropyPercent": 0.0,
+        "fitCount": 49,
+        "fitObjectCount": 14,
+        "validationCount": 14,
+        "validationObjectCount": 14,
+        "cellM": 8.0,
+        "blockHullFraction": 0.476,
+        "poseSource": "block_similarity",
+        "polished": true,
+        "validationInsideHull": 14,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "small_gain",
+          "pairs": {
+            "ink": [
+              11014,
+              49104
+            ],
+            "paving": [
+              16792,
+              27071
+            ],
+            "roof": [
+              1834,
+              22092
+            ],
+            "water": [
+              9190,
+              489
+            ]
+          },
+          "scoreBeforeM": 3.179,
+          "scoreAfterM": 3.129,
+          "gainPercent": 1.58,
+          "moveP95M": 2.3,
+          "moveMaxM": 2.79,
+          "scalePercent": -0.165,
+          "rotationDeg": -0.137,
+          "correction": [
+            [
+              0.99834707,
+              0.00238858,
+              0.88710573
+            ],
+            [
+              -0.00238858,
+              0.99834707,
+              -0.3311531
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.4213,
+          "layers": {
+            "building": 0.1159,
+            "path": 0.5154
+          },
+          "layerWeights": {
+            "building": 0.236,
+            "path": 0.764
+          },
+          "margin": 0.0999
+        },
+        "poseLayerCount": 2
+      },
+      "truthErrorM": {
+        "all": {
+          "median": 4.77,
+          "p95": 6.96,
+          "max": 7.72
+        },
+        "insideHull": {
+          "median": 4.58,
+          "p95": 6.12,
+          "max": 6.61
+        },
+        "insideFraction": 0.464,
+        "wholeImage": {
+          "median": 4.77,
+          "p95": 6.96,
+          "max": 7.72
+        },
+        "evaluationSamples": 576
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4213,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 7.66,
+          "extrapolationSpreadM": 1.89,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.340396,
+              0.012759,
+              -630.181394
+            ],
+            [
+              0.012759,
+              -0.340396,
+              417.894887
+            ]
+          ],
+          "truthMedianM": 4.89
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4209,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 7.64,
+          "p95ErrorM": 3.42,
+          "extrapolationSpreadM": 1.58,
+          "layerCount": 2,
+          "anisotropyPercent": 1.18,
+          "affine": [
+            [
+              0.33716,
+              0.014628,
+              -625.731329
+            ],
+            [
+              0.010949,
+              -0.338675,
+              418.374473
+            ]
+          ],
+          "truthMedianM": 4.35
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4209,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 7.64,
+          "p95ErrorM": 3.42,
+          "extrapolationSpreadM": 1.58,
+          "layerCount": 2,
+          "anisotropyPercent": 1.18,
+          "affine": [
+            [
+              0.33716,
+              0.014628,
+              -625.731329
+            ],
+            [
+              0.010949,
+              -0.338675,
+              418.374473
+            ]
+          ],
+          "truthMedianM": 4.35
+        }
+      ],
+      "poseSupport": {
+        "value": 0.4213,
+        "layers": {
+          "building": 0.1159,
+          "path": 0.5154
+        },
+        "layerWeights": {
+          "building": 0.236,
+          "path": 0.764
+        },
+        "margin": 0.0999
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

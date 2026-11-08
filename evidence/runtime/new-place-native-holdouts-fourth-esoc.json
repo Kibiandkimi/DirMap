@@ -1,0 +1,283 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-08T06:33:24Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "3b61bfe35a1c3e1358b27fc63f9a42ae4088282a5004fb2c7e642c6b6c0aaea6",
+  "verifierSha256": "451848e31af153fd10f24fef47b8dde08964a243826d73c3a70f3ff71d2dd10b",
+  "source": "https://www.esoc.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 82,
+      "map": 69,
+      "name": "Corstorphine Hill - SoSOL2",
+      "date": "2020-02-23",
+      "imageSize": [
+        3614,
+        5688
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "c85537a6ec6cfcb381b923eb4c5d9c7abe55ff37f96d06fd55dededbb585183c",
+      "worldFile": [
+        [
+          6.776243644410691e-06,
+          2.4159387649437556e-07,
+          -3.2829629877515
+        ],
+        [
+          1.362664994485247e-07,
+          -3.8008383298176275e-06,
+          55.963387144077
+        ]
+      ],
+      "referenceFeatures": 12684,
+      "referenceSha256": "fd5834a4492d60a6f479136ce264cefb459cda698e740aa04ed91075dcc40a5f",
+      "elapsedSec": 731.7,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "候选配准与参照的吻合度过低（0.15），请补充同名点"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.2276,
+          "method": "global_search_road_network",
+          "p95ErrorM": 17.33,
+          "acceptance": {
+            "method": "global_search_road_network",
+            "p95ErrorM": 17.33,
+            "medianErrorM": 5.42,
+            "extrapolationSpreadM": 1.66,
+            "fitCount": 52,
+            "fitObjectCount": 9,
+            "validationCount": 6,
+            "validationObjectCount": 2,
+            "validationWays": [
+              {
+                "referenceId": "112955476",
+                "matched": false,
+                "sampleCount": 6,
+                "medianNearestPathM": 17.28,
+                "p95NearestPathM": 26.05,
+                "maxNearestPathM": 27.99
+              },
+              {
+                "referenceId": "1149629563",
+                "matched": false,
+                "sampleCount": 16,
+                "medianNearestPathM": 20.6,
+                "p95NearestPathM": 62.02,
+                "maxNearestPathM": 71.0
+              },
+              {
+                "referenceId": "25983334",
+                "matched": false,
+                "sampleCount": 10,
+                "medianNearestPathM": 12.19,
+                "p95NearestPathM": 52.13,
+                "maxNearestPathM": 57.71
+              },
+              {
+                "referenceId": "25984299",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 50.08,
+                "p95NearestPathM": 89.58,
+                "maxNearestPathM": 91.38
+              },
+              {
+                "referenceId": "358641370",
+                "matched": false,
+                "sampleCount": 8,
+                "medianNearestPathM": 60.3,
+                "p95NearestPathM": 67.5,
+                "maxNearestPathM": 68.75
+              },
+              {
+                "referenceId": "42557385",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 36.05,
+                "p95NearestPathM": 63.87,
+                "maxNearestPathM": 67.21
+              },
+              {
+                "referenceId": "572697323",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 31.09,
+                "p95NearestPathM": 37.49,
+                "maxNearestPathM": 38.2
+              },
+              {
+                "referenceId": "572697421",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 71.34,
+                "p95NearestPathM": 85.21,
+                "maxNearestPathM": 86.85
+              },
+              {
+                "referenceId": "6138709",
+                "matched": false,
+                "sampleCount": 27,
+                "medianNearestPathM": 150.28,
+                "p95NearestPathM": 210.48,
+                "maxNearestPathM": 222.88
+              },
+              {
+                "referenceId": "6138733",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 141.63,
+                "p95NearestPathM": 144.64,
+                "maxNearestPathM": 144.96
+              },
+              {
+                "referenceId": "6138810",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 37.74,
+                "p95NearestPathM": 51.35,
+                "maxNearestPathM": 53.02
+              },
+              {
+                "referenceId": "62201979",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 16.98,
+                "p95NearestPathM": 22.01,
+                "maxNearestPathM": 22.55
+              },
+              {
+                "referenceId": "817797202",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 38.94,
+                "p95NearestPathM": 64.79,
+                "maxNearestPathM": 66.37
+              },
+              {
+                "referenceId": "825199426",
+                "matched": false,
+                "sampleCount": 6,
+                "medianNearestPathM": 106.79,
+                "p95NearestPathM": 126.65,
+                "maxNearestPathM": 128.1
+              },
+              {
+                "referenceId": "825209765",
+                "matched": true,
+                "sampleCount": 2,
+                "medianNearestPathM": 7.36,
+                "p95NearestPathM": 11.53,
+                "maxNearestPathM": 12.0
+              },
+              {
+                "referenceId": "825209777",
+                "matched": true,
+                "sampleCount": 4,
+                "medianNearestPathM": 5.41,
+                "p95NearestPathM": 17.27,
+                "maxNearestPathM": 19.1
+              },
+              {
+                "referenceId": "825209782",
+                "matched": false,
+                "sampleCount": 7,
+                "medianNearestPathM": 30.67,
+                "p95NearestPathM": 33.87,
+                "maxNearestPathM": 34.79
+              },
+              {
+                "referenceId": "825449264",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 28.53,
+                "p95NearestPathM": 33.58,
+                "maxNearestPathM": 34.15
+              },
+              {
+                "referenceId": "825449278",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 25.03,
+                "p95NearestPathM": 29.67,
+                "maxNearestPathM": 30.19
+              },
+              {
+                "referenceId": "825449281",
+                "matched": false,
+                "sampleCount": 8,
+                "medianNearestPathM": 18.02,
+                "p95NearestPathM": 32.59,
+                "maxNearestPathM": 34.14
+              },
+              {
+                "referenceId": "922881340",
+                "matched": false,
+                "sampleCount": 6,
+                "medianNearestPathM": 44.16,
+                "p95NearestPathM": 59.76,
+                "maxNearestPathM": 60.33
+              }
+            ],
+            "validationOmittedWayIds": [
+              "112955476",
+              "1149629563",
+              "25983334",
+              "25984299",
+              "358641370",
+              "42557385",
+              "572697323",
+              "572697421",
+              "6138709",
+              "6138733",
+              "6138810",
+              "62201979",
+              "817797202",
+              "825199426",
+              "825209782",
+              "825449264",
+              "825449278",
+              "825449281",
+              "922881340"
+            ],
+            "validationTotalWays": 21,
+            "validationInsideHull": 0,
+            "orientedPathSupport": 0.039,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "affine": [
+            [
+              -0.115714,
+              -0.203955,
+              892.098863
+            ],
+            [
+              -0.203955,
+              0.115714,
+              311.726983
+            ]
+          ],
+          "truthErrorM": {
+            "median": 1019.92,
+            "p95": 1719.69,
+            "max": 2051.24
+          }
+        }
+      ],
+      "correctPlaceOffered": null
+    }
+  ],
+  "summary": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}
