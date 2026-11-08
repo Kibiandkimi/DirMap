@@ -417,11 +417,17 @@ def search(layers, footprint, reference, scales, angles, keep=6, coarse=16, coar
     # A local search window can omit reference ink beyond its edge. Its
     # peak is a proposal score, not the common whole-sheet comparison:
     # using it as a rival's final score can veto a correct, measured fit.
+    # Proposals are ranked as the sweep's templates compare them, about 128
+    # cells across the sheet at every scale: on a fixed ground cell a pose
+    # shrinking the sheet to a small window keeps few cells, whose noise can
+    # outrank the true place. Each carries the common whole-sheet support
+    # (`score`) by which every candidate is then judged.
     candidates = [{'score': round(support(layers, footprint, reference, matrix)[0], 4),
+                   'proposal': round(support(layers, footprint, reference, matrix, ground_cell=False)[0], 4),
                    'metresPerPixel': round(float(scale), 5), 'rotationDeg': round(float(angle), 2),
                    'matrix': matrix, 'channels': sorted(channels)}
                   for _, scale, angle, matrix in _distinct(refined, footprint, max(keep, coarse))]
-    return sorted(candidates, key=lambda candidate: -candidate['score'])[:keep]
+    return sorted(candidates, key=lambda candidate: -candidate['proposal'])[:keep]
 
 
 def scale_range(footprint, controls, reference, hint=None):
@@ -541,20 +547,23 @@ def support_cell(ground, cells=128):
     return min(_cell(ground, cells), max(SUPPORT_CELL_M*128/cells, _cell(ground, 6*cells)))
 
 
-def support(layers, footprint, reference, matrix, *, cells=128):
+def support(layers, footprint, reference, matrix, *, cells=128, ground_cell=True):
     """Evidence-weighted agreement of all sheet layers at one final pose.
 
     The same yardstick for every candidate, whichever seed and fit produced
-    it (see `support_cell`; `cells` = 256 halves the cell).
+    it (see `support_cell`; `cells` = 256 halves the cell). Without
+    `ground_cell`, about `cells` cells across the sheet at every scale, as
+    the search ranks the poses it proposes.
     """
     matrix = np.asarray(matrix, float)
     memo = _memo(reference)
-    key = ('support', id(layers), np.asarray(footprint, float).tobytes(), matrix.tobytes(), cells)
+    key = ('support', id(layers), np.asarray(footprint, float).tobytes(), matrix.tobytes(), cells, ground_cell)
     if memo is not None and key in memo.values and memo.values[key][0] is layers:
         value, values = memo.values[key][1]
         return value, dict(values)
     ground = math.sqrt(abs(np.linalg.det(matrix[:, :2])))*float(np.hypot(*np.ptp(footprint, axis=0)))
-    values, weights = pose_support(layers, footprint, reference, matrix, support_cell(ground, cells), weighted=True)
+    cell = support_cell(ground, cells) if ground_cell else _cell(ground, cells)
+    values, weights = pose_support(layers, footprint, reference, matrix, cell, weighted=True)
     result = (0., {}) if not values else (sum(values[k]*weights[k] for k in values)/sum(weights[k] for k in values), values)
     if memo is not None:
         memo.values[key] = (layers, result)
