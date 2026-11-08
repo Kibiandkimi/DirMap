@@ -24,7 +24,7 @@ export interface ContourReport { assetId: string; version: number; revision: num
   contours: (MapContour & { calibrated: boolean; automaticallyUsed?: boolean; suggestedHeightM: number | null; suggestionSpreadM: number | null;
     referenceCoverage: number; referenceSamples: number })[] }
 /** A distinct place a refused registration still fitted, for the teacher to choose. */
-export interface OfferedPlace { id: string; support: number | null; method: string; p95ErrorM: number | null; thinValidation: boolean; extent: number[]; preview: string }
+export interface OfferedPlace { id: string; support: number | null; method: string; p95ErrorM: number | null; thinValidation: boolean; approximate?: boolean; extent: number[]; preview: string }
 export interface MapState {
   assetId: string; processed?: boolean; name: string; width: number; height: number; version: number;
   sourceHash: string;

@@ -92,7 +92,7 @@ def load_case(event, cache, *, native_resolution=False):
             'world': transform, 'metresPerSourcePixel': m_per_px, 'bbox': bbox}
 
 
-ACCEPTANCE_KEYS = ('method', 'p95ErrorM', 'heldOutP95ErrorM', 'medianErrorM', 'extrapolationSpreadM', 'anisotropyPercent', 'thinValidation',
+ACCEPTANCE_KEYS = ('method', 'approximate', 'p95ErrorM', 'heldOutP95ErrorM', 'medianErrorM', 'extrapolationSpreadM', 'anisotropyPercent', 'thinValidation',
                    'fitCount', 'fitObjectCount', 'validationCount', 'validationObjectCount',
                    # block layer correlation
                    'cellM', 'blockHullFraction', 'poseSource', 'fineBlockRefinement', 'polished',

@@ -345,14 +345,22 @@ def pose_support(layers, footprint, reference, matrix, cell=4., weighted=False):
     return (result, weights) if weighted else result
 
 
-def _distinct(found, footprint, keep, separation=40.):
-    """Best poses whose sheet outlines differ by a tenth of the sheet."""
+def _distinct(found, footprint, keep, separation=40., scale_window=None):
+    """Best poses whose sheet outlines differ by a tenth of the sheet.
+
+    With `scale_window`, poses whose scales differ by more than that factor
+    are distinct even where their outlines lie close: refining one within
+    the window can never reach the other's scale.
+    """
     found = sorted(found, key=lambda item: -item[0])
     diagonal = float(np.hypot(*np.ptp(footprint, axis=0)))
     distinct = []
+    within = (lambda a, b: True) if scale_window is None else (
+        lambda a, b: abs(math.log(a/b)) <= math.log(scale_window)+1e-9)
     for item in found:
         limit = max(separation, .1*diagonal*item[1])
-        if any(np.median(np.linalg.norm(affine_points(item[3], footprint)-affine_points(other[3], footprint), axis=1)) < limit
+        if any(within(item[1], other[1])
+               and np.median(np.linalg.norm(affine_points(item[3], footprint)-affine_points(other[3], footprint), axis=1)) < limit
                for other in distinct):
             continue
         distinct.append(item)
@@ -393,7 +401,10 @@ def search(layers, footprint, reference, scales, angles, keep=6, coarse=16, coar
     if not sweep:
         raise NoEvidence('参照与原图没有共同的建筑、水体或道路可供搜索')
     refined = []
-    for value, scale, angle, matrix in _distinct(sweep, footprint, coarse):
+    # A near-true sweep peak can lie within a tenth of the sheet of a
+    # stronger peak at a quite different scale; merged into it, it would
+    # never be refined at its own scale.
+    for value, scale, angle, matrix in _distinct(sweep, footprint, coarse, scale_window=SCALE_STEP**2):
         cell = _cell(scale*diagonal, 128)
         corners = affine_points(matrix, footprint)
         margin = max(120., 15*cell)
@@ -1028,17 +1039,20 @@ class AmbiguousPlace(ValueError):
         self.places = places
 
 
-def distinct_places(attempts, evidence, reference, limit=OFFERED_PLACES):
+def distinct_places(attempts, evidence, reference, limit=OFFERED_PLACES, checked=()):
     """The best-supported distinct positions among fits, for a teacher's choice.
 
     Each fit counts under the image evidence that supports it best, since a
     retry may have found it with path ink the plain palette lacks. Within a
     position the most precise fit with a full held-out check represents it.
+    Positions of `checked` fits (seeded fits that passed their own held-out
+    object check) are always offered, beyond `limit` and whatever their
+    support: a coarse whole-sheet comparison must not hide them.
     """
     scored = []
     for reg, quality in attempts:
         value = max(support(layers, footprint, reference, reg.affine)[0] for layers, footprint in evidence)
-        if value >= MINIMUM_SUPPORT:
+        if value >= MINIMUM_SUPPORT or any(reg is other for other, _ in checked):
             scored.append((value, reg, quality))
     scored.sort(key=lambda item: -item[0])
     footprint = evidence[0][1]
@@ -1051,7 +1065,9 @@ def distinct_places(attempts, evidence, reference, limit=OFFERED_PLACES):
         else:
             place.append((value, reg, quality))
     chosen = []
-    for members in places[:limit]:
+    kept = [index < limit or any(reg is other for _, reg, _ in members for other, _ in checked)
+            for index, members in enumerate(places)]
+    for members in [members for members, keep in zip(places, kept) if keep]:
         # A much less supported fit has misaligned the place, however well
         # its own landmarks agree; it cannot represent the place.
         poses = [{'score': value, 'matrix': reg.affine} for value, reg, _ in members]
@@ -1384,8 +1400,41 @@ def _register(image, cartography, result, reference, *, angles, attempts, establ
                 break
             except ValueError:
                 pass
+    evidence = [(h[3], h[4]) for h in hypotheses]
     places = distinct_places(preferred+[(reg, quality) for reg, quality in offered if compatible(reg.affine)],
-                             [(h[3], h[4]) for h in hypotheses], reference)
+                             evidence, reference, checked=preferred)
+    approximate = unconfirmed_place(unconfirmed, places, evidence, reference, compatible)
+    if approximate is not None:
+        places.append(approximate)
     if places:
         raise AmbiguousPlace(refusal+detail, places)
     raise ValueError(refusal+detail)
+
+
+def unconfirmed_place(unconfirmed, places, evidence, reference, compatible=lambda matrix: True):
+    """The best searched pose that no offered fit accounts for, as an approximate place.
+
+    A sheet can match its place clearly while no landmark fit holds there
+    (sparse roofs, paths drawn off the mapped ways). Its coarse search pose
+    is still the most useful starting point for a teacher; it is offered
+    marked as unchecked, after the fitted places, never applied by itself.
+    """
+    from .geometry import Registration
+    for score, matrix, layers, footprint in sorted(unconfirmed, key=lambda item: -item[0]):
+        if not compatible(matrix):
+            continue
+        # A fit within a search pose's coarse error accounts for it unless
+        # the sheet supports the pose clearly better: that fit has then
+        # misaligned the place, and the pose itself is worth a look.
+        if covered({'score': score, 'matrix': matrix}, [(reg.affine, value) for value, reg, _ in places], footprint):
+            return None
+        value = max(support(other_layers, other_footprint, reference, matrix)[0] for other_layers, other_footprint in evidence)
+        if value < MINIMUM_SUPPORT:
+            return None
+        quality = {'state': 'needs_review', 'method': 'global_search_unconfirmed', 'approximate': True,
+                   'fitCount': 0, 'validationCount': 0, 'medianErrorM': None, 'p95ErrorM': None, 'landmarks': [],
+                   'anisotropyPercent': round(100*anisotropy(matrix), 2),
+                   'validationScope': '全局搜索的粗略位置：整幅原图与此处吻合，但没有地物拟合能核查它，位置可能偏差数十米。'
+                                      '叠图核对后请录入同名点完成配准。'}
+        return value, Registration(np.asarray(matrix, float)), quality
+    return None

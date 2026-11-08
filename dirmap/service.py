@@ -393,7 +393,7 @@ def _geographic_registration(image, result, reference, places):
         failures.append(str(exc))
         if places is not None:
             for value, reg, quality in exc.places:
-                if not any(reg is candidate for candidate, _ in established):
+                if not quality.get('approximate') and not any(reg is candidate for candidate, _ in established):
                     reg, quality = recover_boundary_buildings(cartography, reg, quality, reference)
                 places.append((value, reg, finished(reg, quality)[1]))
         return None, None, failures
@@ -994,6 +994,7 @@ def offered_places(image, places, frame, directory):
     for index, (value, reg, quality) in enumerate(places[:len(store.PLACE_PREVIEWS)]):
         offered.append({'id': f'place-{index+1}', 'support': None if value is None else round(float(value), 4), 'method': quality.get('method'),
                         'p95ErrorM': quality.get('p95ErrorM'), 'thinValidation': bool(quality.get('thinValidation')),
+                        'approximate': bool(quality.get('approximate')),
                         'extent': warp_overlay(image, reg, directory/store.PLACE_PREVIEWS[index], frame=frame, max_side=900),
                         'preview': store.PLACE_PREVIEWS[index], 'registration': reg.as_dict(), 'quality': quality})
     return offered

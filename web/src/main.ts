@@ -752,7 +752,7 @@ function renderState() {
   const q = state.quality;
   const streets = q?.method === 'global_search_street_network';
   const roads = streets || q?.method === 'park_outline_road_network' || q?.method === 'global_search_road_network';
-  const label = q?.baseAssetId ? '共同地物对齐' : `${q?.method.startsWith('global_') ? '全局搜索 · ' : ''}${streets ? '铺装街道对齐' : roads ? '道路网络对齐' : q?.method === 'global_search_layer_correlation' ? '图层分块对齐' : '标准地图地物匹配'}`;
+  const label = q?.baseAssetId ? '共同地物对齐' : `${q?.method.startsWith('global_') ? '全局搜索 · ' : ''}${streets ? '铺装街道对齐' : roads ? '道路网络对齐' : q?.method === 'global_search_layer_correlation' ? '图层分块对齐' : q?.method === 'global_search_unconfirmed' ? '近似位置（未经拟合核查）' : '标准地图地物匹配'}`;
   const support = q?.poseSupport ? `<p>整图与参照吻合度 ${q.poseSupport.value.toFixed(2)}，比其他位置高 ${q.poseSupport.margin.toFixed(2)}。</p>` : '';
   const refusal = state.failures?.length ? `<p class="muted">${e(state.failures[state.failures.length - 1])}</p>` : '';
   $('registration-quality').innerHTML = q ? `<span class="quality-label">${label}</span><div class="quality-values"><div><strong>${q.fitCount}</strong><span>拟合同名点</span></div><div><strong>${q.p95ErrorM?.toFixed(1) ?? '—'}<small> m</small></strong><span>${roads ? '已匹配道路留出 P95' : q.leaveOneOut ? '图块留一核查 P95' : '留出误差 P95'}</span></div></div><p>${e(q.validationScope)}</p>${support}${q.inheritedGeographicP95M ? `<p>基准图地理匹配 P95：${q.inheritedGeographicP95M.toFixed(1)} m</p>` : ''}` : `自动匹配证据不足，可添加同名点完成校准。${refusal}`;
@@ -760,7 +760,7 @@ function renderState() {
   const places = !q || q.chosenPlace ? state.registrationCandidates ?? [] : [];
   if (places.length) $('registration-quality').insertAdjacentHTML('beforeend', `<div class="place-choices"><p>${q ? '其他吻合度相近的位置：' : `自动配准找到 ${places.length} 个吻合度相近的位置，不能自行确定是哪一处。逐个查看原图叠在标准地图上的效果，采用道路和建筑都对得上的一处；都不对时再添加同名点。`}</p>${places.map((p, i) => {
     const chosen = q?.chosenPlace?.id === p.id, previewed = placePreview?.id === p.id;
-    return `<div class="place-choice"><span>候选 ${i + 1} · ${p.support != null ? `吻合度 ${p.support.toFixed(2)}` : '未作整图比对'}${p.p95ErrorM != null ? ` · 留出 P95 ${p.p95ErrorM.toFixed(1)} m` : ''}</span><button class="text-button" data-place-preview="${e(p.id)}" aria-pressed="${previewed}">${previewed ? '结束预览' : '查看'}</button><button class="soft-button" data-place-adopt="${e(p.id)}" ${chosen ? 'disabled' : ''}>${chosen ? '已采用' : '采用此位置'}</button></div>`;
+    return `<div class="place-choice"><span>候选 ${i + 1}${p.approximate ? ' · 近似位置，未经拟合核查' : ''} · ${p.support != null ? `吻合度 ${p.support.toFixed(2)}` : '未作整图比对'}${p.p95ErrorM != null ? ` · 留出 P95 ${p.p95ErrorM.toFixed(1)} m` : ''}</span><button class="text-button" data-place-preview="${e(p.id)}" aria-pressed="${previewed}">${previewed ? '结束预览' : '查看'}</button><button class="soft-button" data-place-adopt="${e(p.id)}" ${chosen ? 'disabled' : ''}>${chosen ? '已采用' : '采用此位置'}</button></div>`;
   }).join('')}</div>`);
   $('terrain-summary').innerHTML = `<strong>${Math.round(state.statistics.forbiddenPixelFraction * 100)}%</strong> 像素被识别为障碍候选<p>${state.edits.length} 处教师通行修正</p><p>${state.statistics.staircaseCandidates ?? 0} 处楼梯候选，可在原图中勾选查看；楼梯按较慢速度估计。</p><p>路线会检查每条边经过的工作图像素。未知层级及模糊的门洞仍需核验。</p>`;
 }

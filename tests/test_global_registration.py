@@ -402,6 +402,47 @@ def test_offered_places_report_the_selected_fits_own_support(monkeypatch):
     assert offered[0][0] == .35
 
 
+def test_sweep_peaks_at_scales_beyond_the_refinement_window_stay_distinct():
+    footprint = np.array([[0, 0], [1000, 0], [1000, 1000], [0, 1000]], float)
+    # Scaled about the sheet centre: outlines within a tenth of the sheet.
+    pose = lambda scale: np.array([[scale, 0, 500*(1-scale)], [0, -scale, 500*(scale-1)]], float)
+    strong, near = (.6, .77, 0., pose(.77)), (.4, .9, 0., pose(.9))
+    assert G._distinct([strong, near], footprint, 4) == [strong]
+    assert G._distinct([strong, near], footprint, 4, scale_window=G.SCALE_STEP**2) == [strong, near]
+    close = (.4, .8, 0., pose(.8))
+    assert G._distinct([strong, close], footprint, 4, scale_window=G.SCALE_STEP**2) == [strong]
+
+
+def test_a_checked_seeded_fit_is_offered_beyond_the_best_supported_places(monkeypatch):
+    footprint = np.array([[0, 0], [500, 0], [500, 500], [0, 500]], float)
+    fits = [Registration(np.array([[1, 0, 1000.*k], [0, -1, 0]], float)) for k in range(5)]
+    values = {0: .44, 1000: .41, 2000: .40, 3000: .33, 4000: .12}
+    monkeypatch.setattr(G, 'support', lambda layers, footprint, reference, matrix: (values[matrix[0, 2]], {}))
+    attempts = [(reg, {'p95ErrorM': 5.}) for reg in fits]
+    assert [p[1] for p in G.distinct_places(attempts, [({}, footprint)], [])] == fits[:3]
+    # The seeded fits ranked fourth and below the support floor are still offered, after the others.
+    checked = [attempts[3], attempts[4]]
+    offered = G.distinct_places(attempts, [({}, footprint)], [], checked=checked)
+    assert [p[1] for p in offered] == fits
+
+
+def test_the_best_unconfirmed_search_pose_is_offered_as_an_approximate_place(monkeypatch):
+    footprint = np.array([[0, 0], [500, 0], [500, 500], [0, 500]], float)
+    monkeypatch.setattr(G, 'support', lambda layers, footprint, reference, matrix: (.52, {}))
+    searched = np.array([[1, 0, 0], [0, -1, 0]], float)
+    elsewhere = (.35, Registration(np.array([[1, 0, 105], [0, -1, 0]], float)), {'method': 'global_search_road_network'})
+    value, reg, quality = G.unconfirmed_place([(.52, searched, {}, footprint), (.3, searched+1, {}, footprint)],
+                                              [elsewhere], [({}, footprint)], [])
+    assert value == .52 and np.array_equal(reg.affine, searched)
+    assert quality['approximate'] and quality['p95ErrorM'] is None and not quality['landmarks']
+    # A nearby fit about as well supported already offers the place.
+    same = (.5, Registration(np.array([[1, 0, 30], [0, -1, 0]], float)), {})
+    assert G.unconfirmed_place([(.52, searched, {}, footprint)], [same], [({}, footprint)], []) is None
+    # One clearly less supported has misaligned it: the pose is offered too.
+    weaker = (.4, Registration(np.array([[1, 0, 30], [0, -1, 0]], float)), {})
+    assert G.unconfirmed_place([(.52, searched, {}, footprint)], [weaker], [({}, footprint)], []) is not None
+
+
 def test_dim_paving_is_not_used_as_building_evidence():
     from dirmap import service
     reference = place()
