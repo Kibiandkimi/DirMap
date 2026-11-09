@@ -44,7 +44,7 @@ def main():
             raise SystemExit('Invalid activities in the label file; no data was imported.')
     paths = []
     for path in args.inputs:
-        paths.extend(sorted(p for p in path.rglob('*') if p.suffix.lower() == '.kml')) if path.is_dir() else paths.append(path)
+        paths.extend(sorted(p for p in path.rglob('*') if p.suffix.lower() in elevation.TRACK_SUFFIXES)) if path.is_dir() else paths.append(path)
     paths = list(dict.fromkeys(p.resolve() for p in paths))
     if not paths and labels is None:
         raise SystemExit('No KML files found.')

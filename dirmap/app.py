@@ -688,14 +688,14 @@ def elevation_geotiff(region_id: str):
 @app.post('/api/elevation/tracks')
 async def contribute_elevation(request: Request, files: list[UploadFile] = File(...)):
     if not 1 <= len(files) <= 32:
-        raise ValueError('每批请选择 1–32 份 KML')
+        raise ValueError('每批请选择 1–32 份轨迹')
     sources, total = [], 0
     try:
         for upload in files:
             content = await upload.read(elevation.MAX_FILE_BYTES+1)
             total += len(content)
             if len(content) > elevation.MAX_FILE_BYTES or total > elevation.MAX_BATCH_BYTES:
-                raise ValueError('每份 KML 不超过 20 MiB，每批不超过 64 MiB')
+                raise ValueError('每份轨迹不超过 20 MiB，每批不超过 64 MiB')
             sources.append((upload.filename or 'track.kml', content))
         receipt = await anyio.to_thread.run_sync(elevation.add_tracks, sources, current_user(request))
         job = await anyio.to_thread.run_sync(submit_elevation_rebuild, request)

@@ -70,10 +70,10 @@ def main():
     from dirmap.elevation_model import SCHEMA, reconstruct, spatial_groups
     paths = []
     for path in args.inputs:
-        paths.extend(sorted(p for p in path.iterdir() if p.suffix.lower() == '.kml') if path.is_dir() else [path])
+        paths.extend(sorted(p for p in path.iterdir() if p.suffix.lower() in elevation.TRACK_SUFFIXES) if path.is_dir() else [path])
     tracks = []
     for path in paths:
-        summary, arrays = elevation.parse_kml(path.read_bytes(), path.name)
+        summary, arrays = elevation.parse_track(path.read_bytes(), path.name)
         tracks.append({**summary, 'points': arrays['points'], 'times': arrays['times']})
     report = {'schema': SCHEMA, 'files': len(tracks), 'points': int(sum(len(t['points']) for t in tracks)), 'regions': []}
     for group in spatial_groups(tracks):

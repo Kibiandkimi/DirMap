@@ -74,29 +74,102 @@ def parse_time(text):
     return (value if value.tzinfo else value.replace(tzinfo=timezone.utc)).timestamp()
 
 
+TRACK_SUFFIXES = ('.kml', '.gpx', '.tcx')
+
+
+def read_track_xml(content, filename):
+    """The XML root of a recording; DTDs and entities are never expanded."""
+    if not filename.lower().endswith(TRACK_SUFFIXES) or len(content) > MAX_FILE_BYTES:
+        raise ValueError('请选择不超过 20 MiB 的 KML、GPX 或 TCX 轨迹文件')
+    if re.search(br'<!\s*(?:DOCTYPE|ENTITY)\b', content, re.I):
+        raise ValueError('轨迹文件不能包含 DTD 或实体定义')
+    try:
+        return ET.fromstring(content)
+    except ET.ParseError as exc:
+        raise ValueError('轨迹文件无法解析') from exc
+
+
+def tag(element):
+    return element.tag.rsplit('}', 1)[-1]
+
+
+def child_text(element, *path):
+    for name in path:
+        element = next((e for e in element if tag(e) == name), None)
+        if element is None:
+            return None
+    return element.text
+
+
+class TrackPoints:
+    """Accumulates validated observations; invalid points split the segment."""
+    def __init__(self):
+        self.rows, self.times, self.breaks, self.rejected = [], [], [], 0
+
+    def segment(self):
+        self.start = len(self.rows)
+
+    def add(self, values, stamp=np.nan):
+        try:
+            if len(values) < 3 or any(v is None for v in values[:3]):
+                raise ValueError()
+            point = np.asarray(values[:3], float)
+            if not np.isfinite(point).all() or abs(point[0]) > 180 or abs(point[1]) > 85 or not -500 <= point[2] <= 9000:
+                raise ValueError()
+        except ValueError:
+            self.rejected += 1
+            if self.rows and (not self.breaks or self.breaks[-1] != len(self.rows)):
+                self.breaks.append(len(self.rows))
+            return
+        self.rows.append(point); self.times.append(stamp)
+        if len(self.rows) > MAX_TRACK_POINTS:
+            raise ValueError('单份轨迹超过 25 万个观测点，请分段导出')
+
+    def end(self):
+        if len(self.rows) > self.start:
+            self.breaks.append(self.start)
+
+    def record(self, document, content, filename, modes=(), names=('name',)):
+        if len(self.rows) < 3:
+            raise ValueError('轨迹至少需要 3 个带有效高程的坐标；仅有经纬度不能重建地形')
+        points = np.asarray(self.rows)
+        if np.all(points[:, 2] == 0) and 'absolute' not in modes:
+            raise ValueError('轨迹高程全部为 0，可能未记录海拔；请导出包含实际高程的数据')
+        name = next(((e.text or '').strip() for e in document.iter() if tag(e) in names and (e.text or '').strip()), Path(filename).name)
+        summary, arrays = track_record(points, self.breaks, self.times, name, filename, hashlib.sha256(content).hexdigest(), sorted(modes))
+        summary['rejectedPoints'] = self.rejected
+        return summary, arrays
+
+
+def parse_track(content, filename):
+    """A KML, GPX or TCX recording, dispatched by file extension."""
+    suffix = Path(filename).suffix.lower()
+    return {'.gpx': parse_gpx, '.tcx': parse_tcx}.get(suffix, parse_kml)(content, filename)
+
+
 def parse_kml(content, filename):
     """KML LineString and gx:Track, ignoring descriptions and network links."""
-    if not filename.lower().endswith('.kml') or len(content) > MAX_FILE_BYTES:
-        raise ValueError('请选择不超过 20 MiB 的 KML 轨迹文件')
-    if re.search(br'<!\s*(?:DOCTYPE|ENTITY)\b', content, re.I):
-        raise ValueError('KML 不能包含 DTD 或实体定义')
-    try:
-        document = ET.fromstring(content)
-    except ET.ParseError as exc:
-        raise ValueError('KML 文件无法解析') from exc
-    def tag(element):
-        return element.tag.rsplit('}', 1)[-1]
+    document = read_track_xml(content, filename)
     # Some apps write the same walk as a timed gx:Track and again as a
     # LineString; counting both would double its weight.
     geometries = ([e for e in document.iter() if tag(e) == 'Track'] or [e for e in document.iter() if tag(e) == 'LineString']
                   or [e for e in document.iter() if tag(e) == 'Point'])
-    rows, times, breaks, rejected = [], [], [], 0
-    modes = set()
+    track, modes = TrackPoints(), set()
+    # Per-point Placemarks (Huawei Health) carry their clock in a TimeSpan or
+    # TimeStamp; their untimed Start/End markers repeat track points.
+    point_times = {}
+    for placemark in (e for e in document.iter() if tag(e) == 'Placemark'):
+        stamp = child_text(placemark, 'TimeStamp', 'when') or child_text(placemark, 'TimeSpan', 'begin')
+        for point in (e for e in placemark if tag(e) == 'Point'):
+            point_times[id(point)] = parse_time(stamp)
+    timed_points = geometries and tag(geometries[0]) == 'Point' and any(np.isfinite(t) for t in point_times.values())
+    if timed_points:
+        geometries = [g for g in geometries if np.isfinite(point_times.get(id(g), np.nan))]
     for geometry in geometries:
         modes.update((e.text or '').strip() for e in geometry if tag(e) == 'altitudeMode')
         if modes & {'relativeToGround', 'relativeToSeaFloor'}:
             raise ValueError('相对地面或海底的高度不能用于重建地形，请导出记录海拔的轨迹')
-        start = len(rows)
+        track.segment()
         elements = [e for e in geometry.iter() if tag(e) in ('coordinates', 'coord')]
         # gx:Track pairs its n <when> with its n <gx:coord>. Never synthesize
         # missing clocks: these now also supply observed moving speeds.
@@ -104,34 +177,45 @@ def parse_kml(content, filename):
         stamps = [parse_time(e.text) for e in whens] if len(whens) == len(elements) else [np.nan]*len(elements)
         for element, stamp in zip(elements, stamps):
             kind = tag(element)
-            values = (element.text or '').split()
-            tokens = [word.split(',') for word in values] if kind == 'coordinates' else [values]
-            for token in tokens:
-                try:
-                    if len(token) < 3:
-                        raise ValueError()
-                    point = np.asarray(token[:3], float)
-                    if not np.isfinite(point).all() or abs(point[0]) > 180 or abs(point[1]) > 85 or not -500 <= point[2] <= 9000:
-                        raise ValueError()
-                except ValueError:
-                    rejected += 1
-                    if rows and (not breaks or breaks[-1] != len(rows)):
-                        breaks.append(len(rows))
-                    continue
-                rows.append(point); times.append(stamp if kind == 'coord' else np.nan)
-                if len(rows) > MAX_TRACK_POINTS:
-                    raise ValueError('单份轨迹超过 25 万个观测点，请分段导出')
-        if len(rows) > start:
-            breaks.append(start)
-    if len(rows) < 3:
-        raise ValueError('轨迹至少需要 3 个带有效高程的坐标；仅有经纬度不能重建地形')
-    points = np.asarray(rows)
-    if np.all(points[:, 2] == 0) and 'absolute' not in modes:
-        raise ValueError('轨迹高程全部为 0，可能未记录海拔；请导出包含实际高程的数据')
-    name = next(((e.text or '').strip() for e in document.iter() if tag(e) == 'name' and (e.text or '').strip()), Path(filename).name)
-    summary, arrays = track_record(points, breaks, times, name, filename, hashlib.sha256(content).hexdigest(), sorted(modes))
-    summary['rejectedPoints'] = rejected
-    return summary, arrays
+            # Tolerate "lng,lat, height" as written by some exporters.
+            values = re.sub(r'\s*,\s*', ',', (element.text or '').strip()).split()
+            if kind == 'coordinates':
+                stamp = point_times.get(id(geometry), np.nan) if tag(geometry) == 'Point' else np.nan
+            for token in ([word.split(',') for word in values] if kind == 'coordinates' else [values]):
+                track.add(token, stamp)
+        track.end()
+    # Timed per-point exports are one walk, not a segment per point.
+    if timed_points:
+        track.breaks = []
+    return track.record(document, content, filename, modes)
+
+
+def parse_gpx(content, filename):
+    """GPX track segments (or routes) with <ele> heights and optional <time>."""
+    document = read_track_xml(content, filename)
+    segments = [e for e in document.iter() if tag(e) == 'trkseg'] or [e for e in document.iter() if tag(e) == 'rte']
+    track = TrackPoints()
+    for segment in segments:
+        track.segment()
+        for point in (e for e in segment if tag(e) in ('trkpt', 'rtept')):
+            track.add([point.get('lon'), point.get('lat'), child_text(point, 'ele')], parse_time(child_text(point, 'time')))
+        track.end()
+    return track.record(document, content, filename, names=('name',))
+
+
+def parse_tcx(content, filename):
+    """TCX laps' Track elements; trackpoints without a position are skipped."""
+    document = read_track_xml(content, filename)
+    track = TrackPoints()
+    for segment in (e for e in document.iter() if tag(e) == 'Track'):
+        track.segment()
+        for point in (e for e in segment if tag(e) == 'Trackpoint'):
+            if child_text(point, 'Position', 'LatitudeDegrees') is None:
+                continue
+            track.add([child_text(point, 'Position', 'LongitudeDegrees'), child_text(point, 'Position', 'LatitudeDegrees'),
+                       child_text(point, 'AltitudeMeters')], parse_time(child_text(point, 'Time')))
+        track.end()
+    return track.record(document, content, filename, names=('Name',))
 
 
 def track_record(points, breaks, times, name, file_name, source_sha256, modes):
@@ -172,11 +256,11 @@ def add_tracks(files, owner):
     if not owner or not owner.get('id'):
         raise NotOwner('请登录后贡献轨迹')
     if not files or len(files) > 32 or sum(len(content) for _, content in files) > MAX_BATCH_BYTES:
-        raise ValueError('每批最多 32 份 KML，总大小不超过 64 MiB')
+        raise ValueError('每批最多 32 份轨迹，总大小不超过 64 MiB')
     parsed, errors = [], []
     for name, content in files:
         try:
-            parsed.append(parse_kml(content, name))
+            parsed.append(parse_track(content, name))
         except ValueError as exc:
             errors.append({'fileName': Path(name).name, 'message': str(exc)})
     if not parsed:

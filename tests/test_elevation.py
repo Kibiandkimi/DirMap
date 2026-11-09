@@ -152,3 +152,32 @@ def test_grade_cost_is_directional_and_missing_height_is_not_invented():
     assert slope_factors(0, -40, 100) > 1  # steep downhill is not arbitrarily faster
     assert slope_factors(np.nan, 20, 100) == 1
     assert slope_factors(0, 0, 100) == 1
+
+
+def test_gpx_tcx_and_per_point_kml_exports_of_one_walk_are_the_same_observations():
+    points, stamps = plane()[:20], [f'2026-11-09T13:16:{i:02d}.000Z' for i in range(20)]
+    gpx = ('<gpx xmlns="http://www.topografix.com/GPX/1/0"><trk><trkseg>' + ''.join(
+        f'<trkpt lat="{y}" lon="{x}"><ele>{z}</ele><time>{t}</time></trkpt>' for (x, y, z), t in zip(points, stamps))
+        + '</trkseg></trk></gpx>').encode()
+    tcx = ('<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"><Activities><Activity>'
+           '<Lap><Track><Trackpoint><Time>2026-11-09T13:15:59Z</Time><HeartRateBpm><Value>90</Value></HeartRateBpm></Trackpoint>' + ''.join(
+        f'<Trackpoint><Time>{t}</Time><Position><LatitudeDegrees>{y}</LatitudeDegrees><LongitudeDegrees>{x}</LongitudeDegrees></Position>'
+        f'<AltitudeMeters>{z}</AltitudeMeters></Trackpoint>' for (x, y, z), t in zip(points, stamps))
+        + '</Track></Lap></Activity></Activities></TrainingCenterDatabase>').encode()
+    # Huawei Health: untimed lap markers, then one timed Placemark per point with "lng,lat, height".
+    marker = lambda name, p: f'<Placemark><name>{name}</name><Point><coordinates>{p[0]},{p[1]}</coordinates></Point></Placemark>'
+    kml_points = ('<kml><Folder><name>Walk</name><Folder>' + marker('Start', points[0]) + marker('End', points[-1]) + '</Folder><Folder>' + ''.join(
+        f'<Placemark><TimeSpan><begin>{t}</begin><end>{t}</end></TimeSpan><Point><altitudeMode>clampToGround</altitudeMode>'
+        f'<coordinates>{x},{y}, {z}</coordinates></Point></Placemark>' for (x, y, z), t in zip(points, stamps)) + '</Folder></Folder></kml>').encode()
+    parsed = [elevation.parse_track(content, name) for content, name in ((gpx, 'walk.gpx'), (tcx, 'walk.TCX'), (kml_points, 'walk.kml'))]
+    reference, _ = elevation.parse_kml(kml(points), 'line.kml')
+    assert {summary['id'] for summary, _ in parsed} == {reference['id']}
+    for summary, arrays in parsed:
+        assert summary['pointCount'] == summary['timedPointCount'] == 20 and summary['rejectedPoints'] == 0
+        assert np.all(np.diff(arrays['times']) == 1)
+    with pytest.raises(ValueError, match='有效高程'):
+        elevation.parse_track(gpx.replace(b'<ele>', b'<!-- -->').replace(b'</ele>', b''), 'flat.gpx')
+    with pytest.raises(ValueError, match='DTD'):
+        elevation.parse_track(b'<!DOCTYPE gpx [<!ENTITY x "y">]><gpx>&x;</gpx>', 'bad.gpx')
+    with pytest.raises(ValueError, match='KML、GPX 或 TCX'):
+        elevation.parse_track(gpx, 'walk.fit')

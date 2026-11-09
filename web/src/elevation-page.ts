@@ -35,7 +35,7 @@ document.querySelector('#app')!.innerHTML = `
     <div id="height-statistics" class="height-statistics"></div><div id="height-inspect" class="height-inspect">切换“高程图”，点击或移动指针查看某处高程。</div><div id="height-context-credit" class="height-context-credit hidden">位置参照 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> · 未着色区域暂无高程支持</div>
     <section id="height-track-detail" class="height-explanation track-detail" aria-label="所选轨迹贡献详情" hidden></section>
     <div class="height-explanation"><strong>轨迹与等高线共同构建的参考地形</strong><p>手机记录的高度会随时间漂移，不同日子的记录也有整体偏差。重建时利用交叉和重叠路段，同时估计地面高度和每条记录的漂移，再在有观测支持的区域平滑插值。留白处没有足够的数据；三维夸张不影响路线中的爬升与耗时计算。</p><p>识别出的等高线自动约束沿线同高，每条线的高度由重叠轨迹推断；无参考处等待数据。已知标高和相对高差也可补充，未建立测量级海拔基准。新贡献更新后续规划的地形，已发布课程保留原高程快照。</p><p id="height-alignment"></p></div>
-  </section><aside class="height-sidebar"><div class="height-contribute"><h2>贡献轨迹</h2><p>大家共同构建、共同查看。你可以管理自己上传的轨迹。</p><button id="height-upload" class="primary-button wide">＋ 添加 KML 轨迹</button><input id="height-files" type="file" accept=".kml,application/vnd.google-earth.kml+xml" multiple hidden><small>可多选；相同轨迹不会重复计入。</small>
+  </section><aside class="height-sidebar"><div class="height-contribute"><h2>贡献轨迹</h2><p>大家共同构建、共同查看。你可以管理自己上传的轨迹。</p><button id="height-upload" class="primary-button wide">＋ 添加轨迹（KML/GPX/TCX）</button><input id="height-files" type="file" accept=".kml,.gpx,.tcx,application/vnd.google-earth.kml+xml,application/gpx+xml" multiple hidden><small>可多选；相同轨迹不会重复计入。</small>
     <div id="height-job" class="height-job hidden" role="status"><progress id="height-job-progress" max="100"></progress><p id="height-job-message"></p></div>
     <div id="height-import-errors" class="height-import-errors"></div><button id="height-rebuild" class="soft-button wide hidden">合并最新轨迹</button></div>
     <div class="height-track-title"><h2>已贡献轨迹 <span id="height-track-count"></span></h2><label class="check-label"><input id="height-mine" type="checkbox">只看我的</label></div><div id="height-tracks" class="height-tracks"></div>
@@ -101,7 +101,7 @@ function renderTracks() {
     const relative = track.kind === 'contours' && track.heightReference === 'relative';
     const recorded = track.recordedAt ? new Date(track.recordedAt * 1000).toLocaleString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     return `<article class="height-track ${track.enabled ? '' : 'disabled'} ${track.id === selectedTrack ? 'selected' : ''}" data-track="${e(track.id)}"><div class="height-track-heading"><strong>${e(track.name)}</strong><span>${mine ? '我的' : e(track.ownerName)}</span></div><p>${e(region?.name ?? '等待合并')} · ${track.kind === 'contours' ? `${track.contourCount ?? ''} 条${shape ? '自动识别' : relative ? '相对标高' : '已知标高'}等高线 · ` : ''}${track.pointCount.toLocaleString()} 点${recorded ? ` · 记录于 ${e(recorded)}` : ''}</p><p>${shape ? '自动约束沿线同高，无需逐条标高' : `${relative ? '标注高差' : '记录高程'} ${track.minHeightM.toFixed(1)}–${track.maxHeightM.toFixed(1)} m`}${aligned?.anchored === false ? ' · 等待重叠轨迹或已知标高' : ''}${typeof correction === 'number' && Math.abs(correction) >= .1 ? ` · ${relative ? '整体对齐' : '平均校正'} ${correction > 0 ? '+' : ''}${correction.toFixed(1)} m` : ''}${drift >= 1 ? ` · 期间漂移约 ${drift.toFixed(1)} m` : ''}</p>${mine ? `<div class="height-track-actions"><label class="check-label"><input type="checkbox" data-track-enable="${e(track.id)}" ${track.enabled ? 'checked' : ''}>参与重建</label><button data-track-name="${e(track.id)}" class="text-button">改名</button><button data-track-delete="${e(track.id)}" class="text-button danger">删除</button></div>` : `<span class="height-readonly">${track.enabled ? '已分享，参与共同重建' : '贡献者已停用'}</span>`}<button class="soft-button height-track-select" data-track-select="${e(track.id)}" aria-pressed="${track.id === selectedTrack}">${track.id === selectedTrack ? '正在查看此贡献' : '单独查看贡献'}</button></article>`;
-  }).join('') || `<p class="muted">${onlyMine ? '你还没有贡献轨迹。' : '还没有高程轨迹。添加带海拔的 KML 即可开始。'}</p>`;
+  }).join('') || `<p class="muted">${onlyMine ? '你还没有贡献轨迹。' : '还没有高程轨迹。添加带海拔的 KML、GPX 或 TCX 即可开始。'}</p>`;
   for (const track of tracks) {
     if (track.kind === 'contours') continue;
     const card = $('height-tracks').querySelector<HTMLElement>(`[data-track="${CSS.escape(track.id)}"]`)!;
@@ -202,7 +202,7 @@ async function loadRegion() {
   if (!region) {
     void renderTravel('');
     ++loading; pendingFingerprint = '';
-    viewer.setGrid(null); activeGrid = null; loadedFingerprint = ''; $('height-empty').textContent = selectedTrack ? '此贡献未参与当前地区的地形；下方可查看它的原始数据和统计。' : '还没有重建地形。登录后添加带高程的 KML 轨迹，即可共同构建。'; $('height-empty').classList.remove('hidden');
+    viewer.setGrid(null); activeGrid = null; loadedFingerprint = ''; $('height-empty').textContent = selectedTrack ? '此贡献未参与当前地区的地形；下方可查看它的原始数据和统计。' : '还没有重建地形。登录后添加带高程的 KML、GPX 或 TCX 轨迹，即可共同构建。'; $('height-empty').classList.remove('hidden');
     $('height-statistics').innerHTML = ''; $('height-low').textContent = $('height-high').textContent = '—';
     $('height-alignment').textContent = ''; $('height-context-credit').classList.add('hidden');
     $<HTMLAnchorElement>('height-download').removeAttribute('href'); $<HTMLAnchorElement>('height-download').setAttribute('aria-disabled', 'true'); return;
@@ -267,7 +267,7 @@ $<HTMLInputElement>('height-files').onchange = async event => {
     notify(`已加入 ${result.added.length} 份轨迹${result.duplicates.length ? `，${result.duplicates.length} 份相同轨迹未重复计入` : ''}`);
     input.value = ''; await refresh(); void watchJob(result.job);
   } catch (error) { notify((error as Error).message, true); }
-  finally { button.disabled = false; button.textContent = '＋ 添加 KML 轨迹'; input.value = ''; }
+  finally { button.disabled = false; button.textContent = '＋ 添加轨迹（KML/GPX/TCX）'; input.value = ''; }
 };
 $('height-rebuild').onclick = async () => { if (!requireAccount()) return; try { void watchJob((await api('/api/elevation/rebuild', { method: 'POST' })).job); } catch (error) { notify((error as Error).message, true); } };
 async function editTrack(track: HeightTrack, body: object, remove = false) {

@@ -23,10 +23,10 @@ sys.path.insert(0, str(ROOT))
 
 def read_tracks(paths, labels):
     from dirmap import elevation
-    files = sorted({p for path in paths for p in (path.rglob('*') if path.is_dir() else [path]) if p.suffix.lower() == '.kml'})
+    files = sorted({p for path in paths for p in (path.rglob('*') if path.is_dir() else [path]) if p.suffix.lower() in elevation.TRACK_SUFFIXES})
     tracks, seen, duplicates = [], set(), []
     for path in files:
-        metadata, arrays = elevation.parse_kml(path.read_bytes(), path.name)
+        metadata, arrays = elevation.parse_track(path.read_bytes(), path.name)
         same = [t for t in tracks if t['geometryId'] == metadata['geometryId']]
         duplicate = next((t for t in same if t['timingFingerprint'] == metadata['timingFingerprint'] or
                           not t['timedPointCount'] or not metadata['timedPointCount']), None)
