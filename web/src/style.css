@@ -326,3 +326,4 @@ html.print-page, html.print-page body { height: auto; overflow: auto; background
 .route-speed { display: grid; gap: 4px; margin-top: 10px; font-size: 11px; line-height: 1.65; color: #4f6b54; }
 .route-speed small { font-size: 10px; color: #7d8977; }
 .route-card > .route-elevation, .route-card > .route-speed { grid-column: 1 / -1; min-width: 0; }
+.place-choices { margin-top: 12px; } .place-choice { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #e3eadb; font-size: 10px; color: #5f7655; } .place-choice span { margin-right: auto; } .place-choice .soft-button { padding: 6px 9px; }

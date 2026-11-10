@@ -1,0 +1,3270 @@
+{
+  "checkedAt": "2026-11-08T21:24:07Z",
+  "scope": "The real 大沙河 sheet registered as if its place were new.\n\n大沙河 was the first park sheet; its first automatic registration only\nworked once a park outline seed was added. Later sheets of new places will\nnot match a park outline as conveniently. This reruns recognition and the\nwhole automatic registration chain on the supplied sheet under conditions a\nnew place brings: no park outline in OSM, only part of the park printed\n(crops), a teacher's own viewport downloaded fresh from OSM instead of the\nbuilt-in reference, JPEG/exposure damage, and a sideways (90°) image.\n\nThe reviewed workbench registration of the unchanged sheet is the\ncomparison baseline. It is itself an automatic road fit (internal road P95\nabout 10 m), not survey truth: differences here measure consistency.",
+  "implementationSignature": "6c0e5b077157ba4999ee28e4a389f5426a2fc26fffeb020a711ef7bf754faba6",
+  "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "verifierSha256": "43e10c893890afff7372f5a99fd990b0866b142a223ebf649cbc658f6ac06d35",
+  "baselineRegistrationStamp": "de2b35b3c79a82a8c96f03637cc698f2dd3876053b5adfa6ba244a44ad9dcead",
+  "baselineMethod": "park_outline_road_network",
+  "stableWithinM": 12.0,
+  "viewportReferenceSha256": "1650af9f16e4e1beddfbd24562fbf2e888b3884d9b0b926b79c4360871bb287f",
+  "complete": true,
+  "cases": [
+    {
+      "case": "original",
+      "reference": "builtin",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 116.5,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点"
+      ],
+      "method": "park_outline_road_network",
+      "reportedP95M": 10.54,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4286,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.1924,
+            "metresPerPixel": 0.4236,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2466,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.1207,
+            "metresPerPixel": 0.45817,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.1611,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.1135,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -15.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 0,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.3713,
+        "layers": {
+          "building": 0.3966,
+          "path": 0.3636
+        },
+        "layerWeights": {
+          "building": 0.232,
+          "path": 0.768
+        },
+        "margin": 0.1247
+      },
+      "acceptance": {
+        "method": "park_outline_road_network",
+        "p95ErrorM": 10.54,
+        "heldOutP95ErrorM": 10.52,
+        "medianErrorM": 3.55,
+        "extrapolationSpreadM": 0.6,
+        "anisotropyPercent": 0.0,
+        "fitCount": 394,
+        "fitObjectCount": 28,
+        "validationCount": 155,
+        "validationObjectCount": 7,
+        "validationWays": [
+          {
+            "referenceId": "251476469",
+            "matched": true,
+            "sampleCount": 27,
+            "medianNearestPathM": 7.48,
+            "p95NearestPathM": 10.74,
+            "maxNearestPathM": 11.06
+          },
+          {
+            "referenceId": "913431711",
+            "matched": true,
+            "sampleCount": 51,
+            "medianNearestPathM": 4.3,
+            "p95NearestPathM": 10.78,
+            "maxNearestPathM": 12.13
+          },
+          {
+            "referenceId": "913431715",
+            "matched": true,
+            "sampleCount": 5,
+            "medianNearestPathM": 3.74,
+            "p95NearestPathM": 4.69,
+            "maxNearestPathM": 4.79
+          },
+          {
+            "referenceId": "913431718",
+            "matched": true,
+            "sampleCount": 23,
+            "medianNearestPathM": 1.6,
+            "p95NearestPathM": 5.08,
+            "maxNearestPathM": 6.78
+          },
+          {
+            "referenceId": "913431722",
+            "matched": false,
+            "sampleCount": 16,
+            "medianNearestPathM": 33.1,
+            "p95NearestPathM": 47.52,
+            "maxNearestPathM": 48.41
+          },
+          {
+            "referenceId": "913763000",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 0.86,
+            "p95NearestPathM": 5.46,
+            "maxNearestPathM": 6.67
+          },
+          {
+            "referenceId": "913763004",
+            "matched": true,
+            "sampleCount": 37,
+            "medianNearestPathM": 3.32,
+            "p95NearestPathM": 6.55,
+            "maxNearestPathM": 11.44
+          },
+          {
+            "referenceId": "913763010",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 1.66,
+            "p95NearestPathM": 2.94,
+            "maxNearestPathM": 3.3
+          }
+        ],
+        "validationOmittedWayIds": [
+          "913431722"
+        ],
+        "validationTotalWays": 8,
+        "validationInsideHull": 155,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "pairs": {
+            "ink": [
+              2223,
+              7954
+            ],
+            "paving": [
+              8828,
+              7178
+            ],
+            "roof": [
+              544,
+              831
+            ]
+          },
+          "scoreBeforeM": 3.467,
+          "scoreAfterM": 3.216,
+          "gainPercent": 7.23,
+          "moveP95M": 10.54,
+          "moveMaxM": 11.65,
+          "scalePercent": -1.712,
+          "rotationDeg": -0.7,
+          "halfAgreementM": [
+            7.06,
+            4.65
+          ],
+          "layerGainsM": {
+            "ink": 0.007,
+            "paving": -0.19,
+            "roof": 0.072
+          },
+          "sensitivityM": {
+            "scale": [
+              0.205,
+              0.215
+            ],
+            "rotationDeg": [
+              0.1514,
+              0.1277
+            ],
+            "stretchX": [
+              0.0667,
+              0.1282
+            ],
+            "stretchY": [
+              0.1558,
+              0.1358
+            ]
+          },
+          "correction": [
+            [
+              0.98280421,
+              0.01200987,
+              -3.72348524
+            ],
+            [
+              -0.01200987,
+              0.98280421,
+              0.25909351
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.3713,
+          "layers": {
+            "building": 0.3966,
+            "path": 0.3636
+          },
+          "layerWeights": {
+            "building": 0.232,
+            "path": 0.768
+          },
+          "margin": 0.1247
+        },
+        "poseLayerCount": 2
+      },
+      "alternatives": [
+        {
+          "method": "park_outline_road_network",
+          "support": 0.3713,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 10.52,
+          "extrapolationSpreadM": 0.6,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.296739,
+              0.01045,
+              -567.536094
+            ],
+            [
+              0.01045,
+              -0.296739,
+              423.768881
+            ]
+          ],
+          "differenceFromBaselineMaxM": 0.0
+        }
+      ],
+      "calibratedControls": 32,
+      "differenceFromBaselineM": {
+        "median": 0.0,
+        "max": 0.0
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "no-park-outline",
+      "reference": "no-park",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 121.5,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 7.67,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4036,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2639,
+            "metresPerPixel": 0.17874,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2407,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2379,
+            "metresPerPixel": 0.21747,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.2194,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.0944,
+            "metresPerPixel": 0.62703,
+            "rotationDeg": -9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.4362,
+        "layers": {
+          "building": 0.4766,
+          "path": 0.4237
+        },
+        "layerWeights": {
+          "building": 0.235,
+          "path": 0.765
+        },
+        "margin": 0.1723
+      },
+      "acceptance": {
+        "method": "global_search_road_network",
+        "p95ErrorM": 7.67,
+        "heldOutP95ErrorM": 7.65,
+        "medianErrorM": 3.37,
+        "extrapolationSpreadM": 0.59,
+        "anisotropyPercent": 0.0,
+        "fitCount": 399,
+        "fitObjectCount": 28,
+        "validationCount": 155,
+        "validationObjectCount": 7,
+        "validationWays": [
+          {
+            "referenceId": "251476469",
+            "matched": true,
+            "sampleCount": 27,
+            "medianNearestPathM": 5.06,
+            "p95NearestPathM": 6.83,
+            "maxNearestPathM": 7.35
+          },
+          {
+            "referenceId": "913431711",
+            "matched": true,
+            "sampleCount": 51,
+            "medianNearestPathM": 4.03,
+            "p95NearestPathM": 8.68,
+            "maxNearestPathM": 9.59
+          },
+          {
+            "referenceId": "913431715",
+            "matched": true,
+            "sampleCount": 5,
+            "medianNearestPathM": 4.35,
+            "p95NearestPathM": 5.53,
+            "maxNearestPathM": 5.65
+          },
+          {
+            "referenceId": "913431718",
+            "matched": true,
+            "sampleCount": 23,
+            "medianNearestPathM": 1.49,
+            "p95NearestPathM": 7.09,
+            "maxNearestPathM": 7.62
+          },
+          {
+            "referenceId": "913431722",
+            "matched": false,
+            "sampleCount": 16,
+            "medianNearestPathM": 34.88,
+            "p95NearestPathM": 49.06,
+            "maxNearestPathM": 49.61
+          },
+          {
+            "referenceId": "913763000",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 1.37,
+            "p95NearestPathM": 6.09,
+            "maxNearestPathM": 7.57
+          },
+          {
+            "referenceId": "913763004",
+            "matched": true,
+            "sampleCount": 37,
+            "medianNearestPathM": 2.61,
+            "p95NearestPathM": 5.12,
+            "maxNearestPathM": 8.64
+          },
+          {
+            "referenceId": "913763010",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 1.1,
+            "p95NearestPathM": 2.38,
+            "maxNearestPathM": 2.75
+          }
+        ],
+        "validationOmittedWayIds": [
+          "913431722"
+        ],
+        "validationTotalWays": 8,
+        "validationInsideHull": 154,
+        "orientedPathSupport": 0.497,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "pairs": {
+            "ink": [
+              2245,
+              7864
+            ],
+            "paving": [
+              8824,
+              7143
+            ],
+            "roof": [
+              546,
+              776
+            ]
+          },
+          "scoreBeforeM": 3.337,
+          "scoreAfterM": 3.223,
+          "gainPercent": 3.42,
+          "moveP95M": 6.4,
+          "moveMaxM": 7.15,
+          "scalePercent": -1.169,
+          "rotationDeg": -0.466,
+          "halfAgreementM": [
+            6.21,
+            4.8
+          ],
+          "layerGainsM": {
+            "ink": -0.051,
+            "paving": -0.448,
+            "roof": 0.043
+          },
+          "sensitivityM": {
+            "scale": [
+              0.2026,
+              0.2109
+            ],
+            "rotationDeg": [
+              0.1479,
+              0.1053
+            ],
+            "stretchX": [
+              0.0798,
+              0.1253
+            ],
+            "stretchY": [
+              0.1349,
+              0.1403
+            ]
+          },
+          "correction": [
+            [
+              0.98827562,
+              0.00802973,
+              -1.83320195
+            ],
+            [
+              -0.00802973,
+              0.98827562,
+              0.09142419
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.4362,
+          "layers": {
+            "building": 0.4766,
+            "path": 0.4237
+          },
+          "layerWeights": {
+            "building": 0.235,
+            "path": 0.765
+          },
+          "margin": 0.1723
+        },
+        "poseLayerCount": 2
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4911,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 6.38,
+          "p95ErrorM": 6.32,
+          "extrapolationSpreadM": 1.67,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.291575,
+              0.007572,
+              -557.609745
+            ],
+            [
+              0.007572,
+              -0.291575,
+              422.451403
+            ]
+          ],
+          "differenceFromBaselineMaxM": 11.04
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4731,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 4.33,
+          "p95ErrorM": 7.19,
+          "extrapolationSpreadM": 1.9,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.293475,
+              0.0081,
+              -562.20301
+            ],
+            [
+              0.0081,
+              -0.293475,
+              424.214759
+            ]
+          ],
+          "differenceFromBaselineMaxM": 9.07
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4362,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 7.65,
+          "extrapolationSpreadM": 0.59,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.295227,
+              0.008593,
+              -563.963729
+            ],
+            [
+              0.008593,
+              -0.295227,
+              424.902542
+            ]
+          ],
+          "differenceFromBaselineMaxM": 4.82
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3016,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 7.64,
+          "p95ErrorM": 12.2,
+          "extrapolationSpreadM": 0.61,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.299155,
+              0.011469,
+              -573.747543
+            ],
+            [
+              0.011469,
+              -0.299155,
+              424.098683
+            ]
+          ],
+          "differenceFromBaselineMaxM": 4.24
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2553,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 330.44,
+          "p95ErrorM": 11.46,
+          "extrapolationSpreadM": 1.5,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.184049,
+              -0.028064,
+              -225.452195
+            ],
+            [
+              -0.028064,
+              -0.184049,
+              130.916607
+            ]
+          ],
+          "differenceFromBaselineMaxM": 356.05
+        }
+      ],
+      "calibratedControls": 31,
+      "differenceFromBaselineM": {
+        "median": 3.12,
+        "max": 4.82
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "fresh-viewport",
+      "reference": "viewport",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 122.0,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 10.57,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3762,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2456,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.246,
+            "metresPerPixel": 0.23521,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.1442,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2341,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.1158,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -3.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.3656,
+        "layers": {
+          "building": 0.4019,
+          "path": 0.3543
+        },
+        "layerWeights": {
+          "building": 0.238,
+          "path": 0.762
+        },
+        "margin": 0.1196
+      },
+      "acceptance": {
+        "method": "global_search_road_network",
+        "p95ErrorM": 10.57,
+        "heldOutP95ErrorM": 10.56,
+        "medianErrorM": 3.69,
+        "extrapolationSpreadM": 0.54,
+        "anisotropyPercent": 0.0,
+        "fitCount": 404,
+        "fitObjectCount": 30,
+        "validationCount": 155,
+        "validationObjectCount": 7,
+        "polished": true,
+        "validationWays": [
+          {
+            "referenceId": "251476469",
+            "matched": true,
+            "sampleCount": 27,
+            "medianNearestPathM": 8.85,
+            "p95NearestPathM": 10.9,
+            "maxNearestPathM": 11.11
+          },
+          {
+            "referenceId": "913431711",
+            "matched": true,
+            "sampleCount": 51,
+            "medianNearestPathM": 4.51,
+            "p95NearestPathM": 11.0,
+            "maxNearestPathM": 12.44
+          },
+          {
+            "referenceId": "913431715",
+            "matched": true,
+            "sampleCount": 5,
+            "medianNearestPathM": 4.91,
+            "p95NearestPathM": 5.66,
+            "maxNearestPathM": 5.84
+          },
+          {
+            "referenceId": "913431718",
+            "matched": true,
+            "sampleCount": 23,
+            "medianNearestPathM": 1.4,
+            "p95NearestPathM": 5.15,
+            "maxNearestPathM": 7.64
+          },
+          {
+            "referenceId": "913431722",
+            "matched": false,
+            "sampleCount": 16,
+            "medianNearestPathM": 33.66,
+            "p95NearestPathM": 47.79,
+            "maxNearestPathM": 48.39
+          },
+          {
+            "referenceId": "913763000",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 0.89,
+            "p95NearestPathM": 5.8,
+            "maxNearestPathM": 7.03
+          },
+          {
+            "referenceId": "913763004",
+            "matched": true,
+            "sampleCount": 37,
+            "medianNearestPathM": 3.79,
+            "p95NearestPathM": 7.21,
+            "maxNearestPathM": 10.23
+          },
+          {
+            "referenceId": "913763010",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 2.19,
+            "p95NearestPathM": 3.56,
+            "maxNearestPathM": 3.92
+          }
+        ],
+        "validationOmittedWayIds": [
+          "913431722"
+        ],
+        "validationTotalWays": 8,
+        "validationInsideHull": 155,
+        "orientedPathSupport": 0.404,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "pairs": {
+            "ink": [
+              2242,
+              8095
+            ],
+            "paving": [
+              8836,
+              7309
+            ],
+            "roof": [
+              546,
+              841
+            ]
+          },
+          "scoreBeforeM": 3.452,
+          "scoreAfterM": 3.205,
+          "gainPercent": 7.16,
+          "moveP95M": 10.7,
+          "moveMaxM": 11.85,
+          "scalePercent": -1.973,
+          "rotationDeg": -0.499,
+          "halfAgreementM": [
+            7.35,
+            4.33
+          ],
+          "layerGainsM": {
+            "ink": -0.006,
+            "paving": -0.181,
+            "roof": 0.054
+          },
+          "sensitivityM": {
+            "scale": [
+              0.2034,
+              0.2344
+            ],
+            "rotationDeg": [
+              0.1455,
+              0.1256
+            ],
+            "stretchX": [
+              0.0658,
+              0.1453
+            ],
+            "stretchY": [
+              0.1541,
+              0.135
+            ]
+          },
+          "correction": [
+            [
+              0.98023663,
+              0.00853931,
+              -3.51713701
+            ],
+            [
+              -0.00853931,
+              0.98023663,
+              1.10066991
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.3656,
+          "layers": {
+            "building": 0.4019,
+            "path": 0.3543
+          },
+          "layerWeights": {
+            "building": 0.238,
+            "path": 0.762
+          },
+          "margin": 0.1196
+        },
+        "poseLayerCount": 2
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4895,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 12.08,
+          "p95ErrorM": 8.04,
+          "extrapolationSpreadM": 1.76,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.291726,
+              0.006085,
+              -556.208136
+            ],
+            [
+              0.006085,
+              -0.291726,
+              425.705534
+            ]
+          ],
+          "differenceFromBaselineMaxM": 12.43
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4887,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 12.25,
+          "p95ErrorM": 7.66,
+          "extrapolationSpreadM": 2.21,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.291537,
+              0.006884,
+              -557.121445
+            ],
+            [
+              0.006884,
+              -0.291537,
+              424.556913
+            ]
+          ],
+          "differenceFromBaselineMaxM": 12.31
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4415,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 5.09,
+          "p95ErrorM": 7.68,
+          "extrapolationSpreadM": 0.65,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.294684,
+              0.008889,
+              -563.106154
+            ],
+            [
+              0.008889,
+              -0.294684,
+              423.829823
+            ]
+          ],
+          "differenceFromBaselineMaxM": 4.76
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3656,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 10.56,
+          "extrapolationSpreadM": 0.54,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.297715,
+              0.009585,
+              -568.468327
+            ],
+            [
+              0.009585,
+              -0.297715,
+              425.978932
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2.41
+        }
+      ],
+      "calibratedControls": 32,
+      "differenceFromBaselineM": {
+        "median": 1.5,
+        "max": 2.41
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "left-half",
+      "reference": "builtin",
+      "imageSize": [
+        2253,
+        2789
+      ],
+      "printedControls": 22,
+      "elapsedSec": 91.2,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 8.58,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3973,
+            "metresPerPixel": 0.28614,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.2747,
+            "metresPerPixel": 0.17872,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1961,
+            "metresPerPixel": 0.25438,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.1357,
+            "metresPerPixel": 0.45812,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.1247,
+            "metresPerPixel": 0.53593,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.1243,
+            "metresPerPixel": 0.53593,
+            "rotationDeg": 10.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.4402,
+        "layers": {
+          "building": 0.1812,
+          "path": 0.4792
+        },
+        "layerWeights": {
+          "building": 0.131,
+          "path": 0.869
+        },
+        "margin": 0.1655
+      },
+      "acceptance": {
+        "method": "global_search_road_network",
+        "p95ErrorM": 8.58,
+        "heldOutP95ErrorM": 8.57,
+        "medianErrorM": 3.7,
+        "extrapolationSpreadM": 0.38,
+        "anisotropyPercent": 0.0,
+        "fitCount": 348,
+        "fitObjectCount": 25,
+        "validationCount": 50,
+        "validationObjectCount": 4,
+        "validationWays": [
+          {
+            "referenceId": "913431712",
+            "matched": true,
+            "sampleCount": 9,
+            "medianNearestPathM": 4.91,
+            "p95NearestPathM": 7.75,
+            "maxNearestPathM": 7.84
+          },
+          {
+            "referenceId": "913431718",
+            "matched": true,
+            "sampleCount": 23,
+            "medianNearestPathM": 1.11,
+            "p95NearestPathM": 6.93,
+            "maxNearestPathM": 8.73
+          },
+          {
+            "referenceId": "913431725",
+            "matched": true,
+            "sampleCount": 9,
+            "medianNearestPathM": 5.23,
+            "p95NearestPathM": 11.62,
+            "maxNearestPathM": 13.78
+          },
+          {
+            "referenceId": "913763002",
+            "matched": true,
+            "sampleCount": 9,
+            "medianNearestPathM": 3.85,
+            "p95NearestPathM": 8.43,
+            "maxNearestPathM": 9.07
+          }
+        ],
+        "validationOmittedWayIds": [],
+        "validationTotalWays": 4,
+        "validationInsideHull": 50,
+        "orientedPathSupport": 0.535,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "pairs": {
+            "ink": [
+              901,
+              5753
+            ],
+            "paving": [
+              6236,
+              5381
+            ]
+          },
+          "scoreBeforeM": 3.152,
+          "scoreAfterM": 2.989,
+          "gainPercent": 5.16,
+          "moveP95M": 4.91,
+          "moveMaxM": 5.33,
+          "scalePercent": -0.756,
+          "rotationDeg": -0.49,
+          "halfAgreementM": [
+            1.49,
+            1.35
+          ],
+          "layerGainsM": {
+            "ink": 0.169,
+            "paving": -0.187
+          },
+          "sensitivityM": {
+            "scale": [
+              0.3643,
+              0.3001
+            ],
+            "rotationDeg": [
+              0.2078,
+              0.2282
+            ],
+            "stretchX": [
+              0.1417,
+              0.1682
+            ],
+            "stretchY": [
+              0.158,
+              0.1865
+            ]
+          },
+          "correction": [
+            [
+              0.99240255,
+              0.00848203,
+              0.51160875
+            ],
+            [
+              -0.00848203,
+              0.99240255,
+              0.28541249
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.4402,
+          "layers": {
+            "building": 0.1812,
+            "path": 0.4792
+          },
+          "layerWeights": {
+            "building": 0.131,
+            "path": 0.869
+          },
+          "margin": 0.1655
+        },
+        "poseLayerCount": 2
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4708,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 5.99,
+          "p95ErrorM": 9.12,
+          "extrapolationSpreadM": 3.24,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.29239,
+              0.008236,
+              -559.288049
+            ],
+            [
+              0.008236,
+              -0.29239,
+              423.141394
+            ]
+          ],
+          "differenceFromBaselineMaxM": 8.84
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4402,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 8.57,
+          "extrapolationSpreadM": 0.38,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.29523,
+              0.010896,
+              -567.982236
+            ],
+            [
+              0.010896,
+              -0.29523,
+              421.034985
+            ]
+          ],
+          "differenceFromBaselineMaxM": 3.17
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4129,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 3.84,
+          "p95ErrorM": 7.14,
+          "extrapolationSpreadM": 0.68,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.29738,
+              0.010863,
+              -570.646027
+            ],
+            [
+              0.010863,
+              -0.29738,
+              422.846719
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2.39
+        }
+      ],
+      "calibratedControls": 22,
+      "differenceFromBaselineM": {
+        "median": 2.53,
+        "max": 3.17
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "right-half",
+      "reference": "builtin",
+      "imageSize": [
+        2253,
+        2789
+      ],
+      "printedControls": 17,
+      "elapsedSec": 80.7,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 7.51,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3056,
+            "metresPerPixel": 0.28623,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.3057,
+            "metresPerPixel": 0.23526,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2449,
+            "metresPerPixel": 0.26464,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.2839,
+            "metresPerPixel": 0.19337,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1801,
+            "metresPerPixel": 0.42369,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2468,
+            "metresPerPixel": 0.36217,
+            "rotationDeg": 9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.485,
+        "layers": {
+          "building": 0.6493,
+          "water": 0.0002,
+          "path": 0.4383
+        },
+        "layerWeights": {
+          "building": 0.285,
+          "water": 0.031,
+          "path": 0.685
+        },
+        "margin": 0.1793
+      },
+      "acceptance": {
+        "method": "global_search_road_network",
+        "p95ErrorM": 7.51,
+        "heldOutP95ErrorM": 7.25,
+        "medianErrorM": 4.2,
+        "extrapolationSpreadM": 1.97,
+        "anisotropyPercent": 0.0,
+        "thinValidation": true,
+        "fitCount": 265,
+        "fitObjectCount": 22,
+        "validationCount": 5,
+        "validationObjectCount": 1,
+        "validationWays": [
+          {
+            "referenceId": "913431715",
+            "matched": true,
+            "sampleCount": 5,
+            "medianNearestPathM": 4.2,
+            "p95NearestPathM": 7.25,
+            "maxNearestPathM": 7.73
+          },
+          {
+            "referenceId": "913439821",
+            "matched": false,
+            "sampleCount": 25,
+            "medianNearestPathM": 13.43,
+            "p95NearestPathM": 59.93,
+            "maxNearestPathM": 64.76
+          }
+        ],
+        "validationOmittedWayIds": [
+          "913439821"
+        ],
+        "validationTotalWays": 2,
+        "validationInsideHull": 5,
+        "orientedPathSupport": 0.509,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "held_out_layer+held_out_half",
+          "pairs": {
+            "ink": [
+              2000,
+              3985
+            ],
+            "paving": [
+              5442,
+              3489
+            ],
+            "roof": [
+              706,
+              496
+            ]
+          },
+          "scoreBeforeM": 3.157,
+          "scoreAfterM": 3.04,
+          "gainPercent": 3.68,
+          "moveP95M": 5.89,
+          "moveMaxM": 7.0,
+          "scalePercent": -1.047,
+          "rotationDeg": 0.795,
+          "halfAgreementM": [
+            22.38,
+            3.73
+          ],
+          "layerGainsM": {
+            "ink": 0.048,
+            "paving": -0.517,
+            "roof": 0.246
+          },
+          "sensitivityM": {
+            "scale": [
+              0.2007,
+              0.1582
+            ],
+            "rotationDeg": [
+              0.1118,
+              0.1415
+            ],
+            "stretchX": [
+              0.0085,
+              0.1049
+            ],
+            "stretchY": [
+              0.1997,
+              0.0794
+            ]
+          },
+          "correction": [
+            [
+              0.98943311,
+              -0.0137272,
+              0.16145767
+            ],
+            [
+              0.0137272,
+              0.98943311,
+              -2.68217333
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.485,
+          "layers": {
+            "building": 0.6493,
+            "water": 0.0002,
+            "path": 0.4383
+          },
+          "layerWeights": {
+            "building": 0.285,
+            "water": 0.031,
+            "path": 0.685
+          },
+          "margin": 0.1793
+        },
+        "poseLayerCount": 3
+      },
+      "alternatives": [
+        {
+          "method": "global_search_road_network",
+          "support": 0.485,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 7.25,
+          "extrapolationSpreadM": 1.97,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.294299,
+              0.005009,
+              -17.413671
+            ],
+            [
+              0.005009,
+              -0.294299,
+              440.933041
+            ]
+          ],
+          "differenceFromBaselineMaxM": 11.82
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4216,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 9.0,
+          "p95ErrorM": 7.54,
+          "extrapolationSpreadM": 1.52,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.297401,
+              0.012625,
+              -29.481339
+            ],
+            [
+              0.012625,
+              -0.297401,
+              443.049819
+            ]
+          ],
+          "differenceFromBaselineMaxM": 6.49
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.3912,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 14.39,
+          "p95ErrorM": 5.54,
+          "extrapolationSpreadM": 2.07,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.288994,
+              -0.007568,
+              3.859907
+            ],
+            [
+              -0.007568,
+              -0.288994,
+              437.647098
+            ]
+          ],
+          "differenceFromBaselineMaxM": 26.45
+        }
+      ],
+      "calibratedControls": 16,
+      "differenceFromBaselineM": {
+        "median": 8.06,
+        "max": 11.82
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "top-half",
+      "reference": "builtin",
+      "imageSize": [
+        4096,
+        1534
+      ],
+      "printedControls": 14,
+      "elapsedSec": 360.7,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "另一处位置与原图同样吻合（0.47，已选 0.24），请补充同名点确定位置"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.2423,
+          "method": "global_search_road_network",
+          "p95ErrorM": 17.98,
+          "acceptance": {
+            "method": "global_search_road_network",
+            "p95ErrorM": 17.98,
+            "medianErrorM": 5.84,
+            "extrapolationSpreadM": 0.99,
+            "fitCount": 174,
+            "fitObjectCount": 28,
+            "validationCount": 21,
+            "validationObjectCount": 5,
+            "validationWays": [
+              {
+                "referenceId": "1125426271",
+                "matched": false,
+                "sampleCount": 8,
+                "medianNearestPathM": 24.05,
+                "p95NearestPathM": 30.77,
+                "maxNearestPathM": 31.62
+              },
+              {
+                "referenceId": "1216000751",
+                "matched": true,
+                "sampleCount": 2,
+                "medianNearestPathM": 10.04,
+                "p95NearestPathM": 15.63,
+                "maxNearestPathM": 16.26
+              },
+              {
+                "referenceId": "1216000754",
+                "matched": true,
+                "sampleCount": 4,
+                "medianNearestPathM": 10.82,
+                "p95NearestPathM": 23.98,
+                "maxNearestPathM": 25.43
+              },
+              {
+                "referenceId": "1460037353",
+                "matched": false,
+                "sampleCount": 14,
+                "medianNearestPathM": 19.67,
+                "p95NearestPathM": 35.79,
+                "maxNearestPathM": 37.57
+              },
+              {
+                "referenceId": "1463385605",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 42.33,
+                "p95NearestPathM": 50.01,
+                "maxNearestPathM": 50.81
+              },
+              {
+                "referenceId": "1468004412",
+                "matched": true,
+                "sampleCount": 5,
+                "medianNearestPathM": 5.62,
+                "p95NearestPathM": 10.81,
+                "maxNearestPathM": 11.87
+              },
+              {
+                "referenceId": "246260664",
+                "matched": true,
+                "sampleCount": 3,
+                "medianNearestPathM": 10.03,
+                "p95NearestPathM": 17.19,
+                "maxNearestPathM": 17.98
+              },
+              {
+                "referenceId": "246481980",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 14.28,
+                "p95NearestPathM": 18.34,
+                "maxNearestPathM": 18.79
+              },
+              {
+                "referenceId": "246557296",
+                "matched": true,
+                "sampleCount": 7,
+                "medianNearestPathM": 5.39,
+                "p95NearestPathM": 8.11,
+                "maxNearestPathM": 8.84
+              },
+              {
+                "referenceId": "533912134",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 61.04,
+                "p95NearestPathM": 85.1,
+                "maxNearestPathM": 88.72
+              },
+              {
+                "referenceId": "535143171",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 36.6,
+                "p95NearestPathM": 43.41,
+                "maxNearestPathM": 43.5
+              },
+              {
+                "referenceId": "636237024",
+                "matched": false,
+                "sampleCount": 13,
+                "medianNearestPathM": 25.23,
+                "p95NearestPathM": 38.21,
+                "maxNearestPathM": 38.44
+              },
+              {
+                "referenceId": "913431713",
+                "matched": false,
+                "sampleCount": 26,
+                "medianNearestPathM": 21.53,
+                "p95NearestPathM": 66.25,
+                "maxNearestPathM": 67.9
+              },
+              {
+                "referenceId": "913431719",
+                "matched": false,
+                "sampleCount": 8,
+                "medianNearestPathM": 11.74,
+                "p95NearestPathM": 24.29,
+                "maxNearestPathM": 26.34
+              },
+              {
+                "referenceId": "913431725",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 12.02,
+                "p95NearestPathM": 19.12,
+                "maxNearestPathM": 19.74
+              },
+              {
+                "referenceId": "913763000",
+                "matched": false,
+                "sampleCount": 6,
+                "medianNearestPathM": 9.24,
+                "p95NearestPathM": 29.44,
+                "maxNearestPathM": 32.74
+              },
+              {
+                "referenceId": "913763003",
+                "matched": false,
+                "sampleCount": 7,
+                "medianNearestPathM": 28.89,
+                "p95NearestPathM": 38.66,
+                "maxNearestPathM": 39.98
+              },
+              {
+                "referenceId": "913779741",
+                "matched": false,
+                "sampleCount": 14,
+                "medianNearestPathM": 22.02,
+                "p95NearestPathM": 45.66,
+                "maxNearestPathM": 48.58
+              },
+              {
+                "referenceId": "925798986",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 12.88,
+                "p95NearestPathM": 24.42,
+                "maxNearestPathM": 26.44
+              }
+            ],
+            "validationOmittedWayIds": [
+              "1125426271",
+              "1460037353",
+              "1463385605",
+              "246481980",
+              "533912134",
+              "535143171",
+              "636237024",
+              "913431713",
+              "913431719",
+              "913431725",
+              "913763000",
+              "913763003",
+              "913779741",
+              "925798986"
+            ],
+            "validationTotalWays": 19,
+            "validationInsideHull": 21,
+            "orientedPathSupport": 0.096,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "differenceFromBaselineM": {
+            "median": 213.45,
+            "max": 307.48
+          }
+        },
+        {
+          "support": 0.5988,
+          "method": "global_search_unconfirmed",
+          "p95ErrorM": null,
+          "acceptance": {
+            "method": "global_search_unconfirmed",
+            "approximate": true,
+            "p95ErrorM": null,
+            "medianErrorM": null,
+            "anisotropyPercent": 0.0,
+            "fitCount": 0,
+            "validationCount": 0,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "differenceFromBaselineM": {
+            "median": 1025.96,
+            "max": 1270.49
+          }
+        }
+      ],
+      "baselinePlaceOffered": null
+    },
+    {
+      "case": "bottom-half",
+      "reference": "builtin",
+      "imageSize": [
+        4096,
+        1534
+      ],
+      "printedControls": 23,
+      "elapsedSec": 299.9,
+      "failures": [
+        "自动配准仅找到 6 组稳定地物，需补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "候选配准与参照的吻合度过低（-0.01），请补充同名点"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.2865,
+          "method": "global_search_unconfirmed",
+          "p95ErrorM": null,
+          "acceptance": {
+            "method": "global_search_unconfirmed",
+            "approximate": true,
+            "p95ErrorM": null,
+            "medianErrorM": null,
+            "anisotropyPercent": 0.0,
+            "fitCount": 0,
+            "validationCount": 0,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "differenceFromBaselineM": {
+            "median": 1345.21,
+            "max": 1935.64
+          }
+        }
+      ],
+      "baselinePlaceOffered": null
+    },
+    {
+      "case": "centre",
+      "reference": "builtin",
+      "imageSize": [
+        2458,
+        1673
+      ],
+      "printedControls": 23,
+      "elapsedSec": 399.4,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置",
+        "另一处位置与原图同样吻合（0.39，已选 0.32），请补充同名点确定位置"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.3199,
+          "method": "global_search_road_network",
+          "p95ErrorM": 16.74,
+          "acceptance": {
+            "method": "global_search_road_network",
+            "p95ErrorM": 16.74,
+            "medianErrorM": 6.56,
+            "extrapolationSpreadM": 0.67,
+            "fitCount": 148,
+            "fitObjectCount": 13,
+            "validationCount": 14,
+            "validationObjectCount": 2,
+            "validationWays": [
+              {
+                "referenceId": "913431719",
+                "matched": true,
+                "sampleCount": 8,
+                "medianNearestPathM": 6.56,
+                "p95NearestPathM": 18.02,
+                "maxNearestPathM": 19.52
+              },
+              {
+                "referenceId": "913763000",
+                "matched": true,
+                "sampleCount": 6,
+                "medianNearestPathM": 7.61,
+                "p95NearestPathM": 14.12,
+                "maxNearestPathM": 14.55
+              }
+            ],
+            "validationOmittedWayIds": [],
+            "validationTotalWays": 2,
+            "validationInsideHull": 14,
+            "orientedPathSupport": 0.199,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "differenceFromBaselineM": {
+            "median": 98.25,
+            "max": 168.32
+          }
+        },
+        {
+          "support": 0.2544,
+          "method": "global_search_road_network",
+          "p95ErrorM": 8.63,
+          "acceptance": {
+            "method": "global_search_road_network",
+            "p95ErrorM": 8.63,
+            "medianErrorM": 6.77,
+            "extrapolationSpreadM": 3.56,
+            "thinValidation": true,
+            "fitCount": 57,
+            "fitObjectCount": 10,
+            "validationCount": 2,
+            "validationObjectCount": 1,
+            "validationWays": [
+              {
+                "referenceId": "581971362",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 14.09,
+                "p95NearestPathM": 16.27,
+                "maxNearestPathM": 16.51
+              },
+              {
+                "referenceId": "581971441",
+                "matched": true,
+                "sampleCount": 2,
+                "medianNearestPathM": 6.76,
+                "p95NearestPathM": 8.64,
+                "maxNearestPathM": 8.84
+              }
+            ],
+            "validationOmittedWayIds": [
+              "581971362"
+            ],
+            "validationTotalWays": 2,
+            "validationInsideHull": 2,
+            "orientedPathSupport": 0.114,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "differenceFromBaselineM": {
+            "median": 1146.72,
+            "max": 1671.93
+          }
+        },
+        {
+          "support": 0.3922,
+          "method": "global_search_unconfirmed",
+          "p95ErrorM": null,
+          "acceptance": {
+            "method": "global_search_unconfirmed",
+            "approximate": true,
+            "p95ErrorM": null,
+            "medianErrorM": null,
+            "anisotropyPercent": 0.0,
+            "fitCount": 0,
+            "validationCount": 0,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "differenceFromBaselineM": {
+            "median": 999.71,
+            "max": 1432.23
+          }
+        }
+      ],
+      "baselinePlaceOffered": null
+    },
+    {
+      "case": "jpeg-60-no-park",
+      "reference": "no-park",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 127.3,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 10.01,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3708,
+            "metresPerPixel": 0.28633,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.1561,
+            "metresPerPixel": 0.45842,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.1068,
+            "metresPerPixel": 0.42384,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.2381,
+            "metresPerPixel": 0.21759,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.184,
+            "metresPerPixel": 0.42384,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2162,
+            "metresPerPixel": 0.23534,
+            "rotationDeg": 9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.4355,
+        "layers": {
+          "building": 0.4838,
+          "path": 0.422
+        },
+        "layerWeights": {
+          "building": 0.219,
+          "path": 0.781
+        },
+        "margin": 0.1974
+      },
+      "acceptance": {
+        "method": "global_search_road_network",
+        "p95ErrorM": 10.01,
+        "heldOutP95ErrorM": 9.99,
+        "medianErrorM": 2.66,
+        "extrapolationSpreadM": 0.57,
+        "anisotropyPercent": 0.0,
+        "fitCount": 416,
+        "fitObjectCount": 26,
+        "validationCount": 134,
+        "validationObjectCount": 7,
+        "validationWays": [
+          {
+            "referenceId": "385693575",
+            "matched": true,
+            "sampleCount": 60,
+            "medianNearestPathM": 2.49,
+            "p95NearestPathM": 7.21,
+            "maxNearestPathM": 8.4
+          },
+          {
+            "referenceId": "913431712",
+            "matched": true,
+            "sampleCount": 9,
+            "medianNearestPathM": 5.46,
+            "p95NearestPathM": 8.26,
+            "maxNearestPathM": 8.79
+          },
+          {
+            "referenceId": "913431716",
+            "matched": true,
+            "sampleCount": 20,
+            "medianNearestPathM": 5.77,
+            "p95NearestPathM": 13.77,
+            "maxNearestPathM": 15.15
+          },
+          {
+            "referenceId": "913431719",
+            "matched": true,
+            "sampleCount": 8,
+            "medianNearestPathM": 1.38,
+            "p95NearestPathM": 6.37,
+            "maxNearestPathM": 7.52
+          },
+          {
+            "referenceId": "913431725",
+            "matched": true,
+            "sampleCount": 9,
+            "medianNearestPathM": 4.04,
+            "p95NearestPathM": 7.7,
+            "maxNearestPathM": 7.82
+          },
+          {
+            "referenceId": "913763001",
+            "matched": true,
+            "sampleCount": 24,
+            "medianNearestPathM": 2.18,
+            "p95NearestPathM": 4.74,
+            "maxNearestPathM": 5.91
+          },
+          {
+            "referenceId": "913763005",
+            "matched": true,
+            "sampleCount": 4,
+            "medianNearestPathM": 5.42,
+            "p95NearestPathM": 9.32,
+            "maxNearestPathM": 9.81
+          }
+        ],
+        "validationOmittedWayIds": [],
+        "validationTotalWays": 7,
+        "validationInsideHull": 134,
+        "orientedPathSupport": 0.547,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "pairs": {
+            "ink": [
+              1894,
+              7423
+            ],
+            "paving": [
+              8706,
+              6760
+            ],
+            "roof": [
+              540,
+              718
+            ]
+          },
+          "scoreBeforeM": 3.366,
+          "scoreAfterM": 3.262,
+          "gainPercent": 3.09,
+          "moveP95M": 5.4,
+          "moveMaxM": 5.7,
+          "scalePercent": -0.728,
+          "rotationDeg": -0.658,
+          "halfAgreementM": [
+            6.99,
+            5.61
+          ],
+          "layerGainsM": {
+            "ink": 0.011,
+            "paving": -0.447,
+            "roof": 0.149
+          },
+          "sensitivityM": {
+            "scale": [
+              0.2066,
+              0.1822
+            ],
+            "rotationDeg": [
+              0.1226,
+              0.1095
+            ],
+            "stretchX": [
+              0.0865,
+              0.1075
+            ],
+            "stretchY": [
+              0.1322,
+              0.1198
+            ]
+          },
+          "correction": [
+            [
+              0.99265374,
+              0.01140633,
+              -0.21301741
+            ],
+            [
+              -0.01140633,
+              0.99265374,
+              -0.90435305
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.4355,
+          "layers": {
+            "building": 0.4838,
+            "path": 0.422
+          },
+          "layerWeights": {
+            "building": 0.219,
+            "path": 0.781
+          },
+          "margin": 0.1974
+        },
+        "poseLayerCount": 2
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4626,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 4.42,
+          "p95ErrorM": 8.79,
+          "extrapolationSpreadM": 2.03,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.29257,
+              0.006623,
+              -557.717376
+            ],
+            [
+              0.006623,
+              -0.29257,
+              426.151804
+            ]
+          ],
+          "differenceFromBaselineMaxM": 10.44
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4564,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 7.58,
+          "p95ErrorM": 7.53,
+          "extrapolationSpreadM": 2.37,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.291178,
+              0.005569,
+              -554.557363
+            ],
+            [
+              0.005569,
+              -0.291178,
+              427.350566
+            ]
+          ],
+          "differenceFromBaselineMaxM": 13.74
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4355,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 9.99,
+          "extrapolationSpreadM": 0.57,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.293969,
+              0.009543,
+              -564.564887
+            ],
+            [
+              0.009543,
+              -0.293969,
+              422.256385
+            ]
+          ],
+          "differenceFromBaselineMaxM": 7.03
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3865,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 4.29,
+          "p95ErrorM": 12.28,
+          "extrapolationSpreadM": 0.65,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.295879,
+              0.010623,
+              -568.046327
+            ],
+            [
+              0.010623,
+              -0.295879,
+              422.199755
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2.74
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2147,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 172.79,
+          "p95ErrorM": 13.97,
+          "extrapolationSpreadM": 0.62,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.220362,
+              -0.027825,
+              -327.905933
+            ],
+            [
+              -0.027825,
+              -0.220362,
+              459.149528
+            ]
+          ],
+          "differenceFromBaselineMaxM": 178.01
+        }
+      ],
+      "calibratedControls": 31,
+      "differenceFromBaselineM": {
+        "median": 4.81,
+        "max": 7.03
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "dim-80-no-park",
+      "reference": "no-park",
+      "imageSize": [
+        4096,
+        2789
+      ],
+      "printedControls": 32,
+      "elapsedSec": 184.8,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 9.73,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3981,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.1951,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -6.0
+          },
+          {
+            "score": 0.2355,
+            "metresPerPixel": 0.21747,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.1524,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2573,
+            "metresPerPixel": 0.17874,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2225,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 10.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": {
+        "whiteValue": 204.0,
+        "gain": 1.25,
+        "reference": "unmasked_map"
+      },
+      "poseSupport": {
+        "value": 0.4624,
+        "layers": {
+          "building": 0.4582,
+          "path": 0.4637
+        },
+        "layerWeights": {
+          "building": 0.244,
+          "path": 0.756
+        },
+        "margin": 0.2051
+      },
+      "acceptance": {
+        "method": "global_search_road_network",
+        "p95ErrorM": 9.73,
+        "heldOutP95ErrorM": 9.71,
+        "medianErrorM": 2.23,
+        "extrapolationSpreadM": 0.61,
+        "anisotropyPercent": 0.0,
+        "fitCount": 415,
+        "fitObjectCount": 28,
+        "validationCount": 134,
+        "validationObjectCount": 7,
+        "validationWays": [
+          {
+            "referenceId": "385693575",
+            "matched": true,
+            "sampleCount": 60,
+            "medianNearestPathM": 1.74,
+            "p95NearestPathM": 4.95,
+            "maxNearestPathM": 7.81
+          },
+          {
+            "referenceId": "913431712",
+            "matched": true,
+            "sampleCount": 9,
+            "medianNearestPathM": 3.84,
+            "p95NearestPathM": 6.55,
+            "maxNearestPathM": 6.66
+          },
+          {
+            "referenceId": "913431716",
+            "matched": true,
+            "sampleCount": 20,
+            "medianNearestPathM": 5.16,
+            "p95NearestPathM": 14.02,
+            "maxNearestPathM": 16.67
+          },
+          {
+            "referenceId": "913431719",
+            "matched": true,
+            "sampleCount": 8,
+            "medianNearestPathM": 1.37,
+            "p95NearestPathM": 6.48,
+            "maxNearestPathM": 7.54
+          },
+          {
+            "referenceId": "913431725",
+            "matched": true,
+            "sampleCount": 9,
+            "medianNearestPathM": 2.54,
+            "p95NearestPathM": 8.83,
+            "maxNearestPathM": 9.73
+          },
+          {
+            "referenceId": "913763001",
+            "matched": true,
+            "sampleCount": 24,
+            "medianNearestPathM": 2.45,
+            "p95NearestPathM": 6.33,
+            "maxNearestPathM": 6.67
+          },
+          {
+            "referenceId": "913763005",
+            "matched": true,
+            "sampleCount": 4,
+            "medianNearestPathM": 5.11,
+            "p95NearestPathM": 6.84,
+            "maxNearestPathM": 6.89
+          }
+        ],
+        "validationOmittedWayIds": [],
+        "validationTotalWays": 7,
+        "validationInsideHull": 134,
+        "orientedPathSupport": 0.503,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "small_gain",
+          "pairs": {
+            "ink": [
+              2265,
+              7863
+            ],
+            "paving": [
+              8787,
+              7201
+            ],
+            "roof": [
+              541,
+              717
+            ]
+          },
+          "scoreBeforeM": 3.264,
+          "scoreAfterM": 3.21,
+          "gainPercent": 1.68,
+          "moveP95M": 3.92,
+          "moveMaxM": 4.36,
+          "scalePercent": -0.809,
+          "rotationDeg": -0.287,
+          "sensitivityM": {
+            "scale": [
+              0.2017,
+              0.2169
+            ],
+            "rotationDeg": [
+              0.1478,
+              0.119
+            ],
+            "stretchX": [
+              0.0768,
+              0.143
+            ],
+            "stretchY": [
+              0.1471,
+              0.1188
+            ]
+          },
+          "correction": [
+            [
+              0.99189722,
+              0.0049715,
+              0.35582731
+            ],
+            [
+              -0.0049715,
+              0.99189722,
+              -0.06127675
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.4624,
+          "layers": {
+            "building": 0.4582,
+            "path": 0.4637
+          },
+          "layerWeights": {
+            "building": 0.244,
+            "path": 0.756
+          },
+          "margin": 0.2051
+        },
+        "poseLayerCount": 2
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4731,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 4.54,
+          "p95ErrorM": 5.71,
+          "extrapolationSpreadM": 1.66,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.291063,
+              0.008123,
+              -557.287787
+            ],
+            [
+              0.008123,
+              -0.291063,
+              421.097585
+            ]
+          ],
+          "differenceFromBaselineMaxM": 11.25
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4624,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 9.71,
+          "extrapolationSpreadM": 0.61,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.294149,
+              0.008359,
+              -563.767988
+            ],
+            [
+              0.008359,
+              -0.294149,
+              424.311122
+            ]
+          ],
+          "differenceFromBaselineMaxM": 8.11
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3378,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 9.27,
+          "p95ErrorM": 11.09,
+          "extrapolationSpreadM": 0.6,
+          "layerCount": 2,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.298553,
+              0.010783,
+              -572.13065
+            ],
+            [
+              0.010783,
+              -0.298553,
+              424.940416
+            ]
+          ],
+          "differenceFromBaselineMaxM": 3.14
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.2035,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 44.29,
+          "p95ErrorM": 2.55,
+          "extrapolationSpreadM": 32.12,
+          "layerCount": 2,
+          "anisotropyPercent": 13.53,
+          "affine": [
+            [
+              0.316111,
+              -0.009491,
+              -590.282317
+            ],
+            [
+              0.002218,
+              -0.280172,
+              415.499323
+            ]
+          ],
+          "differenceFromBaselineMaxM": 50.72
+        }
+      ],
+      "calibratedControls": 31,
+      "differenceFromBaselineM": {
+        "median": 5.66,
+        "max": 8.11
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "turned-90-no-park",
+      "reference": "no-park",
+      "imageSize": [
+        2789,
+        4096
+      ],
+      "printedControls": 32,
+      "elapsedSec": 199.6,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 10.64,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.094,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.1409,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.0804,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.0813,
+            "metresPerPixel": 0.96529,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.1539,
+            "metresPerPixel": 0.45817,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.1409,
+            "metresPerPixel": 0.44054,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.094,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.1409,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.0804,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.0813,
+            "metresPerPixel": 0.96529,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.1539,
+            "metresPerPixel": 0.45817,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.1409,
+            "metresPerPixel": 0.44054,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.185,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.1969,
+            "metresPerPixel": 0.55743,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.1407,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2061,
+            "metresPerPixel": 0.17187,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.1926,
+            "metresPerPixel": 0.26458,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.0723,
+            "metresPerPixel": 0.60291,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.1583,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.1407,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.073,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.1919,
+            "metresPerPixel": 0.26458,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.1285,
+            "metresPerPixel": 0.53599,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.1266,
+            "metresPerPixel": 0.4236,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.0895,
+            "metresPerPixel": 0.17187,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.1163,
+            "metresPerPixel": 0.24462,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.1221,
+            "metresPerPixel": 0.2544,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1224,
+            "metresPerPixel": 0.60291,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.1106,
+            "metresPerPixel": 0.16526,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.1078,
+            "metresPerPixel": 0.2091,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.3918,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 90.0
+          },
+          {
+            "score": 0.2306,
+            "metresPerPixel": 0.30952,
+            "rotationDeg": 222.0
+          },
+          {
+            "score": 0.2516,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 253.5
+          },
+          {
+            "score": 0.1583,
+            "metresPerPixel": 0.57973,
+            "rotationDeg": 256.5
+          },
+          {
+            "score": 0.184,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 219.0
+          },
+          {
+            "score": 0.2439,
+            "metresPerPixel": 0.2091,
+            "rotationDeg": 228.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 24,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.3467,
+        "layers": {
+          "building": 0.3792,
+          "water": 0.006,
+          "path": 0.3498
+        },
+        "layerWeights": {
+          "building": 0.229,
+          "water": 0.029,
+          "path": 0.743
+        },
+        "margin": 0.0951
+      },
+      "acceptance": {
+        "method": "global_search_road_network",
+        "p95ErrorM": 10.64,
+        "heldOutP95ErrorM": 10.63,
+        "medianErrorM": 3.76,
+        "extrapolationSpreadM": 0.52,
+        "anisotropyPercent": 0.0,
+        "fitCount": 416,
+        "fitObjectCount": 30,
+        "validationCount": 155,
+        "validationObjectCount": 7,
+        "polished": true,
+        "validationWays": [
+          {
+            "referenceId": "251476469",
+            "matched": true,
+            "sampleCount": 27,
+            "medianNearestPathM": 8.77,
+            "p95NearestPathM": 11.29,
+            "maxNearestPathM": 11.5
+          },
+          {
+            "referenceId": "913431711",
+            "matched": true,
+            "sampleCount": 51,
+            "medianNearestPathM": 4.67,
+            "p95NearestPathM": 11.41,
+            "maxNearestPathM": 13.04
+          },
+          {
+            "referenceId": "913431715",
+            "matched": true,
+            "sampleCount": 5,
+            "medianNearestPathM": 4.47,
+            "p95NearestPathM": 5.59,
+            "maxNearestPathM": 5.67
+          },
+          {
+            "referenceId": "913431718",
+            "matched": true,
+            "sampleCount": 23,
+            "medianNearestPathM": 1.42,
+            "p95NearestPathM": 5.52,
+            "maxNearestPathM": 6.23
+          },
+          {
+            "referenceId": "913431722",
+            "matched": false,
+            "sampleCount": 16,
+            "medianNearestPathM": 33.73,
+            "p95NearestPathM": 47.92,
+            "maxNearestPathM": 48.46
+          },
+          {
+            "referenceId": "913763000",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 1.14,
+            "p95NearestPathM": 6.03,
+            "maxNearestPathM": 6.04
+          },
+          {
+            "referenceId": "913763004",
+            "matched": true,
+            "sampleCount": 37,
+            "medianNearestPathM": 3.71,
+            "p95NearestPathM": 7.29,
+            "maxNearestPathM": 10.43
+          },
+          {
+            "referenceId": "913763010",
+            "matched": true,
+            "sampleCount": 6,
+            "medianNearestPathM": 2.07,
+            "p95NearestPathM": 3.66,
+            "maxNearestPathM": 4.0
+          }
+        ],
+        "validationOmittedWayIds": [
+          "913431722"
+        ],
+        "validationTotalWays": 8,
+        "validationInsideHull": 155,
+        "orientedPathSupport": 0.402,
+        "denseRefinement": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "pairs": {
+            "ink": [
+              2286,
+              8077
+            ],
+            "paving": [
+              8845,
+              7289
+            ],
+            "roof": [
+              551,
+              843
+            ]
+          },
+          "scoreBeforeM": 3.468,
+          "scoreAfterM": 3.216,
+          "gainPercent": 7.26,
+          "moveP95M": 10.72,
+          "moveMaxM": 11.86,
+          "scalePercent": -1.983,
+          "rotationDeg": -0.477,
+          "halfAgreementM": [
+            8.88,
+            3.57
+          ],
+          "layerGainsM": {
+            "ink": -0.034,
+            "paving": -0.187,
+            "roof": 0.101
+          },
+          "sensitivityM": {
+            "scale": [
+              0.1924,
+              0.2293
+            ],
+            "rotationDeg": [
+              0.1592,
+              0.1333
+            ],
+            "stretchX": [
+              0.0584,
+              0.1568
+            ],
+            "stretchY": [
+              0.1491,
+              0.1167
+            ]
+          },
+          "correction": [
+            [
+              0.98013186,
+              0.0081541,
+              -3.50161239
+            ],
+            [
+              -0.0081541,
+              0.98013186,
+              1.23414131
+            ]
+          ]
+        },
+        "poseSupport": {
+          "value": 0.3467,
+          "layers": {
+            "building": 0.3792,
+            "water": 0.006,
+            "path": 0.3498
+          },
+          "layerWeights": {
+            "building": 0.229,
+            "water": 0.029,
+            "path": 0.743
+          },
+          "margin": 0.0951
+        },
+        "poseLayerCount": 3
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4686,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 11.5,
+          "p95ErrorM": 8.38,
+          "extrapolationSpreadM": 2.08,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.007567,
+              -0.291884,
+              636.321658
+            ],
+            [
+              -0.291884,
+              -0.007567,
+              454.375202
+            ]
+          ],
+          "differenceFromBaselineMaxM": 11.59
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.4319,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 5.02,
+          "p95ErrorM": 7.86,
+          "extrapolationSpreadM": 0.59,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.008315,
+              -0.295248,
+              644.99949
+            ],
+            [
+              -0.295248,
+              -0.008315,
+              459.324232
+            ]
+          ],
+          "differenceFromBaselineMaxM": 5.53
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.3467,
+          "agreesWithChosen": true,
+          "sheetP95DistanceM": 0.0,
+          "p95ErrorM": 10.63,
+          "extrapolationSpreadM": 0.52,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.009699,
+              -0.297771,
+              650.381811
+            ],
+            [
+              -0.297771,
+              -0.009699,
+              465.636488
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2.44
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.227,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 1624.39,
+          "p95ErrorM": 12.23,
+          "extrapolationSpreadM": 2.53,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              -0.078833,
+              0.277363,
+              524.278553
+            ],
+            [
+              0.277363,
+              0.078833,
+              -274.227575
+            ]
+          ],
+          "differenceFromBaselineMaxM": 1605.4
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0867,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2441.41,
+          "p95ErrorM": 10.74,
+          "extrapolationSpreadM": 6.23,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.789702,
+              0.101041,
+              -2179.688109
+            ],
+            [
+              0.101041,
+              -0.789702,
+              356.483375
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2666.27
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0867,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2441.41,
+          "p95ErrorM": 10.74,
+          "extrapolationSpreadM": 6.23,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.789702,
+              0.101041,
+              -2179.688109
+            ],
+            [
+              0.101041,
+              -0.789702,
+              356.483375
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2666.27
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0846,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2445.73,
+          "p95ErrorM": 10.09,
+          "extrapolationSpreadM": 4.81,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.788555,
+              0.107124,
+              -2190.190176
+            ],
+            [
+              0.107124,
+              -0.788555,
+              340.909623
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2671.02
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0846,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2445.73,
+          "p95ErrorM": 10.09,
+          "extrapolationSpreadM": 4.81,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.788555,
+              0.107124,
+              -2190.190176
+            ],
+            [
+              0.107124,
+              -0.788555,
+              340.909623
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2671.02
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0836,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2585.21,
+          "p95ErrorM": 15.1,
+          "extrapolationSpreadM": 4.49,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.746966,
+              0.219487,
+              -2329.655592
+            ],
+            [
+              0.219487,
+              -0.746966,
+              -83.341375
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2816.22
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0836,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2585.21,
+          "p95ErrorM": 15.1,
+          "extrapolationSpreadM": 4.49,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.746966,
+              0.219487,
+              -2329.655592
+            ],
+            [
+              0.219487,
+              -0.746966,
+              -83.341375
+            ]
+          ],
+          "differenceFromBaselineMaxM": 2816.22
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0679,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 1344.53,
+          "p95ErrorM": 14.81,
+          "extrapolationSpreadM": 0.93,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.399771,
+              0.100753,
+              -513.911331
+            ],
+            [
+              0.100753,
+              -0.399771,
+              46.751722
+            ]
+          ],
+          "differenceFromBaselineMaxM": 1460.4
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0664,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2754.87,
+          "p95ErrorM": 10.13,
+          "extrapolationSpreadM": 4.3,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.907919,
+              0.190849,
+              -2622.873832
+            ],
+            [
+              0.190849,
+              -0.907919,
+              348.052172
+            ]
+          ],
+          "differenceFromBaselineMaxM": 3016.93
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0664,
+          "agreesWithChosen": false,
+          "sheetP95DistanceM": 2754.87,
+          "p95ErrorM": 10.13,
+          "extrapolationSpreadM": 4.3,
+          "layerCount": 3,
+          "anisotropyPercent": 0.0,
+          "affine": [
+            [
+              0.907919,
+              0.190849,
+              -2622.873832
+            ],
+            [
+              0.190849,
+              -0.907919,
+              348.052172
+            ]
+          ],
+          "differenceFromBaselineMaxM": 3016.93
+        }
+      ],
+      "calibratedControls": 32,
+      "differenceFromBaselineM": {
+        "median": 1.48,
+        "max": 2.44
+      },
+      "outcome": "consistent"
+    }
+  ],
+  "summary": {
+    "consistent": 8,
+    "inconsistent": 0,
+    "refused": 3,
+    "refusedOfferingBaselinePlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

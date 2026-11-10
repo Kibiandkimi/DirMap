@@ -1,11 +1,14 @@
 {
-  "checkedAt": "2026-11-04T03:08:12Z",
-  "scope": "The real 大沙河 sheet registered as if its place were new.\n\n大沙河 was the first park sheet; its first automatic registration only\nworked once a park outline seed was added. Later sheets of new places will\nnot match a park outline as conveniently. This reruns recognition and the\nwhole automatic registration chain on the supplied sheet under conditions a\nnew place brings: no park outline in OSM, only part of the park printed\n(crops), a teacher's own viewport downloaded fresh from OSM instead of the\nbuilt-in reference, and JPEG/exposure damage on top.\n\nThe reviewed workbench registration of the unchanged sheet is the\ncomparison baseline. It is itself an automatic road fit (internal road P95\nabout 10 m), not survey truth: differences here measure consistency.",
-  "implementationSignature": "199a4ca5c0c6a70ca210d84877deb4ea843c079cfd8a755505f7403cab57c536",
+  "checkedAt": "2026-11-05T18:11:49Z",
+  "scope": "The real 大沙河 sheet registered as if its place were new.\n\n大沙河 was the first park sheet; its first automatic registration only\nworked once a park outline seed was added. Later sheets of new places will\nnot match a park outline as conveniently. This reruns recognition and the\nwhole automatic registration chain on the supplied sheet under conditions a\nnew place brings: no park outline in OSM, only part of the park printed\n(crops), a teacher's own viewport downloaded fresh from OSM instead of the\nbuilt-in reference, JPEG/exposure damage, and a sideways (90°) image.\n\nThe reviewed workbench registration of the unchanged sheet is the\ncomparison baseline. It is itself an automatic road fit (internal road P95\nabout 10 m), not survey truth: differences here measure consistency.",
+  "implementationSignature": "3a6acfe7d89adc294173f468416bef12599d8d2fc0029a24ea3ab9f193fa31f7",
   "sourceSha256": "21800411acc7cc83220de66d1c31b7b33b9ac20d1bcff0da699ea9c45dc8d4b8",
+  "verifierSha256": "cdec6efb2b5d95da2b20b9e0551bf8c58c71315e2453667d8fc1a05b5cd4cd67",
+  "baselineRegistrationStamp": "de2b35b3c79a82a8c96f03637cc698f2dd3876053b5adfa6ba244a44ad9dcead",
   "baselineMethod": "park_outline_road_network",
   "stableWithinM": 12.0,
   "viewportReferenceSha256": "e792e514c778df2301bfb01139ecf5841319fe5cdb3f58075eeff73b18cc7190",
+  "complete": true,
   "cases": [
     {
       "case": "original",
@@ -15,20 +18,63 @@
         2789
       ],
       "printedControls": 32,
-      "elapsedSec": 57.8,
+      "elapsedSec": 71.6,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点"
       ],
       "method": "park_outline_road_network",
       "reportedP95M": 10.52,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4638,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.2928,
+            "metresPerPixel": 0.4236,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2594,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2442,
+            "metresPerPixel": 0.45817,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.237,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2274,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -15.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 1,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.3592,
+        "value": 0.3632,
         "layers": {
-          "building": 0.4407,
-          "water": 0.0662,
+          "building": 0.4912,
           "path": 0.3294
         },
-        "margin": 0.3592
+        "margin": 0.0704
       },
       "calibratedControls": 32,
       "differenceFromBaselineM": {
@@ -45,26 +91,69 @@
         2789
       ],
       "printedControls": 32,
-      "elapsedSec": 62.2,
+      "elapsedSec": 79.7,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "场地缺少可核对的公园轮廓与道路网络"
       ],
       "method": "global_search_road_network",
-      "reportedP95M": 12.7,
+      "reportedP95M": 12.2,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4477,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2639,
+            "metresPerPixel": 0.17874,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2612,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2607,
+            "metresPerPixel": 0.21747,
+            "rotationDeg": 6.0
+          },
+          {
+            "score": 0.2467,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2354,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 4.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.4707,
+        "value": 0.3493,
         "layers": {
-          "building": 0.4686,
-          "water": 0.0475,
-          "path": 0.4714
+          "building": 0.4572,
+          "path": 0.3205
         },
-        "margin": 0.2764
+        "margin": 0.0854
       },
       "calibratedControls": 32,
       "differenceFromBaselineM": {
-        "median": 1.71,
-        "max": 2.31
+        "median": 2.48,
+        "max": 4.24
       },
       "outcome": "consistent"
     },
@@ -76,26 +165,69 @@
         2789
       ],
       "printedControls": 32,
-      "elapsedSec": 62.0,
+      "elapsedSec": 79.8,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "场地缺少可核对的公园轮廓与道路网络"
       ],
       "method": "global_search_road_network",
-      "reportedP95M": 12.7,
+      "reportedP95M": 10.56,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4874,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.279,
+            "metresPerPixel": 0.21747,
+            "rotationDeg": -4.5
+          },
+          {
+            "score": 0.2719,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.269,
+            "metresPerPixel": 0.23521,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2687,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2668,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.4707,
+        "value": 0.388,
         "layers": {
-          "building": 0.4686,
-          "water": 0.0475,
-          "path": 0.4714
+          "building": 0.4429,
+          "path": 0.3732
         },
-        "margin": 0.4707
+        "margin": 0.109
       },
       "calibratedControls": 32,
       "differenceFromBaselineM": {
-        "median": 1.71,
-        "max": 2.31
+        "median": 1.5,
+        "max": 2.41
       },
       "outcome": "consistent"
     },
@@ -107,21 +239,64 @@
         2789
       ],
       "printedControls": 22,
-      "elapsedSec": 48.1,
+      "elapsedSec": 64.2,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "global_search_road_network",
       "reportedP95M": 8.57,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4344,
+            "metresPerPixel": 0.28614,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.2747,
+            "metresPerPixel": 0.17872,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2615,
+            "metresPerPixel": 0.25438,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2607,
+            "metresPerPixel": 0.45812,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.2522,
+            "metresPerPixel": 0.65204,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.2373,
+            "metresPerPixel": 0.16524,
+            "rotationDeg": -12.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.4257,
+        "value": 0.4494,
         "layers": {
-          "building": 0.1593,
-          "water": 0.0046,
-          "path": 0.506
+          "building": 0.2048,
+          "path": 0.4834
         },
-        "margin": 0.4257
+        "margin": 0.1747
       },
       "calibratedControls": 22,
       "differenceFromBaselineM": {
@@ -138,26 +313,70 @@
         2789
       ],
       "printedControls": 17,
-      "elapsedSec": 50.4,
+      "elapsedSec": 53.0,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "global_search_road_network",
-      "reportedP95M": 7.77,
-      "poseSupport": {
-        "value": 0.4486,
-        "layers": {
-          "building": 0.6079,
-          "water": 0.0012,
-          "path": 0.395
-        },
-        "margin": 0.1727
+      "reportedP95M": 7.25,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.3563,
+            "metresPerPixel": 0.28623,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.3057,
+            "metresPerPixel": 0.23526,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2971,
+            "metresPerPixel": 0.26464,
+            "rotationDeg": 12.0
+          },
+          {
+            "score": 0.2839,
+            "metresPerPixel": 0.19337,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2761,
+            "metresPerPixel": 0.42369,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.2749,
+            "metresPerPixel": 0.36217,
+            "rotationDeg": 9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
       },
-      "calibratedControls": 17,
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.4479,
+        "layers": {
+          "building": 0.6617,
+          "water": 0.0047,
+          "path": 0.3871
+        },
+        "margin": 0.1422
+      },
+      "calibratedControls": 16,
       "differenceFromBaselineM": {
-        "median": 4.23,
-        "max": 6.76
+        "median": 8.06,
+        "max": 11.82
       },
       "outcome": "consistent"
     },
@@ -169,13 +388,25 @@
         1534
       ],
       "printedControls": 14,
-      "elapsedSec": 37.3,
+      "elapsedSec": 318.7,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "存在多个相似道路布局，请补同名点确定方向或位置",
-        "没有可核查的候选配准；仅 4 个图块与参照清晰吻合，不足以核查配准；全局搜索的候选位置缺少足够的道路可核对；自动配准仅找到 0 组稳定地物，需补充同名点；仅 0 个图块与参照清晰吻合，不足以核查配准；自动配准仅找到 1 组稳定地物，需补充同名点；仅 2 个图块与参照清晰吻合，不足以核查配准；仅 3 个图块与参照清晰吻合，不足以核查配准"
+        "候选配准与参照的吻合度过低（0.18），请补充同名点"
       ],
-      "outcome": "refused"
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.2658,
+          "method": "global_search_road_network",
+          "p95ErrorM": 17.98,
+          "differenceFromBaselineM": {
+            "median": 213.45,
+            "max": 307.48
+          }
+        }
+      ],
+      "baselinePlaceOffered": null
     },
     {
       "case": "bottom-half",
@@ -185,13 +416,15 @@
         1534
       ],
       "printedControls": 23,
-      "elapsedSec": 42.5,
+      "elapsedSec": 261.2,
       "failures": [
-        "自动配准仅找到 7 组稳定地物，需补充同名点",
+        "自动配准仅找到 6 组稳定地物，需补充同名点",
         "存在多个相似道路布局，请补同名点确定方向或位置",
-        "另一处位置与原图同样吻合（0.35，已选 0.25），请补充同名点确定位置"
+        "没有可核查的候选配准；仅 1 个图块与参照清晰吻合，不足以核查配准；全局搜索的候选位置缺少足够的道路可核对；自动配准仅找到 0 组稳定地物，需补充同名点；仅 0 个图块与参照清晰吻合，不足以核查配准；自动配准仅找到 2 组稳定地物，需补充同名点；道路匹配的独立核查证据不足，需补充同名点；铺装街道的完整留出核查未通过；自动配准仅找到 1 组稳"
       ],
-      "outcome": "refused"
+      "outcome": "refused",
+      "offeredPlaces": [],
+      "baselinePlaceOffered": null
     },
     {
       "case": "centre",
@@ -201,13 +434,34 @@
         1673
       ],
       "printedControls": 23,
-      "elapsedSec": 38.1,
+      "elapsedSec": 358.6,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "存在多个相似道路布局，请补同名点确定方向或位置",
-        "候选配准与参照的吻合度过低（0.17），请补充同名点"
+        "存在吻合度相近的不同位置（0.24 与 0.23），请补充同名点确定位置"
       ],
-      "outcome": "refused"
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.2902,
+          "method": "global_search_road_network",
+          "p95ErrorM": 8.63,
+          "differenceFromBaselineM": {
+            "median": 1146.72,
+            "max": 1671.93
+          }
+        },
+        {
+          "support": 0.2547,
+          "method": "global_search_road_network",
+          "p95ErrorM": 16.74,
+          "differenceFromBaselineM": {
+            "median": 98.25,
+            "max": 168.32
+          }
+        }
+      ],
+      "baselinePlaceOffered": null
     },
     {
       "case": "jpeg-60-no-park",
@@ -217,26 +471,69 @@
         2789
       ],
       "printedControls": 32,
-      "elapsedSec": 59.4,
+      "elapsedSec": 77.7,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "场地缺少可核对的公园轮廓与道路网络"
       ],
       "method": "global_search_road_network",
-      "reportedP95M": 11.15,
+      "reportedP95M": 9.99,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4118,
+            "metresPerPixel": 0.28633,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.2753,
+            "metresPerPixel": 0.45842,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.267,
+            "metresPerPixel": 0.42384,
+            "rotationDeg": -10.5
+          },
+          {
+            "score": 0.2612,
+            "metresPerPixel": 0.21759,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2589,
+            "metresPerPixel": 0.42384,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2485,
+            "metresPerPixel": 0.23534,
+            "rotationDeg": 9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.4572,
+        "value": 0.4231,
         "layers": {
-          "building": 0.5722,
-          "water": 0.0997,
-          "path": 0.4233
+          "building": 0.5912,
+          "path": 0.3806
         },
-        "margin": 0.2202
+        "margin": 0.1478
       },
       "calibratedControls": 31,
       "differenceFromBaselineM": {
-        "median": 4.61,
-        "max": 6.77
+        "median": 4.81,
+        "max": 7.03
       },
       "outcome": "consistent"
     },
@@ -248,17 +545,277 @@
         2789
       ],
       "printedControls": 32,
-      "elapsedSec": 79.9,
+      "elapsedSec": 120.5,
       "failures": [
-        "场地缺少可核对的公园轮廓与道路网络",
-        "另一处位置与原图同样吻合（0.28，已选 0.32），请补充同名点确定位置"
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
       ],
-      "outcome": "refused"
+      "method": "global_search_road_network",
+      "reportedP95M": 11.09,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.4593,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2949,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -6.0
+          },
+          {
+            "score": 0.2681,
+            "metresPerPixel": 0.21747,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.258,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2573,
+            "metresPerPixel": 0.17874,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2513,
+            "metresPerPixel": 0.22616,
+            "rotationDeg": 10.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": {
+        "whiteValue": 204.0,
+        "gain": 1.25,
+        "reference": "unmasked_map"
+      },
+      "poseSupport": {
+        "value": 0.351,
+        "layers": {
+          "building": 0.4364,
+          "path": 0.3262
+        },
+        "margin": 0.0561
+      },
+      "calibratedControls": 32,
+      "differenceFromBaselineM": {
+        "median": 1.94,
+        "max": 3.15
+      },
+      "outcome": "consistent"
+    },
+    {
+      "case": "turned-90-no-park",
+      "reference": "no-park",
+      "imageSize": [
+        2789,
+        4096
+      ],
+      "printedControls": 32,
+      "elapsedSec": 160.3,
+      "failures": [
+        "自动地物匹配证据不足，请在原图与底图补充同名点",
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_search_road_network",
+      "reportedP95M": 7.86,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.2969,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2887,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.2661,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.2505,
+            "metresPerPixel": 0.44054,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2473,
+            "metresPerPixel": 0.57973,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.2435,
+            "metresPerPixel": 0.39164,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2969,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2887,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.2661,
+            "metresPerPixel": 0.79339,
+            "rotationDeg": -15.0
+          },
+          {
+            "score": 0.2505,
+            "metresPerPixel": 0.44054,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2473,
+            "metresPerPixel": 0.57973,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.2435,
+            "metresPerPixel": 0.39164,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.29,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.2155,
+            "metresPerPixel": 0.55743,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2589,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.1876,
+            "metresPerPixel": 0.18589,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2061,
+            "metresPerPixel": 0.17187,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2202,
+            "metresPerPixel": 0.26458,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2857,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.2589,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.2551,
+            "metresPerPixel": 0.33478,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.1658,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": -13.5
+          },
+          {
+            "score": 0.2165,
+            "metresPerPixel": 0.26458,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2334,
+            "metresPerPixel": 0.4236,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.4785,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 90.0
+          },
+          {
+            "score": 0.3187,
+            "metresPerPixel": 0.30952,
+            "rotationDeg": 222.0
+          },
+          {
+            "score": 0.3166,
+            "metresPerPixel": 0.34817,
+            "rotationDeg": 261.0
+          },
+          {
+            "score": 0.3109,
+            "metresPerPixel": 0.53599,
+            "rotationDeg": 261.0
+          },
+          {
+            "score": 0.3065,
+            "metresPerPixel": 0.28617,
+            "rotationDeg": 253.5
+          },
+          {
+            "score": 0.3008,
+            "metresPerPixel": 0.40731,
+            "rotationDeg": 219.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 20,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "poseSupport": {
+        "value": 0.3879,
+        "layers": {
+          "building": 0.5193,
+          "water": 0.0489,
+          "path": 0.3711
+        },
+        "margin": 0.0692
+      },
+      "calibratedControls": 31,
+      "differenceFromBaselineM": {
+        "median": 3.67,
+        "max": 5.53
+      },
+      "outcome": "consistent"
     }
   ],
   "summary": {
-    "consistent": 6,
+    "consistent": 8,
     "inconsistent": 0,
-    "refused": 4
+    "refused": 3,
+    "refusedOfferingBaselinePlace": 0,
+    "refusedWithoutOffer": 1
   }
 }

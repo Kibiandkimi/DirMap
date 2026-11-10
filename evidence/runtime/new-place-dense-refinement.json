@@ -1,0 +1,2119 @@
+{
+  "scope": "Dense final refinement of every accepted fit (dirmap/pose_refinement.py, global_registration.dense_refinement, called last in service.geographic_registration), judged on the same cached inputs as the acceptance-gate evidence of 2026-11-07 (OSM references of that day; sha256 per case in each batch file). \"before\" is commit d05bf1d on those inputs, \"after\" this implementation. World files and rendering transforms are used only to score results. Dashahe outcomes are consistency with the reviewed workbench fit (itself an automatic road fit), not survey truth.",
+  "implementationSignature": "3b61bfe35a1c3e1358b27fc63f9a42ae4088282a5004fb2c7e642c6b6c0aaea6",
+  "batches": [
+    {
+      "batch": "15-map set",
+      "resultFile": "new-area-registration-dense-refinement.json",
+      "before": {
+        "correct": 14,
+        "wrong": 0,
+        "refused": 1
+      },
+      "after": {
+        "correct": 14,
+        "wrong": 0,
+        "refused": 1
+      },
+      "changed": [
+        {
+          "case": "Wardown Park HH Sprint Champs 2025",
+          "before": "correct",
+          "beforeTruth": {
+            "median": 2.82,
+            "p95": 5.8,
+            "max": 6.78
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 2.01,
+            "p95": 3.46,
+            "max": 3.87
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 6.29,
+            "gainPercent": 4.97
+          },
+          "reason": null
+        },
+        {
+          "case": "Welwyn Garden City Urban Race",
+          "before": "correct",
+          "beforeTruth": {
+            "median": 2.88,
+            "p95": 4.54,
+            "max": 8.49
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 1.43,
+            "p95": 2.2,
+            "max": 5.67
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 3.48,
+            "gainPercent": 5.38
+          },
+          "reason": null
+        },
+        {
+          "case": "Panshanger Park: Jack of Herts",
+          "before": "correct",
+          "beforeTruth": {
+            "median": 8.99,
+            "p95": 15.5,
+            "max": 17.45
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 2.12,
+            "p95": 3.58,
+            "max": 3.79
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 18.09,
+            "gainPercent": 5.37
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "batch": "native 1 (final)",
+      "resultFile": "new-place-native-final-dense-refinement.json",
+      "before": {
+        "correct": 2,
+        "wrong": 1,
+        "refused": 0
+      },
+      "after": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "changed": [
+        {
+          "case": "Chipperfield Saturday Series",
+          "before": "wrong",
+          "beforeTruth": {
+            "median": 10.24,
+            "p95": 16.13,
+            "max": 19.25
+          },
+          "after": "refused",
+          "afterTruth": null,
+          "refinement": null,
+          "reason": "整幅原图线划与参照对齐后图幅移动 22 m（P95），且未通过分半、分图层核查，原配准不可靠"
+        }
+      ]
+    },
+    {
+      "batch": "native 2",
+      "resultFile": "new-place-native-holdouts-second-dense-refinement.json",
+      "before": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "after": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "changed": []
+    },
+    {
+      "batch": "native 3 bok",
+      "resultFile": "new-place-native-holdouts-third-bok-dense-refinement.json",
+      "before": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "after": {
+        "correct": 2,
+        "wrong": 0,
+        "refused": 1
+      },
+      "changed": []
+    },
+    {
+      "batch": "native 3 tvoc",
+      "resultFile": "new-place-native-holdouts-third-tvoc-dense-refinement.json",
+      "before": {
+        "correct": 2,
+        "wrong": 1,
+        "refused": 0
+      },
+      "after": {
+        "correct": 3,
+        "wrong": 0,
+        "refused": 0
+      },
+      "changed": [
+        {
+          "case": "Wittenham Clumps",
+          "before": "wrong",
+          "beforeTruth": {
+            "median": 15.21,
+            "p95": 23.9,
+            "max": 27.19
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 3.12,
+            "p95": 5.13,
+            "max": 5.69
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 20.96,
+            "gainPercent": 3.5
+          },
+          "reason": null
+        }
+      ]
+    },
+    {
+      "batch": "Dashahe variants",
+      "resultFile": "dashahe-as-new-place-dense-refinement.json",
+      "before": {
+        "correct": 8,
+        "wrong": 0,
+        "refused": 3
+      },
+      "after": {
+        "correct": 8,
+        "wrong": 0,
+        "refused": 3
+      },
+      "changed": []
+    },
+    {
+      "batch": "Shenzhen synthetic",
+      "resultFile": "shenzhen-new-places-dense-refinement.json",
+      "before": {
+        "correct": 10,
+        "wrong": 0,
+        "refused": 0
+      },
+      "after": {
+        "correct": 10,
+        "wrong": 0,
+        "refused": 0
+      },
+      "changed": [
+        {
+          "case": "莲花山公园",
+          "before": "correct",
+          "beforeTruth": {
+            "median": 2.35,
+            "p95": 5.19,
+            "max": 5.86
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 1.79,
+            "p95": 3.17,
+            "max": 3.95
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 4.35,
+            "gainPercent": 11.45
+          },
+          "reason": null
+        },
+        {
+          "case": "荔枝公园",
+          "before": "correct",
+          "beforeTruth": {
+            "median": 1.69,
+            "p95": 3.39,
+            "max": 4.4
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 1.88,
+            "p95": 3.1,
+            "max": 3.54
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 1.71,
+            "gainPercent": 3.34
+          },
+          "reason": null
+        },
+        {
+          "case": "香蜜公园",
+          "before": "correct",
+          "beforeTruth": {
+            "median": 3.82,
+            "p95": 6.83,
+            "max": 8.55
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 1.66,
+            "p95": 2.93,
+            "max": 3.37
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 5.28,
+            "gainPercent": 20.95
+          },
+          "reason": null
+        },
+        {
+          "case": "东湖公园",
+          "before": "correct",
+          "beforeTruth": {
+            "median": 3.27,
+            "p95": 7.39,
+            "max": 8.77
+          },
+          "after": "correct",
+          "afterTruth": {
+            "median": 2.34,
+            "p95": 6.09,
+            "max": 7.22
+          },
+          "refinement": {
+            "decision": "adopt",
+            "reason": null,
+            "moveP95M": 8.43,
+            "gainPercent": 13.32
+          },
+          "reason": null
+        }
+      ]
+    }
+  ],
+  "accuracyOnCasesCorrectBeforeAndAfter": [
+    {
+      "batch": "15-map set",
+      "cases": 14,
+      "medianOfCaseMediansM": [
+        2.85,
+        2.08
+      ],
+      "medianOfCaseP95M": [
+        4.5,
+        3.7
+      ],
+      "worstCaseP95M": [
+        15.5,
+        14.53
+      ],
+      "measure": "truth error (median, P95)"
+    },
+    {
+      "batch": "native 1 (final)",
+      "cases": 2,
+      "medianOfCaseMediansM": [
+        5.9,
+        5.9
+      ],
+      "medianOfCaseP95M": [
+        9.53,
+        9.53
+      ],
+      "worstCaseP95M": [
+        10.4,
+        10.4
+      ],
+      "measure": "truth error (median, P95)"
+    },
+    {
+      "batch": "native 2",
+      "cases": 2,
+      "medianOfCaseMediansM": [
+        2.4,
+        2.4
+      ],
+      "medianOfCaseP95M": [
+        5.18,
+        5.18
+      ],
+      "worstCaseP95M": [
+        5.38,
+        5.38
+      ],
+      "measure": "truth error (median, P95)"
+    },
+    {
+      "batch": "native 3 bok",
+      "cases": 2,
+      "medianOfCaseMediansM": [
+        5.51,
+        5.51
+      ],
+      "medianOfCaseP95M": [
+        8.48,
+        8.48
+      ],
+      "worstCaseP95M": [
+        12.73,
+        12.73
+      ],
+      "measure": "truth error (median, P95)"
+    },
+    {
+      "batch": "native 3 tvoc",
+      "cases": 2,
+      "medianOfCaseMediansM": [
+        1.73,
+        1.73
+      ],
+      "medianOfCaseP95M": [
+        3.62,
+        3.62
+      ],
+      "worstCaseP95M": [
+        4.6,
+        4.6
+      ],
+      "measure": "truth error (median, P95)"
+    },
+    {
+      "batch": "Dashahe variants",
+      "cases": 8,
+      "medianOfCaseMediansM": [
+        3.4,
+        3.4
+      ],
+      "medianOfCaseP95M": [
+        5.18,
+        5.18
+      ],
+      "worstCaseP95M": [
+        11.82,
+        11.82
+      ],
+      "measure": "difference from the reviewed fit at printed controls (median, max)"
+    },
+    {
+      "batch": "Shenzhen synthetic",
+      "cases": 10,
+      "medianOfCaseMediansM": [
+        2.42,
+        1.9
+      ],
+      "medianOfCaseP95M": [
+        4.12,
+        3.28
+      ],
+      "worstCaseP95M": [
+        15.02,
+        15.02
+      ],
+      "measure": "truth error (median, P95)"
+    }
+  ],
+  "refinedCases": [
+    {
+      "batch": "15-map set",
+      "case": "Wardown Park HH Sprint Champs 2025",
+      "truthBefore": {
+        "median": 2.82,
+        "p95": 5.8,
+        "max": 6.78
+      },
+      "truthAfter": {
+        "median": 2.01,
+        "p95": 3.46,
+        "max": 3.87
+      },
+      "moveP95M": 6.29,
+      "gainPercent": 4.97,
+      "scalePercent": 1.055,
+      "rotationDeg": 0.113,
+      "halfAgreementM": [
+        4.69,
+        4.28
+      ],
+      "layerGainsM": {
+        "ink": 0.06,
+        "paving": 0.15,
+        "roof": 0.096,
+        "water": 0.097
+      },
+      "supportBefore": 0.6469,
+      "supportAfter": 0.6324
+    },
+    {
+      "batch": "15-map set",
+      "case": "Welwyn Garden City Urban Race",
+      "truthBefore": {
+        "median": 2.88,
+        "p95": 4.54,
+        "max": 8.49
+      },
+      "truthAfter": {
+        "median": 1.43,
+        "p95": 2.2,
+        "max": 5.67
+      },
+      "moveP95M": 3.48,
+      "gainPercent": 5.38,
+      "scalePercent": 0.151,
+      "rotationDeg": 0.058,
+      "halfAgreementM": [
+        0.08,
+        1.32
+      ],
+      "layerGainsM": {
+        "ink": 0.11,
+        "paving": 0.209,
+        "roof": 0.231,
+        "water": -0.013
+      },
+      "supportBefore": 0.4452,
+      "supportAfter": 0.4452
+    },
+    {
+      "batch": "15-map set",
+      "case": "Panshanger Park: Jack of Herts",
+      "truthBefore": {
+        "median": 8.99,
+        "p95": 15.5,
+        "max": 17.45
+      },
+      "truthAfter": {
+        "median": 2.12,
+        "p95": 3.58,
+        "max": 3.79
+      },
+      "moveP95M": 18.09,
+      "gainPercent": 5.37,
+      "scalePercent": 1.434,
+      "rotationDeg": 0.103,
+      "halfAgreementM": [
+        5.34,
+        7.11
+      ],
+      "layerGainsM": {
+        "ink": 0.061,
+        "paving": -0.024,
+        "water": 0.155
+      },
+      "supportBefore": 0.6569,
+      "supportAfter": 0.6529
+    },
+    {
+      "batch": "native 3 tvoc",
+      "case": "Wittenham Clumps",
+      "truthBefore": {
+        "median": 15.21,
+        "p95": 23.9,
+        "max": 27.19
+      },
+      "truthAfter": {
+        "median": 3.12,
+        "p95": 5.13,
+        "max": 5.69
+      },
+      "moveP95M": 20.96,
+      "gainPercent": 3.5,
+      "scalePercent": -1.245,
+      "rotationDeg": 1.003,
+      "halfAgreementM": [
+        3.75,
+        6.43
+      ],
+      "layerGainsM": {
+        "ink": -0.003,
+        "paving": 0.091,
+        "water": 0.172
+      },
+      "supportBefore": 0.4027,
+      "supportAfter": 0.4213
+    },
+    {
+      "batch": "Shenzhen synthetic",
+      "case": "莲花山公园",
+      "truthBefore": {
+        "median": 2.35,
+        "p95": 5.19,
+        "max": 5.86
+      },
+      "truthAfter": {
+        "median": 1.79,
+        "p95": 3.17,
+        "max": 3.95
+      },
+      "moveP95M": 4.35,
+      "gainPercent": 11.45,
+      "scalePercent": 0.295,
+      "rotationDeg": -0.146,
+      "halfAgreementM": [
+        2.46,
+        1.45
+      ],
+      "layerGainsM": {
+        "ink": -0.007,
+        "paving": 0.395,
+        "roof": -0.028,
+        "water": 0.483
+      },
+      "supportBefore": 0.7985,
+      "supportAfter": 0.8012
+    },
+    {
+      "batch": "Shenzhen synthetic",
+      "case": "荔枝公园",
+      "truthBefore": {
+        "median": 1.69,
+        "p95": 3.39,
+        "max": 4.4
+      },
+      "truthAfter": {
+        "median": 1.88,
+        "p95": 3.1,
+        "max": 3.54
+      },
+      "moveP95M": 1.71,
+      "gainPercent": 3.34,
+      "scalePercent": -0.213,
+      "rotationDeg": 0.143,
+      "halfAgreementM": [
+        4.03,
+        0.84
+      ],
+      "layerGainsM": {
+        "ink": 0.056,
+        "paving": 0.037,
+        "roof": 0.119,
+        "water": 0.002
+      },
+      "supportBefore": 0.7742,
+      "supportAfter": 0.7687
+    },
+    {
+      "batch": "Shenzhen synthetic",
+      "case": "香蜜公园",
+      "truthBefore": {
+        "median": 3.82,
+        "p95": 6.83,
+        "max": 8.55
+      },
+      "truthAfter": {
+        "median": 1.66,
+        "p95": 2.93,
+        "max": 3.37
+      },
+      "moveP95M": 5.28,
+      "gainPercent": 20.95,
+      "scalePercent": -0.821,
+      "rotationDeg": -0.432,
+      "halfAgreementM": [
+        3.52,
+        4.56
+      ],
+      "layerGainsM": {
+        "ink": -0.044,
+        "paving": 0.46,
+        "roof": 0.007,
+        "water": 1.196
+      },
+      "supportBefore": 0.8193,
+      "supportAfter": 0.8276
+    },
+    {
+      "batch": "Shenzhen synthetic",
+      "case": "东湖公园",
+      "truthBefore": {
+        "median": 3.27,
+        "p95": 7.39,
+        "max": 8.77
+      },
+      "truthAfter": {
+        "median": 2.34,
+        "p95": 6.09,
+        "max": 7.22
+      },
+      "moveP95M": 8.43,
+      "gainPercent": 13.32,
+      "scalePercent": -0.434,
+      "rotationDeg": 0.618,
+      "halfAgreementM": [
+        1.9,
+        5.93
+      ],
+      "layerGainsM": {
+        "ink": 0.034,
+        "paving": 0.347,
+        "roof": 0.009
+      },
+      "supportBefore": 0.6618,
+      "supportAfter": 0.6878
+    }
+  ],
+  "offlineCalibration": {
+    "note": "Refinement run offline from every recorded accepted fit and offered first place (recognition cached, evidence rebuilt as the service does), including the three campus maps and the reviewed Dashahe fit; before/after = truth error [median, P95, max] of the starting fit and of the corrected one. The adoption thresholds were chosen on these cases (no separate tuning set); the pre-registered fourth batch was not run.",
+    "rows": [
+      {
+        "case": "15-270-offered1",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.07,
+          4.72,
+          5.71
+        ],
+        "after": [
+          1.48,
+          3.02,
+          3.65
+        ],
+        "gainPercent": 2.06,
+        "moveP95M": 7.54,
+        "scalePercent": 0.56,
+        "rotationDeg": -0.358,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 11.1
+      },
+      {
+        "case": "15-270-offered2",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          836.41,
+          1439.28,
+          1732.15
+        ],
+        "after": [
+          814.99,
+          1413.62,
+          1694.51
+        ],
+        "gainPercent": 1.4,
+        "moveP95M": 45.35,
+        "scalePercent": -2.998,
+        "rotationDeg": 1.663,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 9.4
+      },
+      {
+        "case": "15-270-offered3",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          93.75,
+          185.35,
+          229.87
+        ],
+        "after": [
+          101.1,
+          209.85,
+          261.42
+        ],
+        "gainPercent": 2.75,
+        "moveP95M": 32.58,
+        "scalePercent": -1.725,
+        "rotationDeg": 1.602,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 7.6
+      },
+      {
+        "case": "15-274-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          1.85,
+          3.41,
+          4.29
+        ],
+        "after": [
+          2.08,
+          3.19,
+          3.86
+        ],
+        "gainPercent": 0.64,
+        "moveP95M": 0.86,
+        "scalePercent": -0.083,
+        "rotationDeg": 0.129,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 4.0
+      },
+      {
+        "case": "15-310-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          4.02,
+          7.91,
+          9.27
+        ],
+        "after": [
+          3.63,
+          7.37,
+          8.46
+        ],
+        "gainPercent": 1.44,
+        "moveP95M": 2.53,
+        "scalePercent": -0.392,
+        "rotationDeg": -0.079,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 2.0
+      },
+      {
+        "case": "15-343-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          1.26,
+          1.92,
+          2.32
+        ],
+        "after": [
+          1.28,
+          2.78,
+          3.16
+        ],
+        "gainPercent": 0.36,
+        "moveP95M": 1.79,
+        "scalePercent": -0.23,
+        "rotationDeg": 0.144,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 4.5
+      },
+      {
+        "case": "15-365-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          1.7,
+          4.47,
+          5.76
+        ],
+        "after": [
+          1.62,
+          3.52,
+          4.59
+        ],
+        "gainPercent": 0.39,
+        "moveP95M": 4.28,
+        "scalePercent": -0.357,
+        "rotationDeg": -0.069,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 9.4
+      },
+      {
+        "case": "15-385-accepted_correct",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          5.37,
+          13.25,
+          16.3
+        ],
+        "after": [
+          2.47,
+          4.2,
+          5.29
+        ],
+        "gainPercent": 3.09,
+        "moveP95M": 10.62,
+        "scalePercent": -0.482,
+        "rotationDeg": 0.272,
+        "halfAgreementM": [
+          8.14,
+          7.11
+        ],
+        "layerGainsM": {
+          "ink": -0.162,
+          "paving": -0.021,
+          "roof": -0.006,
+          "water": -0.086
+        },
+        "sec": 83.1
+      },
+      {
+        "case": "15-387-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.04,
+          3.68,
+          4.59
+        ],
+        "after": [
+          1.8,
+          3.72,
+          4.7
+        ],
+        "gainPercent": 0.57,
+        "moveP95M": 1.01,
+        "scalePercent": -0.059,
+        "rotationDeg": -0.0,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 11.2
+      },
+      {
+        "case": "15-406-accepted_correct",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          8.99,
+          15.5,
+          17.45
+        ],
+        "after": [
+          2.12,
+          3.58,
+          3.79
+        ],
+        "gainPercent": 5.37,
+        "moveP95M": 18.09,
+        "scalePercent": 1.434,
+        "rotationDeg": 0.103,
+        "halfAgreementM": [
+          5.34,
+          7.11
+        ],
+        "layerGainsM": {
+          "ink": 0.061,
+          "paving": -0.024,
+          "water": 0.155
+        },
+        "sec": 31.8
+      },
+      {
+        "case": "15-418-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.72,
+          3.72,
+          4.33
+        ],
+        "after": [
+          2.14,
+          3.05,
+          3.56
+        ],
+        "gainPercent": 1.28,
+        "moveP95M": 0.97,
+        "scalePercent": 0.03,
+        "rotationDeg": -0.024,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 14.0
+      },
+      {
+        "case": "15-430-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          7.04,
+          14.53,
+          17.44
+        ],
+        "after": [
+          2.74,
+          4.09,
+          4.43
+        ],
+        "gainPercent": 1.61,
+        "moveP95M": 12.04,
+        "scalePercent": -0.266,
+        "rotationDeg": -0.444,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 10.8
+      },
+      {
+        "case": "15-433-accepted_correct",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          2.82,
+          5.8,
+          6.78
+        ],
+        "after": [
+          2.01,
+          3.46,
+          3.87
+        ],
+        "gainPercent": 4.97,
+        "moveP95M": 6.29,
+        "scalePercent": 1.055,
+        "rotationDeg": 0.113,
+        "halfAgreementM": [
+          4.69,
+          4.28
+        ],
+        "layerGainsM": {
+          "ink": 0.06,
+          "paving": 0.15,
+          "roof": 0.096,
+          "water": 0.097
+        },
+        "sec": 17.4
+      },
+      {
+        "case": "15-434-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.93,
+          4.05,
+          4.51
+        ],
+        "after": [
+          3.18,
+          4.45,
+          5.07
+        ],
+        "gainPercent": 0.12,
+        "moveP95M": 0.53,
+        "scalePercent": 0.013,
+        "rotationDeg": -0.023,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 17.4
+      },
+      {
+        "case": "15-436-accepted_correct",
+        "decision": "keep",
+        "reason": "held_out_layer+held_out_half",
+        "before": [
+          6.3,
+          10.07,
+          11.38
+        ],
+        "after": [
+          2.05,
+          3.21,
+          3.82
+        ],
+        "gainPercent": 4.39,
+        "moveP95M": 8.54,
+        "scalePercent": -0.825,
+        "rotationDeg": 0.051,
+        "halfAgreementM": [
+          7.7,
+          13.35
+        ],
+        "layerGainsM": {
+          "ink": -0.466,
+          "paving": -0.025,
+          "water": 0.313
+        },
+        "sec": 21.5
+      },
+      {
+        "case": "15-446-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          1.14,
+          1.81,
+          2.18
+        ],
+        "after": [
+          0.91,
+          2.18,
+          2.65
+        ],
+        "gainPercent": 0.77,
+        "moveP95M": 1.67,
+        "scalePercent": -0.128,
+        "rotationDeg": -0.009,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 5.6
+      },
+      {
+        "case": "15-450-accepted_correct",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          2.88,
+          4.54,
+          8.49
+        ],
+        "after": [
+          1.43,
+          2.2,
+          5.67
+        ],
+        "gainPercent": 5.38,
+        "moveP95M": 3.48,
+        "scalePercent": 0.151,
+        "rotationDeg": 0.058,
+        "halfAgreementM": [
+          0.08,
+          1.32
+        ],
+        "layerGainsM": {
+          "ink": 0.11,
+          "paving": 0.209,
+          "roof": 0.231,
+          "water": -0.013
+        },
+        "sec": 53.7
+      },
+      {
+        "case": "bok-309-offered1",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          6.32,
+          12.54,
+          13.95
+        ],
+        "after": [
+          1.66,
+          2.59,
+          3.13
+        ],
+        "gainPercent": 8.06,
+        "moveP95M": 11.54,
+        "scalePercent": 0.65,
+        "rotationDeg": 0.146,
+        "halfAgreementM": [
+          1.58,
+          1.92
+        ],
+        "layerGainsM": {
+          "ink": -0.109,
+          "paving": 0.099
+        },
+        "sec": 30.5
+      },
+      {
+        "case": "bok-309-offered2",
+        "decision": "keep",
+        "reason": "held_out_layer+held_out_half",
+        "before": [
+          2087.93,
+          3166.41,
+          3700.24
+        ],
+        "after": [
+          2085.48,
+          3158.05,
+          3688.65
+        ],
+        "gainPercent": 6.06,
+        "moveP95M": 12.06,
+        "scalePercent": -3.633,
+        "rotationDeg": 0.891,
+        "halfAgreementM": [
+          31.09,
+          57.43
+        ],
+        "layerGainsM": {
+          "ink": 0.049,
+          "paving": -0.088
+        },
+        "sec": 2.8
+      },
+      {
+        "case": "bok-309-offered3",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          230.29,
+          399.39,
+          479.18
+        ],
+        "after": [
+          235.19,
+          408.02,
+          490.36
+        ],
+        "gainPercent": 1.12,
+        "moveP95M": 12.21,
+        "scalePercent": -0.457,
+        "rotationDeg": -0.337,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 9.9
+      },
+      {
+        "case": "bok-311-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.4,
+          4.24,
+          5.79
+        ],
+        "after": [
+          1.78,
+          3.42,
+          5.38
+        ],
+        "gainPercent": 0.58,
+        "moveP95M": 1.32,
+        "scalePercent": -0.038,
+        "rotationDeg": 0.042,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 14.5
+      },
+      {
+        "case": "bok-320-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          8.62,
+          12.73,
+          13.56
+        ],
+        "after": [
+          9.01,
+          13.76,
+          14.71
+        ],
+        "gainPercent": 0.44,
+        "moveP95M": 9.69,
+        "scalePercent": -0.384,
+        "rotationDeg": -0.338,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 8.8
+      },
+      {
+        "case": "campus-szu-1-stored",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after": [
+          1.35,
+          2.18,
+          2.56
+        ],
+        "gainPercent": 1.18,
+        "moveP95M": 2.4,
+        "scalePercent": -0.127,
+        "rotationDeg": -0.088,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 6.9
+      },
+      {
+        "case": "campus-szu-2-stored",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after": [
+          1.43,
+          2.19,
+          2.56
+        ],
+        "gainPercent": 0.55,
+        "moveP95M": 2.6,
+        "scalePercent": -0.149,
+        "rotationDeg": 0.038,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 5.0
+      },
+      {
+        "case": "campus-szu-3-stored",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after": [
+          1.26,
+          1.93,
+          2.16
+        ],
+        "gainPercent": 0.72,
+        "moveP95M": 2.1,
+        "scalePercent": -0.207,
+        "rotationDeg": 0.08,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 4.8
+      },
+      {
+        "case": "campus-upload-55496a067ba7-stored",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after": [
+          8.13,
+          15.51,
+          18.1
+        ],
+        "gainPercent": 7.22,
+        "moveP95M": 10.5,
+        "scalePercent": -1.698,
+        "rotationDeg": -0.687,
+        "halfAgreementM": [
+          7.16,
+          4.54
+        ],
+        "layerGainsM": {
+          "ink": 0.008,
+          "paving": -0.191,
+          "roof": 0.072
+        },
+        "sec": 8.8
+      },
+      {
+        "case": "dsh-dim-80-no-park-accepted_consistent",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          5.66,
+          7.58,
+          8.11
+        ],
+        "after": [
+          6.77,
+          10.12,
+          10.99
+        ],
+        "gainPercent": 1.69,
+        "moveP95M": 3.93,
+        "scalePercent": -0.811,
+        "rotationDeg": -0.29,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 2.1
+      },
+      {
+        "case": "dsh-fresh-viewport-accepted_consistent",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.98,
+          4.4,
+          4.76
+        ],
+        "after": [
+          6.62,
+          9.77,
+          10.61
+        ],
+        "gainPercent": 2.97,
+        "moveP95M": 5.6,
+        "scalePercent": -0.871,
+        "rotationDeg": -0.348,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 3.0
+      },
+      {
+        "case": "dsh-jpeg-60-no-park-accepted_consistent",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          4.81,
+          6.46,
+          7.03
+        ],
+        "after": [
+          6.91,
+          10.4,
+          11.31
+        ],
+        "gainPercent": 3.11,
+        "moveP95M": 5.38,
+        "scalePercent": -0.728,
+        "rotationDeg": -0.657,
+        "halfAgreementM": [
+          6.99,
+          5.45
+        ],
+        "layerGainsM": {
+          "ink": 0.013,
+          "paving": -0.454,
+          "roof": 0.151
+        },
+        "sec": 8.5
+      },
+      {
+        "case": "dsh-left-half-accepted_consistent",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          2.53,
+          3.16,
+          3.17
+        ],
+        "after": [
+          3.61,
+          5.99,
+          6.7
+        ],
+        "gainPercent": 5.16,
+        "moveP95M": 4.98,
+        "scalePercent": -0.762,
+        "rotationDeg": -0.503,
+        "halfAgreementM": [
+          1.5,
+          0.45
+        ],
+        "layerGainsM": {
+          "ink": 0.166,
+          "paving": -0.196
+        },
+        "sec": 2.7
+      },
+      {
+        "case": "dsh-no-park-outline-accepted_consistent",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          3.12,
+          4.48,
+          4.82
+        ],
+        "after": [
+          6.98,
+          10.52,
+          11.45
+        ],
+        "gainPercent": 3.42,
+        "moveP95M": 6.37,
+        "scalePercent": -1.154,
+        "rotationDeg": -0.465,
+        "halfAgreementM": [
+          6.25,
+          4.7
+        ],
+        "layerGainsM": {
+          "ink": -0.051,
+          "paving": -0.447,
+          "roof": 0.042
+        },
+        "sec": 8.0
+      },
+      {
+        "case": "dsh-original-accepted_consistent",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after": [
+          6.71,
+          10.04,
+          10.94
+        ],
+        "gainPercent": 7.2,
+        "moveP95M": 10.46,
+        "scalePercent": -1.679,
+        "rotationDeg": -0.677,
+        "halfAgreementM": [
+          7.21,
+          4.44
+        ],
+        "layerGainsM": {
+          "ink": 0.002,
+          "paving": -0.19,
+          "roof": 0.071
+        },
+        "sec": 8.9
+      },
+      {
+        "case": "dsh-right-half-accepted_consistent",
+        "decision": "keep",
+        "reason": "held_out_layer+held_out_half",
+        "before": [
+          8.06,
+          11.59,
+          11.82
+        ],
+        "after": [
+          8.47,
+          10.71,
+          10.82
+        ],
+        "gainPercent": 3.86,
+        "moveP95M": 5.85,
+        "scalePercent": -1.036,
+        "rotationDeg": 0.788,
+        "halfAgreementM": [
+          22.23,
+          3.52
+        ],
+        "layerGainsM": {
+          "ink": 0.058,
+          "paving": -0.527,
+          "roof": 0.248
+        },
+        "sec": 4.9
+      },
+      {
+        "case": "dsh-turned-90-no-park-accepted_consistent",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          3.67,
+          5.16,
+          5.53
+        ],
+        "after": [
+          7.0,
+          10.56,
+          11.52
+        ],
+        "gainPercent": 4.0,
+        "moveP95M": 6.04,
+        "scalePercent": -1.27,
+        "rotationDeg": -0.33,
+        "halfAgreementM": [
+          6.36,
+          4.39
+        ],
+        "layerGainsM": {
+          "ink": -0.052,
+          "paving": -0.39,
+          "roof": 0.124
+        },
+        "sec": 8.8
+      },
+      {
+        "case": "final-403-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          5.92,
+          10.4,
+          11.95
+        ],
+        "after": [
+          7.05,
+          12.01,
+          14.08
+        ],
+        "gainPercent": 1.19,
+        "moveP95M": 3.79,
+        "scalePercent": -0.312,
+        "rotationDeg": 0.18,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 3.2
+      },
+      {
+        "case": "final-404-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          5.88,
+          8.66,
+          10.16
+        ],
+        "after": [
+          8.3,
+          14.67,
+          17.37
+        ],
+        "gainPercent": 1.67,
+        "moveP95M": 9.51,
+        "scalePercent": 0.053,
+        "rotationDeg": -0.274,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 9.8
+      },
+      {
+        "case": "final-414-accepted_wrong",
+        "decision": "unreliable",
+        "reason": "held_out_layer+held_out_half",
+        "before": [
+          10.24,
+          16.13,
+          19.25
+        ],
+        "after": [
+          15.07,
+          24.58,
+          29.92
+        ],
+        "gainPercent": 7.58,
+        "moveP95M": 22.22,
+        "scalePercent": -2.244,
+        "rotationDeg": 0.586,
+        "halfAgreementM": [
+          62.92,
+          9.03
+        ],
+        "layerGainsM": {
+          "ink": -0.139,
+          "paving": 0.026,
+          "water": 0.149
+        },
+        "sec": 14.7
+      },
+      {
+        "case": "second-425-offered1",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          1.55,
+          2.36,
+          2.79
+        ],
+        "after": [
+          2.41,
+          3.92,
+          4.79
+        ],
+        "gainPercent": 0.98,
+        "moveP95M": 4.97,
+        "scalePercent": -0.626,
+        "rotationDeg": -0.107,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 4.2
+      },
+      {
+        "case": "second-425-offered2",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          798.07,
+          1155.45,
+          1339.02
+        ],
+        "after": [
+          790.65,
+          1152.1,
+          1333.02
+        ],
+        "gainPercent": 1.34,
+        "moveP95M": 32.14,
+        "scalePercent": -2.821,
+        "rotationDeg": -0.528,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 8.2
+      },
+      {
+        "case": "second-425-offered3",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          799.79,
+          1062.72,
+          1173.17
+        ],
+        "after": [
+          797.14,
+          1067.75,
+          1181.73
+        ],
+        "gainPercent": -2.28,
+        "moveP95M": 16.69,
+        "scalePercent": 0.744,
+        "rotationDeg": -1.073,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 5.5
+      },
+      {
+        "case": "second-431-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.74,
+          4.98,
+          5.41
+        ],
+        "after": [
+          3.38,
+          4.64,
+          4.92
+        ],
+        "gainPercent": 0.49,
+        "moveP95M": 1.75,
+        "scalePercent": 0.085,
+        "rotationDeg": 0.039,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 7.1
+      },
+      {
+        "case": "second-435-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.06,
+          5.38,
+          6.49
+        ],
+        "after": [
+          1.85,
+          4.56,
+          5.55
+        ],
+        "gainPercent": 0.07,
+        "moveP95M": 1.7,
+        "scalePercent": 0.108,
+        "rotationDeg": 0.012,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 14.5
+      },
+      {
+        "case": "sz-1015cb7dbe35-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          1.91,
+          3.54,
+          5.03
+        ],
+        "after": [
+          2.42,
+          4.36,
+          6.11
+        ],
+        "gainPercent": 2.97,
+        "moveP95M": 1.25,
+        "scalePercent": -0.023,
+        "rotationDeg": -0.112,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 3.1
+      },
+      {
+        "case": "sz-16c9baab20f8-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.48,
+          3.39,
+          3.71
+        ],
+        "after": [
+          3.1,
+          4.13,
+          4.57
+        ],
+        "gainPercent": 1.34,
+        "moveP95M": 1.44,
+        "scalePercent": -0.259,
+        "rotationDeg": 0.039,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 1.5
+      },
+      {
+        "case": "sz-20da3ca52aec-accepted_correct",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          3.27,
+          7.39,
+          8.77
+        ],
+        "after": [
+          2.34,
+          6.09,
+          7.22
+        ],
+        "gainPercent": 13.32,
+        "moveP95M": 8.43,
+        "scalePercent": -0.434,
+        "rotationDeg": 0.618,
+        "halfAgreementM": [
+          1.9,
+          5.93
+        ],
+        "layerGainsM": {
+          "ink": 0.034,
+          "paving": 0.347,
+          "roof": 0.009
+        },
+        "sec": 6.1
+      },
+      {
+        "case": "sz-32f739e53065-accepted_correct",
+        "decision": "keep",
+        "reason": "held_out_layer+held_out_half",
+        "before": [
+          1.45,
+          2.97,
+          3.43
+        ],
+        "after": [
+          3.24,
+          5.54,
+          6.48
+        ],
+        "gainPercent": 11.27,
+        "moveP95M": 3.94,
+        "scalePercent": 0.121,
+        "rotationDeg": 0.294,
+        "halfAgreementM": [
+          0.54,
+          16.73
+        ],
+        "layerGainsM": {
+          "ink": -0.075,
+          "paving": -1.792
+        },
+        "sec": 3.6
+      },
+      {
+        "case": "sz-44b22419acaf-accepted_correct",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          2.35,
+          5.19,
+          5.86
+        ],
+        "after": [
+          1.79,
+          3.17,
+          3.95
+        ],
+        "gainPercent": 11.45,
+        "moveP95M": 4.35,
+        "scalePercent": 0.295,
+        "rotationDeg": -0.146,
+        "halfAgreementM": [
+          2.46,
+          1.45
+        ],
+        "layerGainsM": {
+          "ink": -0.007,
+          "paving": 0.395,
+          "roof": -0.028,
+          "water": 0.483
+        },
+        "sec": 8.8
+      },
+      {
+        "case": "sz-bffa4a053313-accepted_correct",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          3.82,
+          6.83,
+          8.55
+        ],
+        "after": [
+          1.66,
+          2.93,
+          3.37
+        ],
+        "gainPercent": 20.95,
+        "moveP95M": 5.28,
+        "scalePercent": -0.821,
+        "rotationDeg": -0.432,
+        "halfAgreementM": [
+          3.52,
+          4.56
+        ],
+        "layerGainsM": {
+          "ink": -0.044,
+          "paving": 0.46,
+          "roof": 0.007,
+          "water": 1.196
+        },
+        "sec": 2.3
+      },
+      {
+        "case": "sz-c86a93c580ee-accepted_correct",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          1.43,
+          2.09,
+          2.48
+        ],
+        "after": [
+          1.47,
+          3.03,
+          3.79
+        ],
+        "gainPercent": 3.56,
+        "moveP95M": 1.83,
+        "scalePercent": -0.269,
+        "rotationDeg": 0.028,
+        "halfAgreementM": [
+          2.15,
+          2.97
+        ],
+        "layerGainsM": {
+          "ink": 0.046,
+          "paving": 0.104,
+          "roof": 0.053,
+          "water": -0.078
+        },
+        "sec": 9.9
+      },
+      {
+        "case": "sz-ce93eb66ac37-accepted_correct",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          9.14,
+          15.02,
+          17.44
+        ],
+        "after": [
+          3.75,
+          6.16,
+          6.95
+        ],
+        "gainPercent": 11.1,
+        "moveP95M": 3.08,
+        "scalePercent": -1.14,
+        "rotationDeg": -0.07,
+        "halfAgreementM": [
+          1.35,
+          3.9
+        ],
+        "layerGainsM": {},
+        "sec": 0.5
+      },
+      {
+        "case": "sz-f8c8f56e5aa0-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          2.89,
+          4.69,
+          5.14
+        ],
+        "after": [
+          2.57,
+          3.64,
+          4.42
+        ],
+        "gainPercent": 2.91,
+        "moveP95M": 1.68,
+        "scalePercent": -0.23,
+        "rotationDeg": -0.013,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 2.2
+      },
+      {
+        "case": "sz-fe88b484fc2c-accepted_correct",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          1.69,
+          3.39,
+          4.4
+        ],
+        "after": [
+          1.88,
+          3.1,
+          3.54
+        ],
+        "gainPercent": 3.34,
+        "moveP95M": 1.71,
+        "scalePercent": -0.213,
+        "rotationDeg": 0.143,
+        "halfAgreementM": [
+          4.03,
+          0.84
+        ],
+        "layerGainsM": {
+          "ink": 0.056,
+          "paving": 0.037,
+          "roof": 0.119,
+          "water": 0.002
+        },
+        "sec": 12.5
+      },
+      {
+        "case": "tvoc-172-accepted_correct",
+        "decision": "keep",
+        "reason": "small_gain",
+        "before": [
+          1.57,
+          2.64,
+          3.27
+        ],
+        "after": [
+          2.1,
+          2.42,
+          2.76
+        ],
+        "gainPercent": 1.49,
+        "moveP95M": 2.49,
+        "scalePercent": 0.398,
+        "rotationDeg": 0.013,
+        "halfAgreementM": null,
+        "layerGainsM": null,
+        "sec": 3.6
+      },
+      {
+        "case": "tvoc-173-accepted_correct",
+        "decision": "keep",
+        "reason": "held_out_layer",
+        "before": [
+          1.89,
+          4.6,
+          5.03
+        ],
+        "after": [
+          3.63,
+          5.67,
+          6.63
+        ],
+        "gainPercent": 4.79,
+        "moveP95M": 5.26,
+        "scalePercent": 0.681,
+        "rotationDeg": 0.03,
+        "halfAgreementM": [
+          6.7,
+          2.82
+        ],
+        "layerGainsM": {
+          "ink": -0.021,
+          "paving": 0.189,
+          "roof": -0.21,
+          "water": 0.395
+        },
+        "sec": 27.0
+      },
+      {
+        "case": "tvoc-178-accepted_wrong",
+        "decision": "adopt",
+        "reason": null,
+        "before": [
+          15.21,
+          23.9,
+          27.19
+        ],
+        "after": [
+          3.12,
+          5.13,
+          5.69
+        ],
+        "gainPercent": 3.5,
+        "moveP95M": 20.96,
+        "scalePercent": -1.245,
+        "rotationDeg": 1.003,
+        "halfAgreementM": [
+          3.75,
+          6.43
+        ],
+        "layerGainsM": {
+          "ink": -0.003,
+          "paving": 0.091,
+          "water": 0.172
+        },
+        "sec": 26.4
+      }
+    ]
+  },
+  "thresholds": {
+    "adoptGainPercent": 3.0,
+    "layerLossM": 0.05,
+    "layerConfirmationM": 0.02,
+    "halfAgreementM": 10.0,
+    "unreliableMoveP95M": 15.0,
+    "refinedSupportLoss": 0.025,
+    "refinedObjectP95M": 18.0,
+    "pairing": "same-direction (30 deg) nearest line within 30/20/13/8/5 m, across-line distance, Cauchy weights",
+    "model": "similarity (a bounded affine stage was tried and worsened P95, e.g. Highfield 3.5 -> 7.4 m)"
+  },
+  "memory": {
+    "note": "Peak RSS of dense_refinement on large sheets, process otherwise holding only the image and its evidence (1.5 GiB cap, one core).",
+    "runs": [
+      {
+        "case": "westridge",
+        "mode": "refine",
+        "imageSize": [
+          3438,
+          4765
+        ],
+        "maxrssBeforeMiB": 284,
+        "maxrssMiB": 330,
+        "sec": 49.3,
+        "decision": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "moveP95M": 11.54,
+          "gainPercent": 8.06
+        }
+      },
+      {
+        "case": "stalbans",
+        "mode": "refine",
+        "imageSize": [
+          4096,
+          2898
+        ],
+        "maxrssBeforeMiB": 291,
+        "maxrssMiB": 395,
+        "sec": 26.2,
+        "decision": {
+          "decision": "keep",
+          "reason": "small_gain",
+          "moveP95M": 0.53,
+          "gainPercent": 0.12
+        }
+      },
+      {
+        "case": "dashahe",
+        "mode": "refine",
+        "imageSize": [
+          4096,
+          2789
+        ],
+        "maxrssBeforeMiB": 305,
+        "maxrssMiB": 313,
+        "sec": 14.1,
+        "decision": {
+          "decision": "keep",
+          "reason": "held_out_layer",
+          "moveP95M": 10.5,
+          "gainPercent": 7.22
+        }
+      }
+    ]
+  },
+  "verifierSha256": {
+    "verify_new_areas.py": "451848e31af153fd10f24fef47b8dde08964a243826d73c3a70f3ff71d2dd10b",
+    "verify_shenzhen_places.py": "b2e8c997e82b5796f5bbb4040dfc545294779853398651468fb2f54f9deb31ec",
+    "verify_dashahe_new_place.py": "277fd73139633e795585192d89bee7e04e28e081700927f7e1b3255ed6baade7"
+  }
+}

@@ -44,6 +44,34 @@ def test_road_registration_generalizes_without_any_water_buildings_or_control_la
     assert validation and fit and not fit & validation
 
 
+def test_paved_streets_can_be_checked_without_unprinted_minor_paths_pulling_the_fit():
+    image, reference, truth = printed_network(7)
+    for feature in reference:
+        if feature['kind'] == 'road': feature['tags']['highway'] = 'residential'
+    # Numerous additional minor ways are not printed as paving.
+    reference += [{'id': 'minor-'+f['id'], 'kind': 'road', 'tags': {'highway': 'path'},
+                   'points': (np.asarray(f['points'])+[15, -12]).tolist()}
+                  for f in reference if f['kind'] == 'road']
+    seed = truth.copy(); seed[:, 2] += [4, -3]
+    reg, quality = road_network_register(image, reference, seeds=[seed], streets_only=True)
+    assert quality['method'] == 'global_search_street_network'
+    assert quality['validationObjectCount'] >= 3 and not quality['validationOmittedWayIds']
+    assert not any(p['referenceId'].startswith('minor-') for p in quality['landmarks'])
+    assert np.max(np.linalg.norm(affine_points(reg.affine, [[100, 100], [600, 570]])
+                                 -affine_points(truth, [[100, 100], [600, 570]]), axis=1)) < 3
+
+
+def test_a_street_fit_cannot_omit_an_unmatched_held_out_way():
+    image, reference, truth = printed_network(7)
+    for feature in reference:
+        if feature['kind'] == 'road': feature['tags']['highway'] = 'residential'
+    # Way 12 is held out and has no road crossing its middle. Remove its
+    # visible ink, leaving all its reference samples in place.
+    cv2.polylines(image, [np.array([[420, 175], [432, 219], [420, 265]])], False, (155, 225, 185), 13)
+    with pytest.raises(ValueError, match='完整留出'):
+        road_network_register(image, reference, seeds=[truth], streets_only=True)
+
+
 @pytest.mark.parametrize('shade', [1., .65])
 def test_symmetric_network_cannot_silently_choose_a_direction(shade):
     image, reference, _ = printed_network(10, symmetric=True)

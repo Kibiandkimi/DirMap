@@ -1,0 +1,1203 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-07T13:29:45Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "21ada95fdfd9f24edace59c36a1277664d3b4b4e82547dcade2c28a2e63aebcd",
+  "verifierSha256": "3701ae89412f330855ef3d776a6aa6d92910e6a8409f01e58ea0e94e5092aa37",
+  "source": "https://www.bok.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 320,
+      "map": 353,
+      "name": "Clifton Downs",
+      "date": "2026-09-12",
+      "imageSize": [
+        1626,
+        2139
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "fdcf3138cfc1325d3194a03cc69a494239b941407b3352bd0bc2d902118f9aa9",
+      "worldFile": [
+        [
+          1.306083485805643e-05,
+          1.8554425806494045e-08,
+          -2.6364101093373
+        ],
+        [
+          1.2782054737867542e-08,
+          -8.156499123891412e-06,
+          51.474890947361
+        ]
+      ],
+      "referenceFeatures": 7182,
+      "referenceSha256": "ed53e3f0938dd9ab542f7920e8a7071b37be73c7d8840d6dfb21285b10910b25",
+      "elapsedSec": 280.7,
+      "failures": [
+        "自动配准仅找到 5 组稳定地物，需补充同名点",
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "registration": {
+        "affine": [
+          [
+            0.9151389122265216,
+            -0.0030385138488381873,
+            -748.8483720599954
+          ],
+          [
+            -0.0030385138488381994,
+            -0.915138912226522,
+            980.7714125054968
+          ]
+        ],
+        "source": [
+          [
+            809.2308347444385,
+            168.0559583435926
+          ],
+          [
+            1136.7972343903664,
+            168.0559583435926
+          ],
+          [
+            154.09803545258325,
+            532.7053466286819
+          ],
+          [
+            481.6644350985109,
+            532.7053466286819
+          ],
+          [
+            809.2308347444385,
+            532.7053466286819
+          ],
+          [
+            481.6644350985109,
+            897.3547349137712
+          ],
+          [
+            809.2308347444385,
+            897.3547349137712
+          ],
+          [
+            1136.7972343903664,
+            897.3547349137712
+          ],
+          [
+            481.6644350985109,
+            1262.0041231988605
+          ],
+          [
+            809.2308347444385,
+            1262.0041231988605
+          ],
+          [
+            1409.0,
+            339.0
+          ],
+          [
+            1402.0,
+            345.0
+          ],
+          [
+            1402.0,
+            354.0
+          ],
+          [
+            1407.0,
+            359.0
+          ],
+          [
+            1415.0,
+            360.0
+          ],
+          [
+            1421.0,
+            356.0
+          ],
+          [
+            1423.0,
+            348.0
+          ],
+          [
+            1418.0,
+            340.0
+          ],
+          [
+            1052.0,
+            1325.0
+          ],
+          [
+            1038.0,
+            1326.0
+          ],
+          [
+            1008.0,
+            1343.0
+          ],
+          [
+            1009.0,
+            1350.0
+          ],
+          [
+            1034.0,
+            1348.0
+          ],
+          [
+            1051.0,
+            1342.0
+          ],
+          [
+            1210.0,
+            1136.0
+          ],
+          [
+            1201.0,
+            1145.0
+          ],
+          [
+            1210.0,
+            1155.0
+          ],
+          [
+            1219.0,
+            1147.0
+          ]
+        ],
+        "target": [
+          [
+            -8.391580442310126,
+            824.4636796218404
+          ],
+          [
+            291.0147686269086,
+            824.4064750924377
+          ],
+          [
+            -609.2277689625763,
+            492.1031732843262
+          ],
+          [
+            -308.6858014898986,
+            491.67568605625945
+          ],
+          [
+            -9.808811916129052,
+            491.3093993577259
+          ],
+          [
+            -311.1806464102654,
+            157.34818383688003
+          ],
+          [
+            -11.170249764279466,
+            157.23070372646066
+          ],
+          [
+            288.33887339230085,
+            156.3360375581642
+          ],
+          [
+            -312.2367978505575,
+            -176.29240720767953
+          ],
+          [
+            -12.582010075276015,
+            -175.9875893356709
+          ],
+          [
+            539.3966064453125,
+            665.51123046875
+          ],
+          [
+            533.7469482421875,
+            662.9188842773438
+          ],
+          [
+            529.5843505859375,
+            651.6819458007812
+          ],
+          [
+            537.26318359375,
+            642.4698486328125
+          ],
+          [
+            549.1046142578125,
+            644.4946899414062
+          ],
+          [
+            552.6973876953125,
+            649.5569458007812
+          ],
+          [
+            553.2672119140625,
+            655.731689453125
+          ],
+          [
+            545.5883178710938,
+            664.9437866210938
+          ],
+          [
+            212.13839721679688,
+            -233.54701232910156
+          ],
+          [
+            197.65628051757812,
+            -235.12686157226562
+          ],
+          [
+            171.59681701660156,
+            -250.45809936523438
+          ],
+          [
+            175.9748077392578,
+            -255.65382385253906
+          ],
+          [
+            188.65707397460938,
+            -254.3632354736328
+          ],
+          [
+            211.93687438964844,
+            -244.2499542236328
+          ],
+          [
+            355.8615417480469,
+            -57.96091842651367
+          ],
+          [
+            341.0945129394531,
+            -67.94068908691406
+          ],
+          [
+            351.997802734375,
+            -80.24573516845703
+          ],
+          [
+            364.26312255859375,
+            -70.78887176513672
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            3,
+            2
+          ],
+          [
+            3,
+            0,
+            4
+          ],
+          [
+            3,
+            5,
+            2
+          ],
+          [
+            5,
+            8,
+            2
+          ],
+          [
+            13,
+            10,
+            16
+          ],
+          [
+            0,
+            1,
+            4
+          ],
+          [
+            1,
+            12,
+            4
+          ],
+          [
+            10,
+            17,
+            16
+          ],
+          [
+            1,
+            17,
+            10
+          ],
+          [
+            25,
+            9,
+            6
+          ],
+          [
+            8,
+            9,
+            21
+          ],
+          [
+            7,
+            25,
+            6
+          ],
+          [
+            7,
+            6,
+            4
+          ],
+          [
+            12,
+            7,
+            4
+          ],
+          [
+            7,
+            12,
+            13
+          ],
+          [
+            11,
+            1,
+            10
+          ],
+          [
+            11,
+            12,
+            1
+          ],
+          [
+            11,
+            10,
+            13
+          ],
+          [
+            12,
+            11,
+            13
+          ],
+          [
+            19,
+            9,
+            25
+          ],
+          [
+            22,
+            19,
+            23
+          ],
+          [
+            14,
+            7,
+            13
+          ],
+          [
+            14,
+            13,
+            16
+          ],
+          [
+            15,
+            14,
+            16
+          ],
+          [
+            27,
+            14,
+            15
+          ],
+          [
+            14,
+            27,
+            7
+          ],
+          [
+            26,
+            27,
+            23
+          ],
+          [
+            27,
+            26,
+            25
+          ],
+          [
+            7,
+            24,
+            25
+          ],
+          [
+            24,
+            27,
+            25
+          ],
+          [
+            27,
+            24,
+            7
+          ],
+          [
+            9,
+            20,
+            21
+          ],
+          [
+            19,
+            20,
+            9
+          ],
+          [
+            20,
+            22,
+            21
+          ],
+          [
+            20,
+            19,
+            22
+          ],
+          [
+            18,
+            19,
+            25
+          ],
+          [
+            26,
+            18,
+            25
+          ],
+          [
+            19,
+            18,
+            23
+          ],
+          [
+            18,
+            26,
+            23
+          ],
+          [
+            3,
+            6,
+            5
+          ],
+          [
+            6,
+            3,
+            4
+          ],
+          [
+            6,
+            9,
+            5
+          ],
+          [
+            9,
+            8,
+            5
+          ]
+        ],
+        "model": "regularized_piecewise_affine",
+        "foldedTriangles": 0
+      },
+      "validationLandmarks": [
+        {
+          "pixel": [
+            809.2308347444385,
+            168.0559583435926
+          ],
+          "local": [
+            -7.971883418660354,
+            823.3178013651986
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-0-2",
+          "correlation": 0.383,
+          "purpose": "fit",
+          "errorM": 1.46,
+          "leaveOneOutErrorM": 1.91
+        },
+        {
+          "pixel": [
+            1136.7972343903664,
+            168.0559583435926
+          ],
+          "local": [
+            291.0812649621721,
+            827.3860829002518
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-0-3",
+          "correlation": 0.895,
+          "purpose": "fit",
+          "errorM": 3.87,
+          "leaveOneOutErrorM": 5.62
+        },
+        {
+          "pixel": [
+            154.09803545258325,
+            532.7053466286819
+          ],
+          "local": [
+            -608.9104301928189,
+            490.35010309844665
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-1-0",
+          "correlation": 0.389,
+          "purpose": "fit",
+          "errorM": 2.51,
+          "leaveOneOutErrorM": 3.36
+        },
+        {
+          "pixel": [
+            481.6644350985109,
+            532.7053466286819
+          ],
+          "local": [
+            -301.5164387834127,
+            492.01740980321665
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-1-1",
+          "correlation": 0.805,
+          "purpose": "fit",
+          "errorM": 8.16,
+          "leaveOneOutErrorM": 9.47
+        },
+        {
+          "pixel": [
+            809.2308347444385,
+            532.7053466286819
+          ],
+          "local": [
+            -10.380778790280374,
+            493.46804889531916
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-1-2",
+          "correlation": 0.543,
+          "purpose": "fit",
+          "errorM": 2.7,
+          "leaveOneOutErrorM": 3.06
+        },
+        {
+          "pixel": [
+            481.6644350985109,
+            897.3547349137712
+          ],
+          "local": [
+            -314.6216094464778,
+            154.91881987803436
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-1",
+          "correlation": 0.459,
+          "purpose": "fit",
+          "errorM": 4.99,
+          "leaveOneOutErrorM": 5.78
+        },
+        {
+          "pixel": [
+            809.2308347444385,
+            897.3547349137712
+          ],
+          "local": [
+            -11.775982079852952,
+            158.7090169913015
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-2",
+          "correlation": 0.79,
+          "purpose": "fit",
+          "errorM": 1.77,
+          "leaveOneOutErrorM": 2.01
+        },
+        {
+          "pixel": [
+            1136.7972343903664,
+            897.3547349137712
+          ],
+          "local": [
+            286.55613114539847,
+            154.5072309513912
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-2-3",
+          "correlation": 0.472,
+          "purpose": "fit",
+          "errorM": 2.72,
+          "leaveOneOutErrorM": 3.38
+        },
+        {
+          "pixel": [
+            481.6644350985109,
+            1262.0041231988605
+          ],
+          "local": [
+            -313.1154808567604,
+            -179.3524630486579
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-3-1",
+          "correlation": 0.701,
+          "purpose": "fit",
+          "errorM": 3.95,
+          "leaveOneOutErrorM": 5.3
+        },
+        {
+          "pixel": [
+            809.2308347444385,
+            1262.0041231988605
+          ],
+          "local": [
+            -13.274817431390034,
+            -172.7287088437579
+          ],
+          "kind": "layer_block",
+          "referenceId": "block-3-2",
+          "correlation": 0.636,
+          "purpose": "fit",
+          "errorM": 4.04,
+          "leaveOneOutErrorM": 5.28
+        },
+        {
+          "pixel": [
+            1409.0,
+            339.0
+          ],
+          "local": [
+            539.3966064453125,
+            665.51123046875
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 0.763,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1402.0,
+            345.0
+          ],
+          "local": [
+            533.7469482421875,
+            662.9188842773438
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 2.218,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1402.0,
+            354.0
+          ],
+          "local": [
+            529.5843505859375,
+            651.6819458007812
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 3.622,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1407.0,
+            359.0
+          ],
+          "local": [
+            537.26318359375,
+            642.4698486328125
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 5.506,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1415.0,
+            360.0
+          ],
+          "local": [
+            549.1046142578125,
+            644.4946899414062
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 4.838,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1421.0,
+            356.0
+          ],
+          "local": [
+            552.6973876953125,
+            649.5569458007812
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 2.476,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1423.0,
+            348.0
+          ],
+          "local": [
+            553.2672119140625,
+            655.731689453125
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 2.433,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1418.0,
+            340.0
+          ],
+          "local": [
+            545.5883178710938,
+            664.9437866210938
+          ],
+          "referenceId": "147022263",
+          "kind": "building_corner",
+          "outlineIoU": 0.637,
+          "errorM": 2.228,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1052.0,
+            1325.0
+          ],
+          "local": [
+            212.13839721679688,
+            -233.54701232910156
+          ],
+          "referenceId": "715153857",
+          "kind": "building_corner",
+          "outlineIoU": 0.596,
+          "errorM": 2.701,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1038.0,
+            1326.0
+          ],
+          "local": [
+            197.65628051757812,
+            -235.12686157226562
+          ],
+          "referenceId": "715153857",
+          "kind": "building_corner",
+          "outlineIoU": 0.596,
+          "errorM": 0.957,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1008.0,
+            1343.0
+          ],
+          "local": [
+            171.59681701660156,
+            -250.45809936523438
+          ],
+          "referenceId": "715153857",
+          "kind": "building_corner",
+          "outlineIoU": 0.596,
+          "errorM": 2.24,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1009.0,
+            1350.0
+          ],
+          "local": [
+            175.9748077392578,
+            -255.65382385253906
+          ],
+          "referenceId": "715153857",
+          "kind": "building_corner",
+          "outlineIoU": 0.596,
+          "errorM": 5.926,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1034.0,
+            1348.0
+          ],
+          "local": [
+            188.65707397460938,
+            -254.3632354736328
+          ],
+          "referenceId": "715153857",
+          "kind": "building_corner",
+          "outlineIoU": 0.596,
+          "errorM": 4.924,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1051.0,
+            1342.0
+          ],
+          "local": [
+            211.93687438964844,
+            -244.2499542236328
+          ],
+          "referenceId": "715153857",
+          "kind": "building_corner",
+          "outlineIoU": 0.596,
+          "errorM": 6.99,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1210.0,
+            1136.0
+          ],
+          "local": [
+            355.8615417480469,
+            -57.96091842651367
+          ],
+          "referenceId": "87315393",
+          "kind": "building_corner",
+          "outlineIoU": 0.572,
+          "errorM": 4.62,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1201.0,
+            1145.0
+          ],
+          "local": [
+            341.0945129394531,
+            -67.94068908691406
+          ],
+          "referenceId": "87315393",
+          "kind": "building_corner",
+          "outlineIoU": 0.572,
+          "errorM": 6.302,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1210.0,
+            1155.0
+          ],
+          "local": [
+            351.997802734375,
+            -80.24573516845703
+          ],
+          "referenceId": "87315393",
+          "kind": "building_corner",
+          "outlineIoU": 0.572,
+          "errorM": 2.984,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        },
+        {
+          "pixel": [
+            1219.0,
+            1147.0
+          ],
+          "local": [
+            364.26312255859375,
+            -70.78887176513672
+          ],
+          "referenceId": "87315393",
+          "kind": "building_corner",
+          "outlineIoU": 0.572,
+          "errorM": 2.087,
+          "purpose": "fit",
+          "source": "separated_roof_outline"
+        }
+      ],
+      "method": "global_search_layer_correlation",
+      "reportedP95M": 7.81,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.0366,
+            "metresPerPixel": 1.08145,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.0663,
+            "metresPerPixel": 0.82181,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.0124,
+            "metresPerPixel": 0.85469,
+            "rotationDeg": -6.0
+          },
+          {
+            "score": 0.0182,
+            "metresPerPixel": 0.92443,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.0366,
+            "metresPerPixel": 1.08145,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.0663,
+            "metresPerPixel": 0.82181,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.0124,
+            "metresPerPixel": 0.85469,
+            "rotationDeg": -6.0
+          },
+          {
+            "score": 0.0182,
+            "metresPerPixel": 0.92443,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.0804,
+            "metresPerPixel": 0.7902,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.0052,
+            "metresPerPixel": 0.7902,
+            "rotationDeg": -4.5
+          },
+          {
+            "score": 0.1361,
+            "metresPerPixel": 0.7902,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.0334,
+            "metresPerPixel": 0.7902,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": 0.3051,
+            "metresPerPixel": 0.92443,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": -0.0056,
+            "metresPerPixel": 1.08145,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": -0.0027,
+            "metresPerPixel": 0.7902,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.0165,
+            "metresPerPixel": 1.21648,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.0057,
+            "metresPerPixel": 0.7902,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": -0.0056,
+            "metresPerPixel": 1.08145,
+            "rotationDeg": -7.5
+          },
+          {
+            "score": -0.0517,
+            "metresPerPixel": 1.12471,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.4063,
+            "metresPerPixel": 0.92443,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.2052,
+            "metresPerPixel": 0.73059,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.1904,
+            "metresPerPixel": 0.67547,
+            "rotationDeg": 1.5
+          },
+          {
+            "score": 0.1819,
+            "metresPerPixel": 0.67547,
+            "rotationDeg": 10.5
+          },
+          {
+            "score": 0.1753,
+            "metresPerPixel": 0.7902,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.1731,
+            "metresPerPixel": 1.08145,
+            "rotationDeg": 3.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 20,
+        "pathEvidence": "darker_paving",
+        "coarseCells": 96,
+        "scaleBar": {
+          "metresPerPixel": 0.91323566206111,
+          "labels": 3,
+          "spanPx": 219.0,
+          "residualPx": 0.33333333333393966,
+          "pixelBox": [
+            1332,
+            124,
+            1551,
+            140
+          ],
+          "used": true
+        }
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 8.62,
+          "p95": 12.73,
+          "max": 13.56
+        },
+        "insideHull": {
+          "median": 7.88,
+          "p95": 11.01,
+          "max": 11.68
+        },
+        "insideFraction": 0.625,
+        "wholeImage": {
+          "median": 10.0,
+          "p95": 15.55,
+          "max": 18.33
+        },
+        "evaluationSamples": 320
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.4144,
+          "agreesWithChosen": true,
+          "truthMedianM": 8.29
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4131,
+          "agreesWithChosen": true,
+          "truthMedianM": 6.81
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.4131,
+          "agreesWithChosen": true,
+          "truthMedianM": 6.81
+        },
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.413,
+          "agreesWithChosen": true,
+          "truthMedianM": 7.75
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.1633,
+          "agreesWithChosen": false,
+          "truthMedianM": 159.19
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.135,
+          "agreesWithChosen": false,
+          "truthMedianM": 536.43
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0823,
+          "agreesWithChosen": false,
+          "truthMedianM": 525.98
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.0451,
+          "agreesWithChosen": false,
+          "truthMedianM": 1284.35
+        },
+        {
+          "method": "global_search_road_network",
+          "support": -0.0307,
+          "agreesWithChosen": false,
+          "truthMedianM": 1298.75
+        },
+        {
+          "method": "global_search_road_network",
+          "support": -0.0307,
+          "agreesWithChosen": false,
+          "truthMedianM": 1298.75
+        }
+      ],
+      "poseSupport": {
+        "value": 0.4144,
+        "layers": {
+          "building": 0.2733,
+          "path": 0.4527
+        },
+        "margin": 0.2092
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

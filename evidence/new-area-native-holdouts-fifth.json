@@ -1,0 +1,74 @@
+{
+ "selectedAt": "2026-11-08T06:21:58.208724+00:00",
+ "nativeResolution": true,
+ "implementationSignatureAtSelection": "3b61bfe35a1c3e1358b27fc63f9a42ae4088282a5004fb2c7e642c6b6c0aaea6",
+ "headCommitAtSelection": "2799f2ec6caa8e84930bf2c6680b8bf57f216bab",
+ "selectionBasis": "Fifth cohort, selected only from RouteGadget event-list metadata (rg2api.php?type=events: name, date, club, type, suffix and world-file coefficients A-F) before downloading or viewing any image. Six regions and eight hosts never used before (Lancaster SROC, Pendle/Blackburn PFO, the British Championships server BOC for UEA Norwich, Northern Ireland LVO, Malvern HOC, Sheffield SYO, South Wales SWOC, Warwickshire/Birmingham OD), excluding Hertfordshire, London, Bristol, Oxford, Glasgow, Edinburgh, Leeds, Manchester, Newcastle and every host and place of earlier cohorts. Weighted toward Dashahe-like first maps of new places: two hilly urban parks, two campus/institutional grounds, two hilly urban sprint areas, plus two woodland/park stress cases. Events from 2023-2026 only. Eligibility: suffix gif (the verifier fetches kartat/<mapid>.gif), non-zero world file A-F whose origin lies in the event region (placeholder world files near 49.78N 7.56W, seen on BL and LOC, were excluded, as were NWO files with an origin near 78.9N 169.9E), map id not shared with another chosen event. Reasons come from the event name, club, date and world-file scale plus public knowledge of the named place, not from any image. No outcome-based replacement is allowed.",
+ "referencePolicy": "World files frame a bounded teacher viewport only and measure the result afterwards. Preserve every result including refusals and wrong fits.",
+ "cases": [
+  {
+   "host": "https://www.sroc.routegadget.co.uk",
+   "id": 538,
+   "mapid": 487,
+   "name": "Spring Series 1 Williamson Park",
+   "date": "2026-02-28",
+   "reason": "Lancaster hilltop Victorian urban park (Ashton Memorial on the summit, paved paths, steep wooded slopes, housing round the edges); closest analogue of Dashahe. World file 0.54 m/px."
+  },
+  {
+   "host": "https://www.pfo.routegadget.co.uk",
+   "id": 237,
+   "mapid": 297,
+   "name": "Corporation Park",
+   "date": "2024-03-03",
+   "reason": "Blackburn terraced Victorian park on a steep hillside (paved paths, lakes, conservatory, town streets around it); hilly urban park from a different Lancashire club and mapper. The same-day Corporation Park A/B events use another map id (272); this event has its own map id. World file 0.60 m/px."
+  },
+  {
+   "host": "https://www.boc.routegadget.co.uk",
+   "id": 66,
+   "mapid": 65,
+   "name": "British Sprint Qualifier 2025: University of East Anglia",
+   "date": "2025-08-31",
+   "reason": "Norwich university campus sprint (dense concrete campus buildings in sloping parkland by a broad lake); campus analogue in East Anglia, mapped for EAOA. World file 0.34 m/px."
+  },
+  {
+   "host": "https://www.lvo.routegadget.co.uk",
+   "id": 555,
+   "mapid": 518,
+   "name": "NIUL OCO ST. LUKE'S HOSPITAL",
+   "date": "2024-12-15",
+   "reason": "Armagh hospital estate urban-league event (large institutional buildings in hilly grounds with paved paths); campus-like grounds in Northern Ireland. World file 0.51 m/px."
+  },
+  {
+   "host": "https://www.hoc.routegadget.co.uk",
+   "id": 78,
+   "mapid": 77,
+   "name": "Malvern Urban",
+   "date": "2023-09-10",
+   "reason": "Great Malvern town on the steep eastern slope of the Malvern Hills (streets, steps, paved paths, parks); hilly urban sprint in the West Midlands. World file 0.72 m/px."
+  },
+  {
+   "host": "https://www.syo.routegadget.co.uk",
+   "id": 264,
+   "mapid": 258,
+   "name": "Broomhill, Crookes, Crosspool & Lydgate - Night Event",
+   "date": "2025-01-15",
+   "reason": "Hilly residential and university-edge streets of west Sheffield (steep terraces, small parks); hilly urban sprint in Yorkshire by a club other than AIRE. World file 0.34 m/px."
+  },
+  {
+   "host": "https://www.swoc.routegadget.co.uk",
+   "id": 91,
+   "mapid": 112,
+   "name": "Hensol",
+   "date": "2026-01-04",
+   "reason": "Stress case: Hensol Forest near Cardiff, Wales (mixed woodland with tracks, few paved features). Map id 112 is shared only with an earlier Hensol event that is not chosen. World file 0.95 m/px."
+  },
+  {
+   "host": "https://www.od.routegadget.co.uk",
+   "id": 127,
+   "mapid": 138,
+   "name": "Sutton Park CompassSport Cup Heat",
+   "date": "2026-02-22",
+   "reason": "Stress case: Sutton Park, Birmingham, a very large urban heath and woodland park (open heath, woods, pools, few buildings). World file 1.26 m/px."
+  }
+ ]
+}

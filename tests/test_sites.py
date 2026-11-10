@@ -74,7 +74,9 @@ def test_account_adds_a_place_by_downloading_its_osm_features(server, monkeypatc
     assert site['id'] not in {s['id'] for s in other.get('/api/sites').json()}
     assert other.post('/api/maps/upload', files={'file': ('a.png', png_bytes(), 'image/png')},
                       params={'siteId': site['id']}).status_code == 422
-    uploaded = teacher.post('/api/maps/upload', files={'file': ('a.png', png_bytes(), 'image/png')}, params={'siteId': site['id']}).json()
+    response = teacher.post('/api/maps/upload', files={'file': ('a.png', png_bytes(), 'image/png')}, params={'siteId': site['id']})
+    assert response.status_code == 200, response.text
+    uploaded = response.json()
     assert teacher.delete(f'/api/sites/{site["id"]}').status_code == 422
     assert teacher.delete(f'/api/maps/{uploaded["id"]}').status_code == 200
     assert teacher.delete(f'/api/sites/{site["id"]}').status_code == 200
@@ -84,7 +86,7 @@ def test_account_adds_a_place_by_downloading_its_osm_features(server, monkeypatc
 def test_failed_download_marks_a_new_place_and_keeps_an_old_reference(server, monkeypatch):
     def failing(query, progress=lambda p, m: None, rounds=2):
         raise ValueError('OpenStreetMap 参照服务暂时不可用')
-    monkeypatch.setattr(sites, 'download', failing)
+    monkeypatch.setattr(sites, 'download_reference', failing)
     teacher = account('unlucky')
     added = teacher.post('/api/sites', json={'name': '公园', 'bbox': [113.95, 22.55, 113.955, 22.555]}).json()
     job = wait(teacher, added['job']['id'])
@@ -99,8 +101,10 @@ def test_maps_register_only_against_maps_of_the_same_place(server):
     workspace = client_workspace(teacher)
     with store.using(workspace):
         save_fixture('szu-1')
-    uploaded = teacher.post('/api/maps/upload', files={'file': ('park.png', png_bytes(), 'image/png')},
-                            params={'siteId': 'dashahe-park'}).json()
+    response = teacher.post('/api/maps/upload', files={'file': ('park.png', png_bytes(), 'image/png')},
+                            params={'siteId': 'dashahe-park'})
+    assert response.status_code == 200, response.text
+    uploaded = response.json()
     with store.using(workspace):
         inputs = service.job_inputs('process', uploaded['id'])
     assert inputs['bases'] == {} and inputs['site'][0] == 'dashahe-park'

@@ -1,0 +1,27 @@
+{
+  "selectedAt": "2026-11-05T11:00:04Z",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "nativeResolution": true,
+  "selectionBasis": "Selected from event names and available world-file metadata before downloading or matching these images. These places are outside the previous campus, sprint and park comparison set. No outcome-based replacement is allowed.",
+  "referencePolicy": "The organiser world file frames the teacher viewport; matching receives no world-file transform or anchors. Keep original pixels. Preserve every refusal and wrong result.",
+  "cases": [
+    {
+      "id": 403,
+      "mapid": 418,
+      "name": "Nomansland Common GLOSS and Saturday Series",
+      "date": "2023-07-01"
+    },
+    {
+      "id": 404,
+      "mapid": 419,
+      "name": "Burnham Beeches Saturday Series",
+      "date": "2023-09-09"
+    },
+    {
+      "id": 414,
+      "mapid": 413,
+      "name": "Chipperfield Saturday Series",
+      "date": "2024-04-06"
+    }
+  ]
+}

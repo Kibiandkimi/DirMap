@@ -1,7 +1,10 @@
 {
-  "checkedAt": "2026-11-04T03:08:11Z",
-  "scope": "First registration of degraded sprint sheets of Shenzhen places DirMap never saw.\n\nThe next classes go to parks like 大沙河公园: a new place each time, drawn in\nthe same sprint style. For each listed place this downloads the OSM features\naround it, renders a sheet in that style and deliberately damages it the way\nreal sheets differ from OSM: a quarter of the footpaths missing, paths that\nOSM lacks, a fifth of the roofs missing, smooth mapping distortion of a few\nmetres, vegetation and contour clutter, course circles and JPEG compression,\nat a random scale and a small rotation. The teacher's place is framed around\nthe sheet with an uneven margin. Recognition and automatic registration then\nrun exactly as for an upload, and the known rendering transform measures the\nresult.\n\nRendering from OSM is still more favourable than a real print. This checks\nthat the search and its checks generalise across places and OSM content; it\nis not a field accuracy measurement.",
-  "implementationSignature": "199a4ca5c0c6a70ca210d84877deb4ea843c079cfd8a755505f7403cab57c536",
+  "checkedAt": "2026-11-05T18:39:17Z",
+  "scope": "First registration of degraded sprint sheets of Shenzhen places DirMap never saw.\n\nThe next classes go to parks like 大沙河公园: a new place each time, drawn in\nthe same sprint style. For each listed place this downloads the OSM features\naround it, renders a sheet in that style and deliberately damages it the way\nreal sheets differ from OSM: a quarter of the footpaths missing, paths that\nOSM lacks, a fifth of the roofs missing, smooth mapping distortion of a few\nmetres, vegetation and contour clutter, course circles and JPEG compression,\nat a random scale and a small rotation. The teacher's place is framed around\nthe sheet with an uneven margin. Recognition and automatic registration then\nrun exactly as for an upload, and the known rendering transform measures the\nresult.\n\nWith --layout classroom the sheet is laid out like the 大沙河 class sheet\ninstead: the park printed in forest colours inside an irregular outline,\nfootpaths as black dashes, contours, magnetic north lines and a course\ntitle lettered across the park, beside panels of checkpoint photos (cut\nfrom the 大沙河 sheet; they show no linework), Chinese headings, the scale\nnote and a printed 0/150/300 m scale bar. The sheet then goes through the\nsame reading and size reduction as an upload.\n\nRendering from OSM is still more favourable than a real print. This checks\nthat the search and its checks generalise across places and OSM content; it\nis not a field accuracy measurement.",
+  "layout": "sprint",
+  "implementationSignature": "3a6acfe7d89adc294173f468416bef12599d8d2fc0029a24ea3ab9f193fa31f7",
+  "verifierSha256": "d2f78334396190d5d053ab96067ce5ed4b23e1dc12efef560be5805611f56b86",
+  "complete": true,
   "cases": [
     {
       "place": "莲花山公园",
@@ -12,27 +15,29 @@
       "metresPerPixel": 0.3439,
       "rotationDeg": 1.03,
       "controls": 15,
+      "referenceSha256": "7b61963b7ee6770667bf3f6c029f57d1c8ba1e0d368847f2ad56f6176355339d",
       "referenceFeatures": 445,
       "detectedControls": 15,
-      "elapsedSec": 25.8,
+      "elapsedSec": 26.8,
       "failures": [
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "water_seed_observed_outline_ransac_mesh",
-      "reportedP95M": 2.01,
+      "reportedP95M": 2.3,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.7962,
+        "value": 0.7985,
         "layers": {
-          "building": 0.8365,
-          "water": 0.9417,
-          "path": 0.7397
+          "building": 0.8402,
+          "water": 0.9415,
+          "path": 0.7426
         },
-        "margin": 0.7962
+        "margin": 0.4377
       },
       "truthErrorM": {
-        "median": 2.18,
-        "p95": 4.77,
-        "max": 5.44
+        "median": 2.35,
+        "p95": 5.19,
+        "max": 5.86
       },
       "outcome": "correct"
     },
@@ -45,28 +50,30 @@
       "metresPerPixel": 0.3598,
       "rotationDeg": 0.29,
       "controls": 15,
+      "referenceSha256": "d988b59b5af4cda97fb50108bcd2b1c0ae962d431030fe0c6fe6040f2a6a2e8d",
       "referenceFeatures": 745,
       "detectedControls": 15,
-      "elapsedSec": 27.0,
+      "elapsedSec": 23.4,
       "failures": [
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "water_seed_observed_outline_ransac_mesh",
-      "reportedP95M": 5.16,
+      "reportedP95M": 11.12,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.777,
+        "value": 0.4751,
         "layers": {
-          "building": 0.7888,
-          "path": 0.7646
+          "building": 0.5173,
+          "path": 0.4318
         },
-        "margin": 0.777
+        "margin": 0.1312
       },
       "truthErrorM": {
-        "median": 2.19,
-        "p95": 5.67,
-        "max": 7.07
+        "median": 33.59,
+        "p95": 82.86,
+        "max": 97.28
       },
-      "outcome": "correct"
+      "outcome": "wrong"
     },
     {
       "place": "中山公园（南山）",
@@ -77,6 +84,7 @@
       "metresPerPixel": 0.3828,
       "rotationDeg": 0.5,
       "controls": 15,
+      "referenceSha256": "145021c9798082efb6fcb35ae707a710e8b05755f20d5792611800ed9a21e2c1",
       "referenceFeatures": 412,
       "detectedControls": 15,
       "elapsedSec": 17.0,
@@ -84,19 +92,20 @@
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "water_seed_observed_outline_ransac_mesh",
-      "reportedP95M": 3.32,
+      "reportedP95M": 2.77,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.796,
+        "value": 0.782,
         "layers": {
-          "building": 0.8723,
-          "path": 0.7436
+          "building": 0.8588,
+          "path": 0.7322
         },
-        "margin": 0.796
+        "margin": 0.436
       },
       "truthErrorM": {
-        "median": 1.95,
-        "p95": 4.22,
-        "max": 6.01
+        "median": 1.91,
+        "p95": 3.54,
+        "max": 5.03
       },
       "outcome": "correct"
     },
@@ -109,22 +118,24 @@
       "metresPerPixel": 0.2955,
       "rotationDeg": 2.71,
       "controls": 12,
+      "referenceSha256": "9d1115ce5e473d792910a1f475c69944f7c5e64c566b772af057b72e0a19b6da",
       "referenceFeatures": 214,
       "detectedControls": 12,
-      "elapsedSec": 25.9,
+      "elapsedSec": 34.4,
       "failures": [
         "自动地物匹配证据不足，请在原图与底图补充同名点",
         "道路匹配的独立核查证据不足，需补充同名点"
       ],
       "method": "global_search_road_network",
       "reportedP95M": 1.27,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.6684,
+        "value": 0.65,
         "layers": {
-          "building": 0.8343,
-          "path": 0.6196
+          "building": 0.832,
+          "path": 0.6025
         },
-        "margin": 0.3453
+        "margin": 0.2622
       },
       "truthErrorM": {
         "median": 9.14,
@@ -142,27 +153,29 @@
       "metresPerPixel": 0.3855,
       "rotationDeg": -1.81,
       "controls": 12,
+      "referenceSha256": "0dbbd6e22acdac46c66017d3d5a1973adf234689a8b3d39de0d2cf8907624f42",
       "referenceFeatures": 184,
       "detectedControls": 12,
-      "elapsedSec": 32.3,
+      "elapsedSec": 27.7,
       "failures": [
-        "自动配准仅找到 6 组稳定地物，需补充同名点",
+        "自动配准仅找到 5 组稳定地物，需补充同名点",
         "场地缺少可核对的公园轮廓与道路网络"
       ],
       "method": "global_search_layer_correlation",
-      "reportedP95M": 9.94,
+      "reportedP95M": 9.44,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.8352,
+        "value": 0.8193,
         "layers": {
-          "building": 0.8897,
-          "path": 0.8063
+          "building": 0.8525,
+          "path": 0.8034
         },
-        "margin": 0.5154
+        "margin": 0.3573
       },
       "truthErrorM": {
-        "median": 3.84,
-        "p95": 6.92,
-        "max": 8.39
+        "median": 3.82,
+        "p95": 6.83,
+        "max": 8.55
       },
       "outcome": "correct"
     },
@@ -175,26 +188,28 @@
       "metresPerPixel": 0.2935,
       "rotationDeg": -1.88,
       "controls": 15,
+      "referenceSha256": "74144acc77f7f62d91d8c1c4c3abff9d913200d5ccb4a133b2ec18d1b511dbbd",
       "referenceFeatures": 320,
       "detectedControls": 15,
-      "elapsedSec": 56.2,
+      "elapsedSec": 45.3,
       "failures": [
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "building_seed_observed_outline_ransac_mesh",
-      "reportedP95M": 1.74,
+      "reportedP95M": 1.71,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.8129,
+        "value": 0.8164,
         "layers": {
-          "building": 0.9059,
-          "path": 0.761
+          "building": 0.9042,
+          "path": 0.769
         },
-        "margin": 0.8129
+        "margin": 0.4174
       },
       "truthErrorM": {
-        "median": 3.65,
-        "p95": 7.3,
-        "max": 8.72
+        "median": 2.89,
+        "p95": 4.69,
+        "max": 5.14
       },
       "outcome": "correct"
     },
@@ -207,25 +222,27 @@
       "metresPerPixel": 0.2926,
       "rotationDeg": 1.06,
       "controls": 15,
+      "referenceSha256": "649f1396e4c1fc3c2f7348236fce5904b15facb5ef090d23bd406c415e923446",
       "referenceFeatures": 731,
       "detectedControls": 15,
-      "elapsedSec": 39.4,
+      "elapsedSec": 38.6,
       "failures": [],
       "method": "water_seed_observed_outline_ransac_mesh",
-      "reportedP95M": 3.34,
+      "reportedP95M": 2.01,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.8236,
+        "value": 0.8128,
         "layers": {
-          "building": 0.8893,
-          "water": 0.9133,
-          "path": 0.7118
+          "building": 0.8926,
+          "water": 0.8724,
+          "path": 0.7104
         },
-        "margin": 0.8212
+        "margin": 0.4444
       },
       "truthErrorM": {
-        "median": 0.9,
-        "p95": 1.84,
-        "max": 2.31
+        "median": 1.43,
+        "p95": 2.09,
+        "max": 2.48
       },
       "outcome": "correct"
     },
@@ -238,22 +255,24 @@
       "metresPerPixel": 0.3208,
       "rotationDeg": -0.03,
       "controls": 15,
+      "referenceSha256": "103cdd5afea89185f28fb9dc1c1f2eb4c8e43760199f052f2a1bd7202364439c",
       "referenceFeatures": 210,
       "detectedControls": 15,
-      "elapsedSec": 27.6,
+      "elapsedSec": 28.1,
       "failures": [
         "缺少可匹配水体。请补充建筑/路口同名点，或导入校园参考。",
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "global_search_road_network",
       "reportedP95M": 3.13,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.7117,
+        "value": 0.6911,
         "layers": {
-          "building": 0.3214,
-          "path": 0.7747
+          "building": 0.3021,
+          "path": 0.7521
         },
-        "margin": 0.3106
+        "margin": 0.2099
       },
       "truthErrorM": {
         "median": 2.48,
@@ -271,26 +290,28 @@
       "metresPerPixel": 0.3916,
       "rotationDeg": 1.8,
       "controls": 15,
+      "referenceSha256": "06e96e485584917fabf09084cec28d03605f3fd5e4090ce219a34aed90d0653d",
       "referenceFeatures": 799,
       "detectedControls": 15,
-      "elapsedSec": 15.4,
+      "elapsedSec": 17.1,
       "failures": [
         "存在多个相似道路布局，请补同名点确定方向或位置"
       ],
       "method": "water_seed_observed_outline_ransac_mesh",
-      "reportedP95M": 4.02,
+      "reportedP95M": 3.17,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.7368,
+        "value": 0.7268,
         "layers": {
-          "building": 0.7474,
-          "path": 0.735
+          "building": 0.7105,
+          "path": 0.7292
         },
-        "margin": 0.7368
+        "margin": 0.2714
       },
       "truthErrorM": {
-        "median": 1.09,
-        "p95": 2.15,
-        "max": 2.51
+        "median": 1.45,
+        "p95": 2.97,
+        "max": 3.43
       },
       "outcome": "correct"
     },
@@ -303,33 +324,35 @@
       "metresPerPixel": 0.3688,
       "rotationDeg": -2.4,
       "controls": 15,
+      "referenceSha256": "388b6184f073450f1f1150bbd6871f0e87e8025744b85403c2fd9e3558daabf3",
       "referenceFeatures": 360,
       "detectedControls": 15,
-      "elapsedSec": 17.0,
+      "elapsedSec": 18.3,
       "failures": [
         "场地缺少可核对的公园轮廓与道路网络"
       ],
       "method": "water_seed_observed_outline_ransac_mesh",
-      "reportedP95M": 2.72,
+      "reportedP95M": 2.73,
+      "exposureCorrection": null,
       "poseSupport": {
-        "value": 0.661,
+        "value": 0.6505,
         "layers": {
-          "building": 0.892,
-          "path": 0.5433
+          "building": 0.8887,
+          "path": 0.5369
         },
-        "margin": 0.661
+        "margin": 0.2835
       },
       "truthErrorM": {
-        "median": 3.28,
-        "p95": 7.63,
-        "max": 8.73
+        "median": 3.37,
+        "p95": 7.53,
+        "max": 8.82
       },
       "outcome": "correct"
     }
   ],
   "summary": {
-    "correct": 10,
-    "wrong": 0,
+    "correct": 9,
+    "wrong": 1,
     "refused": 0,
     "reference_unavailable": 0
   }

@@ -1,0 +1,319 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-04T12:55:20Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "29c44c0dc88632671a09842a93f9a59fbaaac5ff19f255c47a939ad8448063c8",
+  "verifierSha256": "ef7392f5043f2f2295ef201afc4f5b7df10a6532e55d62481508bb078cf5fcad",
+  "source": "https://www.slow.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 305,
+      "map": 289,
+      "name": "London City Race 2026",
+      "date": "2026-09-19",
+      "imageSize": [
+        3757,
+        3048
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "30b40a37a03ef6e95cab358fc901b65c0f1aad8b6454a0a00f04f8dde5dca1a5",
+      "worldFile": [
+        [
+          7.3142557625837106e-06,
+          3.811151627559479e-08,
+          -0.083251087235715
+        ],
+        [
+          2.4629730635676624e-08,
+          -4.566595588910023e-06,
+          51.502138203902
+        ]
+      ],
+      "referenceFeatures": 12646,
+      "referenceSha256": "a5a8fad980cefa671a703fd339bc3ccf835b482c7f3b6e6f4d2e4188b3621dbc",
+      "elapsedSec": 68.0,
+      "failures": [
+        "道路匹配的独立核查证据不足，需补充同名点"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 5.33,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.6791,
+            "metresPerPixel": 0.55066,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.4499,
+            "metresPerPixel": 0.4707,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.4269,
+            "metresPerPixel": 0.69676,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.4056,
+            "metresPerPixel": 0.72463,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.3987,
+            "metresPerPixel": 0.4707,
+            "rotationDeg": 15.0
+          },
+          {
+            "score": 0.386,
+            "metresPerPixel": 0.38688,
+            "rotationDeg": 4.5
+          }
+        ],
+        "channels": [
+          "building",
+          "path"
+        ],
+        "attempted": 0,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 212.47,
+          "p95": 291.62,
+          "max": 310.13
+        },
+        "insideHull": {
+          "median": 211.37,
+          "p95": 290.84,
+          "max": 308.5
+        },
+        "insideFraction": 0.973
+      },
+      "alternatives": [
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.6782,
+          "agreesWithChosen": true,
+          "truthMedianM": 212.61
+        }
+      ],
+      "poseSupport": {
+        "value": 0.6782,
+        "layers": {
+          "building": 0.725,
+          "path": 0.6311
+        },
+        "margin": 0.2283
+      },
+      "outcome": "wrong"
+    },
+    {
+      "event": 295,
+      "map": 279,
+      "name": "Wimbledon Common Night-O",
+      "date": "2026-03-24",
+      "imageSize": [
+        1376,
+        2004
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "0fd6d8e9c6cd0e4eee29d4729298264a37bdd04561883b07f9693f58582f5aa5",
+      "worldFile": [
+        [
+          2.0298842312529067e-05,
+          2.43247584575846e-07,
+          -0.24617095827493
+        ],
+        [
+          1.5444086192346658e-07,
+          -1.2684991932138888e-05,
+          51.44633750993
+        ]
+      ],
+      "referenceFeatures": 4249,
+      "referenceSha256": "571679dcc2b4b10c9b628f8ed2300c528e215dbfe6d8e9608a7a1f574c6d7cb5",
+      "elapsedSec": 98.3,
+      "failures": [
+        "存在多个相似道路布局，请补同名点确定方向或位置"
+      ],
+      "method": "water_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 9.82,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.39,
+            "metresPerPixel": 1.37295,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.2499,
+            "metresPerPixel": 0.12067,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2486,
+            "metresPerPixel": 0.21731,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2327,
+            "metresPerPixel": 0.17862,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2184,
+            "metresPerPixel": 0.12067,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1617,
+            "metresPerPixel": 0.19319,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.39,
+            "metresPerPixel": 1.37295,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.2499,
+            "metresPerPixel": 0.12067,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.2486,
+            "metresPerPixel": 0.21731,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2327,
+            "metresPerPixel": 0.17862,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2184,
+            "metresPerPixel": 0.12067,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.1617,
+            "metresPerPixel": 0.19319,
+            "rotationDeg": -12.0
+          },
+          {
+            "score": 0.246,
+            "metresPerPixel": 0.12067,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.275,
+            "metresPerPixel": 0.12067,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2486,
+            "metresPerPixel": 0.21731,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2236,
+            "metresPerPixel": 0.13573,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.3832,
+            "metresPerPixel": 1.42787,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2095,
+            "metresPerPixel": 0.17862,
+            "rotationDeg": 7.5
+          },
+          {
+            "score": 0.4048,
+            "metresPerPixel": 1.42787,
+            "rotationDeg": -3.0
+          },
+          {
+            "score": 0.2737,
+            "metresPerPixel": 1.0032,
+            "rotationDeg": 9.0
+          },
+          {
+            "score": 0.2733,
+            "metresPerPixel": 1.1736,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.2715,
+            "metresPerPixel": 0.12067,
+            "rotationDeg": -9.0
+          },
+          {
+            "score": 0.2655,
+            "metresPerPixel": 0.12549,
+            "rotationDeg": 4.5
+          },
+          {
+            "score": 0.2624,
+            "metresPerPixel": 0.12549,
+            "rotationDeg": 9.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 10,
+        "pathEvidence": "linear_ink",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 2.08,
+          "p95": 4.27,
+          "max": 4.99
+        },
+        "insideHull": {
+          "median": 2.01,
+          "p95": 4.31,
+          "max": 4.99
+        },
+        "insideFraction": 0.744
+      },
+      "alternatives": [
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.4229,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.08
+        }
+      ],
+      "poseSupport": {
+        "value": 0.4229,
+        "layers": {
+          "building": 0.237,
+          "water": 0.6137,
+          "path": 0.4724
+        },
+        "margin": 0.1479
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 1,
+    "refused": 0
+  }
+}

@@ -187,8 +187,50 @@ def black_roofs(black, roofs, controls, image_area):
         inside = np.zeros((h, w), np.uint8)
         cv2.fillPoly(inside, [outline-[x, y]], 1)
         if np.mean(grey[y:y+h, x:x+w][inside > 0] > 0) < .2:
-            result.append(feature)
+            result.append({**feature, 'ink': 'black'})
     return result
+
+
+def water_under_overprint(water, purple):
+    """Join visible water through thin purple ink for geographic matching.
+
+    Measure the actual nearby stroke width, so enlarging a map or cropping
+    its margins does not turn a hatched lake into dozens of small ponds.
+    Only hidden purple pixels can be filled; visible land and the source
+    traversability masks are left untouched.
+    """
+    if not np.any(water) or not np.any(purple):
+        return water
+    nearby = (cv2.dilate(water, np.ones((31, 31), np.uint8)) > 0) & (purple > 0)
+    if not nearby.any():
+        return water
+    distance = cv2.distanceTransform(purple, cv2.DIST_L2, 3)
+    size = min(31, max(3, int(np.ceil(2*np.percentile(distance[nearby], 95)+2)) | 1))
+    joined = cv2.morphologyEx(water, cv2.MORPH_CLOSE, np.ones((size, size), np.uint8))
+    return water | (joined & purple)
+
+
+def registration_features(image, controls, masks=None):
+    """Geometric landmarks, shared by recognition and exposure recovery."""
+    masks = colour_masks(image) if masks is None else masks
+    height, width = image.shape[:2]
+    # Antialiased black paths have grey rims. Closing those rims first
+    # invents solid grey roofs around roads and even whole forest clearings.
+    # Require actual filled-grey support before joining small print gaps.
+    grey = cv2.morphologyEx(masks['building'], cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    features = region_features(grey, 'building', height*width, close=5)
+    features += region_features(water_under_overprint(masks['water'], masks['purple']), 'water', height*width, close=7)
+    h, s, v = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
+    pitch_ink = ((h >= 12) & (h <= 34) & (s >= 65) & (s <= 180) & (v > 200)).astype(np.uint8)*255
+    for feature in region_features(pitch_ink, 'pitch', height*width, close=5):
+        rect = cv2.minAreaRect(np.asarray(feature['points'], np.float32))
+        rectangularity = feature['area']/max(1, rect[1][0]*rect[1][1])
+        if rectangularity > .72 and feature['area'] > height*width*.0004 and feature['aspect'] < 3.5:
+            feature['rectangularity'] = float(rectangularity)
+            features.append(feature)
+    del h, s, v, pitch_ink
+    features += black_roofs(masks['black'], grey, controls, height*width)
+    return features
 
 
 def refine_circle(ink, pixel, radius):
@@ -464,18 +506,7 @@ def analyze(image, labeler=None):
     if labeler:
         label_photos(original, photos, controls)
     link_photos(photos, controls)
-    features = region_features(masks['building'], 'building', height*width, close=5)
-    features += region_features(masks['water'], 'water', height*width, close=7)
-    h, s, v = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
-    pitch_ink = ((h >= 12) & (h <= 34) & (s >= 65) & (s <= 180) & (v > 200)).astype(np.uint8)*255
-    for feature in region_features(pitch_ink, 'pitch', height*width, close=5):
-        rect = cv2.minAreaRect(np.asarray(feature['points'], np.float32))
-        rectangularity = feature['area']/max(1, rect[1][0]*rect[1][1])
-        if rectangularity > .72 and feature['area'] > height*width*.0004 and feature['aspect'] < 3.5:
-            feature['rectangularity'] = float(rectangularity)
-            features.append(feature)
-    del h, s, v, pitch_ink
-    features += black_roofs(masks['black'], masks['building'], controls, height*width)
+    features = registration_features(image, controls, masks)
     annotations = annotation_mask(masks['purple'], controls, masks['course_text'])
     restrictions = purple_restrictions(masks['purple'], controls, annotations)
     recovered, hidden, continued_barriers = restore(image, masks['purple'], annotations, restrictions, masks['black'], controls)
@@ -495,6 +526,8 @@ def analyze(image, labeler=None):
     terrain_masks['black'] |= continued_barriers
     boundaries = paved_boundaries(image, masks, controls)
     boundaries[continued_barriers > 0] = 0
+    continued_barrier_pixels = int(np.count_nonzero(continued_barriers))
+    del continued_barriers
     for kind in ('dark_green', 'black', 'olive'):
         terrain_masks[kind][boundaries > 0] = 0
     # Brown elevation strokes do not cut traversable paths through a private
@@ -507,6 +540,10 @@ def analyze(image, labeler=None):
     filled_olive = cv2.morphologyEx(terrain_masks['olive'], cv2.MORPH_CLOSE, np.ones((stroke_width, stroke_width), np.uint8))
     olive_support = cv2.blur((terrain_masks['olive'] > 0).astype(np.float32), (2*stroke_width+1,)*2)
     terrain_masks['olive'][brown_stroke & (filled_olive > 0) & (olive_support >= .6)] = 255
+    # These full-sheet scratch arrays are not needed by later stages.
+    # Releasing them here keeps a large first-time upload from retaining
+    # every earlier HSV channel and float mask through contour extraction.
+    del contour_h, contour_s, contour_v, brown_stroke, filled_olive, olive_support
     # Do not fill an entire external contour: it may contain a courtyard,
     # portico, garden, or an opening through a U-shaped building. Roof fill
     # and its black outline remain hard; real white openings remain visible.
@@ -517,16 +554,21 @@ def analyze(image, labeler=None):
     # roads and courtyards then stay walkable instead of becoming false walls.
     support = cv2.erode(buildings, np.ones((3, 3), np.uint8))
     buildings = cv2.dilate(support, np.ones((3, 3), np.uint8))
+    del support
     continued_roofs = continue_roof_boundaries(image, hidden, masks['building'], controls)
     buildings |= continued_roofs
+    continued_roof_pixels = int(np.count_nonzero(continued_roofs))
+    del continued_roofs
     buildings[lower_stripes > 0] = 0
     # A black roof outline blended with yellow paving is dark brown in the
     # scan, not neutral black. Retain that one-pixel boundary where a solid
     # roof supports it, without filling bright gates or light-grey porticos.
-    _, terrain_s, terrain_v = cv2.split(cv2.cvtColor(recovered, cv2.COLOR_BGR2HSV))
+    terrain_h, terrain_s, terrain_v = cv2.split(cv2.cvtColor(recovered, cv2.COLOR_BGR2HSV))
     roof_edge = ((terrain_v < 165) & (terrain_s < 150)
                  & (cv2.dilate(buildings, np.ones((3, 3), np.uint8)) > 0) & (lower_stripes == 0))
     buildings[roof_edge] = 255
+    lower_hatching_pixels = int(np.count_nonzero(lower_stripes))
+    del roof_edge, lower_stripes
     # JPEG chroma is unstable near black. Requiring low saturation punches
     # traversable holes in black symbols and walls printed over green.
     # This only adds terrain obstacles; geographic feature matching above
@@ -534,6 +576,8 @@ def analyze(image, labeler=None):
     dark_ink = (terrain_v < 70) & (boundaries == 0)
     recovered_dark_ink = int(np.count_nonzero(dark_ink & (terrain_masks['black'] == 0)))
     terrain_masks['black'][dark_ink] = 255
+    paved_boundary_pixels = int(np.count_nonzero(boundaries))
+    del terrain_h, terrain_s, terrain_v, dark_ink, boundaries
     water_regions = water_obstacles(terrain_masks['water'])
     point_symbols, point_count = recover_point_ink(recovered,
         {**terrain_masks, 'building': buildings, 'water': water_regions}, controls)
@@ -541,20 +585,28 @@ def analyze(image, labeler=None):
     terrain_masks['black'] |= point_symbols
     for kind in ('olive', 'dark_green'):
         terrain_masks[kind][point_symbols > 0] = 0
+    point_symbol_pixels = int(np.count_nonzero(point_symbols))
+    del point_symbols
     hard = cv2.bitwise_or(buildings, water_regions)
     for kind in ('dark_green', 'olive', 'black'):
         hard = cv2.bitwise_or(hard, terrain_masks[kind])
     hard = cv2.bitwise_or(hard, restrictions)
     unknown_ink = cv2.bitwise_and(masks['purple'], cv2.bitwise_not(cv2.bitwise_or(annotations, hidden)))
+    del annotations
     hard = cv2.bitwise_or(hard, unknown_ink)
     protected = buildings | water_regions | terrain_masks['dark_green'] | terrain_masks['olive'] | restrictions | unknown_ink | point_protection
+    del point_protection
     stairs, treads, stair_features = detect_stairs(recovered, controls, protected)
+    del protected
     hard[treads > 0] = 0
+    stair_tread_pixels = int(np.count_nonzero(treads))
+    del treads
     # Tiny isolated compression flecks are not walls. A 2x2 black pillar on
     # the supplied low-resolution map is already a real obstacle, though.
     count, labels, stats, _ = cv2.connectedComponentsWithStats(hard, 8)
     keep = np.array([False]+[int(stats[i, cv2.CC_STAT_AREA]) >= 4 for i in range(1, count)])
     hard = keep[labels].astype(np.uint8)*255
+    del labels, stats, keep, _
     canopy_edges, canopy_count = canopy_boundaries(recovered, hard, buildings,
         water_regions | terrain_masks['dark_green'] | terrain_masks['olive'] | restrictions | unknown_ink, controls)
     hard[canopy_edges > 0] = 0
@@ -564,12 +616,15 @@ def analyze(image, labeler=None):
     hard[photo_mask] = 255
     costs = np.ones((height, width), np.float32)
     costs[terrain_masks['green'] > 0] = 1.5
+    del terrain_masks['green']
     costs[stairs > 0] = 1.7
     costs[hard > 0] = 0
     surface_h, surface_s, surface_v = cv2.split(cv2.cvtColor(recovered, cv2.COLOR_BGR2HSV))
     paving = (surface_h <= 30) & (surface_s >= 12) & (surface_s <= 110) & (surface_v >= 205) & (costs > 0)
     open_ground = (surface_v >= 205) & ((surface_h < 32) | (surface_s < 55)) & (costs > 0)
+    del surface_h, surface_s, surface_v, recovered
     contours = extract_contours(image, controls)
+    del image
     return {'width': width, 'height': height, 'controls': controls, 'features': features, 'sheetPhotos': photos,
             'contours': contours,
             'terrainFeatures': [{'kind': 'stairs', **feature} for feature in stair_features]+lower_features,
@@ -590,18 +645,18 @@ def analyze(image, labeler=None):
                            'sheetPhotoCandidates': len(photos),
                            'contourCandidates': len(contours),
                            'pointSymbolCandidates': point_count,
-                           'pointSymbolPixels': int(np.count_nonzero(point_symbols)),
+                           'pointSymbolPixels': point_symbol_pixels,
                            'recoveredDarkInkPixels': recovered_dark_ink,
                            'canopyCandidates': canopy_count,
                            'canopyBoundaryPixels': int(np.count_nonzero(canopy_edges)),
                            'forbiddenPixelFraction': round(float(np.mean(hard > 0)), 4),
                            'restoredCourseInkPixels': int(np.count_nonzero(hidden)),
-                           'continuedBarrierPixels': int(np.count_nonzero(continued_barriers)),
-                           'continuedRoofPixels': int(np.count_nonzero(continued_roofs)),
+                           'continuedBarrierPixels': continued_barrier_pixels,
+                           'continuedRoofPixels': continued_roof_pixels,
                            'staircaseCandidates': len(stair_features),
-                           'stairTreadPixels': int(np.count_nonzero(treads)),
-                           'pavedBoundaryPixels': int(np.count_nonzero(boundaries)),
-                           'lowerLevelHatchingPixels': int(np.count_nonzero(lower_stripes)),
+                           'stairTreadPixels': stair_tread_pixels,
+                           'pavedBoundaryPixels': paved_boundary_pixels,
+                           'lowerLevelHatchingPixels': lower_hatching_pixels,
                            **({'ocr': ocr} if ocr else {})}, 'terrainSchema': TERRAIN_SCHEMA,
             'warnings': ['自动提取结果待核验：细墙、门洞、桥隧层级及紫色禁区可能存在歧义。',
                          '控制点编号需核对；圈心和到访位置分别保存。']}

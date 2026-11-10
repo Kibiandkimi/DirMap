@@ -1,0 +1,906 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-08T06:02:48Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "3b61bfe35a1c3e1358b27fc63f9a42ae4088282a5004fb2c7e642c6b6c0aaea6",
+  "verifierSha256": "451848e31af153fd10f24fef47b8dde08964a243826d73c3a70f3ff71d2dd10b",
+  "source": "https://www.mdoc.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 369,
+      "map": 343,
+      "name": "Philips Park (YBT)",
+      "date": "2023-04-23",
+      "imageSize": [
+        1926,
+        2689
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "8c9cc6c2f8547dfdf016606bc5e591e75d216ed293b1e1fcf22db56648ce643c",
+      "worldFile": [
+        [
+          1.5327941210643655e-05,
+          2.7597148162893e-07,
+          -2.3178366277643
+        ],
+        [
+          1.6638363603462956e-07,
+          -9.130656291186903e-06,
+          53.53931121724
+        ]
+      ],
+      "referenceFeatures": 3524,
+      "referenceSha256": "e311152c1977c8dcd2ce7560c5fc1e379acd0b883c0db6f933d0ead9f791877a",
+      "elapsedSec": 1447.5,
+      "failures": [
+        "自动配准仅找到 7 组稳定地物，需补充同名点",
+        "另一处位置与原图同样吻合（0.32，已选 0.31），请补充同名点确定位置"
+      ],
+      "outcome": "refused",
+      "offeredPlaces": [
+        {
+          "support": 0.3712,
+          "method": "global_search_road_network",
+          "p95ErrorM": 13.04,
+          "acceptance": {
+            "method": "global_search_road_network",
+            "p95ErrorM": 13.04,
+            "medianErrorM": 5.06,
+            "extrapolationSpreadM": 0.77,
+            "fitCount": 162,
+            "fitObjectCount": 24,
+            "validationCount": 8,
+            "validationObjectCount": 2,
+            "validationWays": [
+              {
+                "referenceId": "1230827692",
+                "matched": true,
+                "sampleCount": 3,
+                "medianNearestPathM": 1.52,
+                "p95NearestPathM": 5.34,
+                "maxNearestPathM": 5.76
+              },
+              {
+                "referenceId": "1564864796",
+                "matched": true,
+                "sampleCount": 5,
+                "medianNearestPathM": 6.11,
+                "p95NearestPathM": 13.07,
+                "maxNearestPathM": 13.12
+              },
+              {
+                "referenceId": "210997490",
+                "matched": false,
+                "sampleCount": 45,
+                "medianNearestPathM": 20.4,
+                "p95NearestPathM": 91.32,
+                "maxNearestPathM": 93.45
+              },
+              {
+                "referenceId": "210997497",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 48.71,
+                "p95NearestPathM": 53.22,
+                "maxNearestPathM": 53.72
+              },
+              {
+                "referenceId": "210997514",
+                "matched": false,
+                "sampleCount": 19,
+                "medianNearestPathM": 10.8,
+                "p95NearestPathM": 45.16,
+                "maxNearestPathM": 46.87
+              },
+              {
+                "referenceId": "210997519",
+                "matched": false,
+                "sampleCount": 15,
+                "medianNearestPathM": 20.03,
+                "p95NearestPathM": 34.42,
+                "maxNearestPathM": 40.67
+              },
+              {
+                "referenceId": "401835294",
+                "matched": false,
+                "sampleCount": 16,
+                "medianNearestPathM": 18.71,
+                "p95NearestPathM": 47.74,
+                "maxNearestPathM": 49.06
+              },
+              {
+                "referenceId": "4945191",
+                "matched": false,
+                "sampleCount": 5,
+                "medianNearestPathM": 16.63,
+                "p95NearestPathM": 20.63,
+                "maxNearestPathM": 20.92
+              },
+              {
+                "referenceId": "4945196",
+                "matched": false,
+                "sampleCount": 23,
+                "medianNearestPathM": 10.92,
+                "p95NearestPathM": 54.79,
+                "maxNearestPathM": 63.51
+              },
+              {
+                "referenceId": "608739304",
+                "matched": false,
+                "sampleCount": 23,
+                "medianNearestPathM": 21.37,
+                "p95NearestPathM": 62.44,
+                "maxNearestPathM": 69.14
+              },
+              {
+                "referenceId": "637861593",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 13.23,
+                "p95NearestPathM": 22.81,
+                "maxNearestPathM": 24.28
+              },
+              {
+                "referenceId": "754494647",
+                "matched": false,
+                "sampleCount": 5,
+                "medianNearestPathM": 13.83,
+                "p95NearestPathM": 21.9,
+                "maxNearestPathM": 22.06
+              },
+              {
+                "referenceId": "856745684",
+                "matched": false,
+                "sampleCount": 8,
+                "medianNearestPathM": 22.42,
+                "p95NearestPathM": 31.47,
+                "maxNearestPathM": 31.98
+              },
+              {
+                "referenceId": "974942619",
+                "matched": false,
+                "sampleCount": 3,
+                "medianNearestPathM": 23.97,
+                "p95NearestPathM": 27.71,
+                "maxNearestPathM": 28.13
+              }
+            ],
+            "validationOmittedWayIds": [
+              "210997490",
+              "210997497",
+              "210997514",
+              "210997519",
+              "401835294",
+              "4945191",
+              "4945196",
+              "608739304",
+              "637861593",
+              "754494647",
+              "856745684",
+              "974942619"
+            ],
+            "validationTotalWays": 14,
+            "validationInsideHull": 8,
+            "orientedPathSupport": 0.124,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "affine": [
+            [
+              -0.466742,
+              -0.291486,
+              1099.523083
+            ],
+            [
+              -0.291486,
+              0.466742,
+              -1792.448095
+            ]
+          ],
+          "truthErrorM": {
+            "median": 1748.31,
+            "p95": 3030.03,
+            "max": 3568.9
+          }
+        },
+        {
+          "support": 0.3132,
+          "method": "global_search_road_network",
+          "p95ErrorM": 14.9,
+          "acceptance": {
+            "method": "global_search_road_network",
+            "p95ErrorM": 14.9,
+            "medianErrorM": 6.34,
+            "extrapolationSpreadM": 0.86,
+            "fitCount": 199,
+            "fitObjectCount": 27,
+            "validationCount": 80,
+            "validationObjectCount": 10,
+            "validationWays": [
+              {
+                "referenceId": "1032961063",
+                "matched": false,
+                "sampleCount": 23,
+                "medianNearestPathM": 46.43,
+                "p95NearestPathM": 97.83,
+                "maxNearestPathM": 103.74
+              },
+              {
+                "referenceId": "1032961067",
+                "matched": false,
+                "sampleCount": 6,
+                "medianNearestPathM": 122.33,
+                "p95NearestPathM": 131.63,
+                "maxNearestPathM": 132.7
+              },
+              {
+                "referenceId": "104650486",
+                "matched": false,
+                "sampleCount": 10,
+                "medianNearestPathM": 37.07,
+                "p95NearestPathM": 75.0,
+                "maxNearestPathM": 78.38
+              },
+              {
+                "referenceId": "1135499829",
+                "matched": false,
+                "sampleCount": 3,
+                "medianNearestPathM": 26.48,
+                "p95NearestPathM": 33.73,
+                "maxNearestPathM": 34.54
+              },
+              {
+                "referenceId": "116045147",
+                "matched": false,
+                "sampleCount": 31,
+                "medianNearestPathM": 36.96,
+                "p95NearestPathM": 87.8,
+                "maxNearestPathM": 93.7
+              },
+              {
+                "referenceId": "116045152",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 160.17,
+                "p95NearestPathM": 220.53,
+                "maxNearestPathM": 228.38
+              },
+              {
+                "referenceId": "116045160",
+                "matched": false,
+                "sampleCount": 17,
+                "medianNearestPathM": 14.28,
+                "p95NearestPathM": 44.37,
+                "maxNearestPathM": 49.44
+              },
+              {
+                "referenceId": "116045166",
+                "matched": true,
+                "sampleCount": 7,
+                "medianNearestPathM": 6.63,
+                "p95NearestPathM": 16.86,
+                "maxNearestPathM": 17.25
+              },
+              {
+                "referenceId": "116045180",
+                "matched": false,
+                "sampleCount": 20,
+                "medianNearestPathM": 22.39,
+                "p95NearestPathM": 43.33,
+                "maxNearestPathM": 45.0
+              },
+              {
+                "referenceId": "116045184",
+                "matched": true,
+                "sampleCount": 5,
+                "medianNearestPathM": 8.16,
+                "p95NearestPathM": 13.99,
+                "maxNearestPathM": 14.5
+              },
+              {
+                "referenceId": "116045192",
+                "matched": true,
+                "sampleCount": 2,
+                "medianNearestPathM": 9.13,
+                "p95NearestPathM": 14.68,
+                "maxNearestPathM": 15.3
+              },
+              {
+                "referenceId": "116045200",
+                "matched": true,
+                "sampleCount": 7,
+                "medianNearestPathM": 7.73,
+                "p95NearestPathM": 10.71,
+                "maxNearestPathM": 11.06
+              },
+              {
+                "referenceId": "116045218",
+                "matched": false,
+                "sampleCount": 15,
+                "medianNearestPathM": 18.66,
+                "p95NearestPathM": 35.1,
+                "maxNearestPathM": 36.83
+              },
+              {
+                "referenceId": "1219601752",
+                "matched": false,
+                "sampleCount": 6,
+                "medianNearestPathM": 51.02,
+                "p95NearestPathM": 59.44,
+                "maxNearestPathM": 59.84
+              },
+              {
+                "referenceId": "1232856974",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 55.65,
+                "p95NearestPathM": 64.89,
+                "maxNearestPathM": 66.16
+              },
+              {
+                "referenceId": "1339001251",
+                "matched": false,
+                "sampleCount": 10,
+                "medianNearestPathM": 155.1,
+                "p95NearestPathM": 197.79,
+                "maxNearestPathM": 201.04
+              },
+              {
+                "referenceId": "1444863965",
+                "matched": false,
+                "sampleCount": 19,
+                "medianNearestPathM": 23.72,
+                "p95NearestPathM": 47.44,
+                "maxNearestPathM": 58.66
+              },
+              {
+                "referenceId": "1553202558",
+                "matched": false,
+                "sampleCount": 8,
+                "medianNearestPathM": 13.54,
+                "p95NearestPathM": 20.8,
+                "maxNearestPathM": 22.21
+              },
+              {
+                "referenceId": "172565946",
+                "matched": true,
+                "sampleCount": 5,
+                "medianNearestPathM": 7.28,
+                "p95NearestPathM": 9.82,
+                "maxNearestPathM": 10.41
+              },
+              {
+                "referenceId": "199268845",
+                "matched": false,
+                "sampleCount": 13,
+                "medianNearestPathM": 87.51,
+                "p95NearestPathM": 100.27,
+                "maxNearestPathM": 103.18
+              },
+              {
+                "referenceId": "199277189",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 15.84,
+                "p95NearestPathM": 26.31,
+                "maxNearestPathM": 29.84
+              },
+              {
+                "referenceId": "203423416",
+                "matched": true,
+                "sampleCount": 6,
+                "medianNearestPathM": 2.93,
+                "p95NearestPathM": 5.49,
+                "maxNearestPathM": 6.05
+              },
+              {
+                "referenceId": "203423426",
+                "matched": false,
+                "sampleCount": 7,
+                "medianNearestPathM": 22.24,
+                "p95NearestPathM": 31.57,
+                "maxNearestPathM": 33.42
+              },
+              {
+                "referenceId": "203423429",
+                "matched": false,
+                "sampleCount": 14,
+                "medianNearestPathM": 75.8,
+                "p95NearestPathM": 160.58,
+                "maxNearestPathM": 168.06
+              },
+              {
+                "referenceId": "203423432",
+                "matched": false,
+                "sampleCount": 10,
+                "medianNearestPathM": 30.26,
+                "p95NearestPathM": 60.86,
+                "maxNearestPathM": 65.05
+              },
+              {
+                "referenceId": "203486182",
+                "matched": false,
+                "sampleCount": 13,
+                "medianNearestPathM": 15.75,
+                "p95NearestPathM": 42.0,
+                "maxNearestPathM": 44.54
+              },
+              {
+                "referenceId": "203486190",
+                "matched": true,
+                "sampleCount": 13,
+                "medianNearestPathM": 4.77,
+                "p95NearestPathM": 9.15,
+                "maxNearestPathM": 9.57
+              },
+              {
+                "referenceId": "203488218",
+                "matched": false,
+                "sampleCount": 95,
+                "medianNearestPathM": 34.89,
+                "p95NearestPathM": 158.48,
+                "maxNearestPathM": 173.64
+              },
+              {
+                "referenceId": "225635965",
+                "matched": false,
+                "sampleCount": 3,
+                "medianNearestPathM": 44.67,
+                "p95NearestPathM": 46.49,
+                "maxNearestPathM": 46.69
+              },
+              {
+                "referenceId": "229796440",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 11.06,
+                "p95NearestPathM": 16.85,
+                "maxNearestPathM": 17.8
+              },
+              {
+                "referenceId": "230721113",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 37.23,
+                "p95NearestPathM": 45.84,
+                "maxNearestPathM": 47.12
+              },
+              {
+                "referenceId": "230912111",
+                "matched": false,
+                "sampleCount": 27,
+                "medianNearestPathM": 30.25,
+                "p95NearestPathM": 90.63,
+                "maxNearestPathM": 105.32
+              },
+              {
+                "referenceId": "235214493",
+                "matched": true,
+                "sampleCount": 18,
+                "medianNearestPathM": 8.83,
+                "p95NearestPathM": 14.79,
+                "maxNearestPathM": 14.88
+              },
+              {
+                "referenceId": "264905677",
+                "matched": false,
+                "sampleCount": 6,
+                "medianNearestPathM": 145.15,
+                "p95NearestPathM": 157.73,
+                "maxNearestPathM": 159.25
+              },
+              {
+                "referenceId": "266027799",
+                "matched": false,
+                "sampleCount": 3,
+                "medianNearestPathM": 64.49,
+                "p95NearestPathM": 67.23,
+                "maxNearestPathM": 67.54
+              },
+              {
+                "referenceId": "296100802",
+                "matched": false,
+                "sampleCount": 5,
+                "medianNearestPathM": 16.99,
+                "p95NearestPathM": 23.37,
+                "maxNearestPathM": 23.69
+              },
+              {
+                "referenceId": "41577202",
+                "matched": false,
+                "sampleCount": 5,
+                "medianNearestPathM": 74.06,
+                "p95NearestPathM": 83.59,
+                "maxNearestPathM": 85.66
+              },
+              {
+                "referenceId": "41577209",
+                "matched": false,
+                "sampleCount": 15,
+                "medianNearestPathM": 75.39,
+                "p95NearestPathM": 102.55,
+                "maxNearestPathM": 103.54
+              },
+              {
+                "referenceId": "447699248",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 29.01,
+                "p95NearestPathM": 42.33,
+                "maxNearestPathM": 42.56
+              },
+              {
+                "referenceId": "519760283",
+                "matched": false,
+                "sampleCount": 3,
+                "medianNearestPathM": 23.77,
+                "p95NearestPathM": 34.33,
+                "maxNearestPathM": 35.51
+              },
+              {
+                "referenceId": "531698317",
+                "matched": true,
+                "sampleCount": 11,
+                "medianNearestPathM": 6.94,
+                "p95NearestPathM": 15.4,
+                "maxNearestPathM": 18.3
+              },
+              {
+                "referenceId": "677715148",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 13.28,
+                "p95NearestPathM": 19.44,
+                "maxNearestPathM": 23.04
+              },
+              {
+                "referenceId": "691887050",
+                "matched": false,
+                "sampleCount": 10,
+                "medianNearestPathM": 149.0,
+                "p95NearestPathM": 163.26,
+                "maxNearestPathM": 163.76
+              },
+              {
+                "referenceId": "706454831",
+                "matched": false,
+                "sampleCount": 9,
+                "medianNearestPathM": 40.79,
+                "p95NearestPathM": 53.22,
+                "maxNearestPathM": 53.68
+              },
+              {
+                "referenceId": "718840190",
+                "matched": true,
+                "sampleCount": 6,
+                "medianNearestPathM": 5.23,
+                "p95NearestPathM": 12.31,
+                "maxNearestPathM": 13.49
+              },
+              {
+                "referenceId": "737129853",
+                "matched": false,
+                "sampleCount": 5,
+                "medianNearestPathM": 25.17,
+                "p95NearestPathM": 30.62,
+                "maxNearestPathM": 31.62
+              },
+              {
+                "referenceId": "781778661",
+                "matched": false,
+                "sampleCount": 3,
+                "medianNearestPathM": 15.67,
+                "p95NearestPathM": 23.45,
+                "maxNearestPathM": 24.31
+              },
+              {
+                "referenceId": "853257784",
+                "matched": false,
+                "sampleCount": 56,
+                "medianNearestPathM": 31.75,
+                "p95NearestPathM": 56.24,
+                "maxNearestPathM": 61.09
+              },
+              {
+                "referenceId": "853264331",
+                "matched": false,
+                "sampleCount": 8,
+                "medianNearestPathM": 152.95,
+                "p95NearestPathM": 161.62,
+                "maxNearestPathM": 162.33
+              },
+              {
+                "referenceId": "85552298",
+                "matched": false,
+                "sampleCount": 10,
+                "medianNearestPathM": 81.24,
+                "p95NearestPathM": 98.4,
+                "maxNearestPathM": 99.81
+              },
+              {
+                "referenceId": "904069061",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 47.85,
+                "p95NearestPathM": 63.36,
+                "maxNearestPathM": 63.58
+              },
+              {
+                "referenceId": "918451630",
+                "matched": false,
+                "sampleCount": 3,
+                "medianNearestPathM": 80.11,
+                "p95NearestPathM": 86.18,
+                "maxNearestPathM": 86.85
+              },
+              {
+                "referenceId": "920564689",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 94.43,
+                "p95NearestPathM": 94.93,
+                "maxNearestPathM": 94.99
+              },
+              {
+                "referenceId": "922770841",
+                "matched": false,
+                "sampleCount": 5,
+                "medianNearestPathM": 37.67,
+                "p95NearestPathM": 63.71,
+                "maxNearestPathM": 66.66
+              },
+              {
+                "referenceId": "922770845",
+                "matched": false,
+                "sampleCount": 4,
+                "medianNearestPathM": 92.15,
+                "p95NearestPathM": 96.86,
+                "maxNearestPathM": 97.03
+              },
+              {
+                "referenceId": "922770848",
+                "matched": false,
+                "sampleCount": 12,
+                "medianNearestPathM": 11.52,
+                "p95NearestPathM": 41.96,
+                "maxNearestPathM": 46.24
+              },
+              {
+                "referenceId": "922770851",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 41.54,
+                "p95NearestPathM": 51.82,
+                "maxNearestPathM": 55.99
+              },
+              {
+                "referenceId": "922770855",
+                "matched": false,
+                "sampleCount": 12,
+                "medianNearestPathM": 35.62,
+                "p95NearestPathM": 70.4,
+                "maxNearestPathM": 78.52
+              },
+              {
+                "referenceId": "922938248",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 49.82,
+                "p95NearestPathM": 50.07,
+                "maxNearestPathM": 50.1
+              },
+              {
+                "referenceId": "922938251",
+                "matched": false,
+                "sampleCount": 22,
+                "medianNearestPathM": 107.52,
+                "p95NearestPathM": 144.72,
+                "maxNearestPathM": 151.64
+              },
+              {
+                "referenceId": "926302042",
+                "matched": false,
+                "sampleCount": 2,
+                "medianNearestPathM": 48.61,
+                "p95NearestPathM": 49.1,
+                "maxNearestPathM": 49.15
+              },
+              {
+                "referenceId": "926302059",
+                "matched": false,
+                "sampleCount": 11,
+                "medianNearestPathM": 32.53,
+                "p95NearestPathM": 74.1,
+                "maxNearestPathM": 76.51
+              },
+              {
+                "referenceId": "926302062",
+                "matched": false,
+                "sampleCount": 14,
+                "medianNearestPathM": 43.92,
+                "p95NearestPathM": 68.49,
+                "maxNearestPathM": 71.92
+              },
+              {
+                "referenceId": "947535712",
+                "matched": false,
+                "sampleCount": 30,
+                "medianNearestPathM": 18.91,
+                "p95NearestPathM": 51.16,
+                "maxNearestPathM": 62.08
+              }
+            ],
+            "validationOmittedWayIds": [
+              "1032961063",
+              "1032961067",
+              "104650486",
+              "1135499829",
+              "116045147",
+              "116045152",
+              "116045160",
+              "116045180",
+              "116045218",
+              "1219601752",
+              "1232856974",
+              "1339001251",
+              "1444863965",
+              "1553202558",
+              "199268845",
+              "199277189",
+              "203423426",
+              "203423429",
+              "203423432",
+              "203486182",
+              "203488218",
+              "225635965",
+              "229796440",
+              "230721113",
+              "230912111",
+              "264905677",
+              "266027799",
+              "296100802",
+              "41577202",
+              "41577209",
+              "447699248",
+              "519760283",
+              "677715148",
+              "691887050",
+              "706454831",
+              "737129853",
+              "781778661",
+              "853257784",
+              "853264331",
+              "85552298",
+              "904069061",
+              "918451630",
+              "920564689",
+              "922770841",
+              "922770845",
+              "922770848",
+              "922770851",
+              "922770855",
+              "922938248",
+              "922938251",
+              "926302042",
+              "926302059",
+              "926302062",
+              "947535712"
+            ],
+            "validationTotalWays": 64,
+            "validationInsideHull": 80,
+            "orientedPathSupport": 0.064,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "affine": [
+            [
+              0.881119,
+              0.031579,
+              -883.521612
+            ],
+            [
+              0.031579,
+              -0.881119,
+              1102.399611
+            ]
+          ],
+          "truthErrorM": {
+            "median": 104.79,
+            "p95": 191.42,
+            "max": 239.74
+          }
+        },
+        {
+          "support": 0.2945,
+          "method": "global_search_road_network",
+          "p95ErrorM": 16.54,
+          "acceptance": {
+            "method": "global_search_road_network",
+            "p95ErrorM": 16.54,
+            "medianErrorM": 5.11,
+            "extrapolationSpreadM": 0.21,
+            "fitCount": 250,
+            "fitObjectCount": 32,
+            "validationCount": 40,
+            "validationObjectCount": 5,
+            "validationWays": [
+              {
+                "referenceId": "174832176",
+                "matched": true,
+                "sampleCount": 3,
+                "medianNearestPathM": 1.35,
+                "p95NearestPathM": 4.43,
+                "maxNearestPathM": 4.77
+              },
+              {
+                "referenceId": "230698980",
+                "matched": true,
+                "sampleCount": 5,
+                "medianNearestPathM": 7.78,
+                "p95NearestPathM": 23.42,
+                "maxNearestPathM": 25.76
+              },
+              {
+                "referenceId": "230712819",
+                "matched": true,
+                "sampleCount": 16,
+                "medianNearestPathM": 5.1,
+                "p95NearestPathM": 16.67,
+                "maxNearestPathM": 17.14
+              },
+              {
+                "referenceId": "230962540",
+                "matched": true,
+                "sampleCount": 6,
+                "medianNearestPathM": 5.86,
+                "p95NearestPathM": 6.88,
+                "maxNearestPathM": 6.96
+              },
+              {
+                "referenceId": "85551852",
+                "matched": true,
+                "sampleCount": 10,
+                "medianNearestPathM": 5.01,
+                "p95NearestPathM": 14.39,
+                "maxNearestPathM": 15.68
+              }
+            ],
+            "validationOmittedWayIds": [],
+            "validationTotalWays": 5,
+            "validationInsideHull": 40,
+            "orientedPathSupport": 0.223,
+            "poseSupport": {},
+            "poseLayerCount": 0
+          },
+          "affine": [
+            [
+              -0.232831,
+              0.159952,
+              701.004868
+            ],
+            [
+              0.159952,
+              0.232831,
+              -348.714715
+            ]
+          ],
+          "truthErrorM": {
+            "median": 1055.81,
+            "p95": 1670.83,
+            "max": 1808.47
+          }
+        }
+      ],
+      "correctPlaceOffered": null
+    }
+  ],
+  "summary": {
+    "correct": 0,
+    "wrong": 0,
+    "refused": 1,
+    "refusedOfferingCorrectPlace": 0,
+    "refusedWithoutOffer": 0
+  }
+}

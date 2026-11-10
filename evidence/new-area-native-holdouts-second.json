@@ -1,0 +1,34 @@
+{
+  "selectedAt": "2026-11-05T17:20:45.858705+00:00",
+  "source": "https://www.happyherts.routegadget.co.uk",
+  "nativeResolution": true,
+  "implementationSignatureAtSelection": "3a6acfe7d89adc294173f468416bef12599d8d2fc0029a24ea3ab9f193fa31f7",
+  "selectionBasis": "Selected from event names and world-file availability before downloading or viewing these images. New places chosen after fixing the first native cohort: a campus, a valley park, and a heath. No outcome-based replacement is allowed.",
+  "referencePolicy": "World files frame a bounded teacher viewport only. Match native pixels without world-file transforms or anchors; measure against those files afterward. Preserve every result including refusals and wrong fits.",
+  "cases": [
+    {
+      "id": 431,
+      "mapid": 444,
+      "name": "Haileybury Saturday Series and GLOSS",
+      "date": "2025-07-05",
+      "sourceCachedAtSelection": false,
+      "referenceCachedAtSelection": false
+    },
+    {
+      "id": 435,
+      "mapid": 434,
+      "name": "Fairlands Valley Saturday Series",
+      "date": "2025-11-01",
+      "sourceCachedAtSelection": false,
+      "referenceCachedAtSelection": false
+    },
+    {
+      "id": 425,
+      "mapid": 438,
+      "name": "Mardley Heath Saturday Series",
+      "date": "2025-02-01",
+      "sourceCachedAtSelection": false,
+      "referenceCachedAtSelection": false
+    }
+  ]
+}

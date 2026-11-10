@@ -1,0 +1,166 @@
+{
+  "mode": "service",
+  "checkedAt": "2026-11-04T14:06:48Z",
+  "scope": "First-time automatic registration on maps of places DirMap has never seen.\n\nEvery classroom so far brought a map of a new place. This check imitates\nthat: for each published orienteering map it downloads the OpenStreetMap\nreference of a viewport around the sheet (as a teacher adding a place would),\nthen runs recognition and the automatic geographic registration exactly once,\nwith no tuning per place. Each map comes from a RouteGadget server whose\norganisers georeferenced it with a world file. The file frames the teacher's\nviewport and, by default, normalises resolution toward classroom-photo\nscale. Use --native-resolution to retain original pixels instead. Matching\nreceives neither the world-file transform nor its landmarks; the resulting\npose is measured against that transform afterwards.\n\nWorld files are the organisers' own georeferencing (usually three manually\npicked points), so they carry a few metres of error themselves. The check\nclassifies an outcome as correct, wrong (dangerous: a confident fit far from\nthe world file) or refused. It is not a field accuracy measurement.",
+  "implementationSignature": "29c44c0dc88632671a09842a93f9a59fbaaac5ff19f255c47a939ad8448063c8",
+  "verifierSha256": "ef7392f5043f2f2295ef201afc4f5b7df10a6532e55d62481508bb078cf5fcad",
+  "source": "https://www.slow.routegadget.co.uk",
+  "inputResolution": "native",
+  "complete": true,
+  "cases": [
+    {
+      "event": 200,
+      "map": 191,
+      "name": "The 12th London City Race",
+      "date": "2019-09-21",
+      "imageSize": [
+        3156,
+        2344
+      ],
+      "upscale": 1.0,
+      "sourceSha256": "002af3931d1c360655f7ebf53fee34659baded71a8ea1f7d6060d7d006b737ca",
+      "worldFile": [
+        [
+          1.3071081721738594e-05,
+          7.165612604948456e-08,
+          -0.11756418391692
+        ],
+        [
+          4.697055037945747e-08,
+          -8.155910731654312e-06,
+          51.527767178104
+        ]
+      ],
+      "referenceFeatures": 26161,
+      "referenceSha256": "f25b51dcceb08e890b928fb3d4301651a3c6d8e0bd5435d4a7f0bd915dbbae70",
+      "elapsedSec": 603.3,
+      "failures": [
+        "场地缺少可核对的公园轮廓与道路网络"
+      ],
+      "method": "global_seed_observed_outline_ransac_mesh",
+      "reportedP95M": 11.26,
+      "globalSearch": {
+        "candidates": [
+          {
+            "score": 0.5406,
+            "metresPerPixel": 0.9156,
+            "rotationDeg": 0.0
+          },
+          {
+            "score": 0.3905,
+            "metresPerPixel": 0.59475,
+            "rotationDeg": 3.0
+          },
+          {
+            "score": 0.3883,
+            "metresPerPixel": 0.59475,
+            "rotationDeg": -1.5
+          },
+          {
+            "score": 0.3679,
+            "metresPerPixel": 0.99031,
+            "rotationDeg": 13.5
+          },
+          {
+            "score": 0.366,
+            "metresPerPixel": 0.66902,
+            "rotationDeg": -4.5
+          },
+          {
+            "score": 0.3641,
+            "metresPerPixel": 0.43458,
+            "rotationDeg": 3.0
+          }
+        ],
+        "channels": [
+          "building",
+          "path",
+          "water"
+        ],
+        "attempted": 4,
+        "pathEvidence": "paving",
+        "coarseCells": 64,
+        "scaleBar": null
+      },
+      "exposureCorrection": null,
+      "truthErrorM": {
+        "all": {
+          "median": 3.05,
+          "p95": 4.38,
+          "max": 4.94
+        },
+        "insideHull": {
+          "median": 3.05,
+          "p95": 4.38,
+          "max": 4.94
+        },
+        "insideFraction": 0.971
+      },
+      "alternatives": [
+        {
+          "method": "global_search_layer_correlation",
+          "support": 0.5576,
+          "agreesWithChosen": true,
+          "truthMedianM": 1.59
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.5571,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.67
+        },
+        {
+          "method": "global_seed_observed_outline_ransac_mesh",
+          "support": 0.5547,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.03
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.5545,
+          "agreesWithChosen": true,
+          "truthMedianM": 3.29
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.5539,
+          "agreesWithChosen": true,
+          "truthMedianM": 2.79
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2779,
+          "agreesWithChosen": false,
+          "truthMedianM": 449.47
+        },
+        {
+          "method": "global_search_road_network",
+          "support": 0.2743,
+          "agreesWithChosen": false,
+          "truthMedianM": 369.17
+        },
+        {
+          "method": "water_seed_observed_outline_ransac_mesh",
+          "support": 0.2362,
+          "agreesWithChosen": false,
+          "truthMedianM": 157.04
+        }
+      ],
+      "poseSupport": {
+        "value": 0.5571,
+        "layers": {
+          "building": 0.5856,
+          "water": 0.3928,
+          "path": 0.5778
+        },
+        "margin": 0.1666
+      },
+      "outcome": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 1,
+    "wrong": 0,
+    "refused": 0
+  }
+}
